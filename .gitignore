@@ -1,0 +1,16 @@
+.idea
+.code
+__pycache__/
+*.log
+*.pot
+*.pyc
+local_settings.*
+*.sqlite3
+media
+static
+private
+antenv
+coverage.xml
+.coverage
+htmlcov
+TEST-*.xml
