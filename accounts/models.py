@@ -27,6 +27,9 @@ class Instructor(IUserAccount):
     bio = models.TextField(blank=True, null=True)
     social_media_accounts = HStoreField(blank=True, null=True)
 
+    def __str__(self):
+        return f'Instructor {self.user}'
+
 
 class Student(IUserAccount):
     parent = models.ForeignKey(Parent, on_delete=models.SET_NULL, blank=True, null=True, related_name='children')

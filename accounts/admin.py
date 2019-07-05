@@ -2,4 +2,9 @@ from django.contrib import admin
 
 from accounts.models import Instructor
 
-admin.site.register(Instructor)
+
+class InstructorAdmin(admin.ModelAdmin):
+    raw_id_fields = ('user',)
+
+
+admin.site.register(Instructor, InstructorAdmin)
