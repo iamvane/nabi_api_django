@@ -18,7 +18,7 @@ class IUserAccount(models.Model):
     )
 
     HEAR_ABOUT_US_GOOGLE = 'Google'
-    HEAR_ABOUT_US_FACEBOOK = 'Google'
+    HEAR_ABOUT_US_FACEBOOK = 'Facebook'
     HEAR_ABOUT_US_CHOICES = (
         (HEAR_ABOUT_US_GOOGLE, HEAR_ABOUT_US_GOOGLE),
         (HEAR_ABOUT_US_FACEBOOK, HEAR_ABOUT_US_FACEBOOK),
@@ -29,7 +29,7 @@ class IUserAccount(models.Model):
     display_name = models.CharField(max_length=100, blank=True, null=True)
     gender = models.CharField(max_length=100, blank=True, null=True, choices=GENDER_CHOICES)
     avatar = models.ImageField(blank=True, null=True, upload_to=avatar_directory_path)
-    hearAboutUs = models.CharField(max_length=100, blank=True, null=True, choices=HEAR_ABOUT_US_CHOICES)
+    hear_about_us = models.CharField(max_length=100, blank=True, null=True, choices=HEAR_ABOUT_US_CHOICES)
     birthday = models.DateField(blank=True, null=True)
     email_verified = models.BooleanField(default=False)
 
@@ -120,36 +120,43 @@ class Instructor(IUserAccount):
     music = models.TextField(blank=True, null=True)
 
     # --- Job preferences ---
-    job_prefs_one_student = models.BooleanField(default=False)
-    job_prefs_small_groups = models.BooleanField(default=False)
-    job_prefs_large_groups = models.BooleanField(default=False)
-    job_prefs_children = models.BooleanField(default=False)
-    job_prefs_teens = models.BooleanField(default=False)
-    job_prefs_adults = models.BooleanField(default=False)
-    job_prefs_seniors = models.BooleanField(default=False)
+    job_prefs_one_student = models.BooleanField(default=False, verbose_name='Job Preference: One Student')
+    job_prefs_small_groups = models.BooleanField(default=False, verbose_name='Job Preference: Small Groups')
+    job_prefs_large_groups = models.BooleanField(default=False, verbose_name='Job Preference: Large Groups')
+    job_prefs_children = models.BooleanField(default=False, verbose_name='Job Preference: Children')
+    job_prefs_teens = models.BooleanField(default=False, verbose_name='Job Preference: Teens')
+    job_prefs_adults = models.BooleanField(default=False, verbose_name='Job Preference: Adults')
+    job_prefs_seniors = models.BooleanField(default=False, verbose_name='Job Preference: Seniors')
 
     # --- Qualifications ---
-    qualif_certified_teacher = models.BooleanField(default=False)
-    qualif_music_therapy = models.BooleanField(default=False)
-    qualif_music_production = models.BooleanField(default=False)
-    qualif_ear_training = models.BooleanField(default=False)
-    qualif_conducting = models.BooleanField(default=False)
-    qualif_virtuoso_recognition = models.BooleanField(default=False)
-    qualif_performance = models.BooleanField(default=False)
-    qualif_music_theory = models.BooleanField(default=False)
-    qualif_young_children_experience = models.BooleanField(default=False)
-    qualif_repertoire_selection = models.BooleanField(default=False)
+    qualif_certified_teacher = models.BooleanField(default=False, verbose_name='Qualifications: Certified Teacher')
+    qualif_music_therapy = models.BooleanField(default=False, verbose_name='Qualifications: Music Therapy')
+    qualif_music_production = models.BooleanField(default=False, verbose_name='Qualifications: Music Production')
+    qualif_ear_training = models.BooleanField(default=False, verbose_name='Qualifications: Ear Training')
+    qualif_conducting = models.BooleanField(default=False, verbose_name='Qualifications: Conducting')
+    qualif_virtuoso_recognition = models.BooleanField(default=False,
+                                                      verbose_name='Qualifications: Virtuoso Recognition')
+    qualif_performance = models.BooleanField(default=False, verbose_name='Qualifications: Performance')
+    qualif_music_theory = models.BooleanField(default=False, verbose_name='Qualifications: Music Theory')
+    qualif_young_children_experience = models.BooleanField(default=False,
+                                                           verbose_name='Qualifications: Young Children Experience')
+    qualif_repertoire_selection = models.BooleanField(default=False,
+                                                      verbose_name='Qualifications: Repertoire Selection')
 
     # --- Place for lessons ---
-    place_lessons_home = models.BooleanField(default=False)
-    place_lessons_studio = models.BooleanField(default=False)
-    place_lessons_online = models.BooleanField(default=False)
+    place_lessons_home = models.BooleanField(default=False, verbose_name='Place for Lessons: Home')
+    place_lessons_studio = models.BooleanField(default=False, verbose_name='Place for Lessons: Studio')
+    place_lessons_online = models.BooleanField(default=False, verbose_name='Place for Lessons: Online')
 
     # --- Rates ---
-    rates_thirty_mins = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    rates_forty_five_mins = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    rates_sixty_mins = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    rates_ninety_mins = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    rates_thirty_mins = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True,
+                                            verbose_name='Rates: 30 mins')
+    rates_forty_five_mins = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True,
+                                                verbose_name='Rates: 45 mins')
+    rates_sixty_mins = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True,
+                                           verbose_name='Rates: 60 mins')
+    rates_ninety_mins = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True,
+                                            verbose_name='Rates: 90 mins')
 
 
 def __str__(self):
