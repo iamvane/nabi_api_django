@@ -40,7 +40,6 @@ INSTALLED_APPS = [
     'rest_framework',
     'core.apps.CoreConfig',
     'accounts.apps.AccountsConfig',
-    'instruments.apps.InstrumentsConfig',
     'lesson.apps.LessonConfig',
 ]
 
@@ -126,8 +125,13 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
+STATIC_URL = '/dj-static/'
 
-STATIC_URL = '/static/'
+# Absolute filesystem path to the directory that will hold user-uploaded files.
+# https://docs.djangoproject.com/en/2.2/ref/settings/#media-root
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/dj-media/'
 
 REST_PAGE_SIZE = 20
 
