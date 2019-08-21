@@ -146,6 +146,8 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': REST_PAGE_SIZE
 }
 
+AUTH_USER_MODEL = 'core.User'
+
 try:
     from .local_settings import *
 except Exception as e:
