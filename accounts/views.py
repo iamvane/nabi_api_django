@@ -1,8 +1,12 @@
 from django.db import transaction
+from django.contrib.auth import authenticate, login
+from django.contrib.auth.forms import AuthenticationForm
+from django.middleware.csrf import get_token
 from rest_framework import views, status
 from rest_framework.permissions import *
 from rest_framework.response import Response
 from .serializers import *
+from .models import Parent, Instructor, Student
 
 
 def get_user_response(user_cc):
@@ -11,6 +15,16 @@ def get_user_response(user_cc):
         'id': user.id,
         'email': user.email,
     }
+
+
+def get_user(user):
+    user_cc = Instructor.objects.filter(user=user).first()
+    if user_cc is not None:
+        return user_cc
+    user_cc = Parent.objects.filter(user=user).first()
+    if user_cc is not None:
+        return user_cc
+    return Student.objects.filter(user=user).first()
 
 
 class CreateAccount(views.APIView):
@@ -28,5 +42,42 @@ class CreateAccount(views.APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def get_serializer_class(self, request):
-        if request.data['type'] == 'parent':
+        if request.data['role'] == 'parent':
             return ParentCreateAccountSerializer
+        elif request.data['role'] == 'instructor':
+            return InstructorCreateAccountSerializer
+
+
+class LoginView(views.APIView):
+    permission_classes = (AllowAny,)
+
+    def post(self, request):
+        form = AuthenticationForm(data={
+            'username': request.data['email'],
+            'password': request.data['password'],
+        })
+        if form.is_valid():
+            user = authenticate(username=form.cleaned_data['username'], password=form.cleaned_data['password'])
+            login(request, user)
+            return Response(get_user_response(get_user(user)))
+        else:
+            return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CsrfTokenView(views.APIView):
+
+    def get(self, request):
+        return Response({'token': get_token(request)})
+
+
+class WhoAmIView(views.APIView):
+
+    def get(self, request):
+        data = {
+            'id': None,
+            'email': None,
+        }
+        if request.user.is_authenticated:
+            data = get_user_response(get_user(request.user))
+
+        return Response(data)

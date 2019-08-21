@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from .models import Parent
+from .models import Parent, Instructor
 from .utils import *
 
 User = get_user_model()
@@ -14,7 +14,7 @@ class BaseCreateAccountSerializer(serializers.Serializer):
     display_name = serializers.CharField(max_length=100, allow_blank=True, allow_null=True, required=False, )
     gender = serializers.CharField(max_length=100, allow_blank=True, allow_null=True, required=False, )
     hear_about_us = serializers.CharField(max_length=100, allow_blank=True, allow_null=True, required=False, )
-    birthday = serializers.DateField(allow_null=True, required=False,)
+    birthday = serializers.DateField(allow_null=True, required=True, )
 
     def create(self, validated_data):
         user = User()
@@ -32,3 +32,10 @@ class ParentCreateAccountSerializer(BaseCreateAccountSerializer):
     def create(self, validated_data):
         user = super().create(validated_data)
         return Parent.objects.create(user=user, **init_kwargs(Parent(), validated_data))
+
+
+class InstructorCreateAccountSerializer(BaseCreateAccountSerializer):
+
+    def create(self, validated_data):
+        user = super().create(validated_data)
+        return Instructor(user=user, **init_kwargs(Instructor(), validated_data))

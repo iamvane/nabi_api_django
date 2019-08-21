@@ -1,0 +1,41 @@
+POST localhost:8000/v1/register
+Content-Type: application/json
+
+{
+  "email": "idekel.santana@gmail.com",
+  "password": "123456",
+  "type": "parent"
+}
+
+###
+
+POST localhost:8000/v1/login
+Content-Type: application/json
+
+{
+  "email": "idekel.santana@gmail.com",
+  "password": "123456"
+}
+
+###
+
+GET localhost:8000/v1/csrf-token
+Cookie: sessionid=mismf58tf7xf0xdajvzqmg159ytcx77p;csrftoken=6Hzd0GrKXQAYuo2W3qwDqHQs7MpQdkYc9iauCTUc7hQG9YoT6L0cTsqY2dPM4CNi
+
+###
+
+GET localhost:8000/v1/whoami
+Cookie: sessionid=mismf58tf7xf0xdajvzqmg159ytcx77p
+
+###
+POST localhost:8000/v1/test
+Content-Type: application/json
+Cookie: sessionid=mismf58tf7xf0xdajvzqmg159ytcx77p; csrftoken=6Hzd0GrKXQAYuo2W3qwDqHQs7MpQdkYc9iauCTUc7hQG9YoT6L0cTsqY2dPM4CNi
+X-CSRFToken: OgoFm0sgQTG3lb7Za4Vl6zlfHLuirIZ8RRZWYdVI0kWL0LtWdppUzkVLCcUei0Oe
+
+{
+  "email": "idekel.santana@gmail.com",
+  "password": "123456"
+}
+
+###
