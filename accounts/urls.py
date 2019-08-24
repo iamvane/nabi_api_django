@@ -7,4 +7,5 @@ urlpatterns = [
     path('csrf-token', CsrfTokenView.as_view()),
     path('whoami', WhoAmIView.as_view()),
     path('build-profile', CreateAccountInfoView.as_view()),
+    path('verify-phone', VerifyPhoneView.as_view()),
 ]

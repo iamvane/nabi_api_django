@@ -1,12 +1,15 @@
 from django.db import transaction
+from django.utils import timezone
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.forms import AuthenticationForm
 from django.middleware.csrf import get_token
+from django.conf import settings
 from rest_framework import views, status
 from rest_framework.permissions import *
 from rest_framework.response import Response
 from .serializers import *
 from .models import Parent, Instructor, Student
+from twilio.rest import Client
 
 
 def get_user_response(user_cc):
@@ -94,3 +97,29 @@ class CreateAccountInfoView(views.APIView):
             return Response(status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class VerifyPhoneView(views.APIView):
+
+    def post(self, request):
+        phone = PhoneNumber.objects.get(user=request.user, phone_number=request.data['phone_number'])
+        client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+        verification = client.verify \
+            .services(settings.TWILIO_SERVICE_SID) \
+            .verifications \
+            .create(to=phone.phone_number, channel=request.data['channel'])
+        return Response({"sid": verification.sid, "status": verification.status})
+
+    def put(self, request):
+        phone = PhoneNumber.objects.get(user=request.user, phone_number=request.data['phone_number'])
+        client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+        verification_check = client.verify \
+            .services(settings.TWILIO_SERVICE_SID) \
+            .verification_checks \
+            .create(to=phone.phone_number, code=request.data['code'])
+        approved = verification_check.status == 'approved'
+        if approved:
+            phone.phone_verified_at = timezone.now()
+            phone.save()
+        return Response({'status': verification_check.status},
+                        status=status.HTTP_200_OK if approved else status.HTTP_400_BAD_REQUEST)
