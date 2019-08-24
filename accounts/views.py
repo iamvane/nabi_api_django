@@ -37,8 +37,9 @@ class CreateAccount(views.APIView):
         if serializer is None:
             return Response(status=status.HTTP_400_BAD_REQUEST)
         if serializer.is_valid():
-            user = serializer.save()
-            return Response(get_user_response(user))
+            user_cc = serializer.save()
+            login(request, user_cc.user)
+            return Response(get_user_response(user_cc))
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def get_serializer_class(self, request):
@@ -81,3 +82,15 @@ class WhoAmIView(views.APIView):
             data = get_user_response(get_user(request.user))
 
         return Response(data)
+
+
+class CreateAccountInfoView(views.APIView):
+
+    def put(self, request):
+        serializer = InstructorAccountInfoSerializer(data=request.data,
+                                                     instance=Instructor.objects.get(user=request.user))
+        if serializer.is_valid():
+            serializer.save()
+            return Response(status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

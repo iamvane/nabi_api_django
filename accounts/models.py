@@ -48,7 +48,7 @@ class Address(models.Model):
 
 class PhoneNumber(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    phone_number = models.CharField(max_length=50, blank=True, null=True)
+    phone_number = models.CharField(max_length=50, blank=True, null=True, unique=True)
     phone_type = models.CharField(max_length=100, choices=PHONE_TYPE_CHOICES)
     phone_verified_at = models.DateTimeField(blank=True, null=True)
 
@@ -77,6 +77,8 @@ class Instructor(IUserAccount):
     instruments = models.ManyToManyField('lesson.Instrument', through='accounts.InstructorInstruments')
     languages = ArrayField(base_field=models.CharField(max_length=100, blank=True), blank=True, null=True)
     music = models.TextField(blank=True, null=True)
+    lat = models.CharField(max_length=50, default='')
+    long = models.CharField(max_length=50, default='')
 
     job_preferences = ArrayField(blank=True, null=True, base_field=models.CharField(max_length=100))
     qualifications = ArrayField(blank=True, null=True, base_field=models.CharField(max_length=100))
