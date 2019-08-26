@@ -48,6 +48,62 @@ X-CSRFToken: 8LUV70LbEX0JeWQFfd8N3XTzdH105FTjruMxyy5xRm39TfysDiZRDzd2SIkHlQbf
 }
 
 ###
+POST localhost:8000/v1/build-profile/job-preferences
+Content-Type: application/json
+Cookie: sessionid=65vw4w0a116tfnzcjdcb4ka7dhhpqnu4;csrftoken=zDbcXUdR4RCvgb7XwRP64VgW69EUc0OJSm3OosxdhgFVVuPKUWGaExApLaXBsb6F
+X-CSRFToken: 8LUV70LbEX0JeWQFfd8N3XTzdH105FTjruMxyy5xRm39TfysDiZRDzd2SIkHlQbf
+
+{
+  "instruments": [
+    {
+      "instrument": "piano",
+      "skillLevel": "advanced"
+    }
+  ],
+  "lesson_size": {
+    "one_student": true,
+    "small_groups": false,
+    "large_groups": false
+  },
+  "age_group": {
+    "children": true,
+    "teens": false,
+    "adults": true,
+    "seniors": true
+  },
+  "lesson_rate": {
+    "mins30": 50,
+    "mins45": 50,
+    "mins60": 50,
+    "mins90": 50
+  },
+  "place_for_lessons": {
+    "home": true,
+    "studio": true,
+    "online": true
+  },
+  "availability": [
+    {
+      "day_of_week": "monday",
+      "from1": "10am",
+      "to": "01am"
+    }
+  ],
+  "additional_qualifications": {
+    "certified_teacher": true,
+    "music_therapy": false,
+    "music_production": false,
+    "ear_training": false,
+    "conducting": false,
+    "virtuoso_recognition": false,
+    "performance": false,
+    "music_theory": false,
+    "young_children_experience": false,
+    "repertoire_selection": false
+  }
+}
+
+###
 POST localhost:8000/v1/login
 Content-Type: application/json
 

@@ -132,7 +132,8 @@ class Employment(models.Model):
 class Availability(models.Model):
     instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE, related_name='availability')
     day_of_week = models.CharField(max_length=10, choices=DAY_CHOICES)
-    schedule = models.CharField(max_length=10, choices=SCHEDULE_CHOICES)
+    from1 = models.CharField(max_length=10, default='')
+    to = models.CharField(max_length=10, default='')
 
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
@@ -145,6 +146,50 @@ class InstructorInstruments(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
+
+
+class InstructorLessonSize(models.Model):
+    instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE)
+    one_student = models.BooleanField()
+    small_groups = models.BooleanField()
+    large_groups = models.BooleanField()
+
+
+class InstructorAgeGroup(models.Model):
+    instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE)
+    children = models.BooleanField()
+    teens = models.BooleanField()
+    adults = models.BooleanField()
+    seniors = models.BooleanField()
+
+
+class InstructorLessonRate(models.Model):
+    instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE)
+    mins30 = models.FloatField()
+    mins45 = models.FloatField()
+    mins60 = models.FloatField()
+    mins90 = models.FloatField()
+
+
+class InstructorPlaceForLessons(models.Model):
+    instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE)
+    home = models.BooleanField()
+    studio = models.BooleanField()
+    online = models.BooleanField()
+
+
+class InstructorAdditionalQualifications(models.Model):
+    instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE)
+    certified_teacher = models.BooleanField()
+    music_therapy = models.BooleanField()
+    music_production = models.BooleanField()
+    ear_training = models.BooleanField()
+    conducting = models.BooleanField()
+    virtuoso_recognition = models.BooleanField()
+    performance = models.BooleanField()
+    music_theory = models.BooleanField()
+    young_children_experience = models.BooleanField()
+    repertoire_selection = models.BooleanField()
 
 
 class Student(IUserAccount):

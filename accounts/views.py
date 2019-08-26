@@ -123,3 +123,14 @@ class VerifyPhoneView(views.APIView):
             phone.save()
         return Response({'status': verification_check.status},
                         status=status.HTTP_200_OK if approved else status.HTTP_400_BAD_REQUEST)
+
+
+class InstructorStep2View(views.APIView):
+
+    def post(self, request):
+        serializer = InstructorAccountStepTwoSerializer(data=request.data,
+                                                        instance=Instructor.objects.get(user=request.user))
+        if serializer.is_valid():
+            serializer.save()
+            return Response(request.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
