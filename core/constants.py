@@ -1,3 +1,8 @@
+# Roles
+ROLE_STUDENT = 'Student'
+ROLE_PARENT = 'Parent'
+ROLE_INSTRUCTOR = 'Instructor'
+
 # --- Skill level ---
 SKILL_LEVEL_BASIC = 'basic'
 SKILL_LEVEL_ADVANCED = 'advanced'

@@ -17,16 +17,15 @@ def get_user_response(user_cc):
     return {
         'id': user.id,
         'email': user.email,
+        'role': user.get_type(),
     }
 
 
 def get_user(user):
-    user_cc = Instructor.objects.filter(user=user).first()
-    if user_cc is not None:
-        return user_cc
-    user_cc = Parent.objects.filter(user=user).first()
-    if user_cc is not None:
-        return user_cc
+    if user.get_type() == ROLE_INSTRUCTOR:
+        return Instructor.objects.filter(user=user).first()
+    if user.get_type() == ROLE_PARENT:
+        return Parent.objects.filter(user=user).first()
     return Student.objects.filter(user=user).first()
 
 
