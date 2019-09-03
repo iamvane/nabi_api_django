@@ -1,4 +1,4 @@
-from rest_framework import serializers
+from rest_framework import serializers, validators
 from django.db.models import Q
 from .models import *
 from lesson.models import Instrument
@@ -18,6 +18,11 @@ class BaseCreateAccountSerializer(serializers.Serializer):
     gender = serializers.CharField(max_length=100, allow_blank=True, allow_null=True, required=False, )
     hear_about_us = serializers.CharField(max_length=100, allow_blank=True, allow_null=True, required=False, )
     birthday = serializers.DateField(allow_null=True, required=True, )
+
+    def validate(self, attrs):
+        if User.objects.filter(email=attrs.get('email')).count() > 0:
+            raise validators.ValidationError('Email already registered.')
+        return attrs
 
     def create(self, validated_data):
         user = update_model(User(), **validated_data)
