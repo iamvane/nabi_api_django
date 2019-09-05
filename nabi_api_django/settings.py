@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'core.apps.CoreConfig',
     'accounts.apps.AccountsConfig',
     'lesson.apps.LessonConfig',
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [
