@@ -1,7 +1,7 @@
 # Roles
-ROLE_STUDENT = 'Student'
-ROLE_PARENT = 'Parent'
-ROLE_INSTRUCTOR = 'Instructor'
+ROLE_STUDENT = 'student'
+ROLE_PARENT = 'parent'
+ROLE_INSTRUCTOR = 'instructor'
 
 # --- Skill level ---
 SKILL_LEVEL_BASIC = 'basic'
@@ -126,9 +126,11 @@ ADDRESS_TYPE_CHOICES = (
 # --- gender ---
 GENDER_FEMALE = 'female'
 GENDER_MALE = 'male'
+GENDER_UNDISCLOSED = 'undisclosed'
 GENDER_CHOICES = (
     (GENDER_FEMALE, GENDER_FEMALE),
     (GENDER_MALE, GENDER_MALE),
+    (GENDER_UNDISCLOSED, GENDER_UNDISCLOSED),
 )
 
 # --- how did you hear about us ---
