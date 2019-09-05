@@ -86,7 +86,7 @@ class WhoAmIView(views.APIView):
         return Response(data)
 
 
-class CreateAccountInfoView(views.APIView):
+class UpdateUserInfoView(views.APIView):
 
     def put(self, request):
         serializer = InstructorAccountInfoSerializer(data=request.data,
