@@ -87,6 +87,16 @@ class WhoAmIView(views.APIView):
         return Response(data)
 
 
+class UpdateProfileView(views.APIView):
+
+    def put(self, request):
+        serializer = InstructorProfileSerializer(data=request.data, instance=Instructor.objects.get(user=request.user))
+        if serializer.is_valid():
+            serializer.save()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({'errors': serializer.errors})
+
+
 class UpdateUserInfoView(views.APIView):
 
     def put(self, request):

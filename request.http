@@ -117,7 +117,7 @@ Content-Type: application/json
 ###
 
 GET localhost:8000/v1/csrf-token
-Cookie: sessionid=65vw4w0a116tfnzcjdcb4ka7dhhpqnu4;csrftoken=zDbcXUdR4RCvgb7XwRP64VgW69EUc0OJSm3OosxdhgFVVuPKUWGaExApLaXBsb6F
+Cookie: sessionid=9396ti9t47fzumbr3kp67l9l1x96rzsv;csrftoken=JP1OuCkZlrx8PyQVY8CO97XApPuO4OPOv9Bm7nmQWubaWfRVUGsay7PIT6ZaX9ha
 
 ###
 
@@ -134,6 +134,19 @@ X-CSRFToken: OgoFm0sgQTG3lb7Za4Vl6zlfHLuirIZ8RRZWYdVI0kWL0LtWdppUzkVLCcUei0Oe
 {
   "email": "idekel.santana@gmail.com",
   "password": "123456"
+}
+
+###
+
+PUT localhost:8000/v1/build-profile/profile
+Cookie: sessionid=9396ti9t47fzumbr3kp67l9l1x96rzsv;csrftoken=JP1OuCkZlrx8PyQVY8CO97XApPuO4OPOv9Bm7nmQWubaWfRVUGsay7PIT6ZaX9ha
+Content-Type: application/json
+X-CSRFToken: yfmsbIDJlhHYk4m1kQh8r445PNfrBVPekzW0OtFAWkl0rLn1go7uQ4Wdj4KNughA
+
+{
+  "bio_title": "Nice instructor",
+  "bio": "Son long text",
+  "music": "Son long text"
 }
 
 ###
