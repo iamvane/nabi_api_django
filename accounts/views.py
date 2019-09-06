@@ -8,7 +8,7 @@ from rest_framework import views, status
 from rest_framework.permissions import *
 from rest_framework.response import Response
 from .serializers import *
-from .models import Parent, Instructor, Student
+from .models import Parent, Instructor, Student, get_user_phones
 from twilio.rest import Client
 
 
@@ -18,6 +18,7 @@ def get_user_response(user_cc):
         'id': user.id,
         'email': user.email,
         'role': user.get_type(),
+        'phones': get_user_phones(user_cc),
     }
 
 

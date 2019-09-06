@@ -56,6 +56,18 @@ class PhoneNumber(models.Model):
     modified_at = models.DateTimeField(auto_now=True)
 
 
+def get_user_phones(user_acc):
+    phones = []
+    qs = PhoneNumber.objects.filter(user=user_acc.user).all()
+    if qs is not None:
+        for phone in qs:
+            phones.append({
+                'phone_number': phone.phone_number,
+                'is_verified': True if phone.phone_verified_at is not None else False,
+            })
+    return phones
+
+
 class Parent(IUserAccount):
     # --- notifications ---
     application_received = models.BooleanField(default=False)

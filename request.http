@@ -122,7 +122,8 @@ Cookie: sessionid=65vw4w0a116tfnzcjdcb4ka7dhhpqnu4;csrftoken=zDbcXUdR4RCvgb7XwRP
 ###
 
 GET localhost:8000/v1/whoami
-Cookie: sessionid=mismf58tf7xf0xdajvzqmg159ytcx77p
+Cookie: sessionid=9396ti9t47fzumbr3kp67l9l1x96rzsv
+
 
 ###
 POST localhost:8000/v1/test
