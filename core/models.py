@@ -43,10 +43,14 @@ class User(AbstractUser):
 
     objects = UserManager()
 
-    def get_type(self):
+    def get_role(self):
         if hasattr(self, 'instructor'):
             return ROLE_INSTRUCTOR
         elif hasattr(self, 'parent'):
             return ROLE_PARENT
         else:
             return ROLE_STUDENT
+
+    def get_birthday(self):
+        if hasattr(self, 'birthday'):
+            return '1990-11-24'
