@@ -18,7 +18,7 @@ def get_user_response(user_cc):
         'id': user.id,
         'email': user.email,
         'role': user.get_role(),
-        'birthday': user.get_birthday(),
+        'birthday': user_cc.birthday,
         'phones': get_user_phones(user_cc),
     }
 

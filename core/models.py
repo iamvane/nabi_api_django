@@ -50,7 +50,3 @@ class User(AbstractUser):
             return ROLE_PARENT
         else:
             return ROLE_STUDENT
-
-    def get_birthday(self):
-        if hasattr(self, 'birthday'):
-            return '1990-11-24'
