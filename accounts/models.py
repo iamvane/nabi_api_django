@@ -90,7 +90,7 @@ class Instructor(IUserAccount):
     languages = ArrayField(base_field=models.CharField(max_length=100, blank=True), blank=True, null=True)
     music = models.TextField(blank=True, null=True)
     lat = models.CharField(max_length=50, default='')
-    long = models.CharField(max_length=50, default='')
+    lng = models.CharField(max_length=50, default='')
 
     job_preferences = ArrayField(blank=True, null=True, base_field=models.CharField(max_length=100))
     qualifications = ArrayField(blank=True, null=True, base_field=models.CharField(max_length=100))
