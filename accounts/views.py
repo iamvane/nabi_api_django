@@ -18,8 +18,15 @@ def get_user_response(user_cc):
         'id': user.id,
         'email': user.email,
         'role': user.get_role(),
+        'first_name': user.first_name,
+        'middle_name': user_cc.middle_name,
+        'last_name': user.last_name,
         'birthday': user_cc.birthday,
         'phones': get_user_phones(user_cc),
+        'gender': user_cc.gender,
+        'location': user_cc.location,
+        'lat': user_cc.lat,
+        'lng': user_cc.lng,
     }
 
 
