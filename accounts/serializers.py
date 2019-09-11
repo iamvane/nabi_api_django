@@ -22,11 +22,7 @@ class BaseCreateAccountSerializer(serializers.Serializer):
         return attrs
 
     def create(self, validated_data):
-        user = User.objects.create(
-            email=validated_data.get('email'),
-            username=validated_data.get('email'),
-        )
-        # user = update_model(User(), **validated_data)
+        user = update_model(User(), **validated_data)
         user.set_password(validated_data['password'])
         user.save()
         return user
