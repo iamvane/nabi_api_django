@@ -12,11 +12,8 @@ User = get_user_model()
 class BaseCreateAccountSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField()
-
-    middle_name = serializers.CharField(max_length=100, allow_blank=True, allow_null=True, required=False, )
     display_name = serializers.CharField(max_length=100, allow_blank=True, allow_null=True, required=False, )
     gender = serializers.CharField(max_length=100, allow_blank=True, allow_null=True, required=False, )
-    hear_about_us = serializers.CharField(max_length=100, allow_blank=True, allow_null=True, required=False, )
     birthday = serializers.DateField(allow_null=True, required=True, )
 
     def validate(self, attrs):
@@ -62,15 +59,16 @@ class InstructorCreateAccountSerializer(BaseCreateAccountSerializer):
 class InstructorAccountInfoSerializer(serializers.Serializer):
     first_name = serializers.CharField(required=True, )
     last_name = serializers.CharField(required=True, )
-    middle_name = serializers.CharField()
+    middle_name = serializers.CharField(required=False, allow_blank=True)
     gender = serializers.ChoiceField(required=True, choices=GENDER_CHOICES)
     phone_number = serializers.CharField(required=True, )
     location = serializers.CharField(required=True, )
     lat = serializers.CharField(max_length=50, required=True)
-    long = serializers.CharField(max_length=50, required=True)
+    lng = serializers.CharField(max_length=50, required=True)
 
     def update(self, instance, validated_data):
         user = instance.user
+        user.middle_name = validated_data['middle_name']
         update_model(user, **validated_data)
         user.save()
         if not self.has_number(validated_data['phone_number']):

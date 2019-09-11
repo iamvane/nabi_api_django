@@ -17,8 +17,10 @@ class IUserAccount(models.Model):
     display_name = models.CharField(max_length=100, blank=True, null=True)
     gender = models.CharField(max_length=100, blank=True, null=True, choices=GENDER_CHOICES)
     avatar = models.ImageField(blank=True, null=True, upload_to=avatar_directory_path)
-    hear_about_us = models.CharField(max_length=100, blank=True, null=True, choices=HEAR_ABOUT_US_CHOICES)
     birthday = models.DateField(blank=True, null=True)
+    location = models.CharField(max_length=150, default='')
+    lat = models.CharField(max_length=50, default='')
+    lng = models.CharField(max_length=50, default='')
     email_verified_at = models.DateTimeField(blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -89,8 +91,6 @@ class Instructor(IUserAccount):
     instruments = models.ManyToManyField('lesson.Instrument', through='accounts.InstructorInstruments')
     languages = ArrayField(base_field=models.CharField(max_length=100, blank=True), blank=True, null=True)
     music = models.TextField(blank=True, null=True)
-    lat = models.CharField(max_length=50, default='')
-    long = models.CharField(max_length=50, default='')
 
     job_preferences = ArrayField(blank=True, null=True, base_field=models.CharField(max_length=100))
     qualifications = ArrayField(blank=True, null=True, base_field=models.CharField(max_length=100))

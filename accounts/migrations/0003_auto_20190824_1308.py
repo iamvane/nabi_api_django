@@ -17,7 +17,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='instructor',
-            name='long',
+            name='lng',
             field=models.CharField(default='', max_length=50),
         ),
     ]

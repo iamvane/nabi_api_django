@@ -17,15 +17,23 @@ def get_user_response(user_cc):
     return {
         'id': user.id,
         'email': user.email,
-        'role': user.get_type(),
+        'role': user.get_role(),
+        'first_name': user.first_name,
+        'middle_name': user_cc.middle_name,
+        'last_name': user.last_name,
+        'birthday': user_cc.birthday,
         'phones': get_user_phones(user_cc),
+        'gender': user_cc.gender,
+        'location': user_cc.location,
+        'lat': user_cc.lat,
+        'lng': user_cc.lng,
     }
 
 
 def get_user(user):
-    if user.get_type() == ROLE_INSTRUCTOR:
+    if user.get_role() == ROLE_INSTRUCTOR:
         return Instructor.objects.filter(user=user).first()
-    if user.get_type() == ROLE_PARENT:
+    if user.get_role() == ROLE_PARENT:
         return Parent.objects.filter(user=user).first()
     return Student.objects.filter(user=user).first()
 
