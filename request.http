@@ -58,7 +58,7 @@ X-CSRFToken: yfmsbIDJlhHYk4m1kQh8r445PNfrBVPekzW0OtFAWkl0rLn1go7uQ4Wdj4KNughA
 
 {
   "bio_title": "Nice instructor",
-  "bio": "Son long text",
+  "bio_description": "Son long text",
   "music": ["Son long text"]
 }
 

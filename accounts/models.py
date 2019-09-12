@@ -86,7 +86,6 @@ class Parent(IUserAccount):
 
 
 class Instructor(IUserAccount):
-    bio = models.TextField(blank=True, null=True)
     bio_title = models.CharField(max_length=250, blank=True, null=True)
     bio_description = models.TextField(blank=True, null=True)
     social_media_accounts = HStoreField(blank=True, null=True)
