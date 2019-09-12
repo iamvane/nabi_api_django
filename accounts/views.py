@@ -1,15 +1,22 @@
-from django.db import transaction
-from django.utils import timezone
+from twilio.rest import Client
+
+from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.forms import AuthenticationForm
+from django.db import transaction
 from django.middleware.csrf import get_token
-from django.conf import settings
+from django.utils import timezone
+
 from rest_framework import views, status
 from rest_framework.permissions import *
 from rest_framework.response import Response
-from .serializers import *
-from .models import Parent, Instructor, Student, get_user_phones
-from twilio.rest import Client
+
+from .models import Instructor, Parent, PhoneNumber, Student, get_user_phones
+from .serializers import (
+    InstructorAccountInfoSerializer, InstructorAccountStepTwoSerializer, InstructorCreateAccountSerializer,
+    InstructorProfileSerializer, ParentCreateAccountSerializer, StudentCreateAccountSerializer,
+    ROLE_INSTRUCTOR, ROLE_PARENT
+)
 
 
 def get_user_response(user_cc):
@@ -58,6 +65,8 @@ class CreateAccount(views.APIView):
             return ParentCreateAccountSerializer
         elif request.data['role'] == 'instructor':
             return InstructorCreateAccountSerializer
+        elif request.data['role'] == 'student':
+            return StudentCreateAccountSerializer
 
 
 class LoginView(views.APIView):
