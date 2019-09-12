@@ -49,6 +49,13 @@ class ParentCreateAccountSerializer(BaseCreateAccountSerializer):
         return Parent.objects.create(user=user, **init_kwargs(Parent(), validated_data))
 
 
+class StudentCreateAccountSerializer(BaseCreateAccountSerializer):
+
+    def create(self, validated_data):
+        user = super().create(validated_data)
+        return Student.objects.create(user=user, **init_kwargs(Student(), validated_data))
+
+
 class InstructorCreateAccountSerializer(BaseCreateAccountSerializer):
 
     def create(self, validated_data):

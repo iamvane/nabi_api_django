@@ -41,6 +41,8 @@ class User(AbstractUser):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
 
+    objects = UserManager()
+
     def get_role(self):
         if hasattr(self, 'instructor'):
             return ROLE_INSTRUCTOR
