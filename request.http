@@ -129,6 +129,12 @@ Content-Type: application/json
 
 ###
 
+GET localhost:8000/v1/logout
+Cookie: sessionid=9396ti9t47fzumbr3kp67l9l1x96rzsv
+Content-Type: application/json
+
+###
+
 GET localhost:8000/v1/csrf-token
 Cookie: sessionid=9396ti9t47fzumbr3kp67l9l1x96rzsv;csrftoken=JP1OuCkZlrx8PyQVY8CO97XApPuO4OPOv9Bm7nmQWubaWfRVUGsay7PIT6ZaX9ha
 
@@ -161,12 +167,6 @@ X-CSRFToken: yfmsbIDJlhHYk4m1kQh8r445PNfrBVPekzW0OtFAWkl0rLn1go7uQ4Wdj4KNughA
   "bio": "Son long text",
   "music": "Son long text"
 }
-
-###
-
-GET localhost:8000/v1/logout
-Cookie: sessionid=9396ti9t47fzumbr3kp67l9l1x96rzsv
-Content-Type: application/json
 
 ###
 
