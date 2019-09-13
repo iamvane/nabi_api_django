@@ -157,9 +157,8 @@ Content-Type: application/json
 
 ###
 
-POST localhost:8000/v1/reset-password/
+POST localhost:8000/v1/forgot-password/
 Content-Type: application/json
-X-CSRFToken: yfmsbIDJlhHYk4m1kQh8r445PNfrBVPekzW0OtFAWkl0rLn1go7uQ4Wdj4KNughA
 
 {
   "email": "idekel.santana@gmail.com"
@@ -167,9 +166,8 @@ X-CSRFToken: yfmsbIDJlhHYk4m1kQh8r445PNfrBVPekzW0OtFAWkl0rLn1go7uQ4Wdj4KNughA
 
 ###
 
-PUT localhost:8000/v1/set-password/?token={token}
+PUT localhost:8000/v1/forgot-password/?token={token}
 Content-Type: application/json
-X-CSRFToken: yfmsbIDJlhHYk4m1kQh8r445PNfrBVPekzW0OtFAWkl0rLn1go7uQ4Wdj4KNughA
 
 {
   "password": "minuevopassword"

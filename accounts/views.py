@@ -104,6 +104,7 @@ class LogoutView(views.APIView):
 
       
 class ResetPasswordView(views.APIView):
+    """For set a new password, when user forgot it."""
     permission_classes = (AllowAny, )
 
     def post(self, request):
@@ -135,12 +136,7 @@ class ResetPasswordView(views.APIView):
                 logger.error(e)
         return Response({'message': 'success'}, status=status.HTTP_200_OK)
 
-
-class SetPasswordView(views.APIView):
-    """To set a password, when user forgot it."""
-    permission_classes = (AllowAny, )
-
-    def post(self, request):
+    def put(self, request):
         serializer = UserPasswordSerializer(data=request.data)
         if serializer.is_valid():
             token = request.query_params.get('token')
