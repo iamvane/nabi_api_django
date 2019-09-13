@@ -1,7 +1,7 @@
 from twilio.rest import Client
 
 from django.conf import settings
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.db import transaction
 from django.middleware.csrf import get_token
@@ -83,6 +83,13 @@ class LoginView(views.APIView):
             return Response(get_user_response(get_user(user)))
         else:
             return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class LogoutView(views.APIView):
+
+    def get(self, request):
+        logout(request)
+        return Response({'message': "User logged out"}, status=status.HTTP_200_OK)
 
 
 class CsrfTokenView(views.APIView):
