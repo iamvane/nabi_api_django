@@ -50,3 +50,10 @@ class User(AbstractUser):
             return ROLE_PARENT
         else:
             return ROLE_STUDENT
+
+
+class UserToken(models.Model):
+    """Model to store token used in reset password."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    token = models.CharField(max_length=40, unique=True)
+    expired_at = models.DateTimeField()

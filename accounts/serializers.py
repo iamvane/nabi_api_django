@@ -204,3 +204,20 @@ class InstructorAccountStepTwoSerializer(serializers.Serializer):
 
             update_model(av, item)
             av.save()
+
+
+class UserEmailSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exists():
+            return value
+        else:
+            raise validators.ValidationError("Email isn't registered")
+
+
+class UserPasswordSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = ['password', ]
