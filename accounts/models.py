@@ -49,25 +49,24 @@ class Address(models.Model):
 
 
 class PhoneNumber(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    phone_number = models.CharField(max_length=50, blank=True, null=True, unique=True)
-    phone_type = models.CharField(max_length=100, choices=PHONE_TYPE_CHOICES)
-    phone_verified_at = models.DateTimeField(blank=True, null=True)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    number = models.CharField(max_length=50, unique=True)
+    type = models.CharField(max_length=100, choices=PHONE_TYPE_CHOICES)
+    verified_at = models.DateTimeField(blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
 
 
-def get_user_phones(user_acc):
-    phones = []
-    qs = PhoneNumber.objects.filter(user=user_acc.user).all()
-    if qs is not None:
-        for phone in qs:
-            phones.append({
-                'phone_number': phone.phone_number,
-                'is_verified': True if phone.phone_verified_at is not None else False,
-            })
-    return phones
+def get_user_phone(user_acc):
+    data = {}
+    qs = PhoneNumber.objects.filter(user=user_acc.user)
+    if qs.exists():
+        phone = qs.all()[0]
+        data = {'phone_number': phone.number,
+                'is_verified': True if phone.verified_at is not None else False,
+                }
+    return data
 
 
 class Parent(IUserAccount):

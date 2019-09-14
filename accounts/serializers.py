@@ -68,7 +68,6 @@ class InstructorAccountInfoSerializer(serializers.Serializer):
     last_name = serializers.CharField(required=True, )
     middle_name = serializers.CharField(required=False, allow_blank=True)
     gender = serializers.ChoiceField(required=True, choices=GENDER_CHOICES)
-    phone_number = serializers.CharField(required=True, )
     location = serializers.CharField(required=True, )
     lat = serializers.CharField(max_length=50, required=True)
     lng = serializers.CharField(max_length=50, required=True)
@@ -78,14 +77,12 @@ class InstructorAccountInfoSerializer(serializers.Serializer):
         user.middle_name = validated_data['middle_name']
         update_model(user, **validated_data)
         user.save()
-        if not self.has_number(validated_data['phone_number']):
-            PhoneNumber.objects.create(user=user, phone_number=validated_data['phone_number'])
         update_model(instance, **validated_data)
         instance.save()
         return instance
 
     def has_number(self, number):
-        return PhoneNumber.objects.filter(phone_number=number).first() is not None
+        return PhoneNumber.objects.filter(user=self, number=number).exists()
 
     def create(self, validated_data):
         raise Exception("Create is not supposed to be called")
