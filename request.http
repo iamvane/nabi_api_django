@@ -156,3 +156,21 @@ Cookie: sessionid=9396ti9t47fzumbr3kp67l9l1x96rzsv
 Content-Type: application/json
 
 ###
+
+POST localhost:8000/v1/forgot-password/
+Content-Type: application/json
+
+{
+  "email": "idekel.santana@gmail.com"
+}
+
+###
+
+PUT localhost:8000/v1/forgot-password/?token={token}
+Content-Type: application/json
+
+{
+  "password": "minuevopassword"
+}
+
+###
