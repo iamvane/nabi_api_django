@@ -16,6 +16,7 @@ from rest_framework import views, status
 from rest_framework.permissions import *
 from rest_framework.response import Response
 
+from core.constants import PHONE_TYPE_MAIN
 from core.models import UserToken
 from core.utils import generate_hash
 
@@ -202,7 +203,14 @@ class UpdateUserInfoView(views.APIView):
 class VerifyPhoneView(views.APIView):
 
     def post(self, request):
-        phone = PhoneNumber.objects.get(user=request.user, number=request.data['phone_number'])
+        try:
+            phone = PhoneNumber.objects.get(user=request.user, number=request.data['phone_number'])
+        except ObjectDoesNotExist:
+            if PhoneNumber.objects.filter(user=request.user).exists():
+                phone = PhoneNumber.objects.filter(user=request.user).update(number=request.data['phone_number'])
+            else:
+                phone = PhoneNumber.objects.create(user=request.user, number=request.data['phone_number'],
+                                                   type=PHONE_TYPE_MAIN)
         client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
         verification = client.verify \
             .services(settings.TWILIO_SERVICE_SID) \
