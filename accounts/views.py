@@ -4,7 +4,6 @@ from twilio.rest import Client
 
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model, login, logout
-from django.contrib.auth import authenticate, login
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.mail import EmailMultiAlternatives
 from django.db import transaction, IntegrityError
@@ -17,10 +16,11 @@ from rest_framework import views, status
 from rest_framework.permissions import *
 from rest_framework.response import Response
 
+from core.constants import PHONE_TYPE_MAIN
 from core.models import UserToken
 from core.utils import generate_hash
 
-from .models import Instructor, Parent, PhoneNumber, Student, get_user_phones
+from .models import Instructor, Parent, PhoneNumber, Student, get_user_phone
 from .serializers import (
     InstructorAccountInfoSerializer, InstructorAccountStepTwoSerializer, InstructorCreateAccountSerializer,
     InstructorProfileSerializer, ParentCreateAccountSerializer, StudentCreateAccountSerializer, UserEmailSerializer,
@@ -41,7 +41,7 @@ def get_user_response(user_cc):
         'middle_name': user_cc.middle_name,
         'last_name': user.last_name,
         'birthday': user_cc.birthday,
-        'phones': get_user_phones(user_cc),
+        'phone': get_user_phone(user_cc),
         'gender': user_cc.gender,
         'location': user_cc.location,
         'lat': user_cc.lat,
@@ -203,24 +203,31 @@ class UpdateUserInfoView(views.APIView):
 class VerifyPhoneView(views.APIView):
 
     def post(self, request):
-        phone = PhoneNumber.objects.get(user=request.user, phone_number=request.data['phone_number'])
+        try:
+            phone = PhoneNumber.objects.get(user=request.user, number=request.data['phone_number'])
+        except ObjectDoesNotExist:
+            if PhoneNumber.objects.filter(user=request.user).exists():
+                phone = PhoneNumber.objects.filter(user=request.user).update(number=request.data['phone_number'])
+            else:
+                phone = PhoneNumber.objects.create(user=request.user, number=request.data['phone_number'],
+                                                   type=PHONE_TYPE_MAIN)
         client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
         verification = client.verify \
             .services(settings.TWILIO_SERVICE_SID) \
             .verifications \
-            .create(to=phone.phone_number, channel=request.data['channel'])
+            .create(to=phone.number, channel=request.data['channel'])
         return Response({"sid": verification.sid, "status": verification.status})
 
     def put(self, request):
-        phone = PhoneNumber.objects.get(user=request.user, phone_number=request.data['phone_number'])
+        phone = PhoneNumber.objects.get(user=request.user, number=request.data['phone_number'])
         client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
         verification_check = client.verify \
             .services(settings.TWILIO_SERVICE_SID) \
             .verification_checks \
-            .create(to=phone.phone_number, code=request.data['code'])
+            .create(to=phone.number, code=request.data['code'])
         approved = verification_check.status == 'approved'
         if approved:
-            phone.phone_verified_at = timezone.now()
+            phone.verified_at = timezone.now()
             phone.save()
         return Response({'status': verification_check.status},
                         status=status.HTTP_200_OK if approved else status.HTTP_400_BAD_REQUEST)
