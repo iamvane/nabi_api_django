@@ -16,7 +16,7 @@ from rest_framework import views, status
 from rest_framework.permissions import *
 from rest_framework.response import Response
 
-from core.constants import PHONE_TYPE_MAIN
+from core.constants import PHONE_TYPE_MAIN, ROLE_INSTRUCTOR, ROLE_PARENT
 from core.models import UserToken
 from core.utils import generate_hash
 
@@ -24,7 +24,7 @@ from .models import Instructor, Parent, PhoneNumber, Student, get_user_phone
 from .serializers import (
     InstructorAccountInfoSerializer, InstructorAccountStepTwoSerializer, InstructorCreateAccountSerializer,
     InstructorProfileSerializer, ParentCreateAccountSerializer, StudentCreateAccountSerializer, UserEmailSerializer,
-    UserPasswordSerializer, ROLE_INSTRUCTOR, ROLE_PARENT
+    UserPasswordSerializer
 )
 
 User = get_user_model()

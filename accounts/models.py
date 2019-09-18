@@ -1,8 +1,13 @@
+import uuid
+
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import HStoreField, ArrayField
 from django.db import models
 
-from core.constants import *
+from core.constants import (
+    ADDRESS_TYPE_CHOICES, BENEFIT_STATUSES, BENEFIT_TYPES, DAY_CHOICES, DEGREE_TYPE_CHOICES, GENDER_CHOICES,
+    MONTH_CHOICES, PHONE_TYPE_CHOICES, SKILL_LEVEL_CHOICES,
+)
 
 User = get_user_model()
 
@@ -22,6 +27,9 @@ class IUserAccount(models.Model):
     lat = models.CharField(max_length=50, default='')
     lng = models.CharField(max_length=50, default='')
     email_verified_at = models.DateTimeField(blank=True, null=True)
+    referral_token = models.UUIDField(default=uuid.uuid4, blank=True, unique=True)
+    referred_by = models.ForeignKey(User, blank=True, null=True, related_name='referral_%(class)ss',
+                                    on_delete=models.SET_NULL)
 
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
@@ -209,3 +217,48 @@ class Student(IUserAccount):
     @property
     def role(self):
         return 'Student'
+
+
+class AccountBenefits(models.Model):
+    benefit_type = models.CharField(max_length=50, choices=BENEFIT_TYPES)
+    user_origin = models.ForeignKey(User, related_name='ref_%(class)s_benefits', on_delete=models.SET_NULL, null=True)
+    status = models.CharField(max_length=50, choices=BENEFIT_STATUSES)
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        abstract = True
+
+
+class InstructorBenefits(AccountBenefits):
+    instructor = models.ForeignKey(Instructor, related_name='benefits', on_delete=models.CASCADE)
+
+
+class ParentBenefits(AccountBenefits):
+    parent = models.ForeignKey(Parent, related_name='benefits',  on_delete=models.CASCADE)
+
+
+class StudentBenefits(AccountBenefits):
+    student = models.ForeignKey(Student, related_name='benefits',  on_delete=models.CASCADE)
+
+
+def get_user_from_refer_code(ref_code):
+    """Get an user from his refer_code"""
+    user = None
+    try:
+        account = Instructor.objects.get(referral_token=ref_code)
+    except models.ObjectDoesNotExist:
+        account = None
+    if account is None:
+        try:
+            account = Parent.objects.get(referral_token=ref_code)
+        except models.ObjectDoesNotExist:
+            account = None
+    if account is None:
+        try:
+            account = Student.objects.get(referral_token=ref_code)
+        except models.ObjectDoesNotExist:
+            account = None
+    if account is not None:
+        user = account.user
+    return user
