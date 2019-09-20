@@ -46,6 +46,7 @@ def get_user_response(user_cc):
         'location': user_cc.location,
         'lat': user_cc.lat,
         'lng': user_cc.lng,
+        'referral_token': user.referral_token,
     }
 
 
@@ -171,6 +172,7 @@ class WhoAmIView(views.APIView):
         data = {
             'id': None,
             'email': None,
+            'referral_token': None,
         }
         if request.user.is_authenticated:
             data = get_user_response(get_user(request.user))

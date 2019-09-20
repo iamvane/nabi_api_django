@@ -3,14 +3,13 @@ from django.db.models import Q
 
 from rest_framework import serializers, validators
 
-from core.utils import update_model
 from core.constants import GENDER_CHOICES, SKILL_LEVEL_CHOICES, DAY_CHOICES
+from core.utils import update_model
 from lesson.models import Instrument
 
 from .models import (
     Availability, Instructor, InstructorAdditionalQualifications, InstructorAgeGroup, InstructorInstruments,
     InstructorPlaceForLessons, InstructorLessonRate, InstructorLessonSize, Parent, PhoneNumber, Student,
-    get_user_from_refer_code
 )
 from .utils import init_kwargs
 
@@ -23,23 +22,29 @@ class BaseCreateAccountSerializer(serializers.Serializer):
     display_name = serializers.CharField(max_length=100, allow_blank=True, allow_null=True, required=False, )
     gender = serializers.CharField(max_length=100, allow_blank=True, allow_null=True, required=False, )
     birthday = serializers.DateField(allow_null=True, required=True, )
-    referral_token = serializers.CharField(max_length=36, allow_blank=True, allow_null=True, required=False)
-
-    def validate_referral_token(self, value):
-        if value and get_user_from_refer_code(value) is None:
-            raise validators.ValidationError('Wrong referral_token value')
-        else:
-            return value
+    referring_code = serializers.CharField(max_length=20, allow_blank=True, allow_null=True, required=False)
 
     def validate(self, attrs):
         if User.objects.filter(email=attrs.get('email')).count() > 0:
             raise validators.ValidationError('Email already registered.')
         return attrs
 
+    def validate_referring_code(self, value):
+        if value and User.get_user_from_refer_code(value) is None:
+            raise validators.ValidationError('Wrong referring code value')
+        else:
+            return value
+
     def create(self, validated_data):
+        ref_code = validated_data.get('referring_code')
+        if ref_code:
+            validated_data['referred_by'] = User.get_user_from_refer_code(ref_code)
+        else:
+            validated_data['referred_by'] = None
         user = update_model(User(), **validated_data)
         user.set_password(validated_data['password'])
         user.save()
+        user.set_user_benefits()
         return user
 
     def update(self, instance, validated_data):
@@ -61,9 +66,6 @@ class ParentCreateAccountSerializer(BaseCreateAccountSerializer):
 
     def create(self, validated_data):
         user = super().create(validated_data)
-        if validated_data.get('referral_token') is not None:
-            refer_user = get_user_from_refer_code(validated_data.pop('referral_token'))
-            validated_data['referred_by'] = refer_user
         return Parent.objects.create(user=user, **init_kwargs(Parent(), validated_data))
 
 
@@ -71,9 +73,6 @@ class StudentCreateAccountSerializer(BaseCreateAccountSerializer):
 
     def create(self, validated_data):
         user = super().create(validated_data)
-        if validated_data.get('referral_token') is not None:
-            refer_user = get_user_from_refer_code(validated_data.pop('referral_token'))
-            validated_data['referred_by'] = refer_user
         return Student.objects.create(user=user, **init_kwargs(Student(), validated_data))
 
 
@@ -81,9 +80,6 @@ class InstructorCreateAccountSerializer(BaseCreateAccountSerializer):
 
     def create(self, validated_data):
         user = super().create(validated_data)
-        if validated_data.get('referral_token') is not None:
-            refer_user = get_user_from_refer_code(validated_data.pop('referral_token'))
-            validated_data['referred_by'] = refer_user
         return Instructor.objects.create(user=user, **init_kwargs(Instructor(), validated_data))
 
 

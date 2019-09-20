@@ -5,7 +5,8 @@ Content-Type: application/json
   "email": "idekel.santana@gmail.com",
   "password": "123456",
   "role": "instructor",
-  "birthday": "1990-10-24"
+  "birthday": "1990-10-24",
+  "referring_code": "z6Gu5W6VckRTQoi6"
 }
 
 ### Set-Cookie:  csrftoken=zDbcXUdR4RCvgb7XwRP64VgW69EUc0OJSm3OosxdhgFVVuPKUWGaExApLaXBsb6F; expires=Sat, 22 Aug 2020 11:59:50 GMT; Max-Age=31449600; Path=/; SameSite=Lax
@@ -21,7 +22,7 @@ X-CSRFToken: 8LUV70LbEX0JeWQFfd8N3XTzdH105FTjruMxyy5xRm39TfysDiZRDzd2SIkHlQbf
   "last_name": "Santana",
   "middle_name": "Paola",
   "gender": "male",
-  "loaction": "725 Adams St Boston MA 02122",
+  "location": "725 Adams St Boston MA 02122",
   "lat": "6516516",
   "lng": "6516516"
 }
