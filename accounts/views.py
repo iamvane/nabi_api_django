@@ -48,27 +48,19 @@ def get_user_response(user_cc):
         'lng': user_cc.lng,
         'referral_token': user.referral_token,
     }
-    if user.get_role() == ROLE_INSTRUCTOR:
-        data.bio_title: user_cc.bio_title
 
     return data
-    # return {
-    #     'id': user.id,
-    #     'email': user.email,
-    #     'role': user.get_role(),
-    #     'first_name': user.first_name,
-    #     'middle_name': user_cc.middle_name,
-    #     'last_name': user.last_name,
-    #     'birthday': user_cc.birthday,
-    #     'phones': get_user_phones(user_cc),
-    #     'gender': user_cc.gender,
-    #     'location': user_cc.location,
-    #     'lat': user_cc.lat,
-    #     'lng': user_cc.lng,
-    #     if 
-    #     'bio_title': user_cc.bio_title
-    # }
 
+
+def get_instructor_profile(user_cc):
+    if user_cc.user.get_role() == ROLE_INSTRUCTOR:
+        data = {
+            'bio_title': user_cc.bio_title,
+            'bio_description': user_cc.bio_description,
+            'music': user_cc.music,
+        }
+
+    return data
 
 def get_user(user):
     if user.get_role() == ROLE_INSTRUCTOR:
@@ -199,6 +191,17 @@ class WhoAmIView(views.APIView):
 
         return Response(data)
 
+class FetchInstructor(views.APIView):
+
+    def get(self, request):
+        data = {
+            'id': None,
+            'email': None,
+        }
+        if request.user.is_authenticated:
+            data = get_instructor_profile(get_user(request.user))
+
+        return Response(data)
 
 class UpdateProfileView(views.APIView):
 
