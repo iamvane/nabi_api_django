@@ -16,7 +16,7 @@ from rest_framework import views, status
 from rest_framework.permissions import *
 from rest_framework.response import Response
 
-from core.constants import PHONE_TYPE_MAIN
+from core.constants import PHONE_TYPE_MAIN, ROLE_INSTRUCTOR, ROLE_PARENT
 from core.models import UserToken
 from core.utils import generate_hash
 
@@ -24,7 +24,7 @@ from .models import Instructor, Parent, PhoneNumber, Student, get_user_phone
 from .serializers import (
     InstructorAccountInfoSerializer, InstructorAccountStepTwoSerializer, InstructorCreateAccountSerializer,
     InstructorProfileSerializer, ParentCreateAccountSerializer, StudentCreateAccountSerializer, UserEmailSerializer,
-    UserPasswordSerializer, ROLE_INSTRUCTOR, ROLE_PARENT
+    UserPasswordSerializer
 )
 
 User = get_user_model()
@@ -46,6 +46,7 @@ def get_user_response(user_cc):
         'location': user_cc.location,
         'lat': user_cc.lat,
         'lng': user_cc.lng,
+        'referral_token': user.referral_token,
     }
 
 
@@ -171,6 +172,7 @@ class WhoAmIView(views.APIView):
         data = {
             'id': None,
             'email': None,
+            'referral_token': None,
         }
         if request.user.is_authenticated:
             data = get_user_response(get_user(request.user))

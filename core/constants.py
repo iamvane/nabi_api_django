@@ -208,3 +208,19 @@ RATE_CHOICES = (
     (RATE_60, RATE_60),
     (RATE_90, RATE_90),
 )
+
+# --- benefit types ---
+BENEFIT_LESSON = 'lesson'
+BENEFIT_TYPES = (
+    (BENEFIT_LESSON, BENEFIT_LESSON),
+)
+
+# --- benefit statuses ---
+BENEFIT_ENABLED = 'enable'
+BENEFIT_DISABLED = 'disable'
+BENEFIT_USED = 'used'
+BENEFIT_STATUSES = (
+    (BENEFIT_ENABLED, BENEFIT_ENABLED),
+    (BENEFIT_DISABLED, BENEFIT_DISABLED),
+    (BENEFIT_USED, BENEFIT_USED),
+)

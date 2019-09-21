@@ -2,7 +2,10 @@ from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import HStoreField, ArrayField
 from django.db import models
 
-from core.constants import *
+from core.constants import (
+    ADDRESS_TYPE_CHOICES, DAY_CHOICES, DEGREE_TYPE_CHOICES, GENDER_CHOICES,
+    MONTH_CHOICES, PHONE_TYPE_CHOICES, SKILL_LEVEL_CHOICES,
+)
 
 User = get_user_model()
 
