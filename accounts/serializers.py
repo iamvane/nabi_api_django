@@ -52,9 +52,9 @@ class BaseCreateAccountSerializer(serializers.Serializer):
 
 
 class InstructorProfileSerializer(serializers.Serializer):
-    bio_title = serializers.CharField(max_length=200)
-    bio_description = serializers.CharField()
-    music = serializers.ListField(child=serializers.CharField())
+    bio_title = serializers.CharField(max_length=200, required=False)
+    bio_description = serializers.CharField(required=False)
+    music = serializers.ListField(child=serializers.CharField(), required=False)
 
     def update(self, instance, validated_data):
         instance = update_model(instance, **validated_data)
