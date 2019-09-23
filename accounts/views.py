@@ -33,7 +33,7 @@ logger = getLogger('api_errors')
 
 def get_user_response(user_cc):
     user = user_cc.user
-    return {
+    data = {
         'id': user.id,
         'email': user.email,
         'role': user.get_role(),
@@ -49,6 +49,18 @@ def get_user_response(user_cc):
         'referral_token': user.referral_token,
     }
 
+    return data
+
+
+def get_instructor_profile(user_cc):
+    if user_cc.user.get_role() == ROLE_INSTRUCTOR:
+        data = {
+            'bio_title': user_cc.bio_title,
+            'bio_description': user_cc.bio_description,
+            'music': user_cc.music,
+        }
+
+    return data
 
 def get_user(user):
     if user.get_role() == ROLE_INSTRUCTOR:
@@ -179,6 +191,17 @@ class WhoAmIView(views.APIView):
 
         return Response(data)
 
+class FetchInstructor(views.APIView):
+
+    def get(self, request):
+        data = {
+            'id': None,
+            'email': None,
+        }
+        if request.user.is_authenticated:
+            data = get_instructor_profile(get_user(request.user))
+
+        return Response(data)
 
 class UpdateProfileView(views.APIView):
 

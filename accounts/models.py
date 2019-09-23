@@ -86,13 +86,12 @@ class Parent(IUserAccount):
 
 
 class Instructor(IUserAccount):
-    bio = models.TextField(blank=True, null=True)
     bio_title = models.CharField(max_length=250, blank=True, null=True)
     bio_description = models.TextField(blank=True, null=True)
     social_media_accounts = HStoreField(blank=True, null=True)
     instruments = models.ManyToManyField('lesson.Instrument', through='accounts.InstructorInstruments')
     languages = ArrayField(base_field=models.CharField(max_length=100, blank=True), blank=True, null=True)
-    music = models.TextField(blank=True, null=True)
+    music = ArrayField(base_field=models.CharField(max_length=100, blank=True), blank=True, null=True)
 
     job_preferences = ArrayField(blank=True, null=True, base_field=models.CharField(max_length=100))
     qualifications = ArrayField(blank=True, null=True, base_field=models.CharField(max_length=100))
