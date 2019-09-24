@@ -238,3 +238,24 @@ class UserPasswordSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['password', ]
+
+
+class AvatarInstructorSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Instructor
+        fields = ['avatar', ]
+
+
+class AvatarParentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Parent
+        fields = ['avatar', ]
+
+
+class AvatarStudentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Student
+        fields = ['avatar', ]
