@@ -4,7 +4,7 @@ from django.db import models
 
 from core.constants import (
     ADDRESS_TYPE_CHOICES, DAY_CHOICES, DEGREE_TYPE_CHOICES, GENDER_CHOICES,
-    MONTH_CHOICES, PHONE_TYPE_CHOICES, SKILL_LEVEL_CHOICES,
+    MONTH_CHOICES, PHONE_TYPE_CHOICES, ROLE_INSTRUCTOR, ROLE_PARENT, SKILL_LEVEL_CHOICES,
 )
 
 User = get_user_model()
@@ -211,3 +211,12 @@ class Student(IUserAccount):
     @property
     def role(self):
         return 'Student'
+
+
+def get_account(user):
+    """Get Instructor, Parent or Student instance, related to User instance."""
+    if user.get_role() == ROLE_INSTRUCTOR:
+        return Instructor.objects.filter(user=user).first()
+    if user.get_role() == ROLE_PARENT:
+        return Parent.objects.filter(user=user).first()
+    return Student.objects.filter(user=user).first()

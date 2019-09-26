@@ -13,15 +13,17 @@ from django.template import loader
 from django.utils import timezone
 
 from rest_framework import views, status
+from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import *
 from rest_framework.response import Response
 
-from core.constants import PHONE_TYPE_MAIN, ROLE_INSTRUCTOR, ROLE_PARENT
+from core.constants import PHONE_TYPE_MAIN, ROLE_INSTRUCTOR
 from core.models import UserToken
 from core.utils import generate_hash
 
-from .models import Instructor, Parent, PhoneNumber, Student, get_user_phone
+from .models import Instructor, PhoneNumber, get_account, get_user_phone
 from .serializers import (
+    AvatarInstructorSerializer, AvatarParentSerializer, AvatarStudentSerializer,
     InstructorAccountInfoSerializer, InstructorAccountStepTwoSerializer, InstructorCreateAccountSerializer,
     InstructorProfileSerializer, ParentCreateAccountSerializer, StudentCreateAccountSerializer, UserEmailSerializer,
     UserPasswordSerializer
@@ -62,13 +64,6 @@ def get_instructor_profile(user_cc):
 
     return data
 
-def get_user(user):
-    if user.get_role() == ROLE_INSTRUCTOR:
-        return Instructor.objects.filter(user=user).first()
-    if user.get_role() == ROLE_PARENT:
-        return Parent.objects.filter(user=user).first()
-    return Student.objects.filter(user=user).first()
-
 
 class CreateAccount(views.APIView):
     permission_classes = (AllowAny,)
@@ -105,7 +100,7 @@ class LoginView(views.APIView):
         if form.is_valid():
             user = authenticate(username=form.cleaned_data['username'], password=form.cleaned_data['password'])
             login(request, user)
-            return Response(get_user_response(get_user(user)))
+            return Response(get_user_response(get_account(user)))
         else:
             return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -187,9 +182,10 @@ class WhoAmIView(views.APIView):
             'referral_token': None,
         }
         if request.user.is_authenticated:
-            data = get_user_response(get_user(request.user))
+            data = get_user_response(get_account(request.user))
 
         return Response(data)
+
 
 class FetchInstructor(views.APIView):
 
@@ -199,9 +195,10 @@ class FetchInstructor(views.APIView):
             'email': None,
         }
         if request.user.is_authenticated:
-            data = get_instructor_profile(get_user(request.user))
+            data = get_instructor_profile(get_account(request.user))
 
         return Response(data)
+
 
 class UpdateProfileView(views.APIView):
 
@@ -267,3 +264,26 @@ class InstructorStep2View(views.APIView):
             serializer.save()
             return Response(request.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UploadAvatarView(views.APIView):
+    parser_classes = (MultiPartParser, )
+
+    def post(self, request):
+        serializer_class = self.get_serializer_class(request)
+        account = get_account(request.user)
+        serializer = serializer_class(instance=account, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": 'success'}, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+    def get_serializer_class(self, request):
+        role = request.user.get_role()
+        if role == 'instructor':
+            return AvatarInstructorSerializer
+        elif role == 'parent':
+            return AvatarParentSerializer
+        else:
+            return AvatarStudentSerializer
