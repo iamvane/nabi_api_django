@@ -206,3 +206,13 @@ Key: avatar
 Value: file to upload
 
 ###
+
+POST localhost:8000/v1/referral_email/
+Cookie: sessionid=9396ti9t47fzumbr3kp67l9l1x96rzsv
+X-CSRFToken: yfmsbIDJlhHYk4m1kQh8r445PNfrBVPekzW0OtFAWkl0rLn1go7uQ4Wdj4KNughA
+
+{
+  "email": "luisllave12357@gmail.com"
+}
+
+###

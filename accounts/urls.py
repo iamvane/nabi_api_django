@@ -14,4 +14,5 @@ urlpatterns = [
     path('build-profile/', views.UpdateProfileView.as_view()),
     path('build-profile/job-preferences', views.InstructorStep2View.as_view()),
     path('upload_avatar/', views.UploadAvatarView.as_view()),
+    path('referral_email/', views.ReferralInvitation.as_view()),
 ]
