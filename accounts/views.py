@@ -25,8 +25,8 @@ from .models import Instructor, PhoneNumber, get_account, get_user_phone
 from .serializers import (
     AvatarInstructorSerializer, AvatarParentSerializer, AvatarStudentSerializer, GuestEmailSerializer,
     InstructorAccountInfoSerializer, InstructorAccountStepTwoSerializer, InstructorCreateAccountSerializer,
-    InstructorProfileSerializer, ParentCreateAccountSerializer, StudentCreateAccountSerializer, UserEmailSerializer,
-    UserPasswordSerializer,
+    InstructorProfileSerializer, ParentCreateAccountSerializer, StudentCreateAccountSerializer,
+    StudentDetailsSerializer, UserEmailSerializer, UserPasswordSerializer,
 )
 
 User = get_user_model()
@@ -308,6 +308,24 @@ class ReferralInvitation(views.APIView):
                 send_email(settings.DEFAULT_FROM_EMAIL, [serializer.validated_data['email'], ],
                            request.user.get_full_name() + ' invited to Nabimusic',
                            'core/referral_email_student.html', params)
+
+
+class StudentDetailView(views.APIView):
+
+    def post(self, request):
+        data = request.data.copy()
+        data['student'] = request.user.student.pk
+        data['instrument'] = {"name": request.data['instrument']}
+        serializer = StudentDetailsSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
             return Response({"message": "success"}, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request):
+        if hasattr(request.user.student, 'details'):
+            serializer = StudentDetailsSerializer(request.user.student.details)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response({}, status=status.HTTP_200_OK)
