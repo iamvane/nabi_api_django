@@ -224,6 +224,7 @@ class InstructorAccountStepTwoSerializer(serializers.Serializer):
 
 
 class UserEmailSerializer(serializers.Serializer):
+    """Check email existence in DB. Should belong to existent user."""
     email = serializers.EmailField()
 
     def validate_email(self, value):
@@ -231,6 +232,17 @@ class UserEmailSerializer(serializers.Serializer):
             return value
         else:
             raise validators.ValidationError("Email isn't registered")
+
+
+class GuestEmailSerializer(serializers.Serializer):
+    """Check email existence in DB. Shouldn't belong to existent user."""
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exists():
+            raise validators.ValidationError("Email is registered already")
+        else:
+            return value
 
 
 class UserPasswordSerializer(serializers.ModelSerializer):
