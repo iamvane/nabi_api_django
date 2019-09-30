@@ -3,9 +3,10 @@ from django.contrib.postgres.fields import HStoreField, ArrayField
 from django.db import models
 
 from core.constants import (
-    ADDRESS_TYPE_CHOICES, DAY_CHOICES, DEGREE_TYPE_CHOICES, GENDER_CHOICES,
-    MONTH_CHOICES, PHONE_TYPE_CHOICES, ROLE_INSTRUCTOR, ROLE_PARENT, SKILL_LEVEL_CHOICES,
+    ADDRESS_TYPE_CHOICES, DAY_CHOICES, DEGREE_TYPE_CHOICES, GENDER_CHOICES, LESSON_DURATION_CHOICES,
+    MONTH_CHOICES, PHONE_TYPE_CHOICES, PLACE_FOR_LESSONS_CHOICES, ROLE_INSTRUCTOR, ROLE_PARENT, SKILL_LEVEL_CHOICES,
 )
+from lesson.models import Instrument
 
 User = get_user_model()
 
@@ -211,6 +212,16 @@ class Student(IUserAccount):
     @property
     def role(self):
         return 'Student'
+
+
+class StudentDetails(models.Model):
+    student = models.OneToOneField(Student, related_name='details', on_delete=models.CASCADE)
+    instrument = models.ForeignKey(Instrument, on_delete=models.PROTECT)
+    skill_level = models.CharField(max_length=50, choices=SKILL_LEVEL_CHOICES)
+    lesson_place = models.CharField(max_length=50, choices=PLACE_FOR_LESSONS_CHOICES)
+    lesson_duration = models.CharField(max_length=50, choices=LESSON_DURATION_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
 def get_account(user):

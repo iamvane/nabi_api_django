@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.db.models import Q
+from django.db.models import ObjectDoesNotExist, Q
 
 from rest_framework import serializers, validators
 
@@ -9,7 +9,7 @@ from lesson.models import Instrument
 
 from .models import (
     Availability, Instructor, InstructorAdditionalQualifications, InstructorAgeGroup, InstructorInstruments,
-    InstructorPlaceForLessons, InstructorLessonRate, InstructorLessonSize, Parent, PhoneNumber, Student,
+    InstructorPlaceForLessons, InstructorLessonRate, InstructorLessonSize, Parent, PhoneNumber, Student, StudentDetails,
 )
 from .utils import init_kwargs
 
@@ -271,3 +271,34 @@ class AvatarStudentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Student
         fields = ['avatar', ]
+
+
+class InstrumentNameSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Instrument
+        fields = ['name', ]
+
+
+class StudentDetailsSerializer(serializers.ModelSerializer):
+    instrument = InstrumentNameSerializer()
+
+    class Meta:
+        model = StudentDetails
+        fields = ['student', 'instrument', 'skill_level', 'lesson_place', 'lesson_duration', ]
+
+    def validate_instrument(self, value):
+        try:
+            Instrument.objects.get(name=value.get('name'))
+        except ObjectDoesNotExist:
+            raise serializers.ValidationError("Instrument value not valid")
+        return value
+
+    def create(self, validated_data):
+        validated_data['instrument'] = Instrument.objects.get(name=validated_data['instrument']['name'])
+        return StudentDetails.objects.create(**validated_data)
+
+    def to_representation(self, instance):
+        obj_dic = super().to_representation(instance)
+        obj_dic['instrument'] = obj_dic.get('instrument', {}).get('name')
+        return obj_dic
