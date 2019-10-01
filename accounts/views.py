@@ -238,7 +238,7 @@ class VerifyPhoneView(views.APIView):
             .services(settings.TWILIO_SERVICE_SID) \
             .verifications \
             .create(to=phone.number, channel=request.data['channel'])
-        return Response({"sid": verification.sid, "status": verification.status})
+        return Response({"sid": verification.sid, "status": verification.status, 'message': 'Token was sent to {}.'.format(request.data['phone_number'])})
 
     def put(self, request):
         phone = PhoneNumber.objects.get(user=request.user, number=request.data['phone_number'])
@@ -251,7 +251,7 @@ class VerifyPhoneView(views.APIView):
         if approved:
             phone.verified_at = timezone.now()
             phone.save()
-        return Response({'status': verification_check.status},
+        return Response({'status': verification_check.status, 'message': 'Phone validation was successful.'},
                         status=status.HTTP_200_OK if approved else status.HTTP_400_BAD_REQUEST)
 
 
