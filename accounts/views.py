@@ -164,7 +164,7 @@ class LogoutView(views.APIView):
 
     def get(self, request):
         logout(request)
-        return Response({'message': "User logged out"}, status=status.HTTP_200_OK)
+        return Response({'message': "You have successfully logged out."}, status=status.HTTP_200_OK)
 
 
 class CsrfTokenView(views.APIView):
