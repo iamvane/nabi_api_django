@@ -10,7 +10,7 @@ urlpatterns = [
     path('whoami/', views.WhoAmIView.as_view()),
     path('fetch-profile/', views.FetchInstructor.as_view()),
     path('account-info/', views.UpdateUserInfoView.as_view()),
-    path('verify-phone', views.VerifyPhoneView.as_view()),
+    path('verify-phone/', views.VerifyPhoneView.as_view()),
     path('build-profile/', views.UpdateProfileView.as_view()),
     path('build-profile/job-preferences', views.InstructorStep2View.as_view()),
     path('upload_avatar/', views.UploadAvatarView.as_view()),
