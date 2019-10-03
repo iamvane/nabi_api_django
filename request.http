@@ -72,13 +72,13 @@ GET localhost:8000/v1/fetch-profile/
 }
 
 ###
-POST localhost:8000/v1/build-profile/job-preferences
+POST localhost:8000/v1/build-job-preferences/
 Content-Type: application/json
 Cookie: sessionid=65vw4w0a116tfnzcjdcb4ka7dhhpqnu4;csrftoken=zDbcXUdR4RCvgb7XwRP64VgW69EUc0OJSm3OosxdhgFVVuPKUWGaExApLaXBsb6F
 X-CSRFToken: 8LUV70LbEX0JeWQFfd8N3XTzdH105FTjruMxyy5xRm39TfysDiZRDzd2SIkHlQbf
 
 {
-  "instruments": [
+	"instruments": [
     {
       "instrument": "piano",
       "skillLevel": "advanced"
@@ -108,9 +108,9 @@ X-CSRFToken: 8LUV70LbEX0JeWQFfd8N3XTzdH105FTjruMxyy5xRm39TfysDiZRDzd2SIkHlQbf
   },
   "availability": [
     {
-      "day_of_week": "monday",
-      "from1": "10am",
-      "to": "01am"
+      "mon8to10": true,
+    "mon10to12": false,
+    "mon12to3": true
     }
   ],
   "additional_qualifications": {
@@ -124,7 +124,10 @@ X-CSRFToken: 8LUV70LbEX0JeWQFfd8N3XTzdH105FTjruMxyy5xRm39TfysDiZRDzd2SIkHlQbf
     "music_theory": false,
     "young_children_experience": false,
     "repertoire_selection": false
-  }
+  },
+  "languages": ["french", "spanish"],
+  "studio_address": "fpp",
+  "travel_distance": "faa"
 }
 
 ###
