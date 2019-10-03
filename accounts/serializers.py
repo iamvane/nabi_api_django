@@ -3,13 +3,16 @@ from django.db.models import ObjectDoesNotExist, Q
 
 from rest_framework import serializers, validators
 
-from core.constants import GENDER_CHOICES, SKILL_LEVEL_CHOICES, DAY_CHOICES
+from core.constants import (
+    DAY_CHOICES, GENDER_CHOICES, SKILL_LEVEL_CHOICES,
+)
 from core.utils import update_model
 from lesson.models import Instrument
 
 from .models import (
     Availability, Instructor, InstructorAdditionalQualifications, InstructorAgeGroup, InstructorInstruments,
-    InstructorPlaceForLessons, InstructorLessonRate, InstructorLessonSize, Parent, PhoneNumber, Student, StudentDetails,
+    InstructorPlaceForLessons, InstructorLessonRate, InstructorLessonSize, Parent, PhoneNumber,
+    Student, StudentDetails, TiedStudent,
 )
 from .utils import init_kwargs
 
@@ -280,25 +283,55 @@ class InstrumentNameSerializer(serializers.ModelSerializer):
         fields = ['name', ]
 
 
+def validate_instrument(value):
+    """value is instrument's name, then check to existence is done"""
+    try:
+        Instrument.objects.get(name=value)
+    except ObjectDoesNotExist:
+        raise serializers.ValidationError("Instrument value not valid")
+    return value
+
+
 class StudentDetailsSerializer(serializers.ModelSerializer):
-    instrument = InstrumentNameSerializer()
+    instrument = serializers.CharField(max_length=250, validators=[validate_instrument, ])   # instrument name
 
     class Meta:
         model = StudentDetails
-        fields = ['student', 'instrument', 'skill_level', 'lesson_place', 'lesson_duration', ]
-
-    def validate_instrument(self, value):
-        try:
-            Instrument.objects.get(name=value.get('name'))
-        except ObjectDoesNotExist:
-            raise serializers.ValidationError("Instrument value not valid")
-        return value
+        fields = ['user', 'instrument', 'skill_level', 'lesson_place', 'lesson_duration', ]
 
     def create(self, validated_data):
-        validated_data['instrument'] = Instrument.objects.get(name=validated_data['instrument']['name'])
+        validated_data['instrument'] = Instrument.objects.get(name=validated_data['instrument'])
         return StudentDetails.objects.create(**validated_data)
 
-    def to_representation(self, instance):
-        obj_dic = super().to_representation(instance)
-        obj_dic['instrument'] = obj_dic.get('instrument', {}).get('name')
-        return obj_dic
+    def update(self, instance, validated_data):
+        validated_data['instrument'] = Instrument.objects.get(name=validated_data['instrument'])
+        return instance.update(**validated_data)
+
+
+class TiedStudentCreateSerializer(serializers.ModelSerializer):
+    """Serializer for usage with student creation by parent user."""
+    name = serializers.CharField(max_length=250)
+    age = serializers.IntegerField()
+    instrument = serializers.CharField(max_length=250, validators=[validate_instrument, ])   # instrument name
+
+    class Meta:
+        model = StudentDetails
+        fields = ['user', 'tied_student', 'name', 'age',
+                  'instrument', 'skill_level', 'lesson_place', 'lesson_duration', ]
+
+    def create(self, validated_data):
+        parent = Parent.objects.get(user_id=validated_data['user'])
+        tied_student = TiedStudent.objects.create(parent=parent, name=validated_data['name'], age=validated_data['age'])
+        super().create({'user': validated_data['user'], 'tied_student': tied_student,
+                        'instrument': Instrument.objects.get(name=validated_data['instrument']),
+                        'skill_level': validated_data['skill_level'], 'lesson_place': validated_data['lesson_place'],
+                        'lesson_duration': validated_data['lesson_duration']})
+
+
+class TiedStudentSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(max_length=250, source='tied_student.name')
+    instrument = serializers.CharField(max_length=250, source='instrument.name')
+
+    class Meta:
+        model = StudentDetails
+        fields = ['name', 'instrument', 'skill_level', 'lesson_place', 'lesson_duration', ]

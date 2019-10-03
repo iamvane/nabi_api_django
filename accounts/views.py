@@ -13,6 +13,7 @@ from django.template import loader
 from django.utils import timezone
 
 from rest_framework import views, status
+from rest_framework.generics import ListAPIView
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import *
 from rest_framework.response import Response
@@ -21,12 +22,13 @@ from core.constants import PHONE_TYPE_MAIN, ROLE_INSTRUCTOR
 from core.models import UserToken
 from core.utils import generate_hash, get_date_a_month_later, send_email
 
-from .models import Instructor, PhoneNumber, get_account, get_user_phone
+from .models import Instructor, PhoneNumber, StudentDetails, get_account, get_user_phone
 from .serializers import (
     AvatarInstructorSerializer, AvatarParentSerializer, AvatarStudentSerializer, GuestEmailSerializer,
     InstructorAccountInfoSerializer, InstructorAccountStepTwoSerializer, InstructorCreateAccountSerializer,
     InstructorProfileSerializer, ParentCreateAccountSerializer, StudentCreateAccountSerializer,
-    StudentDetailsSerializer, UserEmailSerializer, UserPasswordSerializer,
+    StudentDetailsSerializer, TiedStudentSerializer, TiedStudentCreateSerializer,
+    UserEmailSerializer, UserPasswordSerializer,
 )
 
 User = get_user_model()
@@ -312,20 +314,52 @@ class ReferralInvitation(views.APIView):
 
 class StudentDetailView(views.APIView):
 
-    def post(self, request):
+    def put(self, request):
         data = request.data.copy()
-        data['student'] = request.user.student.pk
-        data['instrument'] = {"name": request.data['instrument']}
-        serializer = StudentDetailsSerializer(data=data)
+        data['user'] = request.user.pk
+        if request.user.student_details.count():
+            serializer = StudentDetailsSerializer(instance=request.user.student_details, data=data)
+        else:
+            serializer = StudentDetailsSerializer(data=data)
         if serializer.is_valid():
-            serializer.save()
+            if request.user.student_details.count():
+                serializer.save()
+            else:
+                serializer.create(serializer.validated_data)
             return Response({"message": "success"}, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, request):
-        if hasattr(request.user.student, 'details'):
-            serializer = StudentDetailsSerializer(request.user.student.details)
+        if hasattr(request.user, 'student_details'):
+            serializer = StudentDetailsSerializer(request.user.student_details.first())
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             return Response({}, status=status.HTTP_200_OK)
+
+
+class TiedStudentCreateView(views.APIView):
+
+    def post(self, request):
+        # add parent's id to data of each student
+        data = []
+        for item in request.data:
+            data.append(item)
+            data[-1].update({'user': request.user.pk})
+        serializer = TiedStudentCreateSerializer(data=data, many=True)
+        if serializer.is_valid():
+            serializer.save(parent=request.user.parent.pk)
+            return Response({"message": "success"}, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TiedStudentListView(ListAPIView):
+    serializer_class = TiedStudentSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        if hasattr(self.request.user, 'parent'):
+            return StudentDetails.objects.filter(user__id=self.request.user.pk)
+        else:
+            return StudentDetails.objects.none()

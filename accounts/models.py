@@ -214,8 +214,17 @@ class Student(IUserAccount):
         return 'Student'
 
 
+class TiedStudent(models.Model):
+    """Student tied to a Parent, without including an user."""
+    parent = models.ForeignKey(Parent, related_name='tied_students', on_delete=models.CASCADE)
+    name = models.CharField(max_length=250)
+    age = models.IntegerField()
+
+
 class StudentDetails(models.Model):
-    student = models.OneToOneField(Student, related_name='details', on_delete=models.CASCADE)
+    user = models.ForeignKey(User, related_name='student_details', on_delete=models.CASCADE)   # student or parent user
+    tied_student = models.OneToOneField(TiedStudent, null=True, blank=True, related_name='tied_student_details',
+                                        on_delete=models.SET_NULL)
     instrument = models.ForeignKey(Instrument, on_delete=models.PROTECT)
     skill_level = models.CharField(max_length=50, choices=SKILL_LEVEL_CHOICES)
     lesson_place = models.CharField(max_length=50, choices=PLACE_FOR_LESSONS_CHOICES)

@@ -16,4 +16,6 @@ urlpatterns = [
     path('upload_avatar/', views.UploadAvatarView.as_view()),
     path('referral_email/', views.ReferralInvitation.as_view()),
     path('student-details/', views.StudentDetailView.as_view()),
+    path('create-students/', views.TiedStudentCreateView.as_view()),
+    path('get-students/', views.TiedStudentListView.as_view()),
 ]

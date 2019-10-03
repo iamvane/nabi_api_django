@@ -217,18 +217,51 @@ X-CSRFToken: yfmsbIDJlhHYk4m1kQh8r445PNfrBVPekzW0OtFAWkl0rLn1go7uQ4Wdj4KNughA
 
 ###
 
-POST localhost:8000/v1/student-details/
+PUT localhost:8000/v1/student-details/
 Cookie: sessionid=9396ti9t47fzumbr3kp67l9l1x96rzsv
 X-CSRFToken: yfmsbIDJlhHYk4m1kQh8r445PNfrBVPekzW0OtFAWkl0rLn1go7uQ4Wdj4KNughA
 
 {
-  "instrument": "Flaute",
+  "instrument": "flaute",
   "skill_level": "basic",
   "lesson_place": "home",
   "lesson_duration": "ninety"
 }
 
+###
+
 GET localhost:8000/v1/student-details/
 Cookie: sessionid=9396ti9t47fzumbr3kp67l9l1x96rzsv
+
+###
+
+POST localhost:8000/v1/create-students/
+Cookie: sessionid=9396ti9t47fzumbr3kp67l9l1x96rzsv
+X-CSRFToken: yfmsbIDJlhHYk4m1kQh8r445PNfrBVPekzW0OtFAWkl0rLn1go7uQ4Wdj4KNughA
+
+[
+	{
+		"name": "Joseph",
+		"age": 31,
+		"instrument": "flaute",
+		"skill_level": "basic",
+		"lesson_place": "home",
+		"lesson_duration": "ninety"
+	},
+	{
+		"name": "Lucy",
+		"age": 22,
+		"instrument": "piano",
+		"skill_level": "basic",
+		"lesson_place": "home",
+		"lesson_duration": "ninety"
+	}
+]
+
+###
+
+GET localhost:8000/v1/get-students/
+Cookie: sessionid=9396ti9t47fzumbr3kp67l9l1x96rzsv
+X-CSRFToken: yfmsbIDJlhHYk4m1kQh8r445PNfrBVPekzW0OtFAWkl0rLn1go7uQ4Wdj4KNughA
 
 ###
