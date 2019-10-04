@@ -24,7 +24,7 @@ from core.utils import generate_hash, get_date_a_month_later, send_email
 from .models import Instructor, PhoneNumber, get_account, get_user_phone
 from .serializers import (
     AvatarInstructorSerializer, AvatarParentSerializer, AvatarStudentSerializer, GuestEmailSerializer,
-    InstructorAccountInfoSerializer, InstructorAccountStepTwoSerializer, InstructorCreateAccountSerializer,
+    InstructorAccountInfoSerializer, InstructorBuildJobPreferencesSerializer, InstructorCreateAccountSerializer,
     InstructorProfileSerializer, ParentCreateAccountSerializer, StudentCreateAccountSerializer,
     StudentDetailsSerializer, UserEmailSerializer, UserPasswordSerializer,
 )
@@ -136,7 +136,7 @@ class ResetPasswordView(views.APIView):
                 email_message.send()
             except Exception as e:
                 logger.error(e)
-        return Response({'message': 'success'}, status=status.HTTP_200_OK)
+        return Response({'message': 'Check your email to set a new password.'}, status=status.HTTP_200_OK)
 
     def put(self, request):
         serializer = UserPasswordSerializer(data=request.data)
@@ -153,7 +153,7 @@ class ResetPasswordView(views.APIView):
                 user_token.user.set_password(passw)
                 user_token.user.save()
                 user_token.delete()
-                return Response({'message': 'Password set successfully'}, status=status.HTTP_200_OK)
+                return Response({'message': 'Password set successfully.'}, status=status.HTTP_200_OK)
             else:
                 return Response({'message': 'Token value is missing'}, status=status.HTTP_400_BAD_REQUEST)
         else:
@@ -255,10 +255,10 @@ class VerifyPhoneView(views.APIView):
                         status=status.HTTP_200_OK if approved else status.HTTP_400_BAD_REQUEST)
 
 
-class InstructorStep2View(views.APIView):
+class InstructorBuildJobPreferences(views.APIView):
 
     def post(self, request):
-        serializer = InstructorAccountStepTwoSerializer(data=request.data,
+        serializer = InstructorBuildJobPreferencesSerializer(data=request.data,
                                                         instance=Instructor.objects.get(user=request.user))
         if serializer.is_valid():
             serializer.save()

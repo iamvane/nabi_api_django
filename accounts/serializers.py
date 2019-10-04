@@ -153,19 +153,54 @@ class AdditionalQualifications(serializers.Serializer):
 
 
 class AvailavilitySerializer(serializers.Serializer):
-    day_of_week = serializers.ChoiceField(choices=DAY_CHOICES)
-    from1 = serializers.CharField(max_length=10)
-    to = serializers.CharField(max_length=10)
+    mon8to10 = serializers.BooleanField(required=False)
+    mon10to12 = serializers.BooleanField(required=False)
+    mon12to3 = serializers.BooleanField(required=False)
+    mon3to6 = serializers.BooleanField(required=False)
+    mon6to9 = serializers.BooleanField(required=False)
+    tue8to10 = serializers.BooleanField(required=False)
+    tue10to12 = serializers.BooleanField(required=False)
+    tue12to3 = serializers.BooleanField(required=False)
+    tue3to6 = serializers.BooleanField(required=False)
+    tue6to9 = serializers.BooleanField(required=False)
+    wed8to10 = serializers.BooleanField(required=False)
+    wed10to12 = serializers.BooleanField(required=False)
+    wed12to3 = serializers.BooleanField(required=False)
+    wed3to6 = serializers.BooleanField(required=False)
+    wed6to9 = serializers.BooleanField(required=False)
+    thu8to10 = serializers.BooleanField(required=False)
+    thu10to12 = serializers.BooleanField(required=False)
+    thu12to3 = serializers.BooleanField(required=False)
+    thu3to6 = serializers.BooleanField(required=False)
+    thu6to9 = serializers.BooleanField(required=False)
+    fri8to10 = serializers.BooleanField(required=False)
+    fri10to12 = serializers.BooleanField(required=False)
+    fri12to3 = serializers.BooleanField(required=False)
+    fri3to6 = serializers.BooleanField(required=False)
+    fri6to9 = serializers.BooleanField(required=False)
+    sat8to10 = serializers.BooleanField(required=False)
+    sat10to12 = serializers.BooleanField(required=False)
+    sat12to3 = serializers.BooleanField(required=False)
+    sat3to6 = serializers.BooleanField(required=False)
+    sat6to9 = serializers.BooleanField(required=False)
+    sun8to10 = serializers.BooleanField(required=False)
+    sun10to12 = serializers.BooleanField(required=False)
+    sun12to3 = serializers.BooleanField(required=False)
+    sun3to6 = serializers.BooleanField(required=False)
+    sun6to9 = serializers.BooleanField(required=False)
 
 
-class InstructorAccountStepTwoSerializer(serializers.Serializer):
+class InstructorBuildJobPreferencesSerializer(serializers.Serializer):
     instruments = serializers.ListField(child=InstrumentsSerializer())
     lesson_size = LessonSizeSerializer()
     age_group = AgeGroupsSerializer()
     lesson_rate = LessonRateSerializer()
     place_for_lessons = PlaceForLessonsSerializer()
-    availability = serializers.ListField(child=AvailavilitySerializer())
+    availability = AvailavilitySerializer()
     additional_qualifications = AdditionalQualifications()
+    studio_address = serializers.CharField(max_length=200, required=False)
+    travel_distance = serializers.CharField(max_length=200, required=False)
+    languages = serializers.ListField(child=serializers.CharField(), required=False)
 
     def update(self, instance, validated_data):
         self._set_instruments(instance, validated_data['instruments'])
@@ -174,6 +209,10 @@ class InstructorAccountStepTwoSerializer(serializers.Serializer):
         self._set_lesson_rate(instance, validated_data['lesson_rate'])
         self._set_place_for_lessons(instance, validated_data['place_for_lessons'])
         self._set_instructor_addional_qualifications(instance, validated_data['additional_qualifications'])
+        if hasattr(validated_data, 'studio_address'):
+            self.studio_address = validated_data['studio_address']
+        if hasattr(validated_data, 'travel_distance'):
+            self.travel_distance = validated_data['travel_distance']
         return instance
 
     def _set_instruments(self, instance, data):

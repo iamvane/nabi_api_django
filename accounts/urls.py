@@ -12,7 +12,7 @@ urlpatterns = [
     path('account-info/', views.UpdateUserInfoView.as_view()),
     path('verify-phone/', views.VerifyPhoneView.as_view()),
     path('build-profile/', views.UpdateProfileView.as_view()),
-    path('build-profile/job-preferences', views.InstructorStep2View.as_view()),
+    path('build-job-preferences/', views.InstructorBuildJobPreferences.as_view()),
     path('upload_avatar/', views.UploadAvatarView.as_view()),
     path('referral_email/', views.ReferralInvitation.as_view()),
     path('student-details/', views.StudentDetailView.as_view()),
