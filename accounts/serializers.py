@@ -196,7 +196,7 @@ class InstructorBuildJobPreferencesSerializer(serializers.Serializer):
     age_group = AgeGroupsSerializer()
     lesson_rate = LessonRateSerializer()
     place_for_lessons = PlaceForLessonsSerializer()
-    availability = serializers.ListField(child=AvailavilitySerializer())
+    availability = AvailavilitySerializer()
     additional_qualifications = AdditionalQualifications()
     studio_address = serializers.CharField(max_length=200, required=False)
     travel_distance = serializers.CharField(max_length=200, required=False)
