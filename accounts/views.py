@@ -116,8 +116,7 @@ class ResetPasswordView(views.APIView):
         if serializer.is_valid():
             email = serializer.data['email']
             user = User.objects.get(email=email)
-            subject = "Reset Password"
-            email_template_name = 'accounts/email_reset_password.html'
+            subject = "Reset Your Password"
             repeated_token = True
             while repeated_token:
                 token = generate_hash(email)
@@ -129,11 +128,11 @@ class ResetPasswordView(views.APIView):
                 else:
                     repeated_token = False
             target_url = '{}/forgot-password?token={}'.format(settings.HOSTNAME_PROTOCOL, token)
-            context = {'full_name': user.get_full_name(), 'url_reset_pass': target_url}
-            body = loader.render_to_string(email_template_name, context)
-            email_message = EmailMultiAlternatives(subject, body, settings.DEFAULT_FROM_EMAIL, [email, ])
-            html_email = loader.render_to_string(email_template_name, context)
-            email_message.attach_alternative(html_email, 'text/html')
+            context = {'url_reset_pass': target_url}
+            text_content = loader.render_to_string('reset_password_plain.html', context)
+            html_content = loader.render_to_string('reset_password.html', context)
+            email_message = EmailMultiAlternatives(subject, text_content, settings.DEFAULT_FROM_EMAIL, [email, ])
+            email_message.attach_alternative(html_content, 'text/html')
             try:
                 email_message.send()
             except Exception as e:
