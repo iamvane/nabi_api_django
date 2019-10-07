@@ -265,6 +265,24 @@ X-CSRFToken: yfmsbIDJlhHYk4m1kQh8r445PNfrBVPekzW0OtFAWkl0rLn1go7uQ4Wdj4KNughA
 
 GET localhost:8000/v1/get-students/
 Cookie: sessionid=9396ti9t47fzumbr3kp67l9l1x96rzsv
+
+###
+
+POST localhost:8000/v1/education/
+Cookie: sessionid=9396ti9t47fzumbr3kp67l9l1x96rzsv
 X-CSRFToken: yfmsbIDJlhHYk4m1kQh8r445PNfrBVPekzW0OtFAWkl0rLn1go7uQ4Wdj4KNughA
+
+{
+  "school": "Hopkins",
+  "graduationYear": 2003,
+  "degreeType": "certification",
+  "fieldOfStudy": "Math",
+  "schoolLocation": "Utah"
+}
+
+###
+
+GET localhost:8000/v1/education/
+Cookie: sessionid=9396ti9t47fzumbr3kp67l9l1x96rzsv
 
 ###

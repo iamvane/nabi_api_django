@@ -125,7 +125,6 @@ class Education(models.Model):
     degree_type = models.CharField(max_length=100, blank=True, null=True, choices=DEGREE_TYPE_CHOICES)
     field_of_study = models.CharField(max_length=100, blank=True, null=True)
     school_location = models.CharField(max_length=100, blank=True, null=True)
-
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
 
