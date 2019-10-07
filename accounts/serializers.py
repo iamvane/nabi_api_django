@@ -3,13 +3,14 @@ from django.db.models import ObjectDoesNotExist, Q
 
 from rest_framework import serializers, validators
 
-from core.constants import GENDER_CHOICES, SKILL_LEVEL_CHOICES, DAY_CHOICES
+from core.constants import GENDER_CHOICES, SKILL_LEVEL_CHOICES, DAY_CHOICES, DEGREE_TYPE_CHOICES
 from core.utils import update_model
 from lesson.models import Instrument
 
 from .models import (
     Availability, Instructor, InstructorAdditionalQualifications, InstructorAgeGroup, InstructorInstruments,
     InstructorPlaceForLessons, InstructorLessonRate, InstructorLessonSize, Parent, PhoneNumber, Student, StudentDetails,
+    Education
 )
 from .utils import init_kwargs
 
@@ -262,11 +263,18 @@ class InstructorBuildJobPreferencesSerializer(serializers.Serializer):
             av.save()
 
 
+class EducationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Education
+        fields = '__all__'
+
+
 class UserEmailSerializer(serializers.Serializer):
     """Check email existence in DB. Should belong to existent user."""
     email = serializers.EmailField()
 
     def validate_email(self, value):
+        print(value)
         if User.objects.filter(email=value).exists():
             return value
         else:

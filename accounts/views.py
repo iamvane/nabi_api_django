@@ -2,6 +2,7 @@ from datetime import timedelta
 from logging import getLogger
 from twilio.rest import Client
 
+from django.shortcuts import render, get_object_or_404
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.forms import AuthenticationForm
@@ -12,7 +13,7 @@ from django.middleware.csrf import get_token
 from django.template import loader
 from django.utils import timezone
 
-from rest_framework import views, status
+from rest_framework import views, status, generics
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import *
 from rest_framework.response import Response
@@ -21,12 +22,12 @@ from core.constants import PHONE_TYPE_MAIN, ROLE_INSTRUCTOR
 from core.models import UserToken
 from core.utils import generate_hash, get_date_a_month_later, send_email
 
-from .models import Instructor, PhoneNumber, get_account, get_user_phone
+from .models import IUserAccount, Instructor, PhoneNumber, get_account, get_user_phone, Education
 from .serializers import (
     AvatarInstructorSerializer, AvatarParentSerializer, AvatarStudentSerializer, GuestEmailSerializer,
     InstructorAccountInfoSerializer, InstructorBuildJobPreferencesSerializer, InstructorCreateAccountSerializer,
     InstructorProfileSerializer, ParentCreateAccountSerializer, StudentCreateAccountSerializer,
-    StudentDetailsSerializer, UserEmailSerializer, UserPasswordSerializer,
+    StudentDetailsSerializer, UserEmailSerializer, UserPasswordSerializer, EducationSerializer
 )
 
 User = get_user_model()
@@ -265,6 +266,75 @@ class InstructorBuildJobPreferences(views.APIView):
             return Response(request.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+class EducationListCreateView(generics.ListCreateAPIView):
+
+    serializer_class = EducationSerializer
+
+    def get_queryset(self):
+        qs = Education.objects.none()
+        user_acc = IUserAccount.objects.filter(user=self.request.user).first()
+        if user_acc and hasattr(user_acc, 'instructor'):
+            qs = Education.objects.filter(instructor=user_acc, is_deleted=False)
+        return qs.order_by('-created_at')
+        
+
+
+# class DeleteEducationView(views.APIView):
+#     def delete(self, request, pk):
+#         """
+#         Removes product from the cart.
+#         """
+#         education = Education.objects.filter(id=pk).first()
+#         cart_product = CartProducts.objects.filter(cart=cart, product_id=product_id).first()
+#         if cart_product:
+#             cart_product.delete()
+
+#         return get_default_cart_response(cart)
+
+class DeleteEducationView(views.APIView):
+
+    def delete(self, request, pk):
+        # user_acc = self.request.user
+        # user_acc = Instructor.objects.filter(user=self.request.user).first()
+        education = Education.objects.filter(id=pk).first()
+        if education is None:
+            return Response({'error': 'Unknown education'}, status=status.HTTP_400_BAD_REQUEST)
+        education.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    # def post(self, request):
+    #     serializer = InstructorBuildEducationSerializer(data=request.data,
+    #                                                     instance=Instructor.objects.get(user=request.user))
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #         return Response(request.data)
+    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# class BeneficiaryListCreateView(generics.ListCreateAPIView):
+#     """
+#     get:
+#     Returns a list of all beneficiaries added by the current logged in user.
+
+#     post:
+#     Create a new beneficiary for the logged in user. Payload:
+#     ```
+#     {
+#         "first_name": "string",
+#         "last_name": "string",
+#         "email": "string",
+#         "remitter": int
+#     }
+#     ```
+#     """
+#     serializer_class = BeneficiarySerializer
+
+#     def get_queryset(self):
+#         qs = Beneficiary.objects.none()
+#         user_acc = UserAccount.objects.filter(user=self.request.user).first()
+#         if user_acc and hasattr(user_acc, 'remitter'):
+#             qs = Beneficiary.objects.filter(remitter=user_acc.remitter, is_deleted=False)
+#         return qs.order_by('-created_at')
 
 class UploadAvatarView(views.APIView):
     parser_classes = (MultiPartParser, )
