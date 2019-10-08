@@ -12,7 +12,7 @@ from django.middleware.csrf import get_token
 from django.template import loader
 from django.utils import timezone
 
-from rest_framework import views, status
+from rest_framework import filters, status, views
 from rest_framework.generics import ListAPIView
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import *
@@ -22,7 +22,7 @@ from core.constants import PHONE_TYPE_MAIN, ROLE_INSTRUCTOR
 from core.models import UserToken
 from core.utils import generate_hash, get_date_a_month_later, send_email
 
-from .models import Instructor, PhoneNumber, StudentDetails, get_account, get_user_phone
+from .models import Education, Instructor, PhoneNumber, StudentDetails, get_account, get_user_phone
 from .serializers import (
     AvatarInstructorSerializer, AvatarParentSerializer, AvatarStudentSerializer, GuestEmailSerializer,
     InstructorAccountInfoSerializer, InstructorBuildJobPreferencesSerializer, InstructorCreateAccountSerializer,
@@ -277,7 +277,7 @@ class InstructorBuildJobPreferences(views.APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class InstructorEducation(views.APIView):
+class InstructorEducationView(views.APIView):
 
     def post(self, request):
         data = request.data.copy()
@@ -296,6 +296,31 @@ class InstructorEducation(views.APIView):
         else:
             return Response({"school": None, "graduationYear": None, "degreeType": None, "fieldOfStudy": None,
                              "schoolLocation": None}, status=status.HTTP_200_OK)
+
+
+class InstructorEducationItemView(views.APIView):
+
+    def put(self, request, pk):
+        data = request.data.copy()
+        data['instructor'] = request.user.instructor.pk
+        try:
+            educ_instance = Education.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            return Response({"error": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = InstructorEducationSerializer(instance=educ_instance, data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "success"}, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        try:
+            educ_instance = Education.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            return Response({"error": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
+        educ_instance.delete()
+        return Response({"message": "success"}, status=status.HTTP_200_OK)
 
 
 class UploadAvatarView(views.APIView):

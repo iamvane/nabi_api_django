@@ -18,5 +18,6 @@ urlpatterns = [
     path('student-details/', views.StudentDetailView.as_view()),
     path('create-students/', views.TiedStudentCreateView.as_view()),
     path('get-students/', views.TiedStudentListView.as_view()),
-    path('education/', views.InstructorEducation.as_view()),
+    path('education/<int:pk>/', views.InstructorEducationItemView.as_view()),
+    path('education/', views.InstructorEducationView.as_view()),
 ]
