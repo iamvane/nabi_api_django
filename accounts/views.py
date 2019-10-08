@@ -30,6 +30,8 @@ from .serializers import (
     StudentDetailsSerializer, TiedStudentSerializer, TiedStudentCreateSerializer,
     UserEmailSerializer, UserPasswordSerializer,
 )
+from .utils import send_welcome_email
+
 
 User = get_user_model()
 logger = getLogger('api_errors')
@@ -79,6 +81,7 @@ class CreateAccount(views.APIView):
         if serializer.is_valid():
             user_cc = serializer.save()
             login(request, user_cc.user)
+            send_welcome_email(user_cc)
             return Response(get_user_response(user_cc))
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -131,7 +134,8 @@ class ResetPasswordView(views.APIView):
             context = {'url_reset_pass': target_url}
             text_content = loader.render_to_string('reset_password_plain.html', context)
             html_content = loader.render_to_string('reset_password.html', context)
-            email_message = EmailMultiAlternatives(subject, text_content, settings.DEFAULT_FROM_EMAIL, [email, ])
+            from_email = 'Nabi Music <' + settings.DEFAULT_FROM_EMAIL + '>'
+            email_message = EmailMultiAlternatives(subject, text_content, from_email, [email, ])
             email_message.attach_alternative(html_content, 'text/html')
             try:
                 email_message.send()
