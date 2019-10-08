@@ -26,8 +26,8 @@ from .models import Instructor, PhoneNumber, StudentDetails, get_account, get_us
 from .serializers import (
     AvatarInstructorSerializer, AvatarParentSerializer, AvatarStudentSerializer, GuestEmailSerializer,
     InstructorAccountInfoSerializer, InstructorBuildJobPreferencesSerializer, InstructorCreateAccountSerializer,
-    InstructorProfileSerializer, ParentCreateAccountSerializer, StudentCreateAccountSerializer,
-    StudentDetailsSerializer, TiedStudentSerializer, TiedStudentCreateSerializer,
+    InstructorEducationSerializer, InstructorProfileSerializer, ParentCreateAccountSerializer,
+    StudentCreateAccountSerializer, StudentDetailsSerializer, TiedStudentSerializer, TiedStudentCreateSerializer,
     UserEmailSerializer, UserPasswordSerializer,
 )
 
@@ -265,6 +265,27 @@ class InstructorBuildJobPreferences(views.APIView):
             serializer.save()
             return Response(request.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class InstructorEducation(views.APIView):
+
+    def post(self, request):
+        data = request.data.copy()
+        data['instructor'] = request.user.instructor.pk
+        serializer = InstructorEducationSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "success"}, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request):
+        if hasattr(request.user.instructor, 'education'):
+            serializer = InstructorEducationSerializer(request.user.instructor.education, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response({"school": None, "graduationYear": None, "degreeType": None, "fieldOfStudy": None,
+                             "schoolLocation": None}, status=status.HTTP_200_OK)
 
 
 class UploadAvatarView(views.APIView):

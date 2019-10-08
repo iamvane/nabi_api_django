@@ -4,13 +4,13 @@ from django.db.models import ObjectDoesNotExist, Q
 from rest_framework import serializers, validators
 
 from core.constants import (
-    DAY_CHOICES, GENDER_CHOICES, SKILL_LEVEL_CHOICES,
+    DAY_CHOICES, DEGREE_TYPE_CHOICES, GENDER_CHOICES, SKILL_LEVEL_CHOICES,
 )
 from core.utils import update_model
 from lesson.models import Instrument
 
 from .models import (
-    Availability, Instructor, InstructorAdditionalQualifications, InstructorAgeGroup, InstructorInstruments,
+    Availability, Education, Instructor, InstructorAdditionalQualifications, InstructorAgeGroup, InstructorInstruments,
     InstructorPlaceForLessons, InstructorLessonRate, InstructorLessonSize, Parent, PhoneNumber,
     Student, StudentDetails, TiedStudent,
 )
@@ -109,6 +109,23 @@ class InstructorAccountInfoSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         raise Exception("Create is not supposed to be called")
+
+
+class InstructorEducationSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(source='pk', read_only=True)
+    graduationYear = serializers.IntegerField(source='graduation_year', required=True)
+    degreeType = serializers.ChoiceField(source='degree_type', choices=DEGREE_TYPE_CHOICES, required=True)
+    fieldOfStudy = serializers.CharField(source='field_of_study', max_length=100, required=True)
+    schoolLocation = serializers.CharField(source='school_location', max_length=100, required=True)
+
+    class Meta:
+        model = Education
+        fields = ['id', 'instructor', 'school', 'graduationYear', 'degreeType', 'fieldOfStudy', 'schoolLocation', ]
+
+    def to_representation(self, instance):
+        res_dict = super().to_representation(instance)
+        res_dict.pop('instructor')
+        return res_dict
 
 
 class InstrumentsSerializer(serializers.Serializer):
