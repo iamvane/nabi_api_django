@@ -120,11 +120,11 @@ class Instructor(IUserAccount):
 
 class Education(models.Model):
     instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE, related_name='education')
-    school = models.CharField(max_length=200, blank=True, null=True)
-    graduation_year = models.IntegerField(blank=True, null=True)
-    degree_type = models.CharField(max_length=100, blank=True, null=True, choices=DEGREE_TYPE_CHOICES)
-    field_of_study = models.CharField(max_length=100, blank=True, null=True)
-    school_location = models.CharField(max_length=100, blank=True, null=True)
+    school = models.CharField(max_length=200)
+    graduation_year = models.IntegerField()
+    degree_type = models.CharField(max_length=100, choices=DEGREE_TYPE_CHOICES)
+    field_of_study = models.CharField(max_length=100)
+    school_location = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
 

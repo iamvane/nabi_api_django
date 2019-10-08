@@ -113,10 +113,10 @@ class InstructorAccountInfoSerializer(serializers.Serializer):
 
 class InstructorEducationSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(source='pk', read_only=True)
-    graduationYear = serializers.IntegerField(source='graduation_year', required=False, default=None)
-    degreeType = serializers.ChoiceField(source='degree_type', choices=DEGREE_TYPE_CHOICES, required=False, default=None)
-    fieldOfStudy = serializers.CharField(source='field_of_study', max_length=100, required=False, default=None)
-    schoolLocation = serializers.CharField(source='school_location', max_length=100, required=False, default=None)
+    graduationYear = serializers.IntegerField(source='graduation_year', required=True)
+    degreeType = serializers.ChoiceField(source='degree_type', choices=DEGREE_TYPE_CHOICES, required=True)
+    fieldOfStudy = serializers.CharField(source='field_of_study', max_length=100, required=True)
+    schoolLocation = serializers.CharField(source='school_location', max_length=100, required=True)
 
     class Meta:
         model = Education
