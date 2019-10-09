@@ -142,3 +142,11 @@ if not DEBUG:
     REST_FRAMEWORK['DEFAULT_RENDERER_CLASSES'] = (
         'rest_framework.renderers.JSONRenderer',
     )
+
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
+
+    sentry_sdk.init(
+        dsn="https://e7aee34ab87d4e62ac4570f9c384436c@sentry.io/1774495",
+        integrations=[DjangoIntegration()]
+    )
