@@ -30,11 +30,5 @@ def send_welcome_email(user_cc):
     subject = 'Welcome to Nabi Music!'
     email_message = EmailMultiAlternatives(subject, text_content, from_email, [email])
     email_message.attach_alternative(html_content, 'text/html')
-
-    try:
-        email_message.send()
-    except Exception as e:
-        return Response({
-            "error": str(e)
-        }, status=status.HTTP_400_BAD_REQUEST)
+    email_message.send()
 

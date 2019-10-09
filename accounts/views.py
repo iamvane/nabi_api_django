@@ -81,7 +81,13 @@ class CreateAccount(views.APIView):
         if serializer.is_valid():
             user_cc = serializer.save()
             login(request, user_cc.user)
-            send_welcome_email(user_cc)
+            try:
+                send_welcome_email(user_cc)
+            except Exception as e:
+                return Response({
+                    "error": str(e)
+                }, status=status.HTTP_400_BAD_REQUEST)
+
             return Response(get_user_response(user_cc))
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
