@@ -286,3 +286,23 @@ GET localhost:8000/v1/education/
 Cookie: sessionid=9396ti9t47fzumbr3kp67l9l1x96rzsv
 
 ###
+
+PUT localhost:8000/v1/education/3/
+Cookie: sessionid=9396ti9t47fzumbr3kp67l9l1x96rzsv
+X-CSRFToken: yfmsbIDJlhHYk4m1kQh8r445PNfrBVPekzW0OtFAWkl0rLn1go7uQ4Wdj4KNughA
+
+{
+  "school": "Baltimore",
+  "graduationYear": 2003,
+  "degreeType": "certification",
+  "fieldOfStudy": "Math",
+  "schoolLocation": "Roosvelt Bv Nro 7"
+}
+
+###
+
+DELETE localhost:8000/v1/education/3/
+Cookie: sessionid=9396ti9t47fzumbr3kp67l9l1x96rzsv
+X-CSRFToken: yfmsbIDJlhHYk4m1kQh8r445PNfrBVPekzW0OtFAWkl0rLn1go7uQ4Wdj4KNughA
+
+###

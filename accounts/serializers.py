@@ -4,7 +4,7 @@ from django.db.models import ObjectDoesNotExist, Q
 from rest_framework import serializers, validators
 
 from core.constants import (
-    DAY_CHOICES, DEGREE_TYPE_CHOICES, GENDER_CHOICES, SKILL_LEVEL_CHOICES,
+    DEGREE_TYPE_CHOICES, GENDER_CHOICES, SKILL_LEVEL_CHOICES,
 )
 from core.utils import update_model
 from lesson.models import Instrument
