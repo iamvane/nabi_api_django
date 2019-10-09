@@ -12,7 +12,7 @@ from django.middleware.csrf import get_token
 from django.template import loader
 from django.utils import timezone
 
-from rest_framework import filters, status, views
+from rest_framework import status, views
 from rest_framework.generics import ListAPIView
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import *
@@ -307,7 +307,7 @@ class InstructorEducationItemView(views.APIView):
             educ_instance = Education.objects.get(pk=pk)
         except ObjectDoesNotExist:
             return Response({"error": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
-        serializer = InstructorEducationSerializer(instance=educ_instance, data=data)
+        serializer = InstructorEducationSerializer(instance=educ_instance, data=data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "success"}, status=status.HTTP_200_OK)
