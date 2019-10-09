@@ -18,7 +18,6 @@ def send_welcome_email(user_cc):
     referral_link = '{}/registration?token={}'.format(settings.HOSTNAME_PROTOCOL,
         referral_token)
 
-    text = ''
     if role == 'instructor':
         text = "Invite your colleagues to join Nabi and you and them will get a lesson FREE of fees!"
     else:
@@ -29,11 +28,13 @@ def send_welcome_email(user_cc):
     html_content = loader.render_to_string('welcome_to_nabi.html', context)
     from_email = 'Nabi Music <' + settings.DEFAULT_FROM_EMAIL + '>'
     subject = 'Welcome to Nabi Music!'
-    toEmail = email
     email_message = EmailMultiAlternatives(subject, text_content, from_email, [email])
     email_message.attach_alternative(html_content, 'text/html')
+
     try:
         email_message.send()
     except Exception as e:
-        logger.error(e)
+        return Response({
+            "error": str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)
 
