@@ -93,33 +93,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-logs_path = os.path.join(os.path.dirname(BASE_DIR), 'logs')
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'standard': {
-            'format': "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
-            'datefmt': "%d/%b/%Y %H:%M:%S"
-        },
-    },
-    'handlers': {
-        'logfile': {
-            'level': 'ERROR',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(logs_path, "error.log"),
-            'formatter': 'standard',
-        },
-    },
-    'loggers': {
-        'api_errors': {
-            'handlers': ['logfile', ],
-            'level': 'ERROR',
-            'propagate': False,
-        }
-    },
-}
-
 HOSTNAME = "www.nabimusic.com"
 HOSTNAME_PROTOCOL = "http://" + HOSTNAME
 
@@ -169,3 +142,12 @@ if not DEBUG:
     REST_FRAMEWORK['DEFAULT_RENDERER_CLASSES'] = (
         'rest_framework.renderers.JSONRenderer',
     )
+
+
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
+
+sentry_sdk.init(
+    dsn="https://e7aee34ab87d4e62ac4570f9c384436c@sentry.io/1774495",
+    integrations=[DjangoIntegration()]
+)
