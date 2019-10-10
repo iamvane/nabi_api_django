@@ -12,22 +12,8 @@ Content-Type: application/json
 ### Set-Cookie:  csrftoken=zDbcXUdR4RCvgb7XwRP64VgW69EUc0OJSm3OosxdhgFVVuPKUWGaExApLaXBsb6F; expires=Sat, 22 Aug 2020 11:59:50 GMT; Max-Age=31449600; Path=/; SameSite=Lax
 ### Set-Cookie:  sessionid=65vw4w0a116tfnzcjdcb4ka7dhhpqnu4; expires=Sat, 07 Sep 2019 11:59:50 GMT; HttpOnly; Max-Age=1209600; Path=/; SameSite=Lax
 
-PUT localhost:8000/v1/account-info/
-Content-Type: application/json
-Cookie: sessionid=65vw4w0a116tfnzcjdcb4ka7dhhpqnu4;csrftoken=zDbcXUdR4RCvgb7XwRP64VgW69EUc0OJSm3OosxdhgFVVuPKUWGaExApLaXBsb6F
-X-CSRFToken: 8LUV70LbEX0JeWQFfd8N3XTzdH105FTjruMxyy5xRm39TfysDiZRDzd2SIkHlQbf
-
-{
-  "first_name": "Idekel",
-  "last_name": "Santana",
-  "middle_name": "Paola",
-  "gender": "male",
-  "location": "725 Adams St Boston MA 02122",
-  "lat": "6516516",
-  "lng": "6516516"
-}
-
 ###
+
 POST localhost:8000/v1/verify-phone/
 Content-Type: application/json
 Cookie: sessionid=65vw4w0a116tfnzcjdcb4ka7dhhpqnu4;csrftoken=zDbcXUdR4RCvgb7XwRP64VgW69EUc0OJSm3OosxdhgFVVuPKUWGaExApLaXBsb6F
@@ -304,5 +290,20 @@ X-CSRFToken: yfmsbIDJlhHYk4m1kQh8r445PNfrBVPekzW0OtFAWkl0rLn1go7uQ4Wdj4KNughA
 DELETE localhost:8000/v1/education/3/
 Cookie: sessionid=9396ti9t47fzumbr3kp67l9l1x96rzsv
 X-CSRFToken: yfmsbIDJlhHYk4m1kQh8r445PNfrBVPekzW0OtFAWkl0rLn1go7uQ4Wdj4KNughA
+
+###
+
+PUT localhost:8000/v1/account-info/
+Content-Type: application/json
+Cookie: sessionid=65vw4w0a116tfnzcjdcb4ka7dhhpqnu4;csrftoken=zDbcXUdR4RCvgb7XwRP64VgW69EUc0OJSm3OosxdhgFVVuPKUWGaExApLaXBsb6F
+X-CSRFToken: 8LUV70LbEX0JeWQFfd8N3XTzdH105FTjruMxyy5xRm39TfysDiZRDzd2SIkHlQbf
+
+{
+  "firstName": "Idekel",
+  "lastName": "Santana",
+  "email": "idekel.santana@gmail.com",
+  "location": "725 Adams St Boston MA 02122",
+  "phoneNumber": "+18292901143"
+}
 
 ###

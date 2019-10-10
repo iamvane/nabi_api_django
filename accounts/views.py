@@ -25,10 +25,10 @@ from core.utils import generate_hash, get_date_a_month_later, send_email
 from .models import Education, Instructor, PhoneNumber, StudentDetails, get_account, get_user_phone
 from .serializers import (
     AvatarInstructorSerializer, AvatarParentSerializer, AvatarStudentSerializer, GuestEmailSerializer,
-    InstructorAccountInfoSerializer, InstructorBuildJobPreferencesSerializer, InstructorCreateAccountSerializer,
-    InstructorEducationSerializer, InstructorProfileSerializer, ParentCreateAccountSerializer,
+    InstructorBuildJobPreferencesSerializer, InstructorCreateAccountSerializer, InstructorEducationSerializer,
+    InstructorProfileSerializer, ParentCreateAccountSerializer,
     StudentCreateAccountSerializer, StudentDetailsSerializer, TiedStudentSerializer, TiedStudentCreateSerializer,
-    UserEmailSerializer, UserPasswordSerializer,
+    UserEmailSerializer, UserInfoUpdateSerializer, UserPasswordSerializer,
 )
 from .utils import send_welcome_email
 
@@ -224,11 +224,10 @@ class UpdateProfileView(views.APIView):
 class UpdateUserInfoView(views.APIView):
 
     def put(self, request):
-        serializer = InstructorAccountInfoSerializer(data=request.data,
-                                                     instance=Instructor.objects.get(user=request.user))
+        serializer = UserInfoUpdateSerializer(instance=request.user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response(status=status.HTTP_200_OK)
+            return Response({"message": "success"}, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

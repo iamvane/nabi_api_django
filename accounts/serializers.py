@@ -4,7 +4,7 @@ from django.db.models import ObjectDoesNotExist, Q
 from rest_framework import serializers, validators
 
 from core.constants import (
-    DEGREE_TYPE_CHOICES, GENDER_CHOICES, SKILL_LEVEL_CHOICES,
+    DEGREE_TYPE_CHOICES, GENDER_CHOICES, ROLE_INSTRUCTOR, ROLE_PARENT, ROLE_STUDENT, SKILL_LEVEL_CHOICES,
 )
 from core.utils import update_model
 from lesson.models import Instrument
@@ -12,7 +12,7 @@ from lesson.models import Instrument
 from .models import (
     Availability, Education, Instructor, InstructorAdditionalQualifications, InstructorAgeGroup, InstructorInstruments,
     InstructorPlaceForLessons, InstructorLessonRate, InstructorLessonSize, Parent, PhoneNumber,
-    Student, StudentDetails, TiedStudent,
+    Student, StudentDetails, TiedStudent, get_account,
 )
 from .utils import init_kwargs
 
@@ -52,6 +52,29 @@ class BaseCreateAccountSerializer(serializers.Serializer):
 
     def update(self, instance, validated_data):
         pass
+
+
+class UserInfoUpdateSerializer(serializers.ModelSerializer):
+    firstName = serializers.CharField(max_length=30, source='first_name')
+    lastName = serializers.CharField(max_length=150, source='last_name')
+    phoneNumber = serializers.CharField(max_length=50, source='phonenumber.number')
+    location = serializers.CharField(max_length=150)
+
+    class Meta:
+        model = User
+        fields = ['firstName', 'lastName', 'email', 'phoneNumber', 'location', ]
+
+    def update(self, instance, validated_data):
+        location = validated_data.pop('location', None)
+        if location is not None:
+            account = get_account(instance)
+            account.location = location
+            account.instructor.save()
+        phone_number = validated_data.pop('phonenumber', None)
+        if phone_number is not None:
+            instance.phonenumber.number = phone_number['number']
+            instance.phonenumber.save()
+        return super().update(instance, validated_data)
 
 
 class InstructorProfileSerializer(serializers.Serializer):
