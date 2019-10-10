@@ -59,10 +59,12 @@ class UserInfoUpdateSerializer(serializers.ModelSerializer):
     lastName = serializers.CharField(max_length=150, source='last_name')
     middleName = serializers.CharField(max_length=50)
     address = serializers.CharField(max_length=150)
+    lat = serializers.CharField(max_length=150)
+    lng = serializers.CharField(max_length=150)
 
     class Meta:
         model = User
-        fields = ['firstName', 'lastName', 'middleName', 'email', 'address', ]
+        fields = ['firstName', 'lastName', 'middleName', 'email', 'address', 'lat', 'lng', ]
 
     def update(self, instance, validated_data):
         account = get_account(instance)
@@ -70,6 +72,14 @@ class UserInfoUpdateSerializer(serializers.ModelSerializer):
         location = validated_data.pop('address', None)
         if location is not None:
             account.location = location
+            account_changed = True
+        latitude = validated_data.pop('lat', None)
+        if latitude is not None:
+            account.lat = latitude
+            account_changed = True
+        longitude = validated_data.pop('lng', None)
+        if longitude is not None:
+            account.lng = longitude
             account_changed = True
         middle_name = validated_data.pop('middleName', None)
         if middle_name is not None:
