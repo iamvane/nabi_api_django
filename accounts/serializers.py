@@ -57,23 +57,26 @@ class BaseCreateAccountSerializer(serializers.Serializer):
 class UserInfoUpdateSerializer(serializers.ModelSerializer):
     firstName = serializers.CharField(max_length=30, source='first_name')
     lastName = serializers.CharField(max_length=150, source='last_name')
-    phoneNumber = serializers.CharField(max_length=50, source='phonenumber.number')
-    location = serializers.CharField(max_length=150)
+    middleName = serializers.CharField(max_length=50)
+    address = serializers.CharField(max_length=150)
 
     class Meta:
         model = User
-        fields = ['firstName', 'lastName', 'email', 'phoneNumber', 'location', ]
+        fields = ['firstName', 'lastName', 'middleName', 'email', 'address', ]
 
     def update(self, instance, validated_data):
-        location = validated_data.pop('location', None)
+        account = get_account(instance)
+        account_changed = False
+        location = validated_data.pop('address', None)
         if location is not None:
-            account = get_account(instance)
             account.location = location
-            account.instructor.save()
-        phone_number = validated_data.pop('phonenumber', None)
-        if phone_number is not None:
-            instance.phonenumber.number = phone_number['number']
-            instance.phonenumber.save()
+            account_changed = True
+        middle_name = validated_data.pop('middleName', None)
+        if middle_name is not None:
+            account.middle_name = middle_name
+            account_changed = True
+        if account_changed:
+            account.save()
         return super().update(instance, validated_data)
 
 
