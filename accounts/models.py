@@ -256,14 +256,14 @@ class TiedStudent(models.Model):
 
 class StudentDetails(models.Model):
     user = models.ForeignKey(User, related_name='student_details', on_delete=models.CASCADE)   # student or parent user
-    tied_student = models.OneToOneField(TiedStudent, null=True, blank=True, related_name='tied_student_details',
+    tiedStudent = models.OneToOneField(TiedStudent, null=True, blank=True, related_name='tied_student_details',
                                         on_delete=models.SET_NULL)
     instrument = models.ForeignKey(Instrument, on_delete=models.PROTECT)
-    skill_level = models.CharField(max_length=50, choices=SKILL_LEVEL_CHOICES)
-    lesson_place = models.CharField(max_length=50, choices=PLACE_FOR_LESSONS_CHOICES)
-    lesson_duration = models.CharField(max_length=50, choices=LESSON_DURATION_CHOICES)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    skillLevel = models.CharField(max_length=50, choices=SKILL_LEVEL_CHOICES)
+    lessonPlace = models.CharField(max_length=50, choices=PLACE_FOR_LESSONS_CHOICES)
+    lessonDuration = models.CharField(max_length=50, choices=LESSON_DURATION_CHOICES)
+    createdAt = models.DateTimeField(auto_now_add=True)
+    updatedAt = models.DateTimeField(auto_now=True)
 
 
 def get_account(user):
