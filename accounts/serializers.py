@@ -58,17 +58,27 @@ class UserInfoUpdateSerializer(serializers.ModelSerializer):
     firstName = serializers.CharField(max_length=30, source='first_name')
     lastName = serializers.CharField(max_length=150, source='last_name')
     middleName = serializers.CharField(max_length=50)
+    gender = serializers.ChoiceField(choices=GENDER_CHOICES)
+    birthday = serializers.DateField()
     address = serializers.CharField(max_length=150)
     lat = serializers.CharField(max_length=150)
     lng = serializers.CharField(max_length=150)
 
     class Meta:
         model = User
-        fields = ['firstName', 'lastName', 'middleName', 'email', 'address', 'lat', 'lng', ]
+        fields = ['firstName', 'lastName', 'middleName', 'email', 'gender', 'birthday', 'address', 'lat', 'lng', ]
 
     def update(self, instance, validated_data):
         account = get_account(instance)
         account_changed = False
+        birthday = validated_data.pop('birthday', None)
+        if birthday is not None:
+            account.birthday = birthday
+            account_changed = True
+        gender = validated_data.pop('gender', None)
+        if gender is not None:
+            account.gender = gender
+            account_changed = True
         location = validated_data.pop('address', None)
         if location is not None:
             account.location = location
