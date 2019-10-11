@@ -25,10 +25,10 @@ from core.utils import generate_hash, get_date_a_month_later, send_email
 from .models import Education, Instructor, PhoneNumber, StudentDetails, get_account, get_user_phone
 from .serializers import (
     AvatarInstructorSerializer, AvatarParentSerializer, AvatarStudentSerializer, GuestEmailSerializer,
-    InstructorAccountInfoSerializer, InstructorBuildJobPreferencesSerializer, InstructorCreateAccountSerializer,
-    InstructorEducationSerializer, InstructorProfileSerializer, ParentCreateAccountSerializer,
+    InstructorBuildJobPreferencesSerializer, InstructorCreateAccountSerializer, InstructorEducationSerializer,
+    InstructorProfileSerializer, ParentCreateAccountSerializer,
     StudentCreateAccountSerializer, StudentDetailsSerializer, TiedStudentSerializer, TiedStudentCreateSerializer,
-    UserEmailSerializer, UserPasswordSerializer,
+    UserEmailSerializer, UserInfoUpdateSerializer, UserPasswordSerializer,
 )
 from .utils import send_welcome_email
 
@@ -43,16 +43,16 @@ def get_user_response(user_cc):
         'id': user.id,
         'email': user.email,
         'role': user.get_role(),
-        'first_name': user.first_name,
-        'middle_name': user_cc.middle_name,
-        'last_name': user.last_name,
+        'firstName': user.first_name,
+        'middleName': user_cc.middle_name,
+        'lastName': user.last_name,
         'birthday': user_cc.birthday,
         'phone': get_user_phone(user_cc),
         'gender': user_cc.gender,
         'location': user_cc.location,
         'lat': user_cc.lat,
         'lng': user_cc.lng,
-        'referral_token': user.referral_token,
+        'referralToken': user.referral_token,
     }
 
     return data
@@ -224,11 +224,10 @@ class UpdateProfileView(views.APIView):
 class UpdateUserInfoView(views.APIView):
 
     def put(self, request):
-        serializer = InstructorAccountInfoSerializer(data=request.data,
-                                                     instance=Instructor.objects.get(user=request.user))
+        serializer = UserInfoUpdateSerializer(instance=request.user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response(status=status.HTTP_200_OK)
+            return Response({"message": "success"}, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
