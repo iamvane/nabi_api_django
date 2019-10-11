@@ -304,8 +304,7 @@ X-CSRFToken: 8LUV70LbEX0JeWQFfd8N3XTzdH105FTjruMxyy5xRm39TfysDiZRDzd2SIkHlQbf
   "middleName": "E.",
   "email": "idekel.santana@gmail.com",
   "gender": "male",
-  "birthday": "1990-10-24",
-  "address": "725 Adams St Boston MA 02122",
+  "location": "725 Adams St Boston MA 02122",
   "lat": "43",
   "long": "27.6"
 }
