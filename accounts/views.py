@@ -65,8 +65,7 @@ def get_instructor_profile(user_cc):
             'bio_description': user_cc.bio_description,
             'music': user_cc.music,
         }
-
-    return data
+        return data
 
 
 class CreateAccount(views.APIView):
