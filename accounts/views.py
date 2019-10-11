@@ -13,7 +13,7 @@ from django.template import loader
 from django.utils import timezone
 
 from rest_framework import status, views
-from rest_framework.generics import ListAPIView
+from rest_framework.generics import ListAPIView, ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import *
 from rest_framework.response import Response
@@ -22,11 +22,11 @@ from core.constants import PHONE_TYPE_MAIN, ROLE_INSTRUCTOR
 from core.models import UserToken
 from core.utils import generate_hash, get_date_a_month_later, send_email
 
-from .models import Education, Instructor, PhoneNumber, StudentDetails, get_account, get_user_phone
+from .models import Education, Employment, Instructor, PhoneNumber, StudentDetails, get_account, get_user_phone
 from .serializers import (
     AvatarInstructorSerializer, AvatarParentSerializer, AvatarStudentSerializer, GuestEmailSerializer,
     InstructorBuildJobPreferencesSerializer, InstructorCreateAccountSerializer, InstructorEducationSerializer,
-    InstructorProfileSerializer, ParentCreateAccountSerializer,
+    InstructorEmploymentSerializer, InstructorProfileSerializer, ParentCreateAccountSerializer,
     StudentCreateAccountSerializer, StudentDetailsSerializer, TiedStudentSerializer, TiedStudentCreateSerializer,
     UserEmailSerializer, UserInfoUpdateSerializer, UserPasswordSerializer,
 )
@@ -416,3 +416,50 @@ class TiedStudentListView(ListAPIView):
             return StudentDetails.objects.filter(user__id=self.request.user.pk)
         else:
             return StudentDetails.objects.none()
+
+
+class InstructorEmploymentView(ListCreateAPIView):
+    serializer_class = InstructorEmploymentSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        return Employment.objects.filter(instructor=self.request.user.instructor)\
+            .order_by('from_year', 'from_month', '-still_work_here', 'to_year', 'to_month')
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data, context={'user': self.request.user}, many=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "success"}, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class InstructorEmploymentItemView(RetrieveUpdateDestroyAPIView):
+    serializer_class = InstructorEmploymentSerializer
+
+    def get_queryset(self):
+        return Employment.objects.filter(instructor=self.request.user.instructor)
+
+    def retrieve(self, request, *args, **kwargs):
+        raise Exception("Not implemented")
+
+    def patch(self, request, *args, **kwargs):
+        raise Exception("Not implemented")
+
+    def put(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data, instance=Employment.objects.get(pk=kwargs['pk']),
+                                           partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "success"}, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            instance = Employment.objects.get(pk=kwargs['pk'])
+        except ObjectDoesNotExist:
+            return Response({"error": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
+        instance.delete()
+        return Response({"message": "success"}, status=status.HTTP_200_OK)
