@@ -353,7 +353,7 @@ class StudentDetailsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StudentDetails
-        fields = ['user', 'instrument', 'skill_level', 'lesson_place', 'lesson_duration', ]
+        fields = ['user', 'instrument', 'skillLevel', 'lessonPlace', 'lessonDuration', ]
 
     def create(self, validated_data):
         validated_data['instrument'] = Instrument.objects.get(name=validated_data['instrument'])
@@ -372,22 +372,22 @@ class TiedStudentCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StudentDetails
-        fields = ['user', 'tied_student', 'name', 'age',
-                  'instrument', 'skill_level', 'lesson_place', 'lesson_duration', ]
+        fields = ['user', 'tiedStudent', 'name', 'age',
+                  'instrument', 'skillLevel', 'lessonPlace', 'lessonDuration', ]
 
     def create(self, validated_data):
         parent = Parent.objects.get(user_id=validated_data['user'])
         tied_student = TiedStudent.objects.create(parent=parent, name=validated_data['name'], age=validated_data['age'])
-        super().create({'user': validated_data['user'], 'tied_student': tied_student,
+        super().create({'user': validated_data['user'], 'tiedStudent': tied_student,
                         'instrument': Instrument.objects.get(name=validated_data['instrument']),
-                        'skill_level': validated_data['skill_level'], 'lesson_place': validated_data['lesson_place'],
-                        'lesson_duration': validated_data['lesson_duration']})
+                        'skillLevel': validated_data['skillLevel'], 'lessonPlace': validated_data['lessonPlace'],
+                        'lessonDuration': validated_data['lessonDuration']})
 
 
 class TiedStudentSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(max_length=250, source='tied_student.name')
+    name = serializers.CharField(max_length=250, source='tiedStudent.name')
     instrument = serializers.CharField(max_length=250, source='instrument.name')
 
     class Meta:
         model = StudentDetails
-        fields = ['name', 'instrument', 'skill_level', 'lesson_place', 'lesson_duration', ]
+        fields = ['name', 'instrument', 'skillLevel', 'lessonPlace', 'lessonDuration', ]
