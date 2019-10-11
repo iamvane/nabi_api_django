@@ -4,7 +4,7 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ['SECRET_KEY']
+SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
@@ -61,22 +61,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'nabi_api_django.wsgi.application'
-
-# Database
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': os.environ.get('DB_NAME', 'nabidb'),
-        'USER': os.environ.get('DB_USER', 'postgres'),
-        'PASSWORD': os.environ.get('DB_PASS', ''),
-        'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': '5432',
-        'OPTIONS': {'sslmode': 'require'},
-        'TEST': {
-            'NAME': 'nabidb_test',
-        },
-    }
-}
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
