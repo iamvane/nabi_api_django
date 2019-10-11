@@ -212,9 +212,9 @@ X-CSRFToken: yfmsbIDJlhHYk4m1kQh8r445PNfrBVPekzW0OtFAWkl0rLn1go7uQ4Wdj4KNughA
 
 {
   "instrument": "flaute",
-  "skill_level": "basic",
-  "lesson_place": "home",
-  "lesson_duration": "90 mins"
+  "skillLevel": "basic",
+  "lessonPlace": "home",
+  "lessonDuration": "90 mins"
 }
 
 ###
@@ -233,17 +233,17 @@ X-CSRFToken: yfmsbIDJlhHYk4m1kQh8r445PNfrBVPekzW0OtFAWkl0rLn1go7uQ4Wdj4KNughA
 		"name": "Joseph",
 		"age": 31,
 		"instrument": "flaute",
-		"skill_level": "basic",
-		"lesson_place": "home",
-		"lesson_duration": "ninety"
+		"skillLevel": "basic",
+		"lessonPlace": "home",
+		"lessonDuration": "90 mins"
 	},
 	{
 		"name": "Lucy",
 		"age": 22,
 		"instrument": "piano",
-		"skill_level": "basic",
-		"lesson_place": "home",
-		"lesson_duration": "ninety"
+		"skillLevel": "basic",
+		"lessonPlace": "home",
+		"lessonDuration": "90 mins"
 	}
 ]
 
@@ -251,6 +251,27 @@ X-CSRFToken: yfmsbIDJlhHYk4m1kQh8r445PNfrBVPekzW0OtFAWkl0rLn1go7uQ4Wdj4KNughA
 
 GET localhost:8000/v1/get-students/
 Cookie: sessionid=9396ti9t47fzumbr3kp67l9l1x96rzsv
+
+###
+
+PUT localhost:8000/v1/student/3/
+Cookie: sessionid=9396ti9t47fzumbr3kp67l9l1x96rzsv
+X-CSRFToken: yfmsbIDJlhHYk4m1kQh8r445PNfrBVPekzW0OtFAWkl0rLn1go7uQ4Wdj4KNughA
+
+{
+  "name": "John",
+  "age": 41,
+  "instrument": "flaute",
+  "skillLevel": "basic",
+  "lessonPlace": "online",
+  "lessonDuration": "60 mins"
+}
+
+###
+
+DELETE localhost:8000/v1/student/3/
+Cookie: sessionid=9396ti9t47fzumbr3kp67l9l1x96rzsv
+X-CSRFToken: yfmsbIDJlhHYk4m1kQh8r445PNfrBVPekzW0OtFAWkl0rLn1go7uQ4Wdj4KNughA
 
 ###
 
