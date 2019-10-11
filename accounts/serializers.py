@@ -360,11 +360,12 @@ def validate_instrument(value):
 
 
 class StudentDetailsSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True, source='pk')
     instrument = serializers.CharField(max_length=250, validators=[validate_instrument, ])   # instrument name
 
     class Meta:
         model = StudentDetails
-        fields = ['user', 'instrument', 'skillLevel', 'lessonPlace', 'lessonDuration', ]
+        fields = ['id', 'user', 'instrument', 'skillLevel', 'lessonPlace', 'lessonDuration', ]
 
     def create(self, validated_data):
         validated_data['instrument'] = Instrument.objects.get(name=validated_data['instrument'])
@@ -373,6 +374,11 @@ class StudentDetailsSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         validated_data['instrument'] = Instrument.objects.get(name=validated_data['instrument'])
         return instance.update(**validated_data)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data.pop('user')
+        return data
 
 
 class TiedStudentCreateSerializer(serializers.ModelSerializer):
@@ -396,12 +402,33 @@ class TiedStudentCreateSerializer(serializers.ModelSerializer):
 
 
 class TiedStudentSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(max_length=250, source='tiedStudent.name')
+    id = serializers.IntegerField(source='pk', read_only=True)
+    name = serializers.CharField(max_length=250, source='tied_student.name')
+    age = serializers.IntegerField(source='tied_student.age')
     instrument = serializers.CharField(max_length=250, source='instrument.name')
 
     class Meta:
         model = StudentDetails
-        fields = ['name', 'instrument', 'skillLevel', 'lessonPlace', 'lessonDuration', ]
+        fields = ['id', 'name', 'age', 'instrument', 'skillLevel', 'lessonPlace', 'lessonDuration', ]
+
+    def validate_instrument(self, value):
+        try:
+            Instrument.objects.get(name=value)
+        except ObjectDoesNotExist:
+            raise serializers.ValidationError('Invalid instrument value')
+        return value
+
+    def update(self, instance, validated_data):
+        if validated_data.get('instrument') is not None:
+            validated_data['instrument'] = Instrument.objects.get(name=validated_data['instrument']['name'])
+        if validated_data.get('tied_student') is not None:
+            if validated_data['tied_student'].get('age') is not None:
+                instance.tied_student.age = validated_data['tied_student']['age']
+            if validated_data['tied_student'].get('name') is not None:
+                instance.tied_student.name = validated_data['tied_student']['name']
+            validated_data.pop('tied_student')
+            instance.tied_student.save()
+        return super().update(instance, validated_data)
 
 
 class InstructorEmploymentSerializer(serializers.ModelSerializer):
