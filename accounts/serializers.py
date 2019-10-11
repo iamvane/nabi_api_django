@@ -59,27 +59,22 @@ class UserInfoUpdateSerializer(serializers.ModelSerializer):
     lastName = serializers.CharField(max_length=150, source='last_name')
     middleName = serializers.CharField(max_length=50)
     gender = serializers.ChoiceField(choices=GENDER_CHOICES)
-    birthday = serializers.DateField()
-    address = serializers.CharField(max_length=150)
+    location = serializers.CharField(max_length=150)
     lat = serializers.CharField(max_length=150)
     lng = serializers.CharField(max_length=150)
 
     class Meta:
         model = User
-        fields = ['firstName', 'lastName', 'middleName', 'email', 'gender', 'birthday', 'address', 'lat', 'lng', ]
+        fields = ['firstName', 'lastName', 'middleName', 'email', 'gender', 'location', 'lat', 'lng', ]
 
     def update(self, instance, validated_data):
         account = get_account(instance)
         account_changed = False
-        birthday = validated_data.pop('birthday', None)
-        if birthday is not None:
-            account.birthday = birthday
-            account_changed = True
         gender = validated_data.pop('gender', None)
         if gender is not None:
             account.gender = gender
             account_changed = True
-        location = validated_data.pop('address', None)
+        location = validated_data.pop('location', None)
         if location is not None:
             account.location = location
             account_changed = True
@@ -130,31 +125,6 @@ class InstructorCreateAccountSerializer(BaseCreateAccountSerializer):
     def create(self, validated_data):
         user = super().create(validated_data)
         return Instructor.objects.create(user=user, **init_kwargs(Instructor(), validated_data))
-
-
-class InstructorAccountInfoSerializer(serializers.Serializer):
-    first_name = serializers.CharField(required=True, )
-    last_name = serializers.CharField(required=True, )
-    middle_name = serializers.CharField(required=False, allow_blank=True)
-    gender = serializers.ChoiceField(required=True, choices=GENDER_CHOICES)
-    location = serializers.CharField(required=True, )
-    lat = serializers.CharField(max_length=50, required=True)
-    lng = serializers.CharField(max_length=50, required=True)
-
-    def update(self, instance, validated_data):
-        user = instance.user
-        user.middle_name = validated_data['middle_name']
-        update_model(user, **validated_data)
-        user.save()
-        update_model(instance, **validated_data)
-        instance.save()
-        return instance
-
-    def has_number(self, number):
-        return PhoneNumber.objects.filter(user=self, number=number).exists()
-
-    def create(self, validated_data):
-        raise Exception("Create is not supposed to be called")
 
 
 class InstructorEducationSerializer(serializers.ModelSerializer):
