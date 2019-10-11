@@ -492,17 +492,6 @@ class StudentDetailView(views.APIView):
                              "lesson_duration": None}, status=status.HTTP_200_OK)
 
 
-class StudentDetailDeleteView(views.APIView):
-
-    def delete(self, request, pk):
-        try:
-            instance = StudentDetails.objects.get(pk=pk)
-        except ObjectDoesNotExist:
-            return Response({"error": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
-        instance.delete()
-        return Response({"message": "success"}, status=status.HTTP_200_OK)
-
-
 class TiedStudentCreateView(views.APIView):
 
     def post(self, request):

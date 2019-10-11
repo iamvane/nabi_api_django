@@ -403,8 +403,8 @@ class TiedStudentCreateSerializer(serializers.ModelSerializer):
 
 class TiedStudentSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(source='pk', read_only=True)
-    name = serializers.CharField(max_length=250, source='tied_student.name')
-    age = serializers.IntegerField(source='tied_student.age')
+    name = serializers.CharField(max_length=250, source='tiedStudent.name')
+    age = serializers.IntegerField(source='tiedStudent.age')
     instrument = serializers.CharField(max_length=250, source='instrument.name')
 
     class Meta:
@@ -421,13 +421,13 @@ class TiedStudentSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         if validated_data.get('instrument') is not None:
             validated_data['instrument'] = Instrument.objects.get(name=validated_data['instrument']['name'])
-        if validated_data.get('tied_student') is not None:
-            if validated_data['tied_student'].get('age') is not None:
-                instance.tied_student.age = validated_data['tied_student']['age']
-            if validated_data['tied_student'].get('name') is not None:
-                instance.tied_student.name = validated_data['tied_student']['name']
-            validated_data.pop('tied_student')
-            instance.tied_student.save()
+        if validated_data.get('tiedStudent') is not None:
+            if validated_data['tiedStudent'].get('age') is not None:
+                instance.tiedStudent.age = validated_data['tiedStudent']['age']
+            if validated_data['tiedStudent'].get('name') is not None:
+                instance.tiedStudent.name = validated_data['tiedStudent']['name']
+            validated_data.pop('tiedStudent')
+            instance.tiedStudent.save()
         return super().update(instance, validated_data)
 
 
