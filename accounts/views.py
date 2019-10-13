@@ -418,47 +418,46 @@ class TiedStudentListView(ListAPIView):
             return StudentDetails.objects.none()
 
 
-class InstructorEmploymentView(ListCreateAPIView):
-    serializer_class = InstructorEmploymentSerializer
-    pagination_class = None
+class InstructorEmploymentView(views.APIView):
 
-    def get_queryset(self):
-        return Employment.objects.filter(instructor=self.request.user.instructor)\
-            .order_by('from_year', 'from_month', '-still_work_here', 'to_year', 'to_month')
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data, context={'user': self.request.user}, many=True)
+    def post(self, request):
+        data = request.data.copy()
+        data['instructor'] = request.user.instructor.pk
+        serializer = InstructorEmploymentSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "success"}, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-class InstructorEmploymentItemView(RetrieveUpdateDestroyAPIView):
-    serializer_class = InstructorEmploymentSerializer
-
-    def get_queryset(self):
-        return Employment.objects.filter(instructor=self.request.user.instructor)
-
-    def retrieve(self, request, *args, **kwargs):
-        raise Exception("Not implemented")
-
-    def patch(self, request, *args, **kwargs):
-        raise Exception("Not implemented")
-
-    def put(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data, instance=Employment.objects.get(pk=kwargs['pk']),
-                                           partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"message": "success"}, status=status.HTTP_200_OK)
+    def get(self, request):
+        if hasattr(request.user.instructor, 'employment'):
+            serializer = InstructorEmploymentSerializer(request.user.instructor.employment, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"employer": None, "job_title": None, "job_location": None, "from_month": None,
+                        "from_year": None, "to_month": None, "to_year": None, still_work_here: None}, 
+                        status=status.HTTP_200_OK)
 
-    def delete(self, request, *args, **kwargs):
+class InstructorEmploymentItemView(views.APIView):
+
+    def put(self, request, pk):
+        data = request.data.copy()
+        data['instructor'] = request.user.instructor.pk
         try:
-            instance = Employment.objects.get(pk=kwargs['pk'])
+            instance = Employment.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            return Response({"error": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = InstructorEmploymentSerializer(instance=instance, data=data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "success"}, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        try:
+            instance = Employment.objects.get(pk=pk)
         except ObjectDoesNotExist:
             return Response({"error": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
         instance.delete()
