@@ -316,26 +316,14 @@ Content-Type: application/json
 Cookie: sessionid=65vw4w0a116tfnzcjdcb4ka7dhhpqnu4;csrftoken=zDbcXUdR4RCvgb7XwRP64VgW69EUc0OJSm3OosxdhgFVVuPKUWGaExApLaXBsb6F
 X-CSRFToken: 8LUV70LbEX0JeWQFfd8N3XTzdH105FTjruMxyy5xRm39TfysDiZRDzd2SIkHlQbf
 
-[
-	{
-		"jobTitle": "Consultor",
-		"employer": "Advanced Company Co.",
-		"jobLocation": "Houston",
-		"fromMonth": "august",
-		"fromYear": 2017,
-		"stillWorkHere": true
-	},
-	{
-		"jobTitle": "Staff Assistant",
-		"employer": "Enterprise Ltd",
-		"jobLocation": "Michigan",
-		"fromMonth": "september",
-		"fromYear": 2014,
-		"toMonth": "april",
-		"toYear": 2017,
-		"stillWorkHere": false
-	}
-]
+{
+  "jobTitle": "Consultor",
+  "employer": "Advanced Company Co.",
+  "jobLocation": "Houston",
+  "fromMonth": "august",
+  "fromYear": 2017,
+  "stillWorkHere": true
+}
 
 ###
 
@@ -345,7 +333,7 @@ Cookie: sessionid=65vw4w0a116tfnzcjdcb4ka7dhhpqnu4;csrftoken=zDbcXUdR4RCvgb7XwRP
 
 ###
 
-PUT localhost:8000/v1/employment/
+PUT localhost:8000/v1/employment/3/
 Content-Type: application/json
 Cookie: sessionid=65vw4w0a116tfnzcjdcb4ka7dhhpqnu4;csrftoken=zDbcXUdR4RCvgb7XwRP64VgW69EUc0OJSm3OosxdhgFVVuPKUWGaExApLaXBsb6F
 X-CSRFToken: 8LUV70LbEX0JeWQFfd8N3XTzdH105FTjruMxyy5xRm39TfysDiZRDzd2SIkHlQbf
