@@ -67,7 +67,7 @@ DATABASES = {
         'USER': os.environ.get('DB_USER', 'postgres'),
         'PASSWORD': os.environ.get('DB_PASS', ''),
         'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': '5432',
+        'PORT': os.environ.get('PORT', '5432'),
         'OPTIONS': {'sslmode': 'require'},
         'TEST': {
             'NAME': 'nabidb_test',
