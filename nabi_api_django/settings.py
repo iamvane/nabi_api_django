@@ -60,6 +60,21 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'nabi_api_django.wsgi.application'
 
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': os.environ.get('DB_NAME', 'nabidb'),
+        'USER': os.environ.get('DB_USER', 'postgres'),
+        'PASSWORD': os.environ.get('DB_PASS', ''),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
+        'PORT': '5432',
+        'OPTIONS': {'sslmode': 'require'},
+        'TEST': {
+            'NAME': 'nabidb_test',
+        },
+    }
+}
+
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {
