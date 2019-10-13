@@ -8,8 +8,6 @@ SECRET_KEY = 'j1!%t%u-wbj2d6yh)%8fc8x9k6z9!+t%grk&_7kq=k5h#kop-#'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['nabiapi.herokuapp.com']
-
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -31,8 +29,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
