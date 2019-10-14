@@ -7,7 +7,7 @@ from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.mail import EmailMultiAlternatives
 from django.db import transaction, IntegrityError
-from django.db.models import ObjectDoesNotExist
+from django.db.models import ObjectDoesNotExist, Prefetch
 from django.middleware.csrf import get_token
 from django.template import loader
 from django.utils import timezone
@@ -24,7 +24,7 @@ from core.utils import generate_hash, get_date_a_month_later, send_email
 
 from lesson.models import Instrument
 
-from .models import Education, Employment, Instructor, InstructorInstruments, PhoneNumber, StudentDetails, get_account, get_user_phone
+from .models import Education, Employment, Instructor, PhoneNumber, StudentDetails, get_account, get_user_phone
 
 from .serializers import (
     AvatarInstructorSerializer, AvatarParentSerializer, AvatarStudentSerializer, GuestEmailSerializer,
@@ -40,45 +40,23 @@ User = get_user_model()
 logger = getLogger('api_errors')
 
 
-def get_user_response(user_cc):
-    user = user_cc.user
-    role = user.get_role()
+def get_user_response(account):
+    user = account.user
     data = {
         'id': user.id,
         'email': user.email,
-        'role': role,
+        'role': user.get_role(),
         'firstName': user.first_name,
-        'middleName': user_cc.middle_name,
+        'middleName': account.middle_name,
         'lastName': user.last_name,
-        'birthday': user_cc.birthday,
-        'phone': get_user_phone(user_cc),
-        'gender': user_cc.gender,
-        'location': user_cc.location,
-        'lat': user_cc.lat,
-        'lng': user_cc.lng,
+        'birthday': account.birthday,
+        'phone': get_user_phone(account),
+        'gender': account.gender,
+        'location': account.location,
+        'lat': account.lat,
+        'lng': account.lng,
         'referralToken': user.referral_token,
     }
-
-    if data['role'] == ROLE_INSTRUCTOR:
-        instructor = Instructor.objects.get(user_id=data['id'])
-        instructor_id = instructor.id
-        data['bioTitle'] = user_cc.bio_title
-        data['bioDescription'] = user_cc.bio_description
-        data['music'] = user_cc.music
-        # data['lessonSize'] =
-        data['instruments'] = [{'name': item.instrument.name, 'skillLevel': item.skill_level}
-                               for item in InstructorInstruments.objects.filter(instructor_id=instructor_id)]
-        # age_group =
-        # lesson_rate =
-        # place_for_lessons =
-        # availability =
-        # additional_qualifications =
-        # studio_address =
-        # travel_distance =
-        # languages =
-        # emplyment
-        # education
-
     return data
 
 
@@ -210,13 +188,85 @@ class CsrfTokenView(views.APIView):
 class WhoAmIView(views.APIView):
 
     def get(self, request):
+        if not request.user.is_authenticated:
+            return {'id': None, 'email': None, 'role': None, 'firstName': None, 'middleName': None, 'lastName': None,
+                    'birthday': None, 'phone': None, 'gender': None, 'location': None, 'lat': None, 'lng': None,
+                    'referralToken': None,
+                    }
+
+        account = get_account(request.user)
         data = {
-            'id': None,
-            'email': None,
-            'referral_token': None,
+            'id': request.user.id,
+            'email': request.user.email,
+            'role': request.user.get_role(),
+            'firstName': request.user.first_name,
+            'middleName': account.middle_name,
+            'lastName': request.user.last_name,
+            'birthday': account.birthday,
+            'phone': get_user_phone(account),
+            'gender': account.gender,
+            'location': account.location,
+            'lat': account.lat,
+            'lng': account.lng,
+            'referralToken': request.user.referral_token,
         }
-        if request.user.is_authenticated:
-            data = get_user_response(get_account(request.user))
+
+        if data['role'] == ROLE_INSTRUCTOR:
+            instructor = Instructor.objects.filter(user_id=data['id']).prefetch_related(
+                Prefetch('instructorlessonsize_set', to_attr='lessonsizes'),
+                Prefetch('instructorinstruments_set'),
+                Prefetch('instructoragegroup_set', to_attr='agegroups'),
+                Prefetch('instructorlessonrate_set', to_attr='lessonrates'),
+                Prefetch('instructorplaceforlessons_set', to_attr='placeforlessons'),
+                Prefetch('availability'),
+                Prefetch('instructoradditionalqualifications_set', to_attr='additionalqualifications'),
+                Prefetch('employments',),
+                Prefetch('educations'),
+            ).first()
+            data['bioTitle'] = account.bio_title
+            data['bioDescription'] = account.bio_description
+            data['music'] = account.music
+            data['lessonSizes'] = [{'oneStudent': item.one_student, 'smallGroups': item.small_groups,
+                                   'largeGroups': item.large_groups} for item in instructor.lessonsizes]
+            data['instruments'] = [{'name': item.instrument.name, 'skillLevel': item.skill_level}
+                                   for item in instructor.instructorinstruments_set.all()]
+            data['ageGroup'] = [{'children': item.children, 'teens': item.teens, 'adults': item.adults,
+                                 'seniors': item.seniors} for item in instructor.agegroups]
+            data['lessonRate'] = [{'mins30': item.mins30, 'mins45': item.mins45, 'mins60': item.mins60,
+                                   'mins90': item.mins90} for item in instructor.lessonrates]
+            data['placeForLessons'] = [{'home': item.home, 'studio': item.studio, 'online': item.online}
+                                       for item in instructor.placeforlessons]
+            data['availability'] = [{'mon8to10': item.mon8to10, 'mon10to12': item.mon10to12, 'mon12to3': item.mon12to3,
+                                     'mon3to6': item.mon3to6, 'mon6to9': item.mon6to9, 'tue8to10': item.tue8to10,
+                                     'tue10to12': item.tue10to12, 'tue12to3': item.tue12to3, 'tue3to6': item.tue3to6,
+                                     'tue6to9': item.tue6to9, 'wed8to10': item.wed8to10, 'wed10to12': item.wed10to12,
+                                     'wed12to3': item.wed12to3, 'wed3to6': item.wed3to6, 'wed6to9': item.wed6to9,
+                                     'thu8to10': item.thu8to10, 'thu10to12': item.thu10to12, 'thu12to3': item.thu12to3,
+                                     'thu3to6': item.thu3to6, 'thu6to9': item.thu6to9, 'fri8to10': item.fri8to10,
+                                     'fri10to12': item.fri10to12, 'fri12to3': item.fri12to3, 'fri3to6': item.fri3to6,
+                                     'fri6to9': item.fri6to9, 'sat8to10': item.sat8to10, 'sat10to12': item.sat10to12,
+                                     'sat12to3': item.sat12to3, 'sat3to6': item.sat3to6, 'sat6to9': item.sat6to9,
+                                     'sun8to10': item.sun8to10, 'sun10to12': item.sun10to12, 'sun12to3': item.sun12to3,
+                                     'sun3to6': item.sun3to6, 'sun6to9': item.sun6to9}
+                                    for item in instructor.availability.all()]
+            data['additionalQualifications'] = [{'certifiedTeacher': item.certified_teacher,
+                                                 'musicTherapy': item.music_therapy,
+                                                 'musicProduction': item.music_production,
+                                                 'earTraining': item.ear_training,
+                                                 'conducting': item.conducting,
+                                                 'virtuosoRecognition': item.virtuoso_recognition,
+                                                 'performance': item.performance,
+                                                 'musicTheory': item.music_theory,
+                                                 'youngChildrenExperience': item.young_children_experience,
+                                                 'repertoireSelection': item.repertoire_selection}
+                                                for item in instructor.additionalqualifications]
+            data['studioAddress'] = instructor.studio_address
+            data['travelDistance'] = instructor.travel_distance
+            data['languages'] = instructor.languages
+            data['employments'] = [{'employer': item.employer, 'jobTitle': item.job_title}
+                                   for item in instructor.employments.all()]
+            data['educations'] = [{'degreeType': item.degree_type, 'fieldOfStudy': item.field_of_study}
+                                  for item in instructor.educations.all()]
 
         return Response(data)
 
