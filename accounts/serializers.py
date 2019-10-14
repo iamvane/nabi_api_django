@@ -4,13 +4,15 @@ from django.db.models import ObjectDoesNotExist, Q
 from rest_framework import serializers, validators
 
 from core.constants import (
-    DEGREE_TYPE_CHOICES, GENDER_CHOICES, ROLE_INSTRUCTOR, ROLE_PARENT, ROLE_STUDENT, SKILL_LEVEL_CHOICES,
+    DEGREE_TYPE_CHOICES, GENDER_CHOICES, MONTH_CHOICES,
+    ROLE_INSTRUCTOR, ROLE_PARENT, ROLE_STUDENT, SKILL_LEVEL_CHOICES,
 )
 from core.utils import update_model
 from lesson.models import Instrument
 
 from .models import (
-    Availability, Education, Instructor, InstructorAdditionalQualifications, InstructorAgeGroup, InstructorInstruments,
+    Availability, Education, Employment, Instructor, InstructorAdditionalQualifications,
+    InstructorAgeGroup, InstructorInstruments,
     InstructorPlaceForLessons, InstructorLessonRate, InstructorLessonSize, Parent, PhoneNumber,
     Student, StudentDetails, TiedStudent, get_account,
 )
@@ -407,3 +409,29 @@ class TiedStudentSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentDetails
         fields = ['name', 'instrument', 'skillLevel', 'lessonPlace', 'lessonDuration', ]
+
+
+class InstructorEmploymentSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True, source='pk')
+    jobTitle = serializers.CharField(max_length=100, source='job_title')
+    jobLocation = serializers.CharField(max_length=100, source='job_location')
+    fromMonth = serializers.ChoiceField(choices=MONTH_CHOICES, source='from_month')
+    fromYear = serializers.IntegerField(source='from_year')
+    toMonth = serializers.ChoiceField(MONTH_CHOICES, required=False, default=None, source='to_month')
+    toYear = serializers.IntegerField(required=False, default=None, source='to_year')
+    stillWorkHere = serializers.BooleanField(required=False, default=False, source='still_work_here')
+
+    class Meta:
+        model = Employment
+        fields = ['id', 'instructor', 'employer', 'jobTitle', 'jobLocation', 'fromMonth', 'fromYear',
+                  'toMonth', 'toYear', 'stillWorkHere', ]
+
+    def to_representation(self, instance):
+        dict_data = super().to_representation(instance)
+        dict_data.pop('instructor')
+        return dict_data
+
+    def to_internal_value(self, data):
+        if self.context.get('user'):
+            data['instructor'] = self.context['user'].instructor.pk
+        return super().to_internal_value(data)
