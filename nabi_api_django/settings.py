@@ -95,9 +95,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-HOSTNAME = "www.nabimusic.com"
-HOSTNAME_PROTOCOL = "http://" + HOSTNAME
-
 EMAIL_USE_TLS = True
 EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.sendgrid.net')
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'apikey')
