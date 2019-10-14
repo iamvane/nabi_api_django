@@ -17,7 +17,11 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import *
 from rest_framework.response import Response
 
+<<<<<<< HEAD
 from core.constants import PHONE_TYPE_MAIN, ROLE_INSTRUCTOR, ROLE_STUDENT
+=======
+from core.constants import PHONE_TYPE_MAIN, ROLE_INSTRUCTOR, HOSTNAME_PROTOCOL
+>>>>>>> b09c4a8... changed hostname place
 from core.models import UserToken
 from core.utils import generate_hash
 
@@ -135,7 +139,7 @@ class ResetPasswordView(views.APIView):
                     pass
                 else:
                     repeated_token = False
-            target_url = '{}/forgot-password?token={}'.format(settings.HOSTNAME_PROTOCOL, token)
+            target_url = '{}/forgot-password?token={}'.format(HOSTNAME_PROTOCOL, token)
             context = {'url_reset_pass': target_url}
             text_content = loader.render_to_string('reset_password_plain.html', context)
             html_content = loader.render_to_string('reset_password.html', context)

@@ -4,8 +4,7 @@ from django.core.mail import EmailMultiAlternatives
 from django.utils import timezone
 
 from core.utils import get_date_a_month_later, send_email
-from core.constants import ROLE_INSTRUCTOR
-
+from core.constants import ROLE_INSTRUCTOR, HOSTNAME_PROTOCOL
 
 def init_kwargs(model, arg_dict):
     return {
@@ -20,7 +19,7 @@ def send_welcome_email(user_cc):
     role = user.get_role()
     referral_token = user.referral_token
     to_email = user.email
-    referral_link = '{}/registration?token={}'.format(settings.HOSTNAME_PROTOCOL,
+    referral_link = '{}/registration?token={}'.format(HOSTNAME_PROTOCOL,
         referral_token)
 
     if role == 'instructor':
