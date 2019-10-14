@@ -492,7 +492,7 @@ class StudentDetailView(views.APIView):
                              "lesson_duration": None}, status=status.HTTP_200_OK)
 
 
-class TiedStudentCreateView(views.APIView):
+class TiedStudentView(views.APIView):
 
     def post(self, request):
         if not isinstance(request.data, list):
@@ -509,16 +509,9 @@ class TiedStudentCreateView(views.APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-class TiedStudentListView(ListAPIView):
-    serializer_class = TiedStudentSerializer
-    pagination_class = None
-
-    def get_queryset(self):
-        if hasattr(self.request.user, 'parent'):
-            return StudentDetails.objects.filter(user__id=self.request.user.pk)
-        else:
-            return StudentDetails.objects.none()
+    def get(self, request):
+        serializer = TiedStudentSerializer(StudentDetails.objects.filter(user__id=request.user.pk), many=True)
+        return Response(serializer.data)
 
 
 class InstructorEmploymentView(views.APIView):
