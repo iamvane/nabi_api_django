@@ -22,7 +22,10 @@ from core.constants import PHONE_TYPE_MAIN, ROLE_INSTRUCTOR
 from core.models import UserToken
 from core.utils import generate_hash, get_date_a_month_later, send_email
 
+from lesson.models import Instrument
+
 from .models import Education, Employment, Instructor, PhoneNumber, StudentDetails, get_account, get_user_phone
+
 from .serializers import (
     AvatarInstructorSerializer, AvatarParentSerializer, AvatarStudentSerializer, GuestEmailSerializer,
     InstructorBuildJobPreferencesSerializer, InstructorCreateAccountSerializer, InstructorEducationSerializer,
@@ -39,10 +42,11 @@ logger = getLogger('api_errors')
 
 def get_user_response(user_cc):
     user = user_cc.user
+    role = user.get_role()
     data = {
         'id': user.id,
         'email': user.email,
-        'role': user.get_role(),
+        'role': role,
         'firstName': user.first_name,
         'middleName': user_cc.middle_name,
         'lastName': user.last_name,
@@ -54,6 +58,25 @@ def get_user_response(user_cc):
         'lng': user_cc.lng,
         'referralToken': user.referral_token,
     }
+
+    if data['role'] == ROLE_INSTRUCTOR:
+        instructor = Instructor.objects.get(user_id=data['id'])
+        instructor_id = instructor.id
+        data['bioTitle'] = user_cc.bio_title
+        data['bioDescription'] = user_cc.bio_description
+        data['music'] = user_cc.music
+        # data['lessonSize'] =
+        # data['instruments'] =
+        # age_group =
+        # lesson_rate =
+        # place_for_lessons =
+        # availability =
+        # additional_qualifications =
+        # studio_address =
+        # travel_distance =
+        # languages =
+        # emplyment
+        # education
 
     return data
 
