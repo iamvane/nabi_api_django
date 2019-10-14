@@ -226,40 +226,70 @@ class WhoAmIView(views.APIView):
             data['bioTitle'] = account.bio_title
             data['bioDescription'] = account.bio_description
             data['music'] = account.music
-            data['lessonSizes'] = [{'oneStudent': item.one_student, 'smallGroups': item.small_groups,
-                                   'largeGroups': item.large_groups} for item in instructor.lessonsizes]
+            data['lessonSize'] = {'oneStudent': instructor.lessonsizes[0].one_student,
+                                   'smallGroups': instructor.lessonsizes[0].small_groups,
+                                   'largeGroups': instructor.lessonsizes[0].large_groups} \
+                if len(instructor.lessonsizes) else {}
             data['instruments'] = [{'name': item.instrument.name, 'skillLevel': item.skill_level}
                                    for item in instructor.instructorinstruments_set.all()]
-            data['ageGroup'] = [{'children': item.children, 'teens': item.teens, 'adults': item.adults,
-                                 'seniors': item.seniors} for item in instructor.agegroups]
-            data['lessonRate'] = [{'mins30': item.mins30, 'mins45': item.mins45, 'mins60': item.mins60,
-                                   'mins90': item.mins90} for item in instructor.lessonrates]
-            data['placeForLessons'] = [{'home': item.home, 'studio': item.studio, 'online': item.online}
-                                       for item in instructor.placeforlessons]
-            data['availability'] = [{'mon8to10': item.mon8to10, 'mon10to12': item.mon10to12, 'mon12to3': item.mon12to3,
-                                     'mon3to6': item.mon3to6, 'mon6to9': item.mon6to9, 'tue8to10': item.tue8to10,
-                                     'tue10to12': item.tue10to12, 'tue12to3': item.tue12to3, 'tue3to6': item.tue3to6,
-                                     'tue6to9': item.tue6to9, 'wed8to10': item.wed8to10, 'wed10to12': item.wed10to12,
-                                     'wed12to3': item.wed12to3, 'wed3to6': item.wed3to6, 'wed6to9': item.wed6to9,
-                                     'thu8to10': item.thu8to10, 'thu10to12': item.thu10to12, 'thu12to3': item.thu12to3,
-                                     'thu3to6': item.thu3to6, 'thu6to9': item.thu6to9, 'fri8to10': item.fri8to10,
-                                     'fri10to12': item.fri10to12, 'fri12to3': item.fri12to3, 'fri3to6': item.fri3to6,
-                                     'fri6to9': item.fri6to9, 'sat8to10': item.sat8to10, 'sat10to12': item.sat10to12,
-                                     'sat12to3': item.sat12to3, 'sat3to6': item.sat3to6, 'sat6to9': item.sat6to9,
-                                     'sun8to10': item.sun8to10, 'sun10to12': item.sun10to12, 'sun12to3': item.sun12to3,
-                                     'sun3to6': item.sun3to6, 'sun6to9': item.sun6to9}
-                                    for item in instructor.availability.all()]
-            data['additionalQualifications'] = [{'certifiedTeacher': item.certified_teacher,
-                                                 'musicTherapy': item.music_therapy,
-                                                 'musicProduction': item.music_production,
-                                                 'earTraining': item.ear_training,
-                                                 'conducting': item.conducting,
-                                                 'virtuosoRecognition': item.virtuoso_recognition,
-                                                 'performance': item.performance,
-                                                 'musicTheory': item.music_theory,
-                                                 'youngChildrenExperience': item.young_children_experience,
-                                                 'repertoireSelection': item.repertoire_selection}
-                                                for item in instructor.additionalqualifications]
+            data['ageGroup'] = {'children': instructor.agegroups[0].children, 'teens': instructor.agegroups[0].teens,
+                                'adults': instructor.agegroups[0].adults, 'seniors': instructor.agegroups[0].seniors} \
+                if len(instructor.agegroups) else {}
+            data['lessonRate'] = {'mins30': instructor.lessonrates[0].mins30,
+                                  'mins45': instructor.lessonrates[0].mins45,
+                                  'mins60': instructor.lessonrates[0].mins60,
+                                  'mins90': instructor.lessonrates[0].mins90} if len(instructor.lessonrates) else {}
+            data['placeForLessons'] = {'home': instructor.placeforlessons[0].home,
+                                       'studio': instructor.placeforlessons[0].studio,
+                                       'online': instructor.placeforlessons[0].online} \
+                if len(instructor.placeforlessons) else {}
+            data['availability'] = {'mon8to10': instructor.availability.all()[0].mon8to10,
+                                    'mon10to12': instructor.availability.all()[0].mon10to12,
+                                    'mon12to3': instructor.availability.all()[0].mon12to3,
+                                    'mon3to6': instructor.availability.all()[0].mon3to6,
+                                    'mon6to9': instructor.availability.all()[0].mon6to9,
+                                    'tue8to10': instructor.availability.all()[0].tue8to10,
+                                    'tue10to12': instructor.availability.all()[0].tue10to12,
+                                    'tue12to3': instructor.availability.all()[0].tue12to3,
+                                    'tue3to6': instructor.availability.all()[0].tue3to6,
+                                    'tue6to9': instructor.availability.all()[0].tue6to9,
+                                    'wed8to10': instructor.availability.all()[0].wed8to10,
+                                    'wed10to12': instructor.availability.all()[0].wed10to12,
+                                    'wed12to3': instructor.availability.all()[0].wed12to3,
+                                    'wed3to6': instructor.availability.all()[0].wed3to6,
+                                    'wed6to9': instructor.availability.all()[0].wed6to9,
+                                    'thu8to10': instructor.availability.all()[0].thu8to10,
+                                    'thu10to12': instructor.availability.all()[0].thu10to12,
+                                    'thu12to3': instructor.availability.all()[0].thu12to3,
+                                    'thu3to6': instructor.availability.all()[0].thu3to6,
+                                    'thu6to9': instructor.availability.all()[0].thu6to9,
+                                    'fri8to10': instructor.availability.all()[0].fri8to10,
+                                    'fri10to12': instructor.availability.all()[0].fri10to12,
+                                    'fri12to3': instructor.availability.all()[0].fri12to3,
+                                    'fri3to6': instructor.availability.all()[0].fri3to6,
+                                    'fri6to9': instructor.availability.all()[0].fri6to9,
+                                    'sat8to10': instructor.availability.all()[0].sat8to10,
+                                    'sat10to12': instructor.availability.all()[0].sat10to12,
+                                    'sat12to3': instructor.availability.all()[0].sat12to3,
+                                    'sat3to6': instructor.availability.all()[0].sat3to6,
+                                    'sat6to9': instructor.availability.all()[0].sat6to9,
+                                    'sun8to10': instructor.availability.all()[0].sun8to10,
+                                    'sun10to12': instructor.availability.all()[0].sun10to12,
+                                    'sun12to3': instructor.availability.all()[0].sun12to3,
+                                    'sun3to6': instructor.availability.all()[0].sun3to6,
+                                    'sun6to9': instructor.availability.all()[0].sun6to9} \
+                if instructor.availability.count() else {}
+            data['additionalQualifications'] = {'certifiedTeacher': instructor.additionalqualifications[0].certified_teacher,
+                                                'musicTherapy': instructor.additionalqualifications[0].music_therapy,
+                                                'musicProduction': instructor.additionalqualifications[0].music_production,
+                                                'earTraining': instructor.additionalqualifications[0].ear_training,
+                                                'conducting': instructor.additionalqualifications[0].conducting,
+                                                'virtuosoRecognition': instructor.additionalqualifications[0].virtuoso_recognition,
+                                                'performance': instructor.additionalqualifications[0].performance,
+                                                'musicTheory': instructor.additionalqualifications[0].music_theory,
+                                                'youngChildrenExperience': instructor.additionalqualifications[0].young_children_experience,
+                                                'repertoireSelection': instructor.additionalqualifications[0].repertoire_selection} \
+                if len(instructor.additionalqualifications) else {}
             data['studioAddress'] = instructor.studio_address
             data['travelDistance'] = instructor.travel_distance
             data['languages'] = instructor.languages
