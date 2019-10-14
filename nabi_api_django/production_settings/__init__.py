@@ -1,4 +1,4 @@
-from nabi_api_django import *
+from nabi_api_django.settings import *
 
 DEBUG = False
 TEMPLATE_DEBUG = False
