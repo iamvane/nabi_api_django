@@ -24,7 +24,7 @@ from core.utils import generate_hash, get_date_a_month_later, send_email
 
 from lesson.models import Instrument
 
-from .models import Education, Employment, Instructor, PhoneNumber, StudentDetails, get_account, get_user_phone
+from .models import Education, Employment, Instructor, InstructorInstruments, PhoneNumber, StudentDetails, get_account, get_user_phone
 
 from .serializers import (
     AvatarInstructorSerializer, AvatarParentSerializer, AvatarStudentSerializer, GuestEmailSerializer,
@@ -66,7 +66,8 @@ def get_user_response(user_cc):
         data['bioDescription'] = user_cc.bio_description
         data['music'] = user_cc.music
         # data['lessonSize'] =
-        # data['instruments'] =
+        data['instruments'] = [{'name': item.instrument.name, 'skillLevel': item.skill_level}
+                               for item in InstructorInstruments.objects.filter(instructor_id=instructor_id)]
         # age_group =
         # lesson_rate =
         # place_for_lessons =
