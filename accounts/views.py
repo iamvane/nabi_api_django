@@ -7,7 +7,7 @@ from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.mail import EmailMultiAlternatives
 from django.db import transaction, IntegrityError
-from django.db.models import ObjectDoesNotExist
+from django.db.models import ObjectDoesNotExist, Prefetch
 from django.middleware.csrf import get_token
 from django.template import loader
 from django.utils import timezone
@@ -22,7 +22,10 @@ from core.constants import PHONE_TYPE_MAIN, ROLE_INSTRUCTOR
 from core.models import UserToken
 from core.utils import generate_hash, get_date_a_month_later, send_email
 
+from lesson.models import Instrument
+
 from .models import Education, Employment, Instructor, PhoneNumber, StudentDetails, get_account, get_user_phone
+
 from .serializers import (
     AvatarInstructorSerializer, AvatarParentSerializer, AvatarStudentSerializer, GuestEmailSerializer,
     InstructorBuildJobPreferencesSerializer, InstructorCreateAccountSerializer, InstructorEducationSerializer,
@@ -37,24 +40,23 @@ User = get_user_model()
 logger = getLogger('api_errors')
 
 
-def get_user_response(user_cc):
-    user = user_cc.user
+def get_user_response(account):
+    user = account.user
     data = {
         'id': user.id,
         'email': user.email,
         'role': user.get_role(),
         'firstName': user.first_name,
-        'middleName': user_cc.middle_name,
+        'middleName': account.middle_name,
         'lastName': user.last_name,
-        'birthday': user_cc.birthday,
-        'phone': get_user_phone(user_cc),
-        'gender': user_cc.gender,
-        'location': user_cc.location,
-        'lat': user_cc.lat,
-        'lng': user_cc.lng,
+        'birthday': account.birthday,
+        'phone': get_user_phone(account),
+        'gender': account.gender,
+        'location': account.location,
+        'lat': account.lat,
+        'lng': account.lng,
         'referralToken': user.referral_token,
     }
-
     return data
 
 
@@ -186,13 +188,115 @@ class CsrfTokenView(views.APIView):
 class WhoAmIView(views.APIView):
 
     def get(self, request):
+        if not request.user.is_authenticated:
+            return {'id': None, 'email': None, 'role': None, 'firstName': None, 'middleName': None, 'lastName': None,
+                    'birthday': None, 'phone': None, 'gender': None, 'location': None, 'lat': None, 'lng': None,
+                    'referralToken': None,
+                    }
+
+        account = get_account(request.user)
         data = {
-            'id': None,
-            'email': None,
-            'referral_token': None,
+            'id': request.user.id,
+            'email': request.user.email,
+            'role': request.user.get_role(),
+            'firstName': request.user.first_name,
+            'middleName': account.middle_name,
+            'lastName': request.user.last_name,
+            'birthday': account.birthday,
+            'phone': get_user_phone(account),
+            'gender': account.gender,
+            'location': account.location,
+            'lat': account.lat,
+            'lng': account.lng,
+            'referralToken': request.user.referral_token,
         }
-        if request.user.is_authenticated:
-            data = get_user_response(get_account(request.user))
+
+        if data['role'] == ROLE_INSTRUCTOR:
+            instructor = Instructor.objects.filter(user_id=data['id']).prefetch_related(
+                Prefetch('instructorlessonsize_set', to_attr='lessonsizes'),
+                Prefetch('instructorinstruments_set'),
+                Prefetch('instructoragegroup_set', to_attr='agegroups'),
+                Prefetch('instructorlessonrate_set', to_attr='lessonrates'),
+                Prefetch('instructorplaceforlessons_set', to_attr='placeforlessons'),
+                Prefetch('availability'),
+                Prefetch('instructoradditionalqualifications_set', to_attr='additionalqualifications'),
+                Prefetch('employment',),
+                Prefetch('education'),
+            ).first()
+            data['bioTitle'] = account.bio_title
+            data['bioDescription'] = account.bio_description
+            data['music'] = account.music
+            data['lessonSize'] = {'oneStudent': instructor.lessonsizes[0].one_student,
+                                   'smallGroups': instructor.lessonsizes[0].small_groups,
+                                   'largeGroups': instructor.lessonsizes[0].large_groups} \
+                if len(instructor.lessonsizes) else {}
+            data['instruments'] = [{'name': item.instrument.name, 'skillLevel': item.skill_level}
+                                   for item in instructor.instructorinstruments_set.all()]
+            data['ageGroup'] = {'children': instructor.agegroups[0].children, 'teens': instructor.agegroups[0].teens,
+                                'adults': instructor.agegroups[0].adults, 'seniors': instructor.agegroups[0].seniors} \
+                if len(instructor.agegroups) else {}
+            data['lessonRate'] = {'mins30': instructor.lessonrates[0].mins30,
+                                  'mins45': instructor.lessonrates[0].mins45,
+                                  'mins60': instructor.lessonrates[0].mins60,
+                                  'mins90': instructor.lessonrates[0].mins90} if len(instructor.lessonrates) else {}
+            data['placeForLessons'] = {'home': instructor.placeforlessons[0].home,
+                                       'studio': instructor.placeforlessons[0].studio,
+                                       'online': instructor.placeforlessons[0].online} \
+                if len(instructor.placeforlessons) else {}
+            data['availability'] = {'mon8to10': instructor.availability.all()[0].mon8to10,
+                                    'mon10to12': instructor.availability.all()[0].mon10to12,
+                                    'mon12to3': instructor.availability.all()[0].mon12to3,
+                                    'mon3to6': instructor.availability.all()[0].mon3to6,
+                                    'mon6to9': instructor.availability.all()[0].mon6to9,
+                                    'tue8to10': instructor.availability.all()[0].tue8to10,
+                                    'tue10to12': instructor.availability.all()[0].tue10to12,
+                                    'tue12to3': instructor.availability.all()[0].tue12to3,
+                                    'tue3to6': instructor.availability.all()[0].tue3to6,
+                                    'tue6to9': instructor.availability.all()[0].tue6to9,
+                                    'wed8to10': instructor.availability.all()[0].wed8to10,
+                                    'wed10to12': instructor.availability.all()[0].wed10to12,
+                                    'wed12to3': instructor.availability.all()[0].wed12to3,
+                                    'wed3to6': instructor.availability.all()[0].wed3to6,
+                                    'wed6to9': instructor.availability.all()[0].wed6to9,
+                                    'thu8to10': instructor.availability.all()[0].thu8to10,
+                                    'thu10to12': instructor.availability.all()[0].thu10to12,
+                                    'thu12to3': instructor.availability.all()[0].thu12to3,
+                                    'thu3to6': instructor.availability.all()[0].thu3to6,
+                                    'thu6to9': instructor.availability.all()[0].thu6to9,
+                                    'fri8to10': instructor.availability.all()[0].fri8to10,
+                                    'fri10to12': instructor.availability.all()[0].fri10to12,
+                                    'fri12to3': instructor.availability.all()[0].fri12to3,
+                                    'fri3to6': instructor.availability.all()[0].fri3to6,
+                                    'fri6to9': instructor.availability.all()[0].fri6to9,
+                                    'sat8to10': instructor.availability.all()[0].sat8to10,
+                                    'sat10to12': instructor.availability.all()[0].sat10to12,
+                                    'sat12to3': instructor.availability.all()[0].sat12to3,
+                                    'sat3to6': instructor.availability.all()[0].sat3to6,
+                                    'sat6to9': instructor.availability.all()[0].sat6to9,
+                                    'sun8to10': instructor.availability.all()[0].sun8to10,
+                                    'sun10to12': instructor.availability.all()[0].sun10to12,
+                                    'sun12to3': instructor.availability.all()[0].sun12to3,
+                                    'sun3to6': instructor.availability.all()[0].sun3to6,
+                                    'sun6to9': instructor.availability.all()[0].sun6to9} \
+                if instructor.availability.count() else {}
+            data['qualifications'] = {'certifiedTeacher': instructor.additionalqualifications[0].certified_teacher,
+                                                'musicTherapy': instructor.additionalqualifications[0].music_therapy,
+                                                'musicProduction': instructor.additionalqualifications[0].music_production,
+                                                'earTraining': instructor.additionalqualifications[0].ear_training,
+                                                'conducting': instructor.additionalqualifications[0].conducting,
+                                                'virtuosoRecognition': instructor.additionalqualifications[0].virtuoso_recognition,
+                                                'performance': instructor.additionalqualifications[0].performance,
+                                                'musicTheory': instructor.additionalqualifications[0].music_theory,
+                                                'youngChildrenExperience': instructor.additionalqualifications[0].young_children_experience,
+                                                'repertoireSelection': instructor.additionalqualifications[0].repertoire_selection} \
+                if len(instructor.additionalqualifications) else {}
+            data['studioAddress'] = instructor.studio_address
+            data['travelDistance'] = instructor.travel_distance
+            data['languages'] = instructor.languages
+            data['employment'] = [{'employer': item.employer, 'jobTitle': item.job_title}
+                                   for item in instructor.employment.all()]
+            data['education'] = [{'degreeType': item.degree_type, 'fieldOfStudy': item.field_of_study}
+                                  for item in instructor.education.all()]
 
         return Response(data)
 
