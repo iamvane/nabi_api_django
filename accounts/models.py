@@ -119,7 +119,7 @@ class Instructor(IUserAccount):
 
 
 class Education(models.Model):
-    instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE, related_name='educations')
+    instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE, related_name='education')
     school = models.CharField(max_length=200)
     graduation_year = models.IntegerField()
     degree_type = models.CharField(max_length=100, choices=DEGREE_TYPE_CHOICES)
@@ -130,7 +130,7 @@ class Education(models.Model):
 
 
 class Employment(models.Model):
-    instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE, related_name='employments')
+    instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE, related_name='employment')
     employer = models.CharField(max_length=100, blank=True, null=True)
     job_title = models.CharField(max_length=100, blank=True, null=True)
     job_location = models.CharField(max_length=100, blank=True, null=True)

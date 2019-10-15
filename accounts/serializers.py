@@ -247,6 +247,7 @@ class InstructorBuildJobPreferencesSerializer(serializers.Serializer):
         self._set_lesson_rate(instance, validated_data['lesson_rate'])
         self._set_place_for_lessons(instance, validated_data['place_for_lessons'])
         self._set_instructor_addional_qualifications(instance, validated_data['additional_qualifications'])
+        self._set_availability(instance, validated_data['availability'])
         if hasattr(validated_data, 'studio_address'):
             self.studio_address = validated_data['studio_address']
         if hasattr(validated_data, 'travel_distance'):
@@ -289,15 +290,16 @@ class InstructorBuildJobPreferencesSerializer(serializers.Serializer):
         return model_instance
 
     def _set_availability(self, instance, data):
-        for item in data:
-            av = Availability.objects.filter(instructor=instance).filter(
-                Q(from1=item['from1']) | Q(to=item['to'])).first()
-            if av is None:
-                av = Availability()
-                av.instructor = instance
+        self._update_or_create_model(instance=instance, data=data, model=Availability)
+        # for item in data:
+        #     av = Availability.objects.filter(instructor=instance).filter(
+        #         Q(from1=item['from1']) | Q(to=item['to'])).first()
+        #     if av is None:
+        #         av = Availability()
+        #         av.instructor = instance
 
-            update_model(av, item)
-            av.save()
+        #     update_model(av, item)
+        #     av.save()
 
 
 class UserEmailSerializer(serializers.Serializer):

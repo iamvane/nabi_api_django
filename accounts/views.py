@@ -220,8 +220,8 @@ class WhoAmIView(views.APIView):
                 Prefetch('instructorplaceforlessons_set', to_attr='placeforlessons'),
                 Prefetch('availability'),
                 Prefetch('instructoradditionalqualifications_set', to_attr='additionalqualifications'),
-                Prefetch('employments',),
-                Prefetch('educations'),
+                Prefetch('employment',),
+                Prefetch('education'),
             ).first()
             data['bioTitle'] = account.bio_title
             data['bioDescription'] = account.bio_description
@@ -279,7 +279,7 @@ class WhoAmIView(views.APIView):
                                     'sun3to6': instructor.availability.all()[0].sun3to6,
                                     'sun6to9': instructor.availability.all()[0].sun6to9} \
                 if instructor.availability.count() else {}
-            data['additionalQualifications'] = {'certifiedTeacher': instructor.additionalqualifications[0].certified_teacher,
+            data['qualifications'] = {'certifiedTeacher': instructor.additionalqualifications[0].certified_teacher,
                                                 'musicTherapy': instructor.additionalqualifications[0].music_therapy,
                                                 'musicProduction': instructor.additionalqualifications[0].music_production,
                                                 'earTraining': instructor.additionalqualifications[0].ear_training,
@@ -293,10 +293,10 @@ class WhoAmIView(views.APIView):
             data['studioAddress'] = instructor.studio_address
             data['travelDistance'] = instructor.travel_distance
             data['languages'] = instructor.languages
-            data['employments'] = [{'employer': item.employer, 'jobTitle': item.job_title}
-                                   for item in instructor.employments.all()]
-            data['educations'] = [{'degreeType': item.degree_type, 'fieldOfStudy': item.field_of_study}
-                                  for item in instructor.educations.all()]
+            data['employment'] = [{'employer': item.employer, 'jobTitle': item.job_title}
+                                   for item in instructor.employment.all()]
+            data['education'] = [{'degreeType': item.degree_type, 'fieldOfStudy': item.field_of_study}
+                                  for item in instructor.education.all()]
 
         return Response(data)
 
