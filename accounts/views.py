@@ -33,7 +33,7 @@ from .serializers import (
     StudentCreateAccountSerializer, StudentDetailsSerializer, TiedStudentSerializer, TiedStudentCreateSerializer,
     UserEmailSerializer, UserInfoUpdateSerializer, UserPasswordSerializer,
 )
-from .utils import send_welcome_email
+from .utils import send_welcome_email, send_referral_invitation_email
 
 
 User = get_user_model()
@@ -453,21 +453,17 @@ class ReferralInvitation(views.APIView):
     def post(self, request):
         serializer = GuestEmailSerializer(data=request.data)
         if serializer.is_valid():
-            params = {'first_name': request.user.first_name, 'last_name': request.user.last_name,
-                      'date_limit': get_date_a_month_later(timezone.now())}
-            if request.user.get_role() == ROLE_INSTRUCTOR:
-                params['referral_url'] = '{}/registration-instructor?token={}'.format(settings.HOSTNAME_PROTOCOL,
-                                                                                      request.user.referral_token)
-                send_email(settings.DEFAULT_FROM_EMAIL, [serializer.validated_data['email'], ],
-                           request.user.get_full_name() + ' invited to Nabimusic',
-                           'core/referral_email_instructor.html', params)
-            else:
-                params['referral_url'] = '{}/registration-student?token={}'.format(settings.HOSTNAME_PROTOCOL,
-                                                                                   request.user.referral_token)
-                send_email(settings.DEFAULT_FROM_EMAIL, [serializer.validated_data['email'], ],
-                           request.user.get_full_name() + ' invited to Nabimusic',
-                           'core/referral_email_student.html', params)
-
+            user = request.user
+            email = serializer.validated_data['email']
+            try:
+                send_referral_invitation_email(user, email)
+            except Exception as e:
+                return Response({
+                    "error": str(e)
+                }, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": 'Invitation sent successfully.'}, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 class StudentDetailView(views.APIView):
 
