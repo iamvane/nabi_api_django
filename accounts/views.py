@@ -581,6 +581,6 @@ class TiedStudentItemView(views.APIView):
             instance = StudentDetails.objects.get(pk=pk)
         except ObjectDoesNotExist:
             return Response({"error": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
-        instance.tied_student.delete()
+        instance.tiedStudent.delete()
         instance.delete()
         return Response({"message": "success"}, status=status.HTTP_200_OK)
