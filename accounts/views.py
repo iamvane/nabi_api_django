@@ -495,16 +495,12 @@ class StudentDetailView(views.APIView):
 class TiedStudentView(views.APIView):
 
     def post(self, request):
-        if not isinstance(request.data, list):
-            return Response({"error": "Provided data must be a list."}, status=status.HTTP_400_BAD_REQUEST)
-        # add parent's id to data of each student
-        data = []
-        for item in request.data:
-            data.append(item)
-            data[-1].update({'user': request.user.pk})
-        serializer = TiedStudentCreateSerializer(data=data, many=True)
+        # add parent's id to data student
+        data = request.data.copy()
+        data.update({'user': request.user.pk})
+        serializer = TiedStudentCreateSerializer(data=data)
         if serializer.is_valid():
-            serializer.save(parent=request.user.parent.pk)
+            serializer.save()
             return Response({"message": "success"}, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

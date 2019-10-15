@@ -395,10 +395,10 @@ class TiedStudentCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         parent = Parent.objects.get(user_id=validated_data['user'])
         tied_student = TiedStudent.objects.create(parent=parent, name=validated_data['name'], age=validated_data['age'])
-        super().create({'user': validated_data['user'], 'tiedStudent': tied_student,
-                        'instrument': Instrument.objects.get(name=validated_data['instrument']),
-                        'skillLevel': validated_data['skillLevel'], 'lessonPlace': validated_data['lessonPlace'],
-                        'lessonDuration': validated_data['lessonDuration']})
+        return super().create({'user': validated_data['user'], 'tiedStudent': tied_student,
+                               'instrument': Instrument.objects.get(name=validated_data['instrument']),
+                               'skillLevel': validated_data['skillLevel'], 'lessonPlace': validated_data['lessonPlace'],
+                               'lessonDuration': validated_data['lessonDuration']})
 
 
 class TiedStudentSerializer(serializers.ModelSerializer):
