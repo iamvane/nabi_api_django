@@ -291,15 +291,6 @@ class InstructorBuildJobPreferencesSerializer(serializers.Serializer):
 
     def _set_availability(self, instance, data):
         self._update_or_create_model(instance=instance, data=data, model=Availability)
-        # for item in data:
-        #     av = Availability.objects.filter(instructor=instance).filter(
-        #         Q(from1=item['from1']) | Q(to=item['to'])).first()
-        #     if av is None:
-        #         av = Availability()
-        #         av.instructor = instance
-
-        #     update_model(av, item)
-        #     av.save()
 
 
 class UserEmailSerializer(serializers.Serializer):
