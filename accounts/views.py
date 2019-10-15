@@ -471,7 +471,7 @@ class StudentDetailView(views.APIView):
         data = request.data.copy()
         data['user'] = request.user.pk
         if request.user.student_details.count():
-            serializer = StudentDetailsSerializer(instance=request.user.student_details, data=data)
+            serializer = StudentDetailsSerializer(instance=request.user.student_details, data=data, partial=True)
         else:
             serializer = StudentDetailsSerializer(data=data)
         if serializer.is_valid():
@@ -484,38 +484,30 @@ class StudentDetailView(views.APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, request):
-        if hasattr(request.user, 'student_details'):
+        if request.user.student_details.count():
             serializer = StudentDetailsSerializer(request.user.student_details.first())
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
-            return Response({}, status=status.HTTP_200_OK)
+            return Response({"id": None, "instrument": None, "skill_level": None, "lesson_place": None,
+                             "lesson_duration": None}, status=status.HTTP_200_OK)
 
 
-class TiedStudentCreateView(views.APIView):
+class TiedStudentView(views.APIView):
 
     def post(self, request):
-        # add parent's id to data of each student
-        data = []
-        for item in request.data:
-            data.append(item)
-            data[-1].update({'user': request.user.pk})
-        serializer = TiedStudentCreateSerializer(data=data, many=True)
+        # add parent's id to data student
+        data = request.data.copy()
+        data.update({'user': request.user.pk})
+        serializer = TiedStudentCreateSerializer(data=data)
         if serializer.is_valid():
-            serializer.save(parent=request.user.parent.pk)
+            serializer.save()
             return Response({"message": "success"}, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-class TiedStudentListView(ListAPIView):
-    serializer_class = TiedStudentSerializer
-    pagination_class = None
-
-    def get_queryset(self):
-        if hasattr(self.request.user, 'parent'):
-            return StudentDetails.objects.filter(user__id=self.request.user.pk)
-        else:
-            return StudentDetails.objects.none()
+    def get(self, request):
+        serializer = TiedStudentSerializer(StudentDetails.objects.filter(user__id=request.user.pk), many=True)
+        return Response(serializer.data)
 
 
 class InstructorEmploymentView(views.APIView):
@@ -560,6 +552,31 @@ class InstructorEmploymentItemView(views.APIView):
         try:
             instance = Employment.objects.get(pk=pk)
         except ObjectDoesNotExist:
+            return Response({"error": "Does not exist an object with provided id"},
+                            status=status.HTTP_400_BAD_REQUEST)
+        instance.delete()
+        return Response({"message": "success"}, status=status.HTTP_200_OK)
+
+
+class TiedStudentItemView(views.APIView):
+
+    def put(self, request, pk):
+        try:
+            instance = StudentDetails.objects.get(pk=pk)
+        except ObjectDoesNotExist:
             return Response({"error": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = TiedStudentSerializer(instance=instance, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "success"}, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        try:
+            instance = StudentDetails.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            return Response({"error": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
+        instance.tiedStudent.delete()
         instance.delete()
         return Response({"message": "success"}, status=status.HTTP_200_OK)
