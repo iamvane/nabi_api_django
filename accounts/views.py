@@ -13,16 +13,13 @@ from django.template import loader
 from django.utils import timezone
 
 from rest_framework import status, views
-from rest_framework.generics import ListAPIView, ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import *
 from rest_framework.response import Response
 
 from core.constants import PHONE_TYPE_MAIN, ROLE_INSTRUCTOR, ROLE_STUDENT
 from core.models import UserToken
-from core.utils import generate_hash, get_date_a_month_later, send_email
-
-from lesson.models import Instrument
+from core.utils import generate_hash
 
 from .models import Education, Employment, Instructor, PhoneNumber, StudentDetails, get_account, get_user_phone, TiedStudent
 
@@ -30,7 +27,7 @@ from .serializers import (
     AvatarInstructorSerializer, AvatarParentSerializer, AvatarStudentSerializer, GuestEmailSerializer,
     InstructorBuildJobPreferencesSerializer, InstructorCreateAccountSerializer, InstructorEducationSerializer,
     InstructorEmploymentSerializer, InstructorProfileSerializer, ParentCreateAccountSerializer,
-    StudentCreateAccountSerializer, StudentDetailsSerializer, TiedStudentSerializer, TiedStudentCreateSerializer,
+    StudentCreateAccountSerializer, StudentDetailsSerializer, TiedStudentSerializer, TiedStudentItemSerializer,
     UserEmailSerializer, UserInfoUpdateSerializer, UserPasswordSerializer,
 )
 from .utils import send_welcome_email, send_referral_invitation_email
@@ -63,8 +60,8 @@ def get_user_response(account):
 def get_instructor_profile(user_cc):
     if user_cc.user.get_role() == ROLE_INSTRUCTOR:
         data = {
-            'bio_title': user_cc.bio_title,
-            'bio_description': user_cc.bio_description,
+            'bioTitle': user_cc.bio_title,
+            'bioDescription': user_cc.bio_description,
             'music': user_cc.music,
         }
         return data
@@ -362,22 +359,22 @@ class VerifyPhoneView(views.APIView):
 
     def post(self, request):
         try:
-            phone = PhoneNumber.objects.get(user=request.user, number=request.data['phone_number'])
+            phone = PhoneNumber.objects.get(user=request.user, number=request.data['phoneNumber'])
         except ObjectDoesNotExist:
             if PhoneNumber.objects.filter(user=request.user).exists():
-                phone = PhoneNumber.objects.filter(user=request.user).update(number=request.data['phone_number'])
+                phone = PhoneNumber.objects.filter(user=request.user).update(number=request.data['phoneNumber'])
             else:
-                phone = PhoneNumber.objects.create(user=request.user, number=request.data['phone_number'],
+                phone = PhoneNumber.objects.create(user=request.user, number=request.data['phoneNumber'],
                                                    type=PHONE_TYPE_MAIN)
         client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
         verification = client.verify \
             .services(settings.TWILIO_SERVICE_SID) \
             .verifications \
             .create(to=phone.number, channel=request.data['channel'])
-        return Response({"sid": verification.sid, "status": verification.status, 'message': 'Token was sent to {}.'.format(request.data['phone_number'])})
+        return Response({"sid": verification.sid, "status": verification.status, 'message': 'Token was sent to {}.'.format(request.data['phoneNumber'])})
 
     def put(self, request):
-        phone = PhoneNumber.objects.get(user=request.user, number=request.data['phone_number'])
+        phone = PhoneNumber.objects.get(user=request.user, number=request.data['phoneNumber'])
         client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
         verification_check = client.verify \
             .services(settings.TWILIO_SERVICE_SID) \
@@ -395,7 +392,7 @@ class InstructorBuildJobPreferences(views.APIView):
 
     def post(self, request):
         serializer = InstructorBuildJobPreferencesSerializer(data=request.data,
-                                                        instance=Instructor.objects.get(user=request.user))
+                                                             instance=Instructor.objects.get(user=request.user))
         if serializer.is_valid():
             serializer.save()
             return Response(request.data)
@@ -419,8 +416,7 @@ class InstructorEducationView(views.APIView):
             serializer = InstructorEducationSerializer(request.user.instructor.education, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
-            return Response({"school": None, "graduationYear": None, "degreeType": None, "fieldOfStudy": None,
-                             "schoolLocation": None}, status=status.HTTP_200_OK)
+            return Response([], status=status.HTTP_200_OK)
 
 
 class InstructorEducationItemView(views.APIView):
@@ -488,6 +484,7 @@ class ReferralInvitation(views.APIView):
         else:
             return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
+
 class StudentDetailView(views.APIView):
 
     def put(self, request):
@@ -511,8 +508,7 @@ class StudentDetailView(views.APIView):
             serializer = StudentDetailsSerializer(request.user.student_details.first())
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
-            return Response({"id": None, "instrument": None, "skill_level": None, "lesson_place": None,
-                             "lesson_duration": None}, status=status.HTTP_200_OK)
+            return Response({}, status=status.HTTP_200_OK)
 
 
 class TiedStudentView(views.APIView):
@@ -521,7 +517,7 @@ class TiedStudentView(views.APIView):
         # add parent's id to data student
         data = request.data.copy()
         data.update({'user': request.user.pk})
-        serializer = TiedStudentCreateSerializer(data=data)
+        serializer = TiedStudentSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "success"}, status=status.HTTP_200_OK)
@@ -533,12 +529,34 @@ class TiedStudentView(views.APIView):
         return Response(serializer.data)
 
 
+class TiedStudentItemView(views.APIView):
+
+    def put(self, request, pk):
+        try:
+            instance = StudentDetails.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            return Response({"error": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = TiedStudentItemSerializer(instance=instance, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "success"}, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        try:
+            instance = StudentDetails.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            return Response({"error": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
+        instance.tied_student.delete()
+        instance.delete()
+        return Response({"message": "success"}, status=status.HTTP_200_OK)
+
+
 class InstructorEmploymentView(views.APIView):
 
     def post(self, request):
-        data = request.data.copy()
-        data['instructor'] = request.user.instructor.pk
-        serializer = InstructorEmploymentSerializer(data=data)
+        serializer = InstructorEmploymentSerializer(data=request.data, context={'user': request.user})
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "success"}, status=status.HTTP_200_OK)
@@ -550,21 +568,18 @@ class InstructorEmploymentView(views.APIView):
             serializer = InstructorEmploymentSerializer(request.user.instructor.employment, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
-            return Response({"employer": None, "job_title": None, "job_location": None, "from_month": None,
-                        "from_year": None, "to_month": None, "to_year": None, still_work_here: None}, 
-                        status=status.HTTP_200_OK)
+            return Response([], status=status.HTTP_200_OK)
 
 
 class InstructorEmploymentItemView(views.APIView):
 
     def put(self, request, pk):
-        data = request.data.copy()
-        data['instructor'] = request.user.instructor.pk
         try:
             instance = Employment.objects.get(pk=pk)
         except ObjectDoesNotExist:
             return Response({"error": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
-        serializer = InstructorEmploymentSerializer(instance=instance, data=data, partial=True)
+        serializer = InstructorEmploymentSerializer(instance=instance, data=request.data,
+                                                    context={'user': request.user}, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "success"}, status=status.HTTP_200_OK)
@@ -577,29 +592,5 @@ class InstructorEmploymentItemView(views.APIView):
         except ObjectDoesNotExist:
             return Response({"error": "Does not exist an object with provided id"},
                             status=status.HTTP_400_BAD_REQUEST)
-        instance.delete()
-        return Response({"message": "success"}, status=status.HTTP_200_OK)
-
-
-class TiedStudentItemView(views.APIView):
-
-    def put(self, request, pk):
-        try:
-            instance = StudentDetails.objects.get(pk=pk)
-        except ObjectDoesNotExist:
-            return Response({"error": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
-        serializer = TiedStudentSerializer(instance=instance, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"message": "success"}, status=status.HTTP_200_OK)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, pk):
-        try:
-            instance = StudentDetails.objects.get(pk=pk)
-        except ObjectDoesNotExist:
-            return Response({"error": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
-        instance.tiedStudent.delete()
         instance.delete()
         return Response({"message": "success"}, status=status.HTTP_200_OK)

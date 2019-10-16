@@ -1,11 +1,11 @@
 from django.contrib.auth import get_user_model
-from django.db.models import ObjectDoesNotExist, Q
+from django.db.models import ObjectDoesNotExist
 
 from rest_framework import serializers, validators
 
 from core.constants import (
-    DEGREE_TYPE_CHOICES, GENDER_CHOICES, MONTH_CHOICES,
-    ROLE_INSTRUCTOR, ROLE_PARENT, ROLE_STUDENT, SKILL_LEVEL_CHOICES,
+    DEGREE_TYPE_CHOICES, GENDER_CHOICES, LESSON_DURATION_CHOICES, MONTH_CHOICES,
+    PLACE_FOR_LESSONS_CHOICES, SKILL_LEVEL_CHOICES,
 )
 from core.utils import update_model
 from lesson.models import Instrument
@@ -13,7 +13,7 @@ from lesson.models import Instrument
 from .models import (
     Availability, Education, Employment, Instructor, InstructorAdditionalQualifications,
     InstructorAgeGroup, InstructorInstruments,
-    InstructorPlaceForLessons, InstructorLessonRate, InstructorLessonSize, Parent, PhoneNumber,
+    InstructorPlaceForLessons, InstructorLessonRate, InstructorLessonSize, Parent,
     Student, StudentDetails, TiedStudent, get_account,
 )
 from .utils import init_kwargs
@@ -26,22 +26,22 @@ class BaseCreateAccountSerializer(serializers.Serializer):
     password = serializers.CharField()
     display_name = serializers.CharField(max_length=100, allow_blank=True, allow_null=True, required=False, )
     gender = serializers.CharField(max_length=100, allow_blank=True, allow_null=True, required=False, )
-    birthday = serializers.DateField(allow_null=True, required=True, )
-    referring_code = serializers.CharField(max_length=20, allow_blank=True, allow_null=True, required=False)
+    birthday = serializers.DateField(allow_null=True, required=True, )   # LLL: check this
+    referringCode = serializers.CharField(max_length=20, allow_blank=True, allow_null=True, required=False)
 
     def validate(self, attrs):
         if User.objects.filter(email=attrs.get('email')).count() > 0:
             raise validators.ValidationError('Email already registered.')
         return attrs
 
-    def validate_referring_code(self, value):
+    def validate_referringCode(self, value):
         if value and User.get_user_from_refer_code(value) is None:
             raise validators.ValidationError('Wrong referring code value')
         else:
             return value
 
     def create(self, validated_data):
-        ref_code = validated_data.get('referring_code')
+        ref_code = validated_data.get('referringCode')
         if ref_code:
             validated_data['referred_by'] = User.get_user_from_refer_code(ref_code)
         else:
@@ -55,11 +55,20 @@ class BaseCreateAccountSerializer(serializers.Serializer):
     def update(self, instance, validated_data):
         pass
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if 'display_name' in data.keys():
+            data['displayName'] = data.pop('display_name')
+        return data
+
+    def to_internal_value(self, data):
+        if 'displayName' in data.keys():
+            data['display_name'] = data.get('displayName')
+        return super().to_internal_value(data)
+
 
 class UserInfoUpdateSerializer(serializers.ModelSerializer):
-    firstName = serializers.CharField(max_length=30, source='first_name')
-    lastName = serializers.CharField(max_length=150, source='last_name')
-    middleName = serializers.CharField(max_length=50)
+    middle_name = serializers.CharField(max_length=50)
     gender = serializers.ChoiceField(choices=GENDER_CHOICES)
     location = serializers.CharField(max_length=150)
     lat = serializers.CharField(max_length=150)
@@ -67,7 +76,7 @@ class UserInfoUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['firstName', 'lastName', 'middleName', 'email', 'gender', 'location', 'lat', 'lng', ]
+        fields = ['first_name', 'last_name', 'middle_name', 'email', 'gender', 'location', 'lat', 'lng', ]
 
     def update(self, instance, validated_data):
         account = get_account(instance)
@@ -88,13 +97,24 @@ class UserInfoUpdateSerializer(serializers.ModelSerializer):
         if longitude is not None:
             account.lng = longitude
             account_changed = True
-        middle_name = validated_data.pop('middleName', None)
+        middle_name = validated_data.pop('middle_name', None)
         if middle_name is not None:
             account.middle_name = middle_name
             account_changed = True
         if account_changed:
             account.save()
         return super().update(instance, validated_data)
+
+    def to_internal_value(self, data):
+        new_data = data.copy()
+        keys = dict.fromkeys(data, 1)
+        if keys.get('firstName'):
+            new_data['first_name'] = new_data.pop('firstName')
+        if keys.get('lastName'):
+            new_data['last_name'] = new_data.pop('lastName')
+        if keys.get('middleName'):
+            new_data['middle_name'] = new_data.pop('middleName')
+        return new_data
 
 
 class InstructorProfileSerializer(serializers.Serializer):
@@ -106,6 +126,14 @@ class InstructorProfileSerializer(serializers.Serializer):
         instance = update_model(instance, **validated_data)
         instance.save()
         return instance
+
+    def to_internal_value(self, data):
+        new_data = {
+            'bio_title': data.get('bioTitle'),
+            'bio_description': data.get('bioDescription'),
+            'music': data.get('music'),
+        }
+        return super().to_internal_value(new_data)
 
 
 class ParentCreateAccountSerializer(BaseCreateAccountSerializer):
@@ -131,30 +159,87 @@ class InstructorCreateAccountSerializer(BaseCreateAccountSerializer):
 
 class InstructorEducationSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(source='pk', read_only=True)
-    graduationYear = serializers.IntegerField(source='graduation_year', required=True)
-    degreeType = serializers.ChoiceField(source='degree_type', choices=DEGREE_TYPE_CHOICES, required=True)
-    fieldOfStudy = serializers.CharField(source='field_of_study', max_length=100, required=True)
-    schoolLocation = serializers.CharField(source='school_location', max_length=100, required=True)
 
     class Meta:
         model = Education
-        fields = ['id', 'instructor', 'school', 'graduationYear', 'degreeType', 'fieldOfStudy', 'schoolLocation', ]
+        fields = ['id', 'instructor', 'school', 'graduation_year', 'degree_type', 'field_of_study', 'school_location', ]
 
     def to_representation(self, instance):
         res_dict = super().to_representation(instance)
         res_dict.pop('instructor')
+        data = {'graduationYear': res_dict.pop('graduation_year'), 'degreeType': res_dict.pop('degree_type'),
+                'fieldOfStudy': res_dict.pop('field_of_study'), 'schoolLocation': res_dict.pop('school_location')}
+        res_dict.update(data)
         return res_dict
+
+    def to_internal_value(self, data):
+        if self.instance is None:
+            new_data = {'instructor': data.get('instructor'), 'school': data.get('school'),
+                        'graduation_year': data.get('graduationYear'), 'degree_type': data.get('degreeType'),
+                        'field_of_study': data.get('fieldOfStudy'), 'school_location': data.get('schoolLocation')}
+        else:
+            new_data = {}
+            keys = dict.fromkeys(data, 1)
+            if keys.get('school'):
+                new_data['school'] = data['school']
+            if keys.get('graduationYear'):
+                new_data['graduation_year'] = data['graduationYear']
+            if keys.get('degreeType'):
+                new_data['degree_type'] = data['degreeType']
+            if keys.get('fieldOfStudy'):
+                new_data['field_of_study'] = data['fieldOfStudy']
+            if keys.get('schoolLocation'):
+                new_data['school_location'] = data['schoolLocation']
+        return super().to_internal_value(new_data)
 
 
 class InstrumentsSerializer(serializers.Serializer):
     instrument = serializers.CharField(max_length=100)
-    skillLevel = serializers.ChoiceField(choices=SKILL_LEVEL_CHOICES)
+    skill_level = serializers.ChoiceField(choices=SKILL_LEVEL_CHOICES)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['skillLevel'] = data.pop('skill_level')
+        return data
+
+    def to_internal_value(self, data):
+        if self.instance is None:
+            new_data = {'instrument': data.get('instrument'), 'skill_level': data.get('skillLevel')}
+        else:
+            new_data = {}
+            if 'instrument' in data.keys():
+                new_data['instrument'] = data['instrument']
+            if 'skillLevel' in data.keys():
+                new_data['skill_level'] = data['skillLevel']
+        return new_data
 
 
 class LessonSizeSerializer(serializers.Serializer):
     one_student = serializers.BooleanField()
     small_groups = serializers.BooleanField()
     large_groups = serializers.BooleanField()
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['oneStudent'] = data['one_student']
+        data['smallGroups'] = data['small_groups']
+        data['largeGroups'] = data['large_groups']
+        return data
+
+    def to_internal_value(self, data):
+        if self.instance is None:
+            new_data = {'one_student': data.get('oneStudent'), 'small_groups': data.get('smallGroups'),
+                        'large_groups': data.get('largeGroups')}
+        else:
+            new_data = {}
+            keys = dict.fromkeys(data, 1)
+            if 'oneStudent' in keys:
+                new_data['one_student'] = data['oneStudent']
+            if 'smallGroups' in keys:
+                new_data['small_groups'] = data['smallGroups']
+            if 'largeGroups' in keys:
+                new_data['large_groups'] = data['largeGroups']
+        return new_data
 
 
 class AgeGroupsSerializer(serializers.Serializer):
@@ -188,6 +273,51 @@ class AdditionalQualifications(serializers.Serializer):
     music_theory = serializers.BooleanField()
     young_children_experience = serializers.BooleanField()
     repertoire_selection = serializers.BooleanField()
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        new_data = {'certifiedTeacher': data.get('certified_teacher'), 'musicTherapy': data.get('music_therapy'),
+                    'musicProduction': data.get('music_production'), 'earTraining': data.get('ear_training'),
+                    'conducting': data.get('conducting'), 'virtuosoRecognition': data.get('virtuoso_recognition'),
+                    'performance': data.get('performance'), 'musicTheory': data.get('music_theory'),
+                    'youngChildrenExperience': data.get('young_children_experience'),
+                    'repertoireSelection': data.get('repertoire_selection')}
+        return new_data
+
+    def to_internal_value(self, data):
+        if self.instance is None:
+            new_data = {
+                'certified_teacher': data.get('certifiedTeacher'), 'music_therapy': data.get('musicTherapy'),
+                'music_production': data.get('musicProduction'), 'ear_training': data.get('earTraining'),
+                'conducting': data.get('conducting'), 'virtuoso_recognition': data.get('virtuosoRecognition'),
+                'performance': data.get('performance'), 'music_theory': data.get('musicTheory'),
+                'young_children_experience': data.get('youngChildrenExperience'),
+                'repertoire_selection': data.get('repertoireSelection'),
+            }
+        else:
+            new_data = {}
+            keys = dict.fromkeys(data, 1)
+            if keys.get('certifiedTeacher'):
+                new_data['certified_teacher'] = data['certifiedTeacher']
+            if keys.get('musicTherapy'):
+                new_data['music_therapy'] = data['musicTherapy']
+            if keys.get('musicProduction'):
+                new_data['music_production'] = data['musicProduction']
+            if keys.get('earTraining'):
+                new_data['ear_training'] = data['earTraining']
+            if keys.get('conducting'):
+                new_data['conducting'] = data['conducting']
+            if keys.get('virtuosoRecognition'):
+                new_data['virtuoso_recognition'] = data['virtuosoRecognition']
+            if keys.get('performance'):
+                new_data['performance'] = data['performance']
+            if keys.get('musicTheory'):
+                new_data['music_theory'] = data['musicTheory']
+            if keys.get('youngChildrenExperience'):
+                new_data['young_children_experience'] = data['youngChildrenExperience']
+            if keys.get('repertoireSelection'):
+                new_data['repertoire_selection'] = data['repertoireSelection']
+        return super().to_internal_value(new_data)
 
 
 class AvailavilitySerializer(serializers.Serializer):
@@ -240,6 +370,17 @@ class InstructorBuildJobPreferencesSerializer(serializers.Serializer):
     travel_distance = serializers.CharField(max_length=200, required=False)
     languages = serializers.ListField(child=serializers.CharField(), required=False)
 
+    def to_internal_value(self, data):
+        new_data = {
+            'instruments': data.get('instruments'), 'lesson_size': data.get('lessonSize'),
+            'age_group': data.get('ageGroup'), 'lesson_rate': data.get('lessonRate'),
+            'place_for_lessons': data.get('placeForLessons'), 'availability': data.get('availability'),
+            'additional_qualifications': data.get('additionalQualifications'),
+            'studio_address': data.get('studioAddress'), 'travel_distance': data.get('travelDistance'),
+            'languages': data.get('languages'),
+        }
+        return super().to_internal_value(new_data)
+
     def update(self, instance, validated_data):
         self._set_instruments(instance, validated_data['instruments'])
         self._set_lesson_size(instance, validated_data['lesson_size'])
@@ -248,9 +389,9 @@ class InstructorBuildJobPreferencesSerializer(serializers.Serializer):
         self._set_place_for_lessons(instance, validated_data['place_for_lessons'])
         self._set_instructor_addional_qualifications(instance, validated_data['additional_qualifications'])
         self._set_availability(instance, validated_data['availability'])
-        if hasattr(validated_data, 'studio_address'):
+        if validated_data.get('studio_address') is not None:
             self.studio_address = validated_data['studio_address']
-        if hasattr(validated_data, 'travel_distance'):
+        if validated_data.get('travel_distance') is not None:
             self.travel_distance = validated_data['travel_distance']
         return instance
 
@@ -343,13 +484,6 @@ class AvatarStudentSerializer(serializers.ModelSerializer):
         fields = ['avatar', ]
 
 
-class InstrumentNameSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Instrument
-        fields = ['name', ]
-
-
 def validate_instrument(value):
     """value is instrument's name, then check to existence is done"""
     try:
@@ -365,93 +499,152 @@ class StudentDetailsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StudentDetails
-        fields = ['id', 'user', 'instrument', 'skillLevel', 'lessonPlace', 'lessonDuration', ]
+        fields = ['id', 'user', 'instrument', 'skill_level', 'lesson_place', 'lesson_duration', ]
 
     def create(self, validated_data):
         validated_data['instrument'] = Instrument.objects.get(name=validated_data['instrument'])
         return StudentDetails.objects.create(**validated_data)
 
     def update(self, instance, validated_data):
-        validated_data['instrument'] = Instrument.objects.get(name=validated_data['instrument'])
+        if validated_data.get('instrument') is not None:
+            validated_data['instrument'] = Instrument.objects.get(name=validated_data['instrument'])
         return instance.update(**validated_data)
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data.pop('user')
+        data.update({'skillLevel': data.pop('skill_level'), 'lessonPlace': data.pop('lesson_place'),
+                     'lessonDuration': data.pop('lesson_duration')})
         return data
 
+    def to_internal_value(self, data):
+        new_data = {}
+        keys = dict.fromkeys(data, 1)
+        if keys.get('instrument'):
+            new_data['instrument'] = data['instrument']
+        if keys.get('skillLevel'):
+            new_data['skill_level'] = data['skillLevel']
+        if keys.get('lessonPlace'):
+            new_data['lesson_place'] = data['lessonPlace']
+        if keys.get('lessonDuration'):
+            new_data['lesson_duration'] = data['lessonDuration']
+        return new_data
 
-class TiedStudentCreateSerializer(serializers.ModelSerializer):
-    """Serializer for usage with student creation by parent user."""
-    name = serializers.CharField(max_length=250)
-    age = serializers.IntegerField()
+
+class TiedStudentSerializer(serializers.ModelSerializer):
+    """Serializer for usage with detail student creation and retrieve, by parent user."""
+    id = serializers.IntegerField(source='pk', read_only=True)
+    name = serializers.CharField(max_length=250, source='tied_student.name')
+    age = serializers.IntegerField(source='tied_student.age')
     instrument = serializers.CharField(max_length=250, validators=[validate_instrument, ])   # instrument name
 
     class Meta:
         model = StudentDetails
-        fields = ['user', 'tiedStudent', 'name', 'age',
-                  'instrument', 'skillLevel', 'lessonPlace', 'lessonDuration', ]
+        fields = ['id', 'user', 'name', 'age', 'instrument', 'skill_level', 'lesson_place', 'lesson_duration', ]
 
     def create(self, validated_data):
         parent = Parent.objects.get(user_id=validated_data['user'])
-        tied_student = TiedStudent.objects.create(parent=parent, name=validated_data['name'], age=validated_data['age'])
-        return super().create({'user': validated_data['user'], 'tiedStudent': tied_student,
-                               'instrument': Instrument.objects.get(name=validated_data['instrument']),
-                               'skillLevel': validated_data['skillLevel'], 'lessonPlace': validated_data['lessonPlace'],
-                               'lessonDuration': validated_data['lessonDuration']})
+        tied_student = TiedStudent.objects.create(parent=parent, name=validated_data['tied_student']['name'],
+                                                  age=validated_data['tied_student']['age'])
+        validated_data['tied_student'] = tied_student
+        validated_data['instrument'] = Instrument.objects.get(name=validated_data['instrument'])
+        return super().create(validated_data)
+
+    def to_representation(self, instance):
+        dict_data = super().to_representation(instance)
+        dict_data.pop('user')
+        data = {'skillLevel': dict_data.pop('skill_level'), 'lessonPlace': dict_data.pop('lesson_place'),
+                'lessonDuration': dict_data.pop('lesson_duration')}
+        dict_data.update(data)
+        return dict_data
+
+    def to_internal_value(self, data):
+        new_data = data.copy()
+        alt_data = {'skill_level': new_data.pop('skillLevel'), 'lesson_place': new_data.pop('lessonPlace'),
+                    'lesson_duration': new_data.pop('lessonDuration')}
+        new_data.update(alt_data)
+        if self.context.get('user'):
+            new_data['instructor'] = self.context['user'].instructor.pk
+        return super().to_internal_value(new_data)
 
 
-class TiedStudentSerializer(serializers.ModelSerializer):
+class TiedStudentItemSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(source='pk', read_only=True)
-    name = serializers.CharField(max_length=250, source='tiedStudent.name')
-    age = serializers.IntegerField(source='tiedStudent.age')
-    instrument = serializers.CharField(max_length=250, source='instrument.name')
+    name = serializers.CharField(max_length=250, source='tied_student.name')
+    age = serializers.IntegerField(source='tied_student.age')
+    instrument = serializers.CharField(max_length=250, validators=[validate_instrument, ])   # instrument name
 
     class Meta:
         model = StudentDetails
-        fields = ['id', 'name', 'age', 'instrument', 'skillLevel', 'lessonPlace', 'lessonDuration', ]
-
-    def validate_instrument(self, value):
-        try:
-            Instrument.objects.get(name=value)
-        except ObjectDoesNotExist:
-            raise serializers.ValidationError('Invalid instrument value')
-        return value
+        fields = ['id', 'name', 'age', 'instrument', 'skill_level', 'lesson_place', 'lesson_duration', ]
 
     def update(self, instance, validated_data):
         if validated_data.get('instrument') is not None:
-            validated_data['instrument'] = Instrument.objects.get(name=validated_data['instrument']['name'])
-        if validated_data.get('tiedStudent') is not None:
-            if validated_data['tiedStudent'].get('age') is not None:
-                instance.tiedStudent.age = validated_data['tiedStudent']['age']
-            if validated_data['tiedStudent'].get('name') is not None:
-                instance.tiedStudent.name = validated_data['tiedStudent']['name']
-            validated_data.pop('tiedStudent')
-            instance.tiedStudent.save()
+            validated_data['instrument'] = Instrument.objects.get(name=validated_data['instrument'])
+        if validated_data.get('tied_student') is not None:
+            if validated_data['tied_student'].get('age') is not None:
+                instance.tied_student.age = validated_data['tied_student']['age']
+            if validated_data['tied_student'].get('name') is not None:
+                instance.tied_student.name = validated_data['tied_student']['name']
+            validated_data.pop('tied_student')
+            instance.tied_student.save()
         return super().update(instance, validated_data)
+
+    def to_internal_value(self, data):
+        new_data = data.copy()
+        keys = dict.fromkeys(data, 1)
+        if keys.get('skillLevel') is not None:
+            new_data['skill_level'] = data.pop('skillLevel')
+        if keys.get('lessonPlace'):
+            new_data['lesson_place'] = data.pop('lessonPlace')
+        if keys.get('lessonDuration'):
+            new_data['lesson_duration'] = data.pop('lessonDuration')
+        return super().to_internal_value(new_data)
 
 
 class InstructorEmploymentSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True, source='pk')
-    jobTitle = serializers.CharField(max_length=100, source='job_title')
-    jobLocation = serializers.CharField(max_length=100, source='job_location')
-    fromMonth = serializers.ChoiceField(choices=MONTH_CHOICES, source='from_month')
-    fromYear = serializers.IntegerField(source='from_year')
-    toMonth = serializers.ChoiceField(MONTH_CHOICES, required=False, default=None, source='to_month')
-    toYear = serializers.IntegerField(required=False, default=None, source='to_year')
-    stillWorkHere = serializers.BooleanField(required=False, default=False, source='still_work_here')
 
     class Meta:
         model = Employment
-        fields = ['id', 'instructor', 'employer', 'jobTitle', 'jobLocation', 'fromMonth', 'fromYear',
-                  'toMonth', 'toYear', 'stillWorkHere', ]
+        fields = ['id', 'instructor', 'employer', 'job_title', 'job_location', 'from_month', 'from_year',
+                  'to_month', 'to_year', 'still_work_here', ]
 
     def to_representation(self, instance):
         dict_data = super().to_representation(instance)
         dict_data.pop('instructor')
+        data = {'jobTitle': dict_data.pop('job_title'), 'jobLocation': dict_data.pop('job_location'),
+                'fromMonth': dict_data.pop('from_month'), 'fromYear': dict_data.pop('from_year'),
+                'toMonth': dict_data.pop('to_month'), 'toYear': dict_data.pop('to_year'),
+                'stillWorkHere': dict_data.pop('still_work_here')}
+        dict_data.update(data)
         return dict_data
 
     def to_internal_value(self, data):
-        if self.context.get('user'):
-            data['instructor'] = self.context['user'].instructor.pk
-        return super().to_internal_value(data)
+        if self.instance is None:
+            new_data = {'employer': data.get('employer'), 'job_title': data.get('jobTitle'),
+                        'job_location': data.get('jobLocation'), 'from_month': data.get('fromMonth'),
+                        'from_year': data.get('fromYear'), 'to_month': data.get('toMonth'), 'to_year': data.get('toYear'),
+                        'still_work_here': data.get('stillWorkHere')}
+            if self.context.get('user'):
+                new_data['instructor'] = self.context['user'].instructor.pk
+        else:
+            new_data = {}
+            keys = dict.fromkeys(data, 1)
+            if keys.get('employer'):
+                new_data['employer'] = data['employer']
+            if keys.get('jobTitle'):
+                new_data['job_title'] = data['jobTitle']
+            if keys.get('jobLocation'):
+                new_data['job_location'] = data['jobLocation']
+            if keys.get('fromMonth'):
+                new_data['from_month'] = data['fromMonth']
+            if keys.get('fromYear'):
+                new_data['from_year'] = data['fromYear']
+            if keys.get('toMonth'):
+                new_data['to_month'] = data['toMonth']
+            if keys.get('toYear'):
+                new_data['to_year'] = data['toYear']
+            if keys.get('stillWorkHere'):
+                new_data['still_work_here'] = data['stillWorkHere']
+        return super().to_internal_value(new_data)

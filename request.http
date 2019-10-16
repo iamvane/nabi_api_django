@@ -155,7 +155,7 @@ X-CSRFToken: OgoFm0sgQTG3lb7Za4Vl6zlfHLuirIZ8RRZWYdVI0kWL0LtWdppUzkVLCcUei0Oe
 
 ###
 
-PUT localhost:8000/v1/build-profile/profile
+PUT localhost:8000/v1/build-profile/
 Cookie: sessionid=9396ti9t47fzumbr3kp67l9l1x96rzsv;csrftoken=JP1OuCkZlrx8PyQVY8CO97XApPuO4OPOv9Bm7nmQWubaWfRVUGsay7PIT6ZaX9ha
 Content-Type: application/json
 X-CSRFToken: yfmsbIDJlhHYk4m1kQh8r445PNfrBVPekzW0OtFAWkl0rLn1go7uQ4Wdj4KNughA
@@ -163,7 +163,7 @@ X-CSRFToken: yfmsbIDJlhHYk4m1kQh8r445PNfrBVPekzW0OtFAWkl0rLn1go7uQ4Wdj4KNughA
 {
   "bio_title": "Nice instructor",
   "bio": "Son long text",
-  "music": "Son long text"
+  "music": ["something1", "something2", "something3"],
 }
 
 ###
