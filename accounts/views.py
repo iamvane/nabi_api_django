@@ -17,11 +17,7 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import *
 from rest_framework.response import Response
 
-<<<<<<< HEAD
-from core.constants import PHONE_TYPE_MAIN, ROLE_INSTRUCTOR, ROLE_STUDENT
-=======
 from core.constants import PHONE_TYPE_MAIN, ROLE_INSTRUCTOR, HOSTNAME_PROTOCOL
->>>>>>> b09c4a8... changed hostname place
 from core.models import UserToken
 from core.utils import generate_hash
 
