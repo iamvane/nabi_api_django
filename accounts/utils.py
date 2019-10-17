@@ -6,6 +6,7 @@ from django.utils import timezone
 from core.utils import get_date_a_month_later, send_email
 from core.constants import ROLE_INSTRUCTOR
 
+
 def init_kwargs(model, arg_dict):
     return {
         k: v for k, v in arg_dict.items() if k in [
@@ -35,6 +36,7 @@ def send_welcome_email(user_cc):
     email_message = EmailMultiAlternatives(subject, text_content, from_email, [to_email])
     email_message.attach_alternative(html_content, 'text/html')
     email_message.send()
+
 
 def send_referral_invitation_email(user, email):
     role = user.get_role()
