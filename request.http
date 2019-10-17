@@ -6,7 +6,7 @@ Content-Type: application/json
   "password": "123456",
   "role": "instructor",
   "birthday": "1990-10-24",
-  "referring_code": "z6Gu5W6VckRTQoi6"
+  "referringCode": "z6Gu5W6VckRTQoi6"
 }
 
 ### Set-Cookie:  csrftoken=zDbcXUdR4RCvgb7XwRP64VgW69EUc0OJSm3OosxdhgFVVuPKUWGaExApLaXBsb6F; expires=Sat, 22 Aug 2020 11:59:50 GMT; Max-Age=31449600; Path=/; SameSite=Lax
@@ -20,7 +20,7 @@ Cookie: sessionid=65vw4w0a116tfnzcjdcb4ka7dhhpqnu4;csrftoken=zDbcXUdR4RCvgb7XwRP
 X-CSRFToken: 8LUV70LbEX0JeWQFfd8N3XTzdH105FTjruMxyy5xRm39TfysDiZRDzd2SIkHlQbf
 
 {
-  "phone_number": "+18292901143",
+  "phoneNumber": "+18292901143",
   "channel": "sms"
 }
 
@@ -31,7 +31,7 @@ Cookie: sessionid=65vw4w0a116tfnzcjdcb4ka7dhhpqnu4;csrftoken=zDbcXUdR4RCvgb7XwRP
 X-CSRFToken: 8LUV70LbEX0JeWQFfd8N3XTzdH105FTjruMxyy5xRm39TfysDiZRDzd2SIkHlQbf
 
 {
-  "phone_number": "+18292901143",
+  "phoneNumber": "+18292901143",
   "code": "3137"
 }
 
@@ -43,17 +43,17 @@ Content-Type: application/json
 X-CSRFToken: yfmsbIDJlhHYk4m1kQh8r445PNfrBVPekzW0OtFAWkl0rLn1go7uQ4Wdj4KNughA
 
 {
-  "bio_title": "Nice instructor",
-  "bio_description": "Son long text",
-  "music": ["Son long text"]
+  "bioTitle": "Nice instructor",
+  "bioDescription": "Son long text",
+  "music": ["something1", "something2", "something3"]
 }
 
 ###
 
 GET localhost:8000/v1/fetch-profile/
 {
-  "bio_title": "Nice instructor",
-  "bio_description": "Son long text",
+  "bioTitle": "Nice instructor",
+  "bioDescription": "Son long text",
   "music": ["Son long text"]
 }
 
@@ -70,24 +70,24 @@ X-CSRFToken: 8LUV70LbEX0JeWQFfd8N3XTzdH105FTjruMxyy5xRm39TfysDiZRDzd2SIkHlQbf
       "skillLevel": "advanced"
     }
   ],
-  "lesson_size": {
-    "one_student": true,
-    "small_groups": false,
-    "large_groups": false
+  "lessonSize": {
+    "oneStudent": true,
+    "smallGroups": false,
+    "largeGroups": false
   },
-  "age_group": {
+  "ageGroup": {
     "children": true,
     "teens": false,
     "adults": true,
     "seniors": true
   },
-  "lesson_rate": {
+  "lessonRate": {
     "mins30": 50,
     "mins45": 50,
     "mins60": 50,
     "mins90": 50
   },
-  "place_for_lessons": {
+  "placeForLessons": {
     "home": true,
     "studio": true,
     "online": true
@@ -99,21 +99,21 @@ X-CSRFToken: 8LUV70LbEX0JeWQFfd8N3XTzdH105FTjruMxyy5xRm39TfysDiZRDzd2SIkHlQbf
     "mon12to3": true
     }
   ],
-  "additional_qualifications": {
-    "certified_teacher": true,
-    "music_therapy": false,
-    "music_production": false,
-    "ear_training": false,
+  "additionalQualifications": {
+    "certifiedTeacher": true,
+    "musicTherapy": false,
+    "musicProduction": false,
+    "earTraining": false,
     "conducting": false,
-    "virtuoso_recognition": false,
+    "virtuosoRecognition": false,
     "performance": false,
-    "music_theory": false,
-    "young_children_experience": false,
-    "repertoire_selection": false
+    "musicTheory": false,
+    "youngChildrenExperience": false,
+    "repertoireSelection": false
   },
   "languages": ["french", "spanish"],
-  "studio_address": "fpp",
-  "travel_distance": "faa"
+  "studioAddress": "fpp",
+  "travelDistance": "faa"
 }
 
 ###
@@ -151,19 +151,6 @@ X-CSRFToken: OgoFm0sgQTG3lb7Za4Vl6zlfHLuirIZ8RRZWYdVI0kWL0LtWdppUzkVLCcUei0Oe
 {
   "email": "idekel.santana@gmail.com",
   "password": "123456"
-}
-
-###
-
-PUT localhost:8000/v1/build-profile/
-Cookie: sessionid=9396ti9t47fzumbr3kp67l9l1x96rzsv;csrftoken=JP1OuCkZlrx8PyQVY8CO97XApPuO4OPOv9Bm7nmQWubaWfRVUGsay7PIT6ZaX9ha
-Content-Type: application/json
-X-CSRFToken: yfmsbIDJlhHYk4m1kQh8r445PNfrBVPekzW0OtFAWkl0rLn1go7uQ4Wdj4KNughA
-
-{
-  "bio_title": "Nice instructor",
-  "bio": "Son long text",
-  "music": ["something1", "something2", "something3"],
 }
 
 ###
