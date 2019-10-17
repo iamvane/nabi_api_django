@@ -484,30 +484,21 @@ class AvatarStudentSerializer(serializers.ModelSerializer):
         fields = ['avatar', ]
 
 
-def validate_instrument(value):
-    """value is instrument's name, then check to existence is done"""
-    try:
-        Instrument.objects.get(name=value)
-    except ObjectDoesNotExist:
-        raise serializers.ValidationError("Instrument value not valid")
-    return value
-
-
 class StudentDetailsSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True, source='pk')
-    instrument = serializers.CharField(max_length=250, validators=[validate_instrument, ])   # instrument name
+    instrument = serializers.CharField(max_length=250, source='instrument.name')   # instrument name
 
     class Meta:
         model = StudentDetails
         fields = ['id', 'user', 'instrument', 'skill_level', 'lesson_place', 'lesson_duration', ]
 
     def create(self, validated_data):
-        validated_data['instrument'] = Instrument.objects.get(name=validated_data['instrument'])
+        validated_data['instrument'], _ = Instrument.objects.get_or_create(name=validated_data['instrument']['name'])
         return StudentDetails.objects.create(**validated_data)
 
     def update(self, instance, validated_data):
         if validated_data.get('instrument') is not None:
-            validated_data['instrument'] = Instrument.objects.get(name=validated_data['instrument'])
+            validated_data['instrument'], _ = Instrument.objects.get_or_create(name=validated_data['instrument']['name'])
         return instance.update(**validated_data)
 
     def to_representation(self, instance):
@@ -520,6 +511,8 @@ class StudentDetailsSerializer(serializers.ModelSerializer):
     def to_internal_value(self, data):
         new_data = {}
         keys = dict.fromkeys(data, 1)
+        if keys.get('user'):
+            new_data['user'] = data['user']
         if keys.get('instrument'):
             new_data['instrument'] = data['instrument']
         if keys.get('skillLevel'):
@@ -528,7 +521,7 @@ class StudentDetailsSerializer(serializers.ModelSerializer):
             new_data['lesson_place'] = data['lessonPlace']
         if keys.get('lessonDuration'):
             new_data['lesson_duration'] = data['lessonDuration']
-        return new_data
+        return super().to_internal_value(new_data)
 
 
 class TiedStudentSerializer(serializers.ModelSerializer):
@@ -536,7 +529,7 @@ class TiedStudentSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(source='pk', read_only=True)
     name = serializers.CharField(max_length=250, source='tied_student.name')
     age = serializers.IntegerField(source='tied_student.age')
-    instrument = serializers.CharField(max_length=250, validators=[validate_instrument, ])   # instrument name
+    instrument = serializers.CharField(max_length=250, source='instrument.name')   # instrument name
 
     class Meta:
         model = StudentDetails
@@ -547,7 +540,7 @@ class TiedStudentSerializer(serializers.ModelSerializer):
         tied_student = TiedStudent.objects.create(parent=parent, name=validated_data['tied_student']['name'],
                                                   age=validated_data['tied_student']['age'])
         validated_data['tied_student'] = tied_student
-        validated_data['instrument'] = Instrument.objects.get(name=validated_data['instrument'])
+        validated_data['instrument'], _ = Instrument.objects.get_or_create(name=validated_data['instrument']['name'])
         return super().create(validated_data)
 
     def to_representation(self, instance):
@@ -572,7 +565,7 @@ class TiedStudentItemSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(source='pk', read_only=True)
     name = serializers.CharField(max_length=250, source='tied_student.name')
     age = serializers.IntegerField(source='tied_student.age')
-    instrument = serializers.CharField(max_length=250, validators=[validate_instrument, ])   # instrument name
+    instrument = serializers.CharField(max_length=250, source='instrument.name')   # instrument name
 
     class Meta:
         model = StudentDetails
@@ -580,7 +573,7 @@ class TiedStudentItemSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         if validated_data.get('instrument') is not None:
-            validated_data['instrument'] = Instrument.objects.get(name=validated_data['instrument'])
+            validated_data['instrument'], _ = Instrument.objects.get_or_create(name=validated_data['instrument']['name'])
         if validated_data.get('tied_student') is not None:
             if validated_data['tied_student'].get('age') is not None:
                 instance.tied_student.age = validated_data['tied_student']['age']
