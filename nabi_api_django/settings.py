@@ -8,7 +8,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', '')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['127.0.0.1']
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 INSTALLED_APPS = [
@@ -135,10 +135,10 @@ AUTH_USER_MODEL = 'core.User'
 
 DEFAULT_FROM_EMAIL = 'test@nabimusic.com'
 
-try:
-    from .local_settings import *
-except Exception as e:
-    print('Error importing local_settings.py: {}'.format(str(e)))
+# try:
+#     from .local_settings import *
+# except Exception as e:
+#     print('Error importing local_settings.py: {}'.format(str(e)))
 
 
 if not DEBUG:
