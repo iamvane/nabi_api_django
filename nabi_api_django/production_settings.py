@@ -160,3 +160,5 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # STATICFILES_STORAGE = 'whitenoise.django.GzipManifestStaticFilesStorage'
 
 ALLOWED_HOSTS = ['*']
+
+CORS_ORIGIN_WHITELIST = ['https://nabimusic.herokuapp.com']
