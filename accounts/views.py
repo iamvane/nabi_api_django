@@ -17,7 +17,7 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import *
 from rest_framework.response import Response
 
-from core.constants import PHONE_TYPE_MAIN, ROLE_INSTRUCTOR, HOSTNAME_PROTOCOL
+from core.constants import PHONE_TYPE_MAIN, ROLE_INSTRUCTOR, ROLE_STUDENT, HOSTNAME_PROTOCOL
 from core.models import UserToken
 from core.utils import generate_hash
 
