@@ -161,4 +161,4 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 ALLOWED_HOSTS = ['*']
 
-CORS_ORIGIN_WHITELIST = ['https://nabimusic.herokuapp.com']
+CORS_ORIGIN_WHITELIST = ['https://nabimusic.herokuapp.com', 'https://www.nabimusic.com', 'http://www.nabimusic.com']
