@@ -18,13 +18,13 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import *
 from rest_framework.response import Response
 
-from core.constants import PHONE_TYPE_MAIN, ROLE_INSTRUCTOR
+from core.constants import PHONE_TYPE_MAIN, ROLE_INSTRUCTOR, ROLE_STUDENT
 from core.models import UserToken
 from core.utils import generate_hash, get_date_a_month_later, send_email
 
 from lesson.models import Instrument
 
-from .models import Education, Employment, Instructor, PhoneNumber, StudentDetails, get_account, get_user_phone
+from .models import Education, Employment, Instructor, PhoneNumber, StudentDetails, get_account, get_user_phone, TiedStudent
 
 from .serializers import (
     AvatarInstructorSerializer, AvatarParentSerializer, AvatarStudentSerializer, GuestEmailSerializer,
@@ -297,8 +297,31 @@ class WhoAmIView(views.APIView):
                                    for item in instructor.employment.all()]
             data['education'] = [{'degreeType': item.degree_type, 'fieldOfStudy': item.field_of_study}
                                   for item in instructor.education.all()]
+            return Response(data)
+        elif data['role'] == ROLE_STUDENT:
+            student = StudentDetails.objects.filter(user_id=data['id']).prefetch_related().first()
+            data['skillLevel'] = student.skillLevel
+            data['lessonPlace'] = student.lessonPlace
+            data['lessonDuration'] = student.lessonDuration
+            data['instrument'] = Instrument.objects.filter(id=student.instrument_id).first().name
+            return Response(data)
 
-        return Response(data)
+        else:
+            students = StudentDetails.objects.filter(user_id=data['id']).prefetch_related().all()
+            tied_students = StudentDetails.objects.filter(user_id=data['id']).prefetch_related().all()
+            data['students'] = [{
+                                'name': TiedStudent.objects.filter(
+                                    id=item.tiedStudent_id).first().name,
+                                'age': TiedStudent.objects.filter(
+                                    id=item.tiedStudent_id).first().age,
+                                'instrument': Instrument.objects.filter(
+                                    id=item.instrument_id).first().name,
+                                'skillLevel': item.skillLevel,
+                                'lessonPlace': item.lessonPlace,
+                                'lessonDuration': item.lessonDuration
+                                } for item in students]
+            return Response(data)
+
 
 
 class FetchInstructor(views.APIView):
