@@ -18,9 +18,8 @@ from rest_framework.permissions import *
 from rest_framework.response import Response
 
 from core.constants import PHONE_TYPE_MAIN, ROLE_INSTRUCTOR, ROLE_STUDENT, HOSTNAME_PROTOCOL
-
 from core.models import UserToken
-from core.utils import generate_hash
+from core.utils import generate_hash, get_date_a_month_later, send_email
 
 from .models import Education, Employment, Instructor, Instrument, PhoneNumber, StudentDetails, TiedStudent, \
     get_account, get_user_phone
