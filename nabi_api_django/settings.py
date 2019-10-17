@@ -137,10 +137,10 @@ AUTH_USER_MODEL = 'core.User'
 
 DEFAULT_FROM_EMAIL = 'test@nabimusic.com'
 
-# try:
-#     from .local_settings import *
-# except Exception as e:
-#     print('Error importing local_settings.py: {}'.format(str(e)))
+try:
+    from .local_settings import *
+except Exception as e:
+    print('Error importing local_settings.py: {}'.format(str(e)))
 
 
 if not DEBUG:
