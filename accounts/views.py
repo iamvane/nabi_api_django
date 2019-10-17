@@ -21,7 +21,8 @@ from core.constants import PHONE_TYPE_MAIN, ROLE_INSTRUCTOR, ROLE_STUDENT
 from core.models import UserToken
 from core.utils import generate_hash
 
-from .models import Education, Employment, Instructor, PhoneNumber, StudentDetails, get_account, get_user_phone, TiedStudent
+from .models import Education, Employment, Instructor, Instrument, PhoneNumber, StudentDetails, TiedStudent, \
+    get_account, get_user_phone
 
 from .serializers import (
     AvatarInstructorSerializer, AvatarParentSerializer, AvatarStudentSerializer, GuestEmailSerializer,
@@ -224,8 +225,8 @@ class WhoAmIView(views.APIView):
             data['bioDescription'] = account.bio_description
             data['music'] = account.music
             data['lessonSize'] = {'oneStudent': instructor.lessonsizes[0].one_student,
-                                   'smallGroups': instructor.lessonsizes[0].small_groups,
-                                   'largeGroups': instructor.lessonsizes[0].large_groups} \
+                                  'smallGroups': instructor.lessonsizes[0].small_groups,
+                                  'largeGroups': instructor.lessonsizes[0].large_groups} \
                 if len(instructor.lessonsizes) else {}
             data['instruments'] = [{'name': item.instrument.name, 'skillLevel': item.skill_level}
                                    for item in instructor.instructorinstruments_set.all()]
@@ -277,48 +278,47 @@ class WhoAmIView(views.APIView):
                                     'sun6to9': instructor.availability.all()[0].sun6to9} \
                 if instructor.availability.count() else {}
             data['qualifications'] = {'certifiedTeacher': instructor.additionalqualifications[0].certified_teacher,
-                                                'musicTherapy': instructor.additionalqualifications[0].music_therapy,
-                                                'musicProduction': instructor.additionalqualifications[0].music_production,
-                                                'earTraining': instructor.additionalqualifications[0].ear_training,
-                                                'conducting': instructor.additionalqualifications[0].conducting,
-                                                'virtuosoRecognition': instructor.additionalqualifications[0].virtuoso_recognition,
-                                                'performance': instructor.additionalqualifications[0].performance,
-                                                'musicTheory': instructor.additionalqualifications[0].music_theory,
-                                                'youngChildrenExperience': instructor.additionalqualifications[0].young_children_experience,
-                                                'repertoireSelection': instructor.additionalqualifications[0].repertoire_selection} \
+                                      'musicTherapy': instructor.additionalqualifications[0].music_therapy,
+                                      'musicProduction': instructor.additionalqualifications[0].music_production,
+                                      'earTraining': instructor.additionalqualifications[0].ear_training,
+                                      'conducting': instructor.additionalqualifications[0].conducting,
+                                      'virtuosoRecognition': instructor.additionalqualifications[0].virtuoso_recognition,
+                                      'performance': instructor.additionalqualifications[0].performance,
+                                      'musicTheory': instructor.additionalqualifications[0].music_theory,
+                                      'youngChildrenExperience': instructor.additionalqualifications[0].young_children_experience,
+                                      'repertoireSelection': instructor.additionalqualifications[0].repertoire_selection} \
                 if len(instructor.additionalqualifications) else {}
             data['studioAddress'] = instructor.studio_address
             data['travelDistance'] = instructor.travel_distance
             data['languages'] = instructor.languages
             data['employment'] = [{'employer': item.employer, 'jobTitle': item.job_title}
-                                   for item in instructor.employment.all()]
+                                  for item in instructor.employment.all()]
             data['education'] = [{'degreeType': item.degree_type, 'fieldOfStudy': item.field_of_study}
-                                  for item in instructor.education.all()]
+                                 for item in instructor.education.all()]
             return Response(data)
         elif data['role'] == ROLE_STUDENT:
             student = StudentDetails.objects.filter(user_id=data['id']).prefetch_related().first()
-            data['skillLevel'] = student.skillLevel
-            data['lessonPlace'] = student.lessonPlace
-            data['lessonDuration'] = student.lessonDuration
-            data['instrument'] = Instrument.objects.filter(id=student.instrument_id).first().name
+            if student:
+                data['skillLevel'] = student.skill_level
+                data['lessonPlace'] = student.lesson_place
+                data['lessonDuration'] = student.lesson_duration
+                data['instrument'] = Instrument.objects.filter(id=student.instrument_id).first().name
             return Response(data)
 
         else:
             students = StudentDetails.objects.filter(user_id=data['id']).prefetch_related().all()
-            tied_students = StudentDetails.objects.filter(user_id=data['id']).prefetch_related().all()
             data['students'] = [{
                                 'name': TiedStudent.objects.filter(
-                                    id=item.tiedStudent_id).first().name,
+                                    id=item.tied_student_id).first().name,
                                 'age': TiedStudent.objects.filter(
-                                    id=item.tiedStudent_id).first().age,
+                                    id=item.tied_student_id).first().age,
                                 'instrument': Instrument.objects.filter(
                                     id=item.instrument_id).first().name,
-                                'skillLevel': item.skillLevel,
-                                'lessonPlace': item.lessonPlace,
-                                'lessonDuration': item.lessonDuration
+                                'skillLevel': item.skill_level,
+                                'lessonPlace': item.lesson_place,
+                                'lessonDuration': item.lesson_duration
                                 } for item in students]
             return Response(data)
-
 
 
 class FetchInstructor(views.APIView):
