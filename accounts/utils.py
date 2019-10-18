@@ -6,9 +6,6 @@ from django.utils import timezone
 from core.utils import get_date_a_month_later, send_email
 from core.constants import ROLE_INSTRUCTOR, HOSTNAME_PROTOCOL
 
-
-from core.constants import HOSTNAME_PROTOCOL
-
 def init_kwargs(model, arg_dict):
     return {
         k: v for k, v in arg_dict.items() if k in [
