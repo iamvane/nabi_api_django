@@ -71,7 +71,7 @@ DATABASES = {
         'USER': os.environ.get('DB_USER', 'postgres'),
         'PASSWORD': os.environ.get('DB_PASS', ''),
         'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': '5432',
+        'PORT': os.environ.get('PORT', '5432'),
         'OPTIONS': {'sslmode': 'require'},
         'TEST': {
             'NAME': 'nabidb_test',
@@ -166,3 +166,7 @@ SENDGRID_API_KEY = 'SG.n2dhfceQSYeFpb8JDGY6uw.H5ff_0VMyU-Eu-GT4XBPKbS5la_c73gmm7
 EMAIL_HOST_PASSWORD = SENDGRID_API_KEY
 
 DEFAULT_FROM_EMAIL = 'info@nabimusic.com'
+
+import dj_database_url 
+prod_db  =  dj_database_url.config(conn_max_age=500)
+DATABASES['default'].update(prod_db)
