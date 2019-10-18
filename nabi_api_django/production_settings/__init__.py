@@ -162,7 +162,9 @@ STATIC_URL = '/static/'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # STATICFILES_STORAGE = 'whitenoise.django.GzipManifestStaticFilesStorage'
 
-CORS_ORIGIN_WHITELIST = ['https://nabimusic.herokuapp.com', 'https://www.nabimusic.com', 'http://www.nabimusic.com']
+# CORS_ORIGIN_WHITELIST = ['https://nabimusic.herokuapp.com', 'https://www.nabimusic.com', 'http://www.nabimusic.com']
+
+CORS_ORIGIN_ALLOW_ALL = True
 
 TEMPLATE_DEBUG = False
 
