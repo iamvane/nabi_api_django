@@ -6,7 +6,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'foo'
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = []
 
@@ -155,3 +155,14 @@ if not DEBUG:
         dsn="https://e7aee34ab87d4e62ac4570f9c384436c@sentry.io/1774495",
         integrations=[DjangoIntegration()]
     )
+
+POSTGIS_TEMPLATE = 'nabidb'
+
+TWILIO_SERVICE_SID = 'VA293a21e5a5a43cb816d148473e353e86'
+TWILIO_ACCOUNT_SID = 'AC470b09cbcb7ed2ee226b275cfba769ac'
+TWILIO_AUTH_TOKEN = '94e63280d99aad33698598ae6e432ce1'
+
+SENDGRID_API_KEY = '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'
+EMAIL_HOST_PASSWORD = SENDGRID_API_KEY
+
+DEFAULT_FROM_EMAIL = 'info@nabimusic.com'
