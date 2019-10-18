@@ -4,11 +4,11 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', '')
+SECRET_KEY = 'foo'
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 INSTALLED_APPS = [
@@ -69,7 +69,7 @@ DATABASES = {
         'USER': os.environ.get('DB_USER', 'postgres'),
         'PASSWORD': os.environ.get('DB_PASS', ''),
         'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': '5432',
+        'PORT': os.environ.get('PORT', '5432'),
         'OPTIONS': {'sslmode': 'require'},
         'TEST': {
             'NAME': 'nabidb_test',
@@ -135,10 +135,10 @@ AUTH_USER_MODEL = 'core.User'
 
 DEFAULT_FROM_EMAIL = 'test@nabimusic.com'
 
-try:
-    from .local_settings import *
-except Exception as e:
-    print('Error importing local_settings.py: {}'.format(str(e)))
+# try:
+#     from .local_settings import *
+# except Exception as e:
+#     print('Error importing local_settings.py: {}'.format(str(e)))
 
 
 if not DEBUG:
@@ -153,3 +153,18 @@ if not DEBUG:
         dsn="https://e7aee34ab87d4e62ac4570f9c384436c@sentry.io/1774495",
         integrations=[DjangoIntegration()]
     )
+
+POSTGIS_TEMPLATE = 'nabidb'
+
+TWILIO_SERVICE_SID = 'foo'
+TWILIO_ACCOUNT_SID = 'foo'
+TWILIO_AUTH_TOKEN = 'foo'
+
+SENDGRID_API_KEY = 'foo'
+EMAIL_HOST_PASSWORD = SENDGRID_API_KEY
+
+DEFAULT_FROM_EMAIL = 'foo@foo.com'
+
+import dj_database_url
+prod_db  =  dj_database_url.config(conn_max_age=500)
+DATABASES['default'].update(prod_db)

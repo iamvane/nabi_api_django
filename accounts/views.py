@@ -17,9 +17,9 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import *
 from rest_framework.response import Response
 
-from core.constants import PHONE_TYPE_MAIN, ROLE_INSTRUCTOR, ROLE_STUDENT
+from core.constants import PHONE_TYPE_MAIN, ROLE_INSTRUCTOR, ROLE_STUDENT, HOSTNAME_PROTOCOL
 from core.models import UserToken
-from core.utils import generate_hash
+from core.utils import generate_hash, get_date_a_month_later, send_email
 
 from .models import Education, Employment, Instructor, Instrument, PhoneNumber, StudentDetails, TiedStudent, \
     get_account, get_user_phone
@@ -135,7 +135,7 @@ class ResetPasswordView(views.APIView):
                     pass
                 else:
                     repeated_token = False
-            target_url = '{}/forgot-password?token={}'.format(settings.HOSTNAME_PROTOCOL, token)
+            target_url = '{}/forgot-password?token={}'.format(HOSTNAME_PROTOCOL, token)
             context = {'url_reset_pass': target_url}
             text_content = loader.render_to_string('reset_password_plain.html', context)
             html_content = loader.render_to_string('reset_password.html', context)
