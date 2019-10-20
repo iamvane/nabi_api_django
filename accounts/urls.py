@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from rest_framework_simplejwt import views as jwt_views
 
 urlpatterns = [
     path('register/', views.CreateAccount.as_view()),
@@ -22,4 +23,6 @@ urlpatterns = [
     path('education/', views.InstructorEducationView.as_view()),
     path('employment/<int:pk>/', views.InstructorEmploymentItemView.as_view()),
     path('employment/', views.InstructorEmploymentView.as_view()),
+    path('api-token/', jwt_views.TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api-token-refresh/', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
 ]
