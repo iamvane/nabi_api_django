@@ -119,6 +119,7 @@ REST_PAGE_SIZE = 20
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
@@ -180,3 +181,10 @@ SENDGRID_API_KEY = os.environ['SENDGRID_KEY']
 EMAIL_HOST_PASSWORD = SENDGRID_API_KEY
 
 DEFAULT_FROM_EMAIL = os.environ['DEFAULT_FROM_EMAIL']
+
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=30),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+}
