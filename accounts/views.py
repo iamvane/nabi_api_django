@@ -33,9 +33,17 @@ from .serializers import (
 )
 from .utils import send_welcome_email, send_referral_invitation_email
 
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
 
 User = get_user_model()
 logger = getLogger('api_errors')
+
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        return token
 
 
 def get_user_response(account):
@@ -79,7 +87,6 @@ class CreateAccount(views.APIView):
             return Response(status=status.HTTP_400_BAD_REQUEST)
         if serializer.is_valid():
             user_cc = serializer.save()
-            login(request, user_cc.user)
             try:
                 send_welcome_email(user_cc)
             except Exception as e:
@@ -87,7 +94,7 @@ class CreateAccount(views.APIView):
                     "error": str(e)
                 }, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(get_user_response(user_cc))
+            return Response(get_user_response(user_cc), MyTokenObtainPairSerializer.get_token(user_cc.user))
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def get_serializer_class(self, request):

@@ -1,9 +1,10 @@
 from django.urls import path
 from . import views
 from rest_framework_simplejwt import views as jwt_views
+from django.views.decorators.csrf import csrf_exempt
 
 urlpatterns = [
-    path('register/', views.CreateAccount.as_view()),
+    path('register/', csrf_exempt(views.CreateAccount.as_view())),
     path('login/', views.LoginView.as_view()),
     path('forgot-password/', views.ResetPasswordView.as_view()),
     path('logout/', views.LogoutView.as_view()),
