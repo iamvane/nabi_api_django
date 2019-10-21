@@ -35,15 +35,19 @@ from .utils import send_welcome_email, send_referral_invitation_email
 
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-
 User = get_user_model()
 logger = getLogger('api_errors')
 
-class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
-    @classmethod
-    def get_token(cls, user):
-        token = super().get_token(user)
-        return token
+from rest_framework_simplejwt.tokens import RefreshToken
+
+
+def get_tokens_for_user(user):
+    refresh = RefreshToken.for_user(user)
+
+    return {
+        'refresh': str(refresh),
+        'access': str(refresh.access_token),
+    }
 
 
 def get_user_response(account):
@@ -77,7 +81,7 @@ def get_instructor_profile(user_cc):
 
 
 class CreateAccount(views.APIView):
-    permission_classes = (AllowAny,)
+    permission_classes = ()
 
     @transaction.atomic()
     def post(self, request):
@@ -87,14 +91,9 @@ class CreateAccount(views.APIView):
             return Response(status=status.HTTP_400_BAD_REQUEST)
         if serializer.is_valid():
             user_cc = serializer.save()
-            try:
-                send_welcome_email(user_cc)
-            except Exception as e:
-                return Response({
-                    "error": str(e)
-                }, status=status.HTTP_400_BAD_REQUEST)
-
-            return Response(get_user_response(user_cc), MyTokenObtainPairSerializer.get_token(user_cc.user))
+            user_response = get_user_response(user_cc)
+            user_response['token'] = get_tokens_for_user(user_cc.user)
+            return Response(user_response)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def get_serializer_class(self, request):
@@ -124,7 +123,7 @@ class LoginView(views.APIView):
 
 class ResetPasswordView(views.APIView):
     """For set a new password, when user forgot it."""
-    permission_classes = (AllowAny, )
+    permission_classes = (AllowAny,)
 
     def post(self, request):
         serializer = UserEmailSerializer(data=request.data)
@@ -178,20 +177,17 @@ class ResetPasswordView(views.APIView):
 
 
 class LogoutView(views.APIView):
-
     def get(self, request):
         logout(request)
         return Response({'message': "You have successfully logged out."}, status=status.HTTP_200_OK)
 
 
 class CsrfTokenView(views.APIView):
-
     def get(self, request):
         return Response({'token': get_token(request)})
 
 
 class WhoAmIView(views.APIView):
-
     def get(self, request):
         if not request.user.is_authenticated:
             return {'id': None, 'email': None, 'role': None, 'firstName': None, 'middleName': None, 'lastName': None,
@@ -225,7 +221,7 @@ class WhoAmIView(views.APIView):
                 Prefetch('instructorplaceforlessons_set', to_attr='placeforlessons'),
                 Prefetch('availability'),
                 Prefetch('instructoradditionalqualifications_set', to_attr='additionalqualifications'),
-                Prefetch('employment',),
+                Prefetch('employment', ),
                 Prefetch('education'),
             ).first()
             data['bioTitle'] = account.bio_title
@@ -289,11 +285,14 @@ class WhoAmIView(views.APIView):
                                       'musicProduction': instructor.additionalqualifications[0].music_production,
                                       'earTraining': instructor.additionalqualifications[0].ear_training,
                                       'conducting': instructor.additionalqualifications[0].conducting,
-                                      'virtuosoRecognition': instructor.additionalqualifications[0].virtuoso_recognition,
+                                      'virtuosoRecognition': instructor.additionalqualifications[
+                                          0].virtuoso_recognition,
                                       'performance': instructor.additionalqualifications[0].performance,
                                       'musicTheory': instructor.additionalqualifications[0].music_theory,
-                                      'youngChildrenExperience': instructor.additionalqualifications[0].young_children_experience,
-                                      'repertoireSelection': instructor.additionalqualifications[0].repertoire_selection} \
+                                      'youngChildrenExperience': instructor.additionalqualifications[
+                                          0].young_children_experience,
+                                      'repertoireSelection': instructor.additionalqualifications[
+                                          0].repertoire_selection} \
                 if len(instructor.additionalqualifications) else {}
             data['studioAddress'] = instructor.studio_address
             data['travelDistance'] = instructor.travel_distance
@@ -315,21 +314,20 @@ class WhoAmIView(views.APIView):
         else:
             students = StudentDetails.objects.filter(user_id=data['id']).prefetch_related().all()
             data['students'] = [{
-                                'name': TiedStudent.objects.filter(
-                                    id=item.tied_student_id).first().name,
-                                'age': TiedStudent.objects.filter(
-                                    id=item.tied_student_id).first().age,
-                                'instrument': Instrument.objects.filter(
-                                    id=item.instrument_id).first().name,
-                                'skillLevel': item.skill_level,
-                                'lessonPlace': item.lesson_place,
-                                'lessonDuration': item.lesson_duration
+                                    'name': TiedStudent.objects.filter(
+                                        id=item.tied_student_id).first().name,
+                                    'age': TiedStudent.objects.filter(
+                                        id=item.tied_student_id).first().age,
+                                    'instrument': Instrument.objects.filter(
+                                        id=item.instrument_id).first().name,
+                                    'skillLevel': item.skill_level,
+                                    'lessonPlace': item.lesson_place,
+                                    'lessonDuration': item.lesson_duration
                                 } for item in students]
             return Response(data)
 
 
 class FetchInstructor(views.APIView):
-
     def get(self, request):
         data = {
             'id': None,
@@ -342,7 +340,6 @@ class FetchInstructor(views.APIView):
 
 
 class UpdateProfileView(views.APIView):
-
     def put(self, request):
         serializer = InstructorProfileSerializer(data=request.data, instance=Instructor.objects.get(user=request.user))
         if serializer.is_valid():
@@ -352,7 +349,6 @@ class UpdateProfileView(views.APIView):
 
 
 class UpdateUserInfoView(views.APIView):
-
     def put(self, request):
         serializer = UserInfoUpdateSerializer(instance=request.user, data=request.data, partial=True)
         if serializer.is_valid():
@@ -363,7 +359,6 @@ class UpdateUserInfoView(views.APIView):
 
 
 class VerifyPhoneView(views.APIView):
-
     def post(self, request):
         try:
             phone = PhoneNumber.objects.get(user=request.user, number=request.data['phoneNumber'])
@@ -378,7 +373,8 @@ class VerifyPhoneView(views.APIView):
             .services(settings.TWILIO_SERVICE_SID) \
             .verifications \
             .create(to=phone.number, channel=request.data['channel'])
-        return Response({"sid": verification.sid, "status": verification.status, 'message': 'Token was sent to {}.'.format(request.data['phoneNumber'])})
+        return Response({"sid": verification.sid, "status": verification.status,
+                         'message': 'Token was sent to {}.'.format(request.data['phoneNumber'])})
 
     def put(self, request):
         phone = PhoneNumber.objects.get(user=request.user, number=request.data['phoneNumber'])
@@ -396,7 +392,6 @@ class VerifyPhoneView(views.APIView):
 
 
 class InstructorBuildJobPreferences(views.APIView):
-
     def post(self, request):
         serializer = InstructorBuildJobPreferencesSerializer(data=request.data,
                                                              instance=Instructor.objects.get(user=request.user))
@@ -407,7 +402,6 @@ class InstructorBuildJobPreferences(views.APIView):
 
 
 class InstructorEducationView(views.APIView):
-
     def post(self, request):
         data = request.data.copy()
         data['instructor'] = request.user.instructor.pk
@@ -427,7 +421,6 @@ class InstructorEducationView(views.APIView):
 
 
 class InstructorEducationItemView(views.APIView):
-
     def put(self, request, pk):
         data = request.data.copy()
         data['instructor'] = request.user.instructor.pk
@@ -452,7 +445,7 @@ class InstructorEducationItemView(views.APIView):
 
 
 class UploadAvatarView(views.APIView):
-    parser_classes = (MultiPartParser, )
+    parser_classes = (MultiPartParser,)
 
     def post(self, request):
         serializer_class = self.get_serializer_class(request)
@@ -475,7 +468,6 @@ class UploadAvatarView(views.APIView):
 
 
 class ReferralInvitation(views.APIView):
-
     def post(self, request):
         serializer = GuestEmailSerializer(data=request.data)
         if serializer.is_valid():
@@ -493,7 +485,6 @@ class ReferralInvitation(views.APIView):
 
 
 class StudentDetailView(views.APIView):
-
     def put(self, request):
         data = request.data.copy()
         data['user'] = request.user.pk
@@ -519,7 +510,6 @@ class StudentDetailView(views.APIView):
 
 
 class TiedStudentView(views.APIView):
-
     def post(self, request):
         # add parent's id to data student
         data = request.data.copy()
@@ -537,7 +527,6 @@ class TiedStudentView(views.APIView):
 
 
 class TiedStudentItemView(views.APIView):
-
     def put(self, request, pk):
         try:
             instance = StudentDetails.objects.get(pk=pk)
@@ -561,7 +550,6 @@ class TiedStudentItemView(views.APIView):
 
 
 class InstructorEmploymentView(views.APIView):
-
     def post(self, request):
         serializer = InstructorEmploymentSerializer(data=request.data, context={'user': request.user})
         if serializer.is_valid():
@@ -579,7 +567,6 @@ class InstructorEmploymentView(views.APIView):
 
 
 class InstructorEmploymentItemView(views.APIView):
-
     def put(self, request, pk):
         try:
             instance = Employment.objects.get(pk=pk)
