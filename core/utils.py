@@ -5,6 +5,7 @@ from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
+from django.template import loader
 
 
 def update_model(instance, **kwargs):
@@ -29,18 +30,16 @@ def generate_hash(value):
     return hash_value.hexdigest()
 
 
-def send_email(sender, receivers, subject, template, template_params=None):
+def send_email(sender, receivers, subject, template, template_plain, template_params=None):
     if not isinstance(receivers, list):
         receivers = [receivers, ]
     if template_params is None:
         template_params = {}
-    html_message = render_to_string(template, template_params)
-    plain_message = strip_tags(html_message)
-    msg = EmailMultiAlternatives(subject, plain_message, sender, receivers)
-    msg.content_subtype = 'html'
-    msg.mixed_subtype = 'related'
-    msg.attach_alternative(html_message, "text/html")
-    msg.send()
+    text_content = loader.render_to_string(template_plain, template_params)
+    html_content = loader.render_to_string(template, template_params)
+    email_message = EmailMultiAlternatives(subject, text_content, sender, receivers)
+    email_message.attach_alternative(html_content, 'text/html')
+    email_message.send()
 
 
 def get_date_a_month_later(initial_date):

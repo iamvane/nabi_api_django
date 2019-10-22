@@ -373,12 +373,16 @@ class InstructorBuildJobPreferencesSerializer(serializers.Serializer):
     def to_internal_value(self, data):
         new_data = {
             'instruments': data.get('instruments'), 'lesson_size': data.get('lessonSize'),
-            'age_group': data.get('ageGroup'), 'lesson_rate': data.get('lessonRate'),
+            'age_group': data.get('ageGroup'), 'lesson_rate': data.get('rates'),
             'place_for_lessons': data.get('placeForLessons'), 'availability': data.get('availability'),
-            'additional_qualifications': data.get('additionalQualifications'),
-            'studio_address': data.get('studioAddress'), 'travel_distance': data.get('travelDistance'),
+            'additional_qualifications': data.get('qualifications'),
             'languages': data.get('languages'),
         }
+        if data.get('studioAddress'):
+            new_data['studio_address'] = data.get('studioAddress')
+        if data.get('travelDistance'):
+            new_data['travel_distance'] = data.get('travelDistance')
+
         return super().to_internal_value(new_data)
 
     def update(self, instance, validated_data):
@@ -451,7 +455,7 @@ class GuestEmailSerializer(serializers.Serializer):
 
     def validate_email(self, value):
         if User.objects.filter(email=value).exists():
-            raise validators.ValidationError("Email is registered already")
+            raise validators.ValidationError("Email is already registered.")
         else:
             return value
 

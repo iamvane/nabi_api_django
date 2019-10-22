@@ -77,4 +77,4 @@ def send_referral_invitation_email(user, email):
     if anonymous_message:
         params['anonymous_message']: anonymous_message
 
-    send_email(from_email, [to_email], subject, template, params)
+    send_email(from_email, [to_email], subject, template, plain_template, params)
