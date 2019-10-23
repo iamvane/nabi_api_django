@@ -1,4 +1,4 @@
-from pygeocoder import Geocoder
+from pygeocoder import Geocoder, GeocoderError
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -56,16 +56,24 @@ class IUserAccount(models.Model):
                 lng = float(self.lng)
             except Exception:
                 return ''
-            geocoder = Geocoder(api_key=settings.GOOGLE_MAPS_API_KEY)
-            locations = geocoder.reverse_geocode(lat, lng)
+            if lat < -90 or lat > 90 or lng < -180 or lng > 180:
+                return ''
+            try:
+                geocoder = Geocoder(api_key=settings.GOOGLE_MAPS_API_KEY)
+                locations = geocoder.reverse_geocode(lat, lng)
+            except GeocoderError:
+                locations = []
             city = state = ''
             for item in locations:
-                state = item.state
+                if item.country__short_name == 'US':
+                    state = item.state__short_name
+                else:
+                    state = item.state
                 if item.city:
                     city = item.city
                     break
             if state:
-                return '{} {}'.format(city, state)
+                return '{}, {}'.format(city, state)
             else:
                 return ''
 
