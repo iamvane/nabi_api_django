@@ -645,3 +645,49 @@ class InstructorEmploymentSerializer(serializers.ModelSerializer):
             if keys.get('stillWorkHere'):
                 new_data['still_work_here'] = data['stillWorkHere']
         return super().to_internal_value(new_data)
+
+
+class InstructorDataSerializer(serializers.ModelSerializer):
+    """Serializer for return instructor data, to usage in searching instructor"""
+    display_name = serializers.SerializerMethodField()
+    location = serializers.SerializerMethodField()
+    reviews = serializers.IntegerField(default=0)
+    lessons_taught = serializers.IntegerField(default=0)
+    instruments = serializers.SerializerMethodField()
+    last_login = serializers.DateTimeField(source='user.last_login', format='%Y-%m-%d %H:%M:%S')
+    member_since = serializers.DateTimeField(source='created_at', format='%Y')
+
+    class Meta:
+        model = Instructor
+        fields = ['display_name', 'avatar', 'age', 'bio_title', 'bio_description', 'location', 'reviews',
+                  'instruments', 'rates', 'lessons_taught', 'last_login', 'member_since']
+
+    def get_display_name(self, instructor):
+        first_name = instructor.user.first_name
+        if first_name:
+            initial_last_name = instructor.user.last_name[:1]
+        else:
+            initial_last_name = ''
+        if initial_last_name:
+            return '{first_name} {initial_last_name}.'.format(first_name=first_name,
+                                                              initial_last_name=initial_last_name)
+        else:
+            return first_name
+
+    def get_location(self, instructor):
+        return instructor.get_location()
+
+    def get_instruments(self, instructor):
+        return [item.instrument.name
+                for item in instructor.instructorinstruments_set.select_related('instrument').all()]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        new_data = {'displayName': data.get('display_name'), 'age': data.get('age'),
+                    'avatar': data.get('avatar').url if data.get('avatar') else data.get('avatar'),
+                    'bioTitle': data.get('bio_title'), 'bioDescription': data.get('bio_description'),
+                    'location': data.get('location'), 'reviews': data.get('reviews'),
+                    'lessonsTaught': data.get('lessons_taught'), 'instruments': data.get('instruments'),
+                    'rates': data.get('rates'), 'lastLogin': data.get('last_login'),
+                    'memberSince': data.get('member_since')}
+        return new_data

@@ -26,10 +26,10 @@ from .models import Education, Employment, Instructor, Instrument, PhoneNumber, 
 
 from .serializers import (
     AvatarInstructorSerializer, AvatarParentSerializer, AvatarStudentSerializer, GuestEmailSerializer,
-    InstructorBuildJobPreferencesSerializer, InstructorCreateAccountSerializer, InstructorEducationSerializer,
-    InstructorEmploymentSerializer, InstructorProfileSerializer, ParentCreateAccountSerializer,
-    StudentCreateAccountSerializer, StudentDetailsSerializer, TiedStudentSerializer, TiedStudentItemSerializer,
-    UserEmailSerializer, UserInfoUpdateSerializer, UserPasswordSerializer,
+    InstructorBuildJobPreferencesSerializer, InstructorCreateAccountSerializer, InstructorDataSerializer,
+    InstructorEducationSerializer, InstructorEmploymentSerializer, InstructorProfileSerializer,
+    ParentCreateAccountSerializer, StudentCreateAccountSerializer, StudentDetailsSerializer, TiedStudentSerializer,
+    TiedStudentItemSerializer, UserEmailSerializer, UserInfoUpdateSerializer, UserPasswordSerializer,
 )
 from .utils import send_welcome_email, send_referral_invitation_email
 
@@ -589,3 +589,10 @@ class InstructorEmploymentItemView(views.APIView):
                             status=status.HTTP_400_BAD_REQUEST)
         instance.delete()
         return Response({"message": "success"}, status=status.HTTP_200_OK)
+
+
+class InstructorListView(views.APIView):
+
+    def get(self, request):
+        serializer = InstructorDataSerializer(Instructor.objects.all(), many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
