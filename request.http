@@ -356,6 +356,6 @@ X-CSRFToken: 8LUV70LbEX0JeWQFfd8N3XTzdH105FTjruMxyy5xRm39TfysDiZRDzd2SIkHlQbf
 
 ###
 
-GET localhost:8000/v1/fetch-instructors/
+GET localhost:8000/v1/instructors/
 
 ###
