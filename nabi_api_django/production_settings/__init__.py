@@ -161,7 +161,13 @@ STATIC_URL = '/static/'
 #  Add configuration for static files storage using whitenoise
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-CORS_ORIGIN_WHITELIST = ['https://nabimusic.herokuapp.com', 'https://www.nabimusic.com', 'http://www.nabimusic.com']
+CORS_ORIGIN_WHITELIST = [
+    'https://nabimusic.herokuapp.com',
+    'https://www.nabimusic.com',
+    'http://www.nabimusic.com',
+    'http://www.nabimusiccenter.com',
+    'https://www.nabimusiccenter.com'
+]
 
 CORS_ALLOW_CREDENTIALS = True
 

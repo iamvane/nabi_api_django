@@ -67,8 +67,8 @@ def get_user_phone(user_acc):
     qs = PhoneNumber.objects.filter(user=user_acc.user)
     if qs.exists():
         phone = qs.all()[0]
-        data = {'phone_number': phone.number,
-                'is_verified': True if phone.verified_at is not None else False,
+        data = {'phoneNumber': phone.number,
+                'isVerified': True if phone.verified_at is not None else False,
                 }
     return data
 
