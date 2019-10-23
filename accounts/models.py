@@ -1,6 +1,10 @@
+from pygeocoder import Geocoder
+
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import HStoreField, ArrayField
 from django.db import models
+from django.utils import timezone
 
 from core.constants import (
     ADDRESS_TYPE_CHOICES, DAY_CHOICES, DEGREE_TYPE_CHOICES, GENDER_CHOICES, LESSON_DURATION_CHOICES,
@@ -36,6 +40,34 @@ class IUserAccount(models.Model):
     @property
     def role(self):
         raise Exception('IUserAccount child class must implement this attribute')
+
+    @property
+    def age(self):
+        today = timezone.now()
+        years = today.year - self.birthday.year
+        if (today.month, today.day) < (self.birthday.month, self.birthday.day):
+            years -= 1
+        return years
+
+    def get_location(self):
+        if self.lat is not None and self.lng is not None:
+            try:
+                lat = float(self.lat)
+                lng = float(self.lng)
+            except Exception:
+                return ''
+            geocoder = Geocoder(api_key=settings.GOOGLE_MAPS_API_KEY)
+            locations = geocoder.reverse_geocode(lat, lng)
+            city = state = ''
+            for item in locations:
+                state = item.state
+                if item.city:
+                    city = item.city
+                    break
+            if state:
+                return '{} {}'.format(city, state)
+            else:
+                return ''
 
 
 class Address(models.Model):

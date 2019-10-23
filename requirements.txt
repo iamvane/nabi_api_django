@@ -23,6 +23,7 @@ MarkupSafe==1.1.1
 Pillow==6.1.0
 pinax-stripe==4.4.0
 psycopg2-binary==2.8.3
+pygeocoder==1.2.5
 PyJWT==1.7.1
 PySocks==1.7.0
 pytz==2019.1
