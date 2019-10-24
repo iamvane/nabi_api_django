@@ -237,17 +237,17 @@ class InstructorInstruments(models.Model):
 
 class InstructorLessonSize(models.Model):
     instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE)
-    one_student = models.BooleanField()
-    small_groups = models.BooleanField()
-    large_groups = models.BooleanField()
+    one_student = models.BooleanField(default=False)
+    small_groups = models.BooleanField(default=False)
+    large_groups = models.BooleanField(default=False)
 
 
 class InstructorAgeGroup(models.Model):
     instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE)
-    children = models.BooleanField()
-    teens = models.BooleanField()
-    adults = models.BooleanField()
-    seniors = models.BooleanField()
+    children = models.BooleanField(default=False)
+    teens = models.BooleanField(default=False)
+    adults = models.BooleanField(default=False)
+    seniors = models.BooleanField(default=False)
 
 
 class InstructorLessonRate(models.Model):
@@ -260,23 +260,23 @@ class InstructorLessonRate(models.Model):
 
 class InstructorPlaceForLessons(models.Model):
     instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE)
-    home = models.BooleanField()
-    studio = models.BooleanField()
-    online = models.BooleanField()
+    home = models.BooleanField(default=False)
+    studio = models.BooleanField(default=False)
+    online = models.BooleanField(default=False)
 
 
 class InstructorAdditionalQualifications(models.Model):
     instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE)
-    certified_teacher = models.BooleanField()
-    music_therapy = models.BooleanField()
-    music_production = models.BooleanField()
-    ear_training = models.BooleanField()
-    conducting = models.BooleanField()
-    virtuoso_recognition = models.BooleanField()
-    performance = models.BooleanField()
-    music_theory = models.BooleanField()
-    young_children_experience = models.BooleanField()
-    repertoire_selection = models.BooleanField()
+    certified_teacher = models.BooleanField(default=False)
+    music_therapy = models.BooleanField(default=False)
+    music_production = models.BooleanField(default=False)
+    ear_training = models.BooleanField(default=False)
+    conducting = models.BooleanField(default=False)
+    virtuoso_recognition = models.BooleanField(default=False)
+    performance = models.BooleanField(default=False)
+    music_theory = models.BooleanField(default=False)
+    young_children_experience = models.BooleanField(default=False)
+    repertoire_selection = models.BooleanField(default=False)
 
 
 class Student(IUserAccount):
