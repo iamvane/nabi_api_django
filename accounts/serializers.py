@@ -227,26 +227,22 @@ class LessonSizeSerializer(serializers.Serializer):
         return data
 
     def to_internal_value(self, data):
-        if self.instance is None:
-            new_data = {'one_student': data.get('oneStudent'), 'small_groups': data.get('smallGroups'),
-                        'large_groups': data.get('largeGroups')}
-        else:
-            new_data = {}
-            keys = dict.fromkeys(data, 1)
-            if 'oneStudent' in keys:
-                new_data['one_student'] = data['oneStudent']
-            if 'smallGroups' in keys:
-                new_data['small_groups'] = data['smallGroups']
-            if 'largeGroups' in keys:
-                new_data['large_groups'] = data['largeGroups']
+        new_data = {}
+        keys = dict.fromkeys(data, 1)
+        if 'oneStudent' in keys:
+            new_data['one_student'] = data['oneStudent']
+        if 'smallGroups' in keys:
+            new_data['small_groups'] = data['smallGroups']
+        if 'largeGroups' in keys:
+            new_data['large_groups'] = data['largeGroups']
         return new_data
 
 
 class AgeGroupsSerializer(serializers.Serializer):
-    children = serializers.BooleanField()
-    teens = serializers.BooleanField()
-    adults = serializers.BooleanField()
-    seniors = serializers.BooleanField()
+    children = serializers.BooleanField(required=False)
+    teens = serializers.BooleanField(required=False)
+    adults = serializers.BooleanField(required=False)
+    seniors = serializers.BooleanField(required=False)
 
 
 class LessonRateSerializer(serializers.Serializer):
@@ -257,22 +253,22 @@ class LessonRateSerializer(serializers.Serializer):
 
 
 class PlaceForLessonsSerializer(serializers.Serializer):
-    home = serializers.BooleanField()
-    studio = serializers.BooleanField()
-    online = serializers.BooleanField()
+    home = serializers.BooleanField(required=False)
+    studio = serializers.BooleanField(required=False)
+    online = serializers.BooleanField(required=False)
 
 
 class AdditionalQualifications(serializers.Serializer):
-    certified_teacher = serializers.BooleanField()
-    music_therapy = serializers.BooleanField()
-    music_production = serializers.BooleanField()
-    ear_training = serializers.BooleanField()
-    conducting = serializers.BooleanField()
-    virtuoso_recognition = serializers.BooleanField()
-    performance = serializers.BooleanField()
-    music_theory = serializers.BooleanField()
-    young_children_experience = serializers.BooleanField()
-    repertoire_selection = serializers.BooleanField()
+    certified_teacher = serializers.BooleanField(required=False)
+    music_therapy = serializers.BooleanField(required=False)
+    music_production = serializers.BooleanField(required=False)
+    ear_training = serializers.BooleanField(required=False)
+    conducting = serializers.BooleanField(required=False)
+    virtuoso_recognition = serializers.BooleanField(required=False)
+    performance = serializers.BooleanField(required=False)
+    music_theory = serializers.BooleanField(required=False)
+    young_children_experience = serializers.BooleanField(required=False)
+    repertoire_selection = serializers.BooleanField(required=False)
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -285,38 +281,28 @@ class AdditionalQualifications(serializers.Serializer):
         return new_data
 
     def to_internal_value(self, data):
-        if self.instance is None:
-            new_data = {
-                'certified_teacher': data.get('certifiedTeacher'), 'music_therapy': data.get('musicTherapy'),
-                'music_production': data.get('musicProduction'), 'ear_training': data.get('earTraining'),
-                'conducting': data.get('conducting'), 'virtuoso_recognition': data.get('virtuosoRecognition'),
-                'performance': data.get('performance'), 'music_theory': data.get('musicTheory'),
-                'young_children_experience': data.get('youngChildrenExperience'),
-                'repertoire_selection': data.get('repertoireSelection'),
-            }
-        else:
-            new_data = {}
-            keys = dict.fromkeys(data, 1)
-            if keys.get('certifiedTeacher'):
-                new_data['certified_teacher'] = data['certifiedTeacher']
-            if keys.get('musicTherapy'):
-                new_data['music_therapy'] = data['musicTherapy']
-            if keys.get('musicProduction'):
-                new_data['music_production'] = data['musicProduction']
-            if keys.get('earTraining'):
-                new_data['ear_training'] = data['earTraining']
-            if keys.get('conducting'):
-                new_data['conducting'] = data['conducting']
-            if keys.get('virtuosoRecognition'):
-                new_data['virtuoso_recognition'] = data['virtuosoRecognition']
-            if keys.get('performance'):
-                new_data['performance'] = data['performance']
-            if keys.get('musicTheory'):
-                new_data['music_theory'] = data['musicTheory']
-            if keys.get('youngChildrenExperience'):
-                new_data['young_children_experience'] = data['youngChildrenExperience']
-            if keys.get('repertoireSelection'):
-                new_data['repertoire_selection'] = data['repertoireSelection']
+        new_data = {}
+        keys = dict.fromkeys(data, 1)
+        if keys.get('certifiedTeacher'):
+            new_data['certified_teacher'] = data['certifiedTeacher']
+        if keys.get('musicTherapy'):
+            new_data['music_therapy'] = data['musicTherapy']
+        if keys.get('musicProduction'):
+            new_data['music_production'] = data['musicProduction']
+        if keys.get('earTraining'):
+            new_data['ear_training'] = data['earTraining']
+        if keys.get('conducting'):
+            new_data['conducting'] = data['conducting']
+        if keys.get('virtuosoRecognition'):
+            new_data['virtuoso_recognition'] = data['virtuosoRecognition']
+        if keys.get('performance'):
+            new_data['performance'] = data['performance']
+        if keys.get('musicTheory'):
+            new_data['music_theory'] = data['musicTheory']
+        if keys.get('youngChildrenExperience'):
+            new_data['young_children_experience'] = data['youngChildrenExperience']
+        if keys.get('repertoireSelection'):
+            new_data['repertoire_selection'] = data['repertoireSelection']
         return super().to_internal_value(new_data)
 
 
@@ -417,17 +403,12 @@ class InstructorBuildJobPreferencesSerializer(serializers.Serializer):
         return instance
 
     def _set_instruments(self, instance, data):
+        InstructorInstruments.objects.filter(instructor=instance).delete()
         for item in data:
             ins = Instrument.objects.filter(name=item['instrument']).first()
             if ins is None:
                 ins = Instrument.objects.create(name=item['instrument'])
-            ins_ins = InstructorInstruments.objects.filter(instructor=instance, instrument=ins).first()
-            if ins_ins is None:
-                InstructorInstruments.objects.create(instrument=ins, instructor=instance,
-                                                     skill_level=item['skill_level'])
-            else:
-                ins_ins.skill_level = item['skill_level']
-                ins_ins.save()
+            InstructorInstruments.objects.create(instrument=ins, instructor=instance, skill_level=item['skill_level'])
 
     def _set_lesson_size(self, instance, data):
         self._update_or_create_model(instance=instance, model=InstructorLessonSize, data=data)
