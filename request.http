@@ -81,7 +81,7 @@ X-CSRFToken: 8LUV70LbEX0JeWQFfd8N3XTzdH105FTjruMxyy5xRm39TfysDiZRDzd2SIkHlQbf
     "adults": true,
     "seniors": true
   },
-  "lessonRate": {
+  "rates": {
     "mins30": 50,
     "mins45": 50,
     "mins60": 50,
@@ -92,14 +92,12 @@ X-CSRFToken: 8LUV70LbEX0JeWQFfd8N3XTzdH105FTjruMxyy5xRm39TfysDiZRDzd2SIkHlQbf
     "studio": true,
     "online": true
   },
-  "availability": [
-    {
+  "availability": {
       "mon8to10": true,
     "mon10to12": false,
     "mon12to3": true
-    }
-  ],
-  "additionalQualifications": {
+    },
+  "qualifications": {
     "certifiedTeacher": true,
     "musicTherapy": false,
     "musicProduction": false,

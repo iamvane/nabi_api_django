@@ -359,40 +359,57 @@ class AvailavilitySerializer(serializers.Serializer):
 
 
 class InstructorBuildJobPreferencesSerializer(serializers.Serializer):
-    instruments = serializers.ListField(child=InstrumentsSerializer())
-    lesson_size = LessonSizeSerializer()
-    age_group = AgeGroupsSerializer()
-    lesson_rate = LessonRateSerializer()
-    place_for_lessons = PlaceForLessonsSerializer()
-    availability = AvailavilitySerializer()
-    additional_qualifications = AdditionalQualifications()
+    instruments = serializers.ListField(child=InstrumentsSerializer(), required=False)
+    lesson_size = LessonSizeSerializer(required=False)
+    age_group = AgeGroupsSerializer(required=False)
+    lesson_rate = LessonRateSerializer(required=False)
+    place_for_lessons = PlaceForLessonsSerializer(required=False)
+    availability = AvailavilitySerializer(required=False)
+    additional_qualifications = AdditionalQualifications(required=False)
     studio_address = serializers.CharField(max_length=200, required=False)
     travel_distance = serializers.CharField(max_length=200, required=False)
     languages = serializers.ListField(child=serializers.CharField(), required=False)
 
     def to_internal_value(self, data):
-        new_data = {
-            'instruments': data.get('instruments'), 'lesson_size': data.get('lessonSize'),
-            'age_group': data.get('ageGroup'), 'lesson_rate': data.get('rates'),
-            'place_for_lessons': data.get('placeForLessons'), 'availability': data.get('availability'),
-            'additional_qualifications': data.get('qualifications'),
-            'languages': data.get('languages'),
-        }
-        if data.get('studioAddress'):
+        new_data = {}
+        keys = dict.fromkeys(data, 1)
+        if keys.get('lessonSize'):
+            new_data['lesson_size'] = data.get('lessonSize')
+        if keys.get('ageGroup'):
+            new_data['age_group'] = data.get('ageGroup')
+        if keys.get('rates'):
+            new_data['lesson_rate'] = data.get('rates')
+        if keys.get('placeForLessons'):
+            new_data['place_for_lessons'] = data.get('placeForLessons')
+        if keys.get('availability'):
+            new_data['availability'] = data.get('availability')
+        if keys.get('qualifications'):
+            new_data['additional_qualifications'] = data.get('qualifications')
+        if keys.get('languages'):
+            new_data['languages'] = data.get('languages')
+        if keys.get('instruments'):
+            new_data['instruments'] = data.get('instruments')
+        if keys.get('studioAddress'):
             new_data['studio_address'] = data.get('studioAddress')
-        if data.get('travelDistance'):
+        if keys.get('travelDistance'):
             new_data['travel_distance'] = data.get('travelDistance')
-
         return super().to_internal_value(new_data)
 
     def update(self, instance, validated_data):
-        self._set_instruments(instance, validated_data['instruments'])
-        self._set_lesson_size(instance, validated_data['lesson_size'])
-        self._set_age_group(instance, validated_data['age_group'])
-        self._set_lesson_rate(instance, validated_data['lesson_rate'])
-        self._set_place_for_lessons(instance, validated_data['place_for_lessons'])
-        self._set_instructor_addional_qualifications(instance, validated_data['additional_qualifications'])
-        self._set_availability(instance, validated_data['availability'])
+        if validated_data.get('instruments') is not None:
+            self._set_instruments(instance, validated_data['instruments'])
+        if validated_data.get('lesson_size') is not None:
+            self._set_lesson_size(instance, validated_data['lesson_size'])
+        if validated_data.get('age_group') is not None:
+            self._set_age_group(instance, validated_data['age_group'])
+        if validated_data.get('lesson_rate') is not None:
+            self._set_lesson_rate(instance, validated_data['lesson_rate'])
+        if validated_data.get('place_for_lessons') is not None:
+            self._set_place_for_lessons(instance, validated_data['place_for_lessons'])
+        if validated_data.get('additional_qualifications') is not None:
+            self._set_instructor_addional_qualifications(instance, validated_data['additional_qualifications'])
+        if validated_data.get('availability') is not None:
+            self._set_availability(instance, validated_data['availability'])
         if validated_data.get('studio_address') is not None:
             self.studio_address = validated_data['studio_address']
         if validated_data.get('travel_distance') is not None:
@@ -406,7 +423,11 @@ class InstructorBuildJobPreferencesSerializer(serializers.Serializer):
                 ins = Instrument.objects.create(name=item['instrument'])
             ins_ins = InstructorInstruments.objects.filter(instructor=instance, instrument=ins).first()
             if ins_ins is None:
-                InstructorInstruments.objects.create(instrument=ins, instructor=instance)
+                InstructorInstruments.objects.create(instrument=ins, instructor=instance,
+                                                     skill_level=item['skill_level'])
+            else:
+                ins_ins.skill_level = item['skill_level']
+                ins_ins.save()
 
     def _set_lesson_size(self, instance, data):
         self._update_or_create_model(instance=instance, model=InstructorLessonSize, data=data)
