@@ -642,8 +642,10 @@ class InstructorEmploymentSerializer(serializers.ModelSerializer):
         if self.instance is None:
             new_data = {'employer': data.get('employer'), 'job_title': data.get('jobTitle'),
                         'job_location': data.get('jobLocation'), 'from_month': data.get('fromMonth'),
-                        'from_year': data.get('fromYear'), 'to_month': data.get('toMonth'), 'to_year': data.get('toYear'),
-                        'still_work_here': data.get('stillWorkHere')}
+                        'from_year': data.get('fromYear'), 'to_month': data.get('toMonth'),
+                        'to_year': data.get('toYear')}
+            if 'stillWorkHere' in data.keys():
+                new_data['still_work_here'] = data.get('stillWorkHere')
             if self.context.get('user'):
                 new_data['instructor'] = self.context['user'].instructor.pk
         else:
@@ -666,6 +668,20 @@ class InstructorEmploymentSerializer(serializers.ModelSerializer):
             if keys.get('stillWorkHere'):
                 new_data['still_work_here'] = data['stillWorkHere']
         return super().to_internal_value(new_data)
+
+    def validate(self, data):
+        if 'still_work_here' in data.keys():
+            still_work_here = data['still_work_here']
+        else:
+            still_work_here = False
+        if not still_work_here:
+            if not data.get('to_year') or not data.get('to_month'):
+                raise serializers.ValidationError('If you not work here currently, final date should be provided')
+        if data.get('to_month') and not data.get('to_year'):
+            raise serializers.ValidationError('Year of final date should be provided')
+        if data.get('from_month') and not data.get('from_year'):
+            raise serializers.ValidationError('Year of initial date should be provided')
+        return data
 
 
 class InstructorDataSerializer(serializers.ModelSerializer):
