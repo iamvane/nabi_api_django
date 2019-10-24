@@ -231,7 +231,7 @@ class WhoAmIView(views.APIView):
                                   'smallGroups': instructor.lessonsizes[0].small_groups,
                                   'largeGroups': instructor.lessonsizes[0].large_groups} \
                 if len(instructor.lessonsizes) else {}
-            data['instruments'] = [{'name': item.instrument.name, 'skillLevel': item.skill_level}
+            data['instruments'] = [{'instrument': item.instrument.name, 'skillLevel': item.skill_level}
                                    for item in instructor.instructorinstruments_set.all()]
             data['ageGroup'] = {'children': instructor.agegroups[0].children, 'teens': instructor.agegroups[0].teens,
                                 'adults': instructor.agegroups[0].adults, 'seniors': instructor.agegroups[0].seniors} \
