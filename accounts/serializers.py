@@ -221,9 +221,9 @@ class LessonSizeSerializer(serializers.Serializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        data['oneStudent'] = data['one_student']
-        data['smallGroups'] = data['small_groups']
-        data['largeGroups'] = data['large_groups']
+        data['oneStudent'] = data.pop('one_student')
+        data['smallGroups'] = data.pop('small_groups')
+        data['largeGroups'] = data.pop('large_groups')
         return data
 
     def to_internal_value(self, data):
@@ -709,3 +709,60 @@ class InstructorDataSerializer(serializers.ModelSerializer):
                     'rates': data.get('rates'), 'lastLogin': data.get('last_login'),
                     'memberSince': data.get('member_since')}
         return new_data
+
+
+class InstructorInstrumentSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source='instrument.name')
+
+    class Meta:
+        model = InstructorInstruments
+        fields = ['name', 'skill_level']
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['skillLevel'] = data.pop('skill_level')
+        return data
+
+
+class InstructorDetailSerializer(serializers.ModelSerializer):
+    instruments = InstructorInstrumentSerializer(source='instructorinstruments_set', many=True, read_only=True)
+    lesson_size = LessonSizeSerializer(source='instructorlessonsize_set', many=True, read_only=True)
+    age_group = AgeGroupsSerializer(source='instructoragegroup_set', many=True, read_only=True)
+    rates = LessonRateSerializer(read_only=True)
+    place_for_lessons = PlaceForLessonsSerializer(source='instructorplaceforlessons_set', many=True, read_only=True)
+    availability = AvailavilitySerializer(many=True, read_only=True)
+    qualifications = AdditionalQualifications(source='instructoradditionalqualifications_set', read_only=True)
+    languages = serializers.ListField(child=serializers.CharField(), read_only=True)
+    lessons_taught = serializers.IntegerField(default=0)
+    education = InstructorEducationSerializer(many=True, read_only=True)
+    employment = InstructorEmploymentSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Instructor
+        fields = ['id', 'user_id', 'bio_title', 'bio_description', 'music', 'instruments', 'lesson_size', 'age_group',
+                  'rates', 'place_for_lessons', 'availability', 'qualifications', 'languages', 'studio_address',
+                  'travel_distance', 'lessons_taught', 'education', 'employment']
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['userId'] = data.pop('user_id')
+        data['bioTitle'] = data.pop('bio_title')
+        data['bioDescription'] = data.pop('bio_description')
+        data['studioAddress'] = data.pop('studio_address')
+        data['travelDistance'] = data.pop('travel_distance')
+        if data.get('lesson_size'):
+            data['lessonSize'] = data.pop('lesson_size')[0]
+        else:
+            data['lessonSize'] = data.pop('lesson_size')
+        if data.get('age_group'):
+            data['ageGroup'] = data.pop('age_group')[0]
+        else:
+            data['ageGroup'] = data.pop('age_group')
+        if data.get('place_for_lessons'):
+            data['placeForLessons'] = data.pop('place_for_lessons')[0]
+        else:
+            data['placeForLessons'] = data.pop('place_for_lessons')
+        data['lessonsTaught'] = data.pop('lessons_taught')
+        if data.get('availability'):
+            data['availability'] = data.pop('availability')[0]
+        return data
