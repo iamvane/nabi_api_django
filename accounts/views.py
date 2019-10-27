@@ -9,6 +9,7 @@ from django.core.mail import EmailMultiAlternatives
 from django.db import transaction, IntegrityError
 from django.db.models import ObjectDoesNotExist, Prefetch
 from django.middleware.csrf import get_token
+from django.shortcuts import get_object_or_404
 from django.template import loader
 from django.utils import timezone
 
@@ -27,9 +28,10 @@ from .models import Education, Employment, Instructor, Instrument, PhoneNumber, 
 from .serializers import (
     AvatarInstructorSerializer, AvatarParentSerializer, AvatarStudentSerializer, GuestEmailSerializer,
     InstructorBuildJobPreferencesSerializer, InstructorCreateAccountSerializer, InstructorDataSerializer,
-    InstructorEducationSerializer, InstructorEmploymentSerializer, InstructorProfileSerializer,
-    ParentCreateAccountSerializer, StudentCreateAccountSerializer, StudentDetailsSerializer, TiedStudentSerializer,
-    TiedStudentItemSerializer, UserEmailSerializer, UserInfoUpdateSerializer, UserPasswordSerializer,
+    InstructorDetailSerializer, InstructorEducationSerializer, InstructorEmploymentSerializer,
+    InstructorProfileSerializer, ParentCreateAccountSerializer, StudentCreateAccountSerializer,
+    StudentDetailsSerializer, TiedStudentSerializer, TiedStudentItemSerializer,
+    UserEmailSerializer, UserInfoUpdateSerializer, UserPasswordSerializer,
 )
 from .utils import send_welcome_email, send_referral_invitation_email
 
@@ -442,6 +444,14 @@ class InstructorEducationItemView(views.APIView):
             return Response({"error": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
         educ_instance.delete()
         return Response({"message": "success"}, status=status.HTTP_200_OK)
+
+
+class InstructorDetailView(views.APIView):
+
+    def get(self, request, pk):
+        instructor = get_object_or_404(Instructor, pk=pk)
+        serializer = InstructorDetailSerializer(instructor)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class UploadAvatarView(views.APIView):
