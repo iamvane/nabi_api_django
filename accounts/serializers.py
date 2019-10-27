@@ -677,7 +677,7 @@ class InstructorDataSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Instructor
-        fields = ['display_name', 'avatar', 'age', 'bio_title', 'bio_description', 'location', 'reviews',
+        fields = ['id', 'display_name', 'avatar', 'age', 'bio_title', 'bio_description', 'location', 'reviews',
                   'instruments', 'rates', 'lessons_taught', 'last_login', 'member_since']
 
     def get_display_name(self, instructor):
@@ -701,7 +701,7 @@ class InstructorDataSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        new_data = {'displayName': data.get('display_name'), 'age': data.get('age'),
+        new_data = {'id': data.get('id'), 'displayName': data.get('display_name'), 'age': data.get('age'),
                     'avatar': data.get('avatar').url if data.get('avatar') else data.get('avatar'),
                     'bioTitle': data.get('bio_title'), 'bioDescription': data.get('bio_description'),
                     'location': data.get('location'), 'reviews': data.get('reviews'),
