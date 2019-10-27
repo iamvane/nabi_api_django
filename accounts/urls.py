@@ -7,7 +7,7 @@ from . import views
 
 
 urlpatterns = [
-    path('register/', csrf_exempt(views.CreateAccount.as_view())),
+    path('register/', views.CreateAccount.as_view()),
     path('login/', views.LoginView.as_view()),
     path('forgot-password/', views.ResetPasswordView.as_view()),
     path('logout/', views.LogoutView.as_view()),
