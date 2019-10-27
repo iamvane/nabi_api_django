@@ -93,6 +93,12 @@ class CreateAccount(views.APIView):
             return Response(status=status.HTTP_400_BAD_REQUEST)
         if serializer.is_valid():
             user_cc = serializer.save()
+            try:
+                send_welcome_email(user_cc)
+            except Exception as e:
+                return Response({
+                    "error": str(e)
+                }, status=status.HTTP_400_BAD_REQUEST)
             user_response = get_user_response(user_cc)
             user_response['token'] = get_tokens_for_user(user_cc.user)
             return Response(user_response)
