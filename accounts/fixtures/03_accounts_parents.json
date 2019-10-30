@@ -1,0 +1,48 @@
+[
+{
+   "model": "accounts.parent",
+   "pk": 1,
+   "fields": {
+      "user": 3,
+      "middle_name": null,
+      "display_name": null,
+      "gender": null,
+      "avatar": "",
+      "birthday": "1979-01-23",
+      "location": "",
+      "lat": "",
+      "lng": "",
+      "email_verified_at": null,
+      "created_at": "2019-10-30T20:32:51.523Z",
+      "modified_at": "2019-10-30T20:32:51.523Z",
+      "application_received": false,
+      "lesson_taught_confirmed": false,
+      "payment_receipts": false,
+      "news_updates": false,
+      "offers": false
+   }
+},
+{
+   "model": "accounts.parent",
+   "pk": 2,
+   "fields": {
+      "user": 4,
+      "middle_name": null,
+      "display_name": null,
+      "gender": null,
+      "avatar": "",
+      "birthday": "1976-07-12",
+      "location": "",
+      "lat": "",
+      "lng": "",
+      "email_verified_at": null,
+      "created_at": "2019-10-30T20:33:15.786Z",
+      "modified_at": "2019-10-30T20:33:15.786Z",
+      "application_received": false,
+      "lesson_taught_confirmed": false,
+      "payment_receipts": false,
+      "news_updates": false,
+      "offers": false
+   }
+}
+]
