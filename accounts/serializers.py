@@ -702,7 +702,7 @@ class InstructorDataSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         new_data = {'id': data.get('id'), 'displayName': data.get('display_name'), 'age': data.get('age'),
-                    'avatar': data.get('avatar').url if data.get('avatar') else data.get('avatar'),
+                    'avatar': data.get('avatar') if data.get('avatar') else data.get('avatar'),
                     'bioTitle': data.get('bio_title'), 'bioDescription': data.get('bio_description'),
                     'location': data.get('location'), 'reviews': data.get('reviews'),
                     'lessonsTaught': data.get('lessons_taught'), 'instruments': data.get('instruments'),
