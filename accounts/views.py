@@ -57,6 +57,8 @@ def get_tokens_for_user(user):
 
 def get_user_response(account):
     user = account.user
+    lat = account.coordinates.coords[0]
+    lng = account.coordinates.coords[1]
     data = {
         'id': user.id,
         'email': user.email,
@@ -68,8 +70,8 @@ def get_user_response(account):
         'phone': get_user_phone(account),
         'gender': account.gender,
         'location': account.location,
-        'lat': account.lat,
-        'lng': account.lng,
+        'lat': lat,
+        'lng': lng,
         'referralToken': user.referral_token,
     }
     return data
@@ -207,6 +209,8 @@ class WhoAmIView(views.APIView):
                     }
 
         account = get_account(request.user)
+        lat = account.coordinates.coords[0]
+        lng = account.coordinates.coords[1]
         data = {
             'id': request.user.id,
             'email': request.user.email,
@@ -218,8 +222,8 @@ class WhoAmIView(views.APIView):
             'phone': get_user_phone(account),
             'gender': account.gender,
             'location': account.location,
-            'lat': account.lat,
-            'lng': account.lng,
+            'lat': lat,
+            'lng': lng,
             'referralToken': request.user.referral_token,
         }
 
@@ -614,8 +618,12 @@ class InstructorListView(views.APIView):
 
     def get(self, request):
         account = get_account(request.user)
-        qs = Instructor.objects.filter(coordinates__distance_lte=(account.coordinates, D(mi=40)))\
-            .annotate(distance=Distance('coordinates', account.coordinates)).order_by('distance')
+        if account.coordinates:
+            qs = Instructor.objects.filter(coordinates__isnull=False)\
+                .filter(coordinates__distance_lte=(account.coordinates, D(mi=40)))\
+                .annotate(distance=Distance('coordinates', account.coordinates)).order_by('distance')
+        else:
+            qs = Instructor.objects.order_by('user__first_name')
         paginator = PageNumberPagination()
         result_page = paginator.paginate_queryset(qs, request)
         serializer = InstructorDataSerializer(result_page, many=True, context={'request': request})

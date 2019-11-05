@@ -52,10 +52,10 @@ class IUserAccount(models.Model):
         return years
 
     def get_location(self):
-        if self.lat is not None and self.lng is not None:
+        if self.coordinates:
             try:
-                lat = float(self.lat)
-                lng = float(self.lng)
+                lat = self.coordinates.coords[0]
+                lng = self.coordinates.coords[1]
             except Exception:
                 return ''
             if lat < -90 or lat > 90 or lng < -180 or lng > 180:
