@@ -5,6 +5,8 @@ from twilio.rest import Client
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.gis.db.models.functions import Distance
+from django.contrib.gis.measure import D
 from django.core.mail import EmailMultiAlternatives
 from django.db import transaction, IntegrityError
 from django.db.models import ObjectDoesNotExist, Prefetch
@@ -14,6 +16,7 @@ from django.template import loader
 from django.utils import timezone
 
 from rest_framework import status, views
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import *
 from rest_framework.response import Response
@@ -610,5 +613,10 @@ class InstructorEmploymentItemView(views.APIView):
 class InstructorListView(views.APIView):
 
     def get(self, request):
-        serializer = InstructorDataSerializer(Instructor.objects.all(), many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        account = get_account(request.user)
+        qs = Instructor.objects.filter(coordinates__distance_lte=(account.coordinates, D(mi=40)))\
+            .annotate(distance=Distance('coordinates', account.coordinates)).order_by('distance')
+        paginator = PageNumberPagination()
+        result_page = paginator.paginate_queryset(qs, request)
+        serializer = InstructorDataSerializer(result_page, many=True, context={'request': request})
+        return paginator.get_paginated_response(serializer.data)

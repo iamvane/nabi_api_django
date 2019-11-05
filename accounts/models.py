@@ -2,6 +2,7 @@ from pygeocoder import Geocoder, GeocoderError
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.gis.db.models import PointField
 from django.contrib.postgres.fields import HStoreField, ArrayField
 from django.db import models
 from django.utils import timezone
@@ -27,6 +28,7 @@ class IUserAccount(models.Model):
     avatar = models.ImageField(blank=True, null=True, upload_to=avatar_directory_path)
     birthday = models.DateField(blank=True, null=True)
     location = models.CharField(max_length=150, default='')
+    coordinates = PointField(blank=True, null=True)
     lat = models.CharField(max_length=50, default='')
     lng = models.CharField(max_length=50, default='')
     email_verified_at = models.DateTimeField(blank=True, null=True)
