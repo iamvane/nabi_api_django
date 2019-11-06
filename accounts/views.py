@@ -57,8 +57,11 @@ def get_tokens_for_user(user):
 
 def get_user_response(account):
     user = account.user
-    lat = account.coordinates.coords[0]
-    lng = account.coordinates.coords[1]
+    if account.coordinates:
+        lat = str(account.coordinates.coords[0])
+        lng = str(account.coordinates.coords[1])
+    else:
+        lat = lng = ''
     data = {
         'id': user.id,
         'email': user.email,
@@ -209,8 +212,11 @@ class WhoAmIView(views.APIView):
                     }
 
         account = get_account(request.user)
-        lat = account.coordinates.coords[0]
-        lng = account.coordinates.coords[1]
+        if account.coordinates:
+            lat = str(account.coordinates.coords[0])
+            lng = str(account.coordinates.coords[1])
+        else:
+            lat = lng = ''
         data = {
             'id': request.user.id,
             'email': request.user.email,
