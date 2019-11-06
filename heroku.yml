@@ -1,0 +1,21 @@
+setup:
+  addons:
+    - plan: 'heroku-postgresql:hobby-dev'
+      as: DATABASE
+  config:
+    DEFAULT_FROM_EMAIL: info@nabimusic.com
+    DISABLE_COLLECTSTATIC: '1'
+    DJANGO_SECRET_KEY: 'j1!%t%u-wbj2d6yh)%8fc8x9k6z9!+t%grk&_7kq=k5h#kop-#'
+    SECRET_KEY: 'j1!%t%u-wbj2d6yh)%8fc8x9k6z9!+t%grk&_7kq=k5h#kop-#'
+    SENDGRID_KEY: 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
+    TWILIO_ACCOUNT_SID: AC470b09cbcb7ed2ee226b275cfba769ac
+    TWILIO_AUTH_TOKEN: 94e63280d99aad33698598ae6e432ce1
+    TWILIO_SERVICE_SID: VA293a21e5a5a43cb816d148473e353e86
+build:
+  languages:
+    - python
+    - 'https://github.com/heroku/heroku-buildpack-apt'
+run:
+  web: >-
+    gunicorn --pythonpath nabi_api_django nabi_api_django.production --log-file
+    -
