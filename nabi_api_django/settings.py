@@ -119,7 +119,7 @@ STATIC_URL = '/dj-static/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/dj-media/'
 
-REST_PAGE_SIZE = 2
+REST_PAGE_SIZE = 20
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
