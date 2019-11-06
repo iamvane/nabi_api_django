@@ -362,11 +362,13 @@ class FetchInstructor(views.APIView):
 
 class UpdateProfileView(views.APIView):
     def put(self, request):
-        serializer = InstructorProfileSerializer(data=request.data, instance=Instructor.objects.get(user=request.user))
+        serializer = InstructorProfileSerializer(data=request.data, instance=Instructor.objects.get(user=request.user),
+                                                 partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response({'errors': serializer.errors})
+            return Response({"message": "success"}, status=status.HTTP_200_OK)
+        else:
+            return Response({'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UpdateUserInfoView(views.APIView):

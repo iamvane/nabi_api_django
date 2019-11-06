@@ -127,11 +127,14 @@ class InstructorProfileSerializer(serializers.Serializer):
         return instance
 
     def to_internal_value(self, data):
-        new_data = {
-            'bio_title': data.get('bioTitle'),
-            'bio_description': data.get('bioDescription'),
-            'music': data.get('music'),
-        }
+        keys = dict.fromkeys(data, 1)
+        new_data = {}
+        if keys.get('bioTitle'):
+            new_data['bio_title'] = data.get('bioTitle')
+        if keys.get('bioDescription'):
+            new_data['bio_description'] = data.get('bioDescription')
+        if keys.get('music'):
+            new_data['music'] = data.get('music')
         return super().to_internal_value(new_data)
 
 
