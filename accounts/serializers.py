@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.contrib.gis.geos import Point
 from django.db.models import ObjectDoesNotExist
 
 from rest_framework import serializers, validators
@@ -90,12 +91,10 @@ class UserInfoUpdateSerializer(serializers.ModelSerializer):
             account.location = location
             account_changed = True
         latitude = validated_data.pop('lat', None)
-        if latitude is not None:
-            account.lat = latitude
-            account_changed = True
         longitude = validated_data.pop('lng', None)
-        if longitude is not None:
-            account.lng = longitude
+        if latitude is not None and longitude is not None:
+            point = Point(float(latitude), float(longitude))
+            account.coordinates = point
             account_changed = True
         middle_name = validated_data.pop('middle_name', None)
         if middle_name is not None:

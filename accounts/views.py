@@ -5,6 +5,8 @@ from twilio.rest import Client
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.gis.db.models.functions import Distance
+from django.contrib.gis.measure import D
 from django.core.mail import EmailMultiAlternatives
 from django.db import transaction, IntegrityError
 from django.db.models import ObjectDoesNotExist, Prefetch
@@ -14,6 +16,7 @@ from django.template import loader
 from django.utils import timezone
 
 from rest_framework import status, views
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import *
 from rest_framework.response import Response
@@ -54,6 +57,11 @@ def get_tokens_for_user(user):
 
 def get_user_response(account):
     user = account.user
+    if account.coordinates:
+        lat = str(account.coordinates.coords[0])
+        lng = str(account.coordinates.coords[1])
+    else:
+        lat = lng = ''
     data = {
         'id': user.id,
         'email': user.email,
@@ -65,8 +73,8 @@ def get_user_response(account):
         'phone': get_user_phone(account),
         'gender': account.gender,
         'location': account.location,
-        'lat': account.lat,
-        'lng': account.lng,
+        'lat': lat,
+        'lng': lng,
         'referralToken': user.referral_token,
     }
     return data
@@ -204,6 +212,11 @@ class WhoAmIView(views.APIView):
                     }
 
         account = get_account(request.user)
+        if account.coordinates:
+            lat = str(account.coordinates.coords[0])
+            lng = str(account.coordinates.coords[1])
+        else:
+            lat = lng = ''
         data = {
             'id': request.user.id,
             'email': request.user.email,
@@ -215,8 +228,8 @@ class WhoAmIView(views.APIView):
             'phone': get_user_phone(account),
             'gender': account.gender,
             'location': account.location,
-            'lat': account.lat,
-            'lng': account.lng,
+            'lat': lat,
+            'lng': lng,
             'referralToken': request.user.referral_token,
         }
 
@@ -610,5 +623,14 @@ class InstructorEmploymentItemView(views.APIView):
 class InstructorListView(views.APIView):
 
     def get(self, request):
-        serializer = InstructorDataSerializer(Instructor.objects.all(), many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        account = get_account(request.user)
+        if account.coordinates:
+            qs = Instructor.objects.filter(coordinates__isnull=False)\
+                .filter(coordinates__distance_lte=(account.coordinates, D(mi=40)))\
+                .annotate(distance=Distance('coordinates', account.coordinates)).order_by('distance')
+        else:
+            qs = Instructor.objects.order_by('user__first_name')
+        paginator = PageNumberPagination()
+        result_page = paginator.paginate_queryset(qs, request)
+        serializer = InstructorDataSerializer(result_page, many=True, context={'request': request})
+        return paginator.get_paginated_response(serializer.data)
