@@ -4,11 +4,11 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', '')
+SECRET_KEY = 'foo'
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 INSTALLED_APPS = [
@@ -36,7 +36,6 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -70,7 +69,7 @@ DATABASES = {
         'USER': os.environ.get('DB_USER', 'postgres'),
         'PASSWORD': os.environ.get('DB_PASS', ''),
         'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': '5432',
+        'PORT': os.environ.get('PORT', '5432'),
         'OPTIONS': {'sslmode': 'require'},
         'TEST': {
             'NAME': 'nabidb_test',
@@ -123,7 +122,6 @@ REST_PAGE_SIZE = 20
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
@@ -137,16 +135,17 @@ AUTH_USER_MODEL = 'core.User'
 
 DEFAULT_FROM_EMAIL = 'test@nabimusic.com'
 
-try:
-    from .local_settings import *
-except Exception as e:
-    print('Error importing local_settings.py: {}'.format(str(e)))
+# try:
+#     from .local_settings import *
+# except Exception as e:
+#     print('Error importing local_settings.py: {}'.format(str(e)))
 
 
 if not DEBUG:
     REST_FRAMEWORK['DEFAULT_RENDERER_CLASSES'] = (
         'rest_framework.renderers.JSONRenderer',
     )
+
     import sentry_sdk
     from sentry_sdk.integrations.django import DjangoIntegration
 
@@ -155,9 +154,17 @@ if not DEBUG:
         integrations=[DjangoIntegration()]
     )
 
-from datetime import timedelta
+POSTGIS_TEMPLATE = 'nabidb'
 
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=30),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
-}
+TWILIO_SERVICE_SID = 'foo'
+TWILIO_ACCOUNT_SID = 'foo'
+TWILIO_AUTH_TOKEN = 'foo'
+
+SENDGRID_API_KEY = 'foo'
+EMAIL_HOST_PASSWORD = SENDGRID_API_KEY
+
+DEFAULT_FROM_EMAIL = 'foo@foo.com'
+
+import dj_database_url
+prod_db  =  dj_database_url.config(conn_max_age=500)
+DATABASES['default'].update(prod_db)
