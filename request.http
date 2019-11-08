@@ -474,5 +474,13 @@ GET localhost:8000/v1/lesson-request-list/?instrument=piano&placeForLessons=home
 
 # GET parameters are optionals. Distance value is in miles, default 50 value will be used (when location value is provided)
 # location value has the format: latitude,longitude
-g
+
+###
+
+GET localhost:8000/v1/background-checks/request/
+
+###
+
+GET localhost:8000/v1/background-checks/status/
+
 ###

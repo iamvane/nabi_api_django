@@ -49,7 +49,9 @@ class IUserAccount(models.Model):
             years -= 1
         return years
 
-    def get_location(self):
+    def get_location(self, result_type='string'):
+        """ :param result_type: indicates how data should be returned
+            :type result_type: 'string' (to return 'city, state' string), 'tuple' (to return country, state, city)"""
         if self.coordinates:
             try:
                 lat = self.coordinates.coords[0]
@@ -64,18 +66,26 @@ class IUserAccount(models.Model):
             except GeocoderError:
                 locations = []
             city = state = ''
+            if len(locations):
+                country = locations[0].country__short_name
             for item in locations:
-                if item.country__short_name == 'US':
+                if country == 'US':
                     state = item.state__short_name
                 else:
                     state = item.state
                 if item.city:
                     city = item.city
                     break
-            if state:
-                return '{}, {}'.format(city, state)
+            if result_type == 'string':
+                if state:
+                    return '{}, {}'.format(city, state)
+                else:
+                    return ''
             else:
-                return ''
+                if state:
+                    return country, state, city
+                else:
+                    return ()
 
     def set_display_name(self):
         if self.user.last_name:
