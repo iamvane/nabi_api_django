@@ -155,6 +155,7 @@ STATICFILES_DIRS = (
 
 prod_db  =  dj_database_url.config(conn_max_age=500)
 DATABASES['default'].update(prod_db)
+DATABASES['default']['ENGINE'] = 'django.contrib.gis.db.backends.postgis'
 
 STATIC_ROOT  =   os.path.join(PROJECT_ROOT, 'staticfiles')
 STATIC_URL = '/static/'
@@ -167,7 +168,8 @@ CORS_ORIGIN_WHITELIST = [
     'https://www.nabimusic.com',
     'http://www.nabimusic.com',
     'http://www.nabimusiccenter.com',
-    'https://www.nabimusiccenter.com'
+    'https://www.nabimusiccenter.com',
+    'https://nabimusicstaging.herokuapp.com/'
 ]
 
 CORS_ALLOW_CREDENTIALS = True
