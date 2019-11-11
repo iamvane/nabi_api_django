@@ -217,6 +217,9 @@ class WhoAmIView(views.APIView):
             lng = str(account.coordinates.coords[1])
         else:
             lat = lng = ''
+        avatar_path = None
+        if account.avatar:
+            avatar_path = account.avatar.url
         data = {
             'id': request.user.id,
             'email': request.user.email,
@@ -231,6 +234,7 @@ class WhoAmIView(views.APIView):
             'lat': lat,
             'lng': lng,
             'referralToken': request.user.referral_token,
+            'avatar': avatar_path
         }
 
         if data['role'] == ROLE_INSTRUCTOR:
