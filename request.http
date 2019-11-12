@@ -477,7 +477,13 @@ GET localhost:8000/v1/lesson-request-list/?instrument=piano&placeForLessons=home
 
 ###
 
-GET localhost:8000/v1/background-checks/request/
+POST localhost:8000/v1/background-checks/request/
+
+{
+"instructor_id": 2
+}
+
+# this parameter is optional, when is not provided, try to use the logged user
 
 ###
 

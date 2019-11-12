@@ -145,9 +145,6 @@ AUTH_USER_MODEL = 'core.User'
 
 DEFAULT_FROM_EMAIL = 'test@nabimusic.com'
 
-ACCURATE_CLIENT_ID = 'ab6b83e8-dd35-4ab1-b9b6-9df63e6bdf98'
-ACCURATE_CLIENT_SECRET = 'fc77b6af-9987-45d3-b542-d337ce753e0c'
-ACCURATE_PLAN_PARAMETER = 'PKG_BASIC'
 
 try:
     from .local_settings import *
