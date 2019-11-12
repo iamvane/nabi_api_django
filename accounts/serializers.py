@@ -674,6 +674,7 @@ class InstructorDataSerializer(serializers.ModelSerializer):
     reviews = serializers.IntegerField(default=0)
     lessons_taught = serializers.IntegerField(default=0)
     instruments = serializers.SerializerMethodField()
+    rates = serializers.SerializerMethodField()
     last_login = serializers.DateTimeField(source='user.last_login', format='%Y-%m-%d %H:%M:%S')
     member_since = serializers.DateTimeField(source='created_at', format='%Y')
 
@@ -700,6 +701,14 @@ class InstructorDataSerializer(serializers.ModelSerializer):
     def get_instruments(self, instructor):
         return [item.instrument.name
                 for item in instructor.instructorinstruments_set.select_related('instrument').all()]
+
+    def get_rates(self, instructor):
+        items = instructor.instructorlessonrate_set.all()
+        if len(items):
+            return {'mins30': str(items[0].mins30), 'mins45': str(items[0].mins45),
+                    'mins60': str(items[0].mins60), 'mins90': str(items[0].mins90)}
+        else:
+            return {'mins30': '', 'mins45': '', 'mins60': '', 'mins90': ''}
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
