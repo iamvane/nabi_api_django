@@ -398,10 +398,18 @@ class InstructorBuildJobPreferencesSerializer(serializers.Serializer):
             self._set_instructor_addional_qualifications(instance, validated_data['additional_qualifications'])
         if validated_data.get('availability') is not None:
             self._set_availability(instance, validated_data['availability'])
+        changed_instance = False
+        if validated_data.get('languages') is not None:
+            instance.languages = validated_data['languages']
+            changed_instance = True
         if validated_data.get('studio_address') is not None:
-            self.studio_address = validated_data['studio_address']
+            instance.studio_address = validated_data['studio_address']
+            changed_instance = True
         if validated_data.get('travel_distance') is not None:
-            self.travel_distance = validated_data['travel_distance']
+            instance.travel_distance = validated_data['travel_distance']
+            changed_instance = True
+        if changed_instance:
+            instance.save()
         return instance
 
     def _set_instruments(self, instance, data):
