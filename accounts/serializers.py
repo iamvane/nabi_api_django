@@ -739,10 +739,10 @@ class InstructorDetailSerializer(serializers.ModelSerializer):
     instruments = InstructorInstrumentSerializer(source='instructorinstruments_set', many=True, read_only=True)
     lesson_size = LessonSizeSerializer(source='instructorlessonsize_set', many=True, read_only=True)
     age_group = AgeGroupsSerializer(source='instructoragegroup_set', many=True, read_only=True)
-    rates = LessonRateSerializer(read_only=True)
+    rates = LessonRateSerializer(source='instructorlessonrate_set', many=True, read_only=True)
     place_for_lessons = PlaceForLessonsSerializer(source='instructorplaceforlessons_set', many=True, read_only=True)
     availability = AvailavilitySerializer(many=True, read_only=True)
-    qualifications = AdditionalQualifications(source='instructoradditionalqualifications_set', read_only=True)
+    qualifications = AdditionalQualifications(source='instructoradditionalqualifications_set', many=True, read_only=True)
     languages = serializers.ListField(child=serializers.CharField(), read_only=True)
     lessons_taught = serializers.IntegerField(default=0)
     education = InstructorEducationSerializer(many=True, read_only=True)
@@ -776,4 +776,14 @@ class InstructorDetailSerializer(serializers.ModelSerializer):
         data['lessonsTaught'] = data.pop('lessons_taught')
         if data.get('availability'):
             data['availability'] = data.pop('availability')[0]
+        if data.get('rates'):
+            rates = data.pop('rates')[0]
+            data['rates'] = {'mins30': str(rates['mins30']), 'mins45': str(rates['mins45']),
+                             'mins60': str(rates['mins60']), 'mins90': str(rates['mins90'])}
+        else:
+            data['rates'] = {'mins30': '', 'mins45': '', 'mins60': '', 'mins90': ''}
+        if data.get('qualifications'):
+            data['qualifications'] = data.pop('qualifications')[0]
+        else:
+            data['qualifications'] = None
         return data
