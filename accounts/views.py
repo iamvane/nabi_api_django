@@ -100,17 +100,20 @@ class CreateAccount(views.APIView):
         if serializer is None:
             return Response(status=status.HTTP_400_BAD_REQUEST)
         if serializer.is_valid():
-            user_cc = serializer.save()
+            account = serializer.save()
             try:
-                send_welcome_email(user_cc)
+                send_welcome_email(account)
             except Exception as e:
                 return Response({
                     "error": str(e)
                 }, status=status.HTTP_400_BAD_REQUEST)
-            user_response = get_user_response(user_cc)
-            user_response['token'] = get_tokens_for_user(user_cc.user)
-            return Response(user_response)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            data = {'id': account.user.id, 'email': account.user.email, 'role': account.user.get_role(),
+                    'firstName': account.user.first_name, 'middleName': account.middle_name,
+                    'lastName': account.user.last_name, 'birthday': account.birthday, 'gender': account.gender,
+                    'referralToken': account.user.referral_token}
+            return Response(data, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def get_serializer_class(self, request):
         if request.data['role'] == 'parent':

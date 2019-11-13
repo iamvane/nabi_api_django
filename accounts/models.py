@@ -80,20 +80,6 @@ class IUserAccount(models.Model):
                 return ''
 
 
-class Address(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    address_line1 = models.CharField(max_length=255, blank=True, null=True)
-    address_line2 = models.CharField(max_length=255, blank=True, null=True)
-    city = models.CharField(max_length=255, blank=True, null=True)
-    state = models.CharField(max_length=255, blank=True, null=True)
-    country = models.CharField(max_length=255, blank=True, null=True)
-    zip_code = models.CharField(max_length=255, blank=True, null=True)
-    address_type = models.CharField(max_length=100, choices=ADDRESS_TYPE_CHOICES)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    modified_at = models.DateTimeField(auto_now=True)
-
-
 class PhoneNumber(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     number = models.CharField(max_length=50, unique=True)
