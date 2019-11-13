@@ -240,10 +240,10 @@ class InstructorAgeGroup(models.Model):
 
 class InstructorLessonRate(models.Model):
     instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE)
-    mins30 = models.FloatField()
-    mins45 = models.FloatField()
-    mins60 = models.FloatField()
-    mins90 = models.FloatField()
+    mins30 = models.DecimalField(max_digits=9, decimal_places=4)
+    mins45 = models.DecimalField(max_digits=9, decimal_places=4)
+    mins60 = models.DecimalField(max_digits=9, decimal_places=4)
+    mins90 = models.DecimalField(max_digits=9, decimal_places=4)
 
 
 class InstructorPlaceForLessons(models.Model):

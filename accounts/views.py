@@ -95,6 +95,8 @@ class CreateAccount(views.APIView):
 
     @transaction.atomic()
     def post(self, request):
+        if 'role' not in request.data:
+            return Response({'message': 'role is required'}, status=status.HTTP_400_BAD_REQUEST)
         account_serializer = self.get_serializer_class(request)
         serializer = account_serializer(data=request.data)
         if serializer is None:
@@ -510,7 +512,6 @@ class ReferralInvitation(views.APIView):
         serializer = GuestEmailSerializer(data=request.data)
         if serializer.is_valid():
             user = request.user
-            print(request.data['email'])
             email = request.data['email']
             try:
                 send_referral_invitation_email(user, email)

@@ -1,3 +1,5 @@
+import operator
+
 from django.conf import settings
 
 from rest_framework import status
@@ -37,3 +39,12 @@ class BaseTest(APITestCase):
                 not_contained = True
                 break
         return not not_contained
+
+    def assertDictListUnsorted(self, list1, list2, field_name):
+        """Check whether list1 and list2 are equals, which are sorted before, by provided field_name"""
+        list1_sorted = sorted(list1, key=operator.itemgetter(field_name))
+        list2_sorted = sorted(list2, key=operator.itemgetter(field_name))
+        if list1_sorted == list2_sorted:
+            return True
+        else:
+            return False

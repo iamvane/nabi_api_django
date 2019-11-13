@@ -32,7 +32,7 @@ class BuildProfileInstructorTest(BaseTest):
                 "music": ["flute", "pan flute"]
                 }
         response = self.client.put(self.url, data=json.dumps(data), content_type='application/json')
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT, msg=response.content.decode())
+        self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
         user.refresh_from_db()
         self.assertEqual(user.instructor.bio_title, data['bioTitle'])
         self.assertEqual(user.instructor.bio_description, data['bioDescription'])
@@ -46,7 +46,7 @@ class BuildProfileInstructorTest(BaseTest):
         self.assertIsNone(user.instructor.music)
         data = {"bioTitle": "A musician"}
         response = self.client.put(self.url, data=json.dumps(data), content_type='application/json')
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT, msg=response.content.decode())
+        self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
         user.refresh_from_db()
         self.assertEqual(user.instructor.bio_title, data['bioTitle'])
         self.assertIsNone(user.instructor.bio_description)

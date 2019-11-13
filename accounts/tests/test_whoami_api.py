@@ -25,7 +25,7 @@ class WhoAmiInstructorTest(BaseTest):
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
         self.assertEqual(response.json(),
                          {"id": 5, "email": "luisinstruct@yopmail.com", "role": "instructor",
-                          "firstName": "Luis", "middleName": None, "lastName": "Instructor",
+                          "firstName": "Luis", "middleName": None, "lastName": "Instructor", "avatar": None,
                           "birthday": "1975-04-03", "phone": {}, "gender": None, "location": "", "lat": "", "lng": "",
                           "referralToken": "WVG3Kw4HaDhEpyag", "bioTitle": "Music instructor",
                           "bioDescription": "I'm a professional music instructor",
@@ -53,8 +53,9 @@ class WhoAmiInstructorTest2(BaseTest):
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
         self.assertDictEqual(response.json(), {"id": 7, "email": "luisinstruct2@yopmail.com", "role": "instructor",
                                                "firstName": "Luis", "middleName": None, "lastName": "Instructor two",
-                                               "birthday": "1975-04-03", "phone": {}, "gender": None, "location": "",
-                                               "lat": "", "lng": "", "referralToken": "VMxGjIPkVJ4CXGCM",
+                                               "avatar": None, "birthday": "1975-04-03", "phone": {}, "gender": None,
+                                               "location": "", "lat": "", "lng": "",
+                                               "referralToken": "VMxGjIPkVJ4CXGCM",
                                                "bioTitle": None, "bioDescription": None, "music": None,
                                                "lessonSize": {}, "instruments": [], "ageGroup": {}, "lessonRate": {},
                                                "placeForLessons": {}, "availability": {}, "qualifications": {},
@@ -81,7 +82,7 @@ class WhoAmiParentTest(BaseTest):
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
         self.assertEqual(json.loads(response.content.decode()),
                          {"id": 3, "email": "luisparent@yopmail.com", "role": "parent",
-                          "firstName": "Luis", "middleName": None, "lastName": "Parent",
+                          "firstName": "Luis", "middleName": None, "lastName": "Parent", "avatar": None,
                           "birthday": "1979-01-23", "phone": {}, "gender": None, "location": "", "lat": "", "lng": "",
                           "referralToken": "EljB8wAa40oDPUIt", "students": []}
                          )
@@ -105,7 +106,7 @@ class WhoAmiStudentTest(BaseTest):
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
         self.assertEqual(json.loads(response.content.decode()),
                          {"id": 1, "email": "luisstudent@yopmail.com", "role": "student",
-                          "firstName": "Luis", "middleName": "A.", "lastName": "Student",
+                          "firstName": "Luis", "middleName": "A.", "lastName": "Student", "avatar": None,
                           "birthday": "1990-03-13", "phone": {}, "gender": "male",
                           "location": "Michigan, United States", "lat": "", "lng": "",
                           "referralToken": "THoANSG6cV60dya1"}
@@ -131,6 +132,6 @@ class WhoAmiStudentTest2(BaseTest):
         self.assertEqual(json.loads(response.content.decode()),
                          {"id": 2, "email": "luisstudent2@yopmail.com", "role": "student", "firstName": "Luis",
                           "middleName": None, "lastName": "Student two", "birthday": "1988-07-26", "phone": {},
-                          "gender": None, "location": "", "lat": "", "lng": "", "referralToken": "R72-BlRs7HAAenV0"}
-
+                          "gender": None, "avatar": None, "location": "", "lat": "", "lng": "",
+                          "referralToken": "R72-BlRs7HAAenV0"}
                          )

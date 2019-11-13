@@ -248,10 +248,30 @@ class AgeGroupsSerializer(serializers.Serializer):
 
 
 class LessonRateSerializer(serializers.Serializer):
-    mins30 = serializers.FloatField()
-    mins45 = serializers.FloatField()
-    mins60 = serializers.FloatField()
-    mins90 = serializers.FloatField()
+    mins30 = serializers.DecimalField(max_digits=9, decimal_places=4)
+    mins45 = serializers.DecimalField(max_digits=9, decimal_places=4)
+    mins60 = serializers.DecimalField(max_digits=9, decimal_places=4)
+    mins90 = serializers.DecimalField(max_digits=9, decimal_places=4)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if data['mins30'][-2:] == '00':
+            data['mins30'] = data['mins30'][:-2]
+        elif data['mins30'][-1] == '0':
+            data['mins30'] = data['mins30'][:-1]
+        if data['mins45'][-2:] == '00':
+            data['mins45'] = data['mins45'][:-2]
+        elif data['mins45'][-1] == '0':
+            data['mins45'] = data['mins45'][:-1]
+        if data['mins60'][-2:] == '00':
+            data['mins60'] = data['mins60'][:-2]
+        elif data['mins60'][-1] == '0':
+            data['mins60'] = data['mins60'][:-1]
+        if data['mins90'][-2:] == '00':
+            data['mins90'] = data['mins90'][:-2]
+        elif data['mins90'][-1] == '0':
+            data['mins90'] = data['mins90'][:-1]
+        return data
 
 
 class PlaceForLessonsSerializer(serializers.Serializer):
@@ -728,8 +748,8 @@ class InstructorDataSerializer(serializers.ModelSerializer):
     def get_rates(self, instructor):
         items = instructor.instructorlessonrate_set.all()
         if len(items):
-            return {'mins30': str(items[0].mins30), 'mins45': str(items[0].mins45),
-                    'mins60': str(items[0].mins60), 'mins90': str(items[0].mins90)}
+            ser = LessonRateSerializer(items[0])
+            return ser.data
         else:
             return {'mins30': '', 'mins45': '', 'mins60': '', 'mins90': ''}
 

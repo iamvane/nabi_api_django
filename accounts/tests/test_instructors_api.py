@@ -16,19 +16,23 @@ class InstructorsTest(BaseTest):
     }
     current_data = [{"id": 1, "displayName": "Luis I.", "age": 44, "avatar": None,
                      "bioTitle": "Music instructor", "bioDescription": "I'm a professional music instructor",
-                     "location": "", "reviews": 0, "lessonsTaught": 0, "instruments": [], "rates": None,
+                     "location": None, "reviews": 0, "lessonsTaught": 0, "instruments": [],
+                     "rates": {'mins30': '', 'mins45': '', 'mins60': '', 'mins90': ''},
                      "lastLogin": "2019-10-30 17:13:11", "memberSince": "2019"},
                     {"id": 2, "displayName": "Luis I.", "age": 44, "avatar": None,
                      "bioTitle": None, "bioDescription": None,
-                     "location": "", "reviews": 0, "lessonsTaught": 0, "instruments": [], "rates": None,
+                     "location": None, "reviews": 0, "lessonsTaught": 0, "instruments": [],
+                     "rates": {'mins30': '', 'mins45': '', 'mins60': '', 'mins90': ''},
                      "lastLogin": None, "memberSince": "2019"},
                     {"id": 3, "displayName": "Luis I.", "age": 44, "avatar": None,
                      "bioTitle": None, "bioDescription": None,
-                     "location": "", "reviews": 0, "lessonsTaught": 0, "instruments": [], "rates": None,
+                     "location": None, "reviews": 0, "lessonsTaught": 0, "instruments": [],
+                     "rates": {'mins30': '', 'mins45': '', 'mins60': '', 'mins90': ''},
                      "lastLogin": None, "memberSince":"2019"},
                     {"id": 4, "displayName": "Luis I.", "age": 53, "avatar": None,
                      "bioTitle": None, "bioDescription": None,
-                     "location": "", "reviews": 0, "lessonsTaught": 0, "instruments": [], "rates": None,
+                     "location": None, "reviews": 0, "lessonsTaught": 0, "instruments": [],
+                     "rates": {'mins30': '', 'mins45': '', 'mins60': '', 'mins90': ''},
                      "lastLogin": "2019-10-30 18:26:38", "memberSince": "2019"}]
 
     def setUp(self):
@@ -39,7 +43,7 @@ class InstructorsTest(BaseTest):
         """Test getting data"""
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
-        list_response = response.json()
+        list_response = response.json()['results']
         list_response = sorted(list_response, key=operator.itemgetter('id'))
         self.assertListEqual(list_response, self.current_data)
 
@@ -55,11 +59,9 @@ class ItemInstructorsTest(BaseTest):
                     'education': [], 'employment': [], 'availability': [],
                     'ageGroup': [], 'lessonSize': [], 'lessonsTaught': 0,
                     'music': ['piano', 'guitar'], 'placeForLessons': [],
-                    'qualifications': {'certifiedTeacher': None, 'conducting': None, 'earTraining': None,
-                                       'musicProduction': None, 'musicTheory': None, 'musicTherapy': None,
-                                       'performance': None, 'repertoireSelection': None,
-                                       'virtuosoRecognition': None, 'youngChildrenExperience': None},
-                    'rates': None, 'studioAddress': None, 'travelDistance': None}
+                    'qualifications': None,
+                    'rates': {'mins30': '', 'mins45': '', 'mins60': '', 'mins90': ''},
+                    'studioAddress': None, 'travelDistance': None}
 
     def setUp(self):
         super().setUp()
