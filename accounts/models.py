@@ -23,7 +23,7 @@ def avatar_directory_path(instance, filename):
 class IUserAccount(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     middle_name = models.CharField(max_length=100, blank=True, null=True)
-    display_name = models.CharField(max_length=100, blank=True, null=True)
+    display_name = models.CharField(max_length=100, blank=True, null=True)   # updated after save() method in User
     gender = models.CharField(max_length=100, blank=True, null=True, choices=GENDER_CHOICES)
     avatar = models.ImageField(blank=True, null=True, upload_to=avatar_directory_path)
     birthday = models.DateField(blank=True, null=True)
@@ -78,6 +78,19 @@ class IUserAccount(models.Model):
                 return '{}, {}'.format(city, state)
             else:
                 return ''
+
+    def set_display_name(self):
+        if self.user.last_name:
+            initial_last_name = self.user.last_name[:1]
+        else:
+            initial_last_name = ''
+        if initial_last_name:
+            display_name = '{first_name} {initial_last_name}.'.format(first_name=self.user.first_name,
+                                                                      initial_last_name=initial_last_name)
+        else:
+            display_name = self.user.first_name
+        self.display_name = display_name
+        self.save()
 
 
 class PhoneNumber(models.Model):

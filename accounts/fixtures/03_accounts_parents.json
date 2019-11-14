@@ -5,7 +5,7 @@
    "fields": {
       "user": 3,
       "middle_name": null,
-      "display_name": null,
+      "display_name": "Luis P.",
       "gender": null,
       "avatar": "",
       "birthday": "1979-01-23",
@@ -28,7 +28,7 @@
    "fields": {
       "user": 4,
       "middle_name": null,
-      "display_name": null,
+      "display_name": "Luis P.",
       "gender": null,
       "avatar": "",
       "birthday": "1976-07-12",

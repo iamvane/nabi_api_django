@@ -5,7 +5,7 @@
    "fields": {
       "user": 1,
       "middle_name": "A.",
-      "display_name": null,
+      "display_name": "Luis S.",
       "gender": "male",
       "avatar": "",
       "birthday": "1990-03-13",
@@ -24,7 +24,7 @@
    "fields": {
       "user": 2,
       "middle_name": null,
-      "display_name": null,
+      "display_name": "Luis S.",
       "gender": null,
       "avatar": "",
       "birthday": "1988-07-26",
@@ -43,7 +43,7 @@
    "fields": {
       "user": 6,
       "middle_name": null,
-      "display_name": null,
+      "display_name": "Luis S.",
       "gender": null,
       "avatar": "",
       "birthday": "1988-07-26",

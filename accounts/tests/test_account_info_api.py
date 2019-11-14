@@ -30,13 +30,15 @@ class AccountInfoInstructorTest(BaseTest):
         self.assertIsNone(user.instructor.gender)
         self.assertEqual(user.instructor.location, '')
 
-        data = {'middleName': 'M', 'gender': 'male', 'location': 'Oregon'}
+        data = {'middleName': 'M', 'gender': 'male', 'location': 'Oregon', 'lastName': 'ThisInstructor'}
         response = self.client.put(self.url, data=json.dumps(data), content_type='application/json')
         user.refresh_from_db()
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
         self.assertEqual(user.instructor.middle_name, data['middleName'])
         self.assertEqual(user.instructor.gender, data['gender'])
         self.assertEqual(user.instructor.location, data['location'])
+        self.assertEqual(user.last_name, data['lastName'])
+        self.assertEqual(user.instructor.display_name, '{} {}.'.format(user.first_name, user.last_name[0]))
 
     def test_update_wrong_gender(self):
         """Try to update with wrong gender value"""

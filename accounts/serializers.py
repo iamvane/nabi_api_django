@@ -25,7 +25,7 @@ User = get_user_model()
 class BaseCreateAccountSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField()
-    display_name = serializers.CharField(max_length=100, allow_blank=True, allow_null=True, required=False, )
+    display_name = serializers.CharField(max_length=100, read_only=True)
     gender = serializers.CharField(max_length=100, allow_blank=True, allow_null=True, required=False, )
     birthday = serializers.DateField(allow_null=True, required=True, )   # LLL: check this
     referringCode = serializers.CharField(max_length=20, allow_blank=True, allow_null=True, required=False)
@@ -61,11 +61,6 @@ class BaseCreateAccountSerializer(serializers.Serializer):
         if 'display_name' in data.keys():
             data['displayName'] = data.pop('display_name')
         return data
-
-    def to_internal_value(self, data):
-        if 'displayName' in data.keys():
-            data['display_name'] = data.get('displayName')
-        return super().to_internal_value(data)
 
 
 class UserInfoUpdateSerializer(serializers.ModelSerializer):
@@ -142,21 +137,27 @@ class ParentCreateAccountSerializer(BaseCreateAccountSerializer):
 
     def create(self, validated_data):
         user = super().create(validated_data)
-        return Parent.objects.create(user=user, **init_kwargs(Parent(), validated_data))
+        parent = Parent.objects.create(user=user, **init_kwargs(Parent(), validated_data))
+        parent.set_display_name()
+        return parent
 
 
 class StudentCreateAccountSerializer(BaseCreateAccountSerializer):
 
     def create(self, validated_data):
         user = super().create(validated_data)
-        return Student.objects.create(user=user, **init_kwargs(Student(), validated_data))
+        student = Student.objects.create(user=user, **init_kwargs(Student(), validated_data))
+        student.set_display_name()
+        return student
 
 
 class InstructorCreateAccountSerializer(BaseCreateAccountSerializer):
 
     def create(self, validated_data):
         user = super().create(validated_data)
-        return Instructor.objects.create(user=user, **init_kwargs(Instructor(), validated_data))
+        instructor = Instructor.objects.create(user=user, **init_kwargs(Instructor(), validated_data))
+        instructor.set_display_name()
+        return instructor
 
 
 class InstructorEducationSerializer(serializers.ModelSerializer):
@@ -712,7 +713,6 @@ class InstructorEmploymentSerializer(serializers.ModelSerializer):
 
 class InstructorDataSerializer(serializers.ModelSerializer):
     """Serializer for return instructor data, to usage in searching instructor"""
-    display_name = serializers.SerializerMethodField()
     location = serializers.SerializerMethodField()
     reviews = serializers.IntegerField(default=0)
     lessons_taught = serializers.IntegerField(default=0)
@@ -725,18 +725,6 @@ class InstructorDataSerializer(serializers.ModelSerializer):
         model = Instructor
         fields = ['id', 'display_name', 'avatar', 'age', 'bio_title', 'bio_description', 'location', 'reviews',
                   'instruments', 'rates', 'lessons_taught', 'last_login', 'member_since']
-
-    def get_display_name(self, instructor):
-        first_name = instructor.user.first_name
-        if first_name:
-            initial_last_name = instructor.user.last_name[:1]
-        else:
-            initial_last_name = ''
-        if initial_last_name:
-            return '{first_name} {initial_last_name}.'.format(first_name=first_name,
-                                                              initial_last_name=initial_last_name)
-        else:
-            return first_name
 
     def get_location(self, instructor):
         return instructor.get_location()

@@ -26,7 +26,6 @@ class CreateInstructorTest(APITestCase):
             "password": "123456",
             "role": "instructor",
             "birthday": "1990-09-17",
-            "displayName": "Instructor No 2",
             "gender": "female",
         }
         self.payload_repeated = {
@@ -39,14 +38,12 @@ class CreateInstructorTest(APITestCase):
             "email": "instructor4@yopmail.com",
             "password": "123456",
             "role": "instructor",
-            "displayName": "Instructor No 4",
             "gender": "female",
         }
         self.payload_missing_role = {
             "email": "instructor5@yopmail.com",
             "password": "123456",
             "birthday": "1990-09-17",
-            "displayName": "Instructor No 5",
             "gender": "female",
         }
 
@@ -60,7 +57,7 @@ class CreateInstructorTest(APITestCase):
         self.assertTrue(Instructor.objects.filter(user_id=user_id).exists())
 
     def test_create_instructor_complete_data(self):
-        """Test instructor creation with complete data (email, password, role, birthday, displayName, gender)"""
+        """Test instructor creation with complete data (email, password, role, birthday, gender)"""
         response = self.client.post(self.url, data=json.dumps(self.payload_all), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
         self.assertTrue(User.objects.filter(email=self.payload_all['email']).exists())
@@ -103,7 +100,6 @@ class CreateParentTest(APITestCase):
             "password": "123456",
             "role": "parent",
             "birthday": "1990-09-17",
-            "displayName": "Parent No 2",
             "gender": "male",
         }
         self.payload_repeated = {
@@ -111,21 +107,18 @@ class CreateParentTest(APITestCase):
             "password": "123456",
             "role": "parent",
             "birthday": "1990-08-16",
-            "displayName": "Parent No 3",
             "gender": "male",
         }
         self.payload_missing_birthday = {
             "email": "parent4@yopmail.com",
             "password": "123456",
             "role": "parent",
-            "displayName": "Instructor No 4",
             "gender": "female",
         }
         self.payload_missing_role = {
             "email": "parent5@yopmail.com",
             "password": "123456",
             "birthday": "1990-09-17",
-            "displayName": "Instructor No 5",
             "gender": "male",
         }
 
@@ -139,7 +132,7 @@ class CreateParentTest(APITestCase):
         self.assertTrue(Parent.objects.filter(user_id=user_id).exists())
 
     def test_create_parent_complete_data(self):
-        """Test parent creation with complete data (email, password, role, birthday, displayName, gender)"""
+        """Test parent creation with complete data (email, password, role, birthday, gender)"""
         response = self.client.post(self.url, data=json.dumps(self.payload_all), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
         self.assertTrue(User.objects.filter(email=self.payload_all['email']).exists())
@@ -182,7 +175,6 @@ class CreateStudentTest(APITestCase):
             "password": "123456",
             "role": "student",
             "birthday": "1990-09-17",
-            "displayName": "Student No 2",
             "gender": "male",
         }
         self.payload_repeated = {
@@ -190,21 +182,18 @@ class CreateStudentTest(APITestCase):
             "password": "123456",
             "role": "student",
             "birthday": "1990-08-16",
-            "displayName": "Student No 3",
             "gender": "male",
         }
         self.payload_missing_birthday = {
             "email": "student4@yopmail.com",
             "password": "123456",
             "role": "student",
-            "displayName": "Student No 4",
             "gender": "female",
         }
         self.payload_missing_role = {
             "email": "student5@yopmail.com",
             "password": "123456",
             "birthday": "1990-09-17",
-            "displayName": "Student No 5",
             "gender": "male",
         }
 
@@ -218,7 +207,7 @@ class CreateStudentTest(APITestCase):
         self.assertTrue(Student.objects.filter(user_id=user_id).exists())
 
     def test_create_student_complete_data(self):
-        """Test student creation with complete data (email, password, role, birthday, displayName, gender)"""
+        """Test student creation with complete data (email, password, role, birthday, gender)"""
         response = self.client.post(self.url, data=json.dumps(self.payload_all), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
         self.assertTrue(User.objects.filter(email=self.payload_all['email']).exists())

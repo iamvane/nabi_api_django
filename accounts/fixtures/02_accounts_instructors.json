@@ -5,7 +5,7 @@
    "fields": {
       "user": 5,
       "middle_name": null,
-      "display_name": null,
+      "display_name": "Luis I.",
       "gender": null,
       "avatar": "",
       "birthday": "1975-04-03",
@@ -40,7 +40,7 @@
    "fields": {
       "user": 7,
       "middle_name": null,
-      "display_name": null,
+      "display_name": "Luis I.",
       "gender": null,
       "avatar": "",
       "birthday": "1975-04-03",
@@ -75,7 +75,7 @@
    "fields": {
       "user": 8,
       "middle_name": null,
-      "display_name": null,
+      "display_name": "Luis I.",
       "gender": null,
       "avatar": "",
       "birthday": "1975-04-03",
@@ -110,7 +110,7 @@
    "fields": {
       "user": 9,
       "middle_name": null,
-      "display_name": null,
+      "display_name": "Luis I.",
       "gender": null,
       "avatar": "",
       "birthday": "1965-11-18",
