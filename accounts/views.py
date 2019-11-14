@@ -109,11 +109,10 @@ class CreateAccount(views.APIView):
                 return Response({
                     "error": str(e)
                 }, status=status.HTTP_400_BAD_REQUEST)
-            data = {'id': account.user.id, 'email': account.user.email, 'role': account.user.get_role(),
-                    'firstName': account.user.first_name, 'middleName': account.middle_name,
-                    'lastName': account.user.last_name, 'birthday': account.birthday, 'gender': account.gender,
-                    'referralToken': account.user.referral_token}
-            return Response(data, status=status.HTTP_200_OK)
+
+            user_response = get_user_response(account)
+            user_response['token'] = get_tokens_for_user(account.user)
+            return Response(user_response, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
