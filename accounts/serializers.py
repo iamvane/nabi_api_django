@@ -25,7 +25,7 @@ User = get_user_model()
 class BaseCreateAccountSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField()
-    display_name = serializers.CharField(max_length=100, read_only=True)
+    display_name = serializers.CharField(max_length=100, allow_blank=True, allow_null=True, required=False, )
     gender = serializers.CharField(max_length=100, allow_blank=True, allow_null=True, required=False, )
     birthday = serializers.DateField(allow_null=True, required=True, )   # LLL: check this
     referringCode = serializers.CharField(max_length=20, allow_blank=True, allow_null=True, required=False)
@@ -61,6 +61,11 @@ class BaseCreateAccountSerializer(serializers.Serializer):
         if 'display_name' in data.keys():
             data['displayName'] = data.pop('display_name')
         return data
+
+    def to_internal_value(self, data):
+        if 'displayName' in data.keys():
+            data['display_name'] = data.get('displayName')
+        return super().to_internal_value(data)
 
 
 class UserInfoUpdateSerializer(serializers.ModelSerializer):
@@ -108,7 +113,7 @@ class UserInfoUpdateSerializer(serializers.ModelSerializer):
             new_data['last_name'] = new_data.pop('lastName')
         if keys.get('middleName'):
             new_data['middle_name'] = new_data.pop('middleName')
-        return super().to_internal_value(new_data)
+        return new_data
 
 
 class InstructorProfileSerializer(serializers.Serializer):
@@ -137,27 +142,21 @@ class ParentCreateAccountSerializer(BaseCreateAccountSerializer):
 
     def create(self, validated_data):
         user = super().create(validated_data)
-        parent = Parent.objects.create(user=user, **init_kwargs(Parent(), validated_data))
-        parent.set_display_name()
-        return parent
+        return Parent.objects.create(user=user, **init_kwargs(Parent(), validated_data))
 
 
 class StudentCreateAccountSerializer(BaseCreateAccountSerializer):
 
     def create(self, validated_data):
         user = super().create(validated_data)
-        student = Student.objects.create(user=user, **init_kwargs(Student(), validated_data))
-        student.set_display_name()
-        return student
+        return Student.objects.create(user=user, **init_kwargs(Student(), validated_data))
 
 
 class InstructorCreateAccountSerializer(BaseCreateAccountSerializer):
 
     def create(self, validated_data):
         user = super().create(validated_data)
-        instructor = Instructor.objects.create(user=user, **init_kwargs(Instructor(), validated_data))
-        instructor.set_display_name()
-        return instructor
+        return Instructor.objects.create(user=user, **init_kwargs(Instructor(), validated_data))
 
 
 class InstructorEducationSerializer(serializers.ModelSerializer):
@@ -249,30 +248,10 @@ class AgeGroupsSerializer(serializers.Serializer):
 
 
 class LessonRateSerializer(serializers.Serializer):
-    mins30 = serializers.DecimalField(max_digits=9, decimal_places=4)
-    mins45 = serializers.DecimalField(max_digits=9, decimal_places=4)
-    mins60 = serializers.DecimalField(max_digits=9, decimal_places=4)
-    mins90 = serializers.DecimalField(max_digits=9, decimal_places=4)
-
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        if data['mins30'][-2:] == '00':
-            data['mins30'] = data['mins30'][:-2]
-        elif data['mins30'][-1] == '0':
-            data['mins30'] = data['mins30'][:-1]
-        if data['mins45'][-2:] == '00':
-            data['mins45'] = data['mins45'][:-2]
-        elif data['mins45'][-1] == '0':
-            data['mins45'] = data['mins45'][:-1]
-        if data['mins60'][-2:] == '00':
-            data['mins60'] = data['mins60'][:-2]
-        elif data['mins60'][-1] == '0':
-            data['mins60'] = data['mins60'][:-1]
-        if data['mins90'][-2:] == '00':
-            data['mins90'] = data['mins90'][:-2]
-        elif data['mins90'][-1] == '0':
-            data['mins90'] = data['mins90'][:-1]
-        return data
+    mins30 = serializers.FloatField()
+    mins45 = serializers.FloatField()
+    mins60 = serializers.FloatField()
+    mins90 = serializers.FloatField()
 
 
 class PlaceForLessonsSerializer(serializers.Serializer):
@@ -682,37 +661,23 @@ class InstructorEmploymentSerializer(serializers.ModelSerializer):
         return super().to_internal_value(new_data)
 
     def validate(self, data):
-        if self.partial:   # when update operation is requested
-            still_work_here = data.get('still_work_here') if 'still_work_here' in data.keys() \
-                else self.instance.still_work_here
-            to_year = data.get('to_year') if 'to_year' in data.keys() else self.instance.to_year
-            if to_year == '':
-                to_year = None
-            to_month = data.get('to_month') if 'to_month' in data.keys() else self.instance.to_month
-            if to_month == '':
-                to_month = None
-            if still_work_here and (to_year is not None or to_month is not None):
-                raise serializers.ValidationError('toYear or toMonth values are not congruent with stillWorkHere value')
-            elif not still_work_here and (to_year is None or to_month is None):
-                raise serializers.ValidationError('toYear or toMonth values are not congruent with stillWorkHere value')
-            return data
+        if 'still_work_here' in data.keys():
+            still_work_here = data['still_work_here']
         else:
-            if 'still_work_here' in data.keys():
-                still_work_here = data['still_work_here']
-            else:
-                still_work_here = False
-            if not still_work_here:
-                if not data.get('to_year') or not data.get('to_month'):
-                    raise serializers.ValidationError('If you not work here currently, final date should be provided')
-            if data.get('to_month') and not data.get('to_year'):
-                raise serializers.ValidationError('Year of final date should be provided')
-            if data.get('from_month') and not data.get('from_year'):
-                raise serializers.ValidationError('Year of initial date should be provided')
-            return data
+            still_work_here = False
+        if not still_work_here:
+            if not data.get('to_year') or not data.get('to_month'):
+                raise serializers.ValidationError('If you not work here currently, final date should be provided')
+        if data.get('to_month') and not data.get('to_year'):
+            raise serializers.ValidationError('Year of final date should be provided')
+        if data.get('from_month') and not data.get('from_year'):
+            raise serializers.ValidationError('Year of initial date should be provided')
+        return data
 
 
 class InstructorDataSerializer(serializers.ModelSerializer):
     """Serializer for return instructor data, to usage in searching instructor"""
+    display_name = serializers.SerializerMethodField()
     location = serializers.SerializerMethodField()
     reviews = serializers.IntegerField(default=0)
     lessons_taught = serializers.IntegerField(default=0)
@@ -726,6 +691,18 @@ class InstructorDataSerializer(serializers.ModelSerializer):
         fields = ['id', 'display_name', 'avatar', 'age', 'bio_title', 'bio_description', 'location', 'reviews',
                   'instruments', 'rates', 'lessons_taught', 'last_login', 'member_since']
 
+    def get_display_name(self, instructor):
+        first_name = instructor.user.first_name
+        if first_name:
+            initial_last_name = instructor.user.last_name[:1]
+        else:
+            initial_last_name = ''
+        if initial_last_name:
+            return '{first_name} {initial_last_name}.'.format(first_name=first_name,
+                                                              initial_last_name=initial_last_name)
+        else:
+            return first_name
+
     def get_location(self, instructor):
         return instructor.get_location()
 
@@ -736,8 +713,8 @@ class InstructorDataSerializer(serializers.ModelSerializer):
     def get_rates(self, instructor):
         items = instructor.instructorlessonrate_set.all()
         if len(items):
-            ser = LessonRateSerializer(items[0])
-            return ser.data
+            return {'mins30': str(items[0].mins30), 'mins45': str(items[0].mins45),
+                    'mins60': str(items[0].mins60), 'mins90': str(items[0].mins90)}
         else:
             return {'mins30': '', 'mins45': '', 'mins60': '', 'mins90': ''}
 
