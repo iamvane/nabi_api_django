@@ -23,7 +23,7 @@ def avatar_directory_path(instance, filename):
 class IUserAccount(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     middle_name = models.CharField(max_length=100, blank=True, null=True)
-    display_name = models.CharField(max_length=100, blank=True, null=True)
+    display_name = models.CharField(max_length=100, blank=True, null=True)   # updated after save() method in User
     gender = models.CharField(max_length=100, blank=True, null=True, choices=GENDER_CHOICES)
     avatar = models.ImageField(blank=True, null=True, upload_to=avatar_directory_path)
     birthday = models.DateField(blank=True, null=True)
@@ -79,19 +79,18 @@ class IUserAccount(models.Model):
             else:
                 return ''
 
-
-class Address(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    address_line1 = models.CharField(max_length=255, blank=True, null=True)
-    address_line2 = models.CharField(max_length=255, blank=True, null=True)
-    city = models.CharField(max_length=255, blank=True, null=True)
-    state = models.CharField(max_length=255, blank=True, null=True)
-    country = models.CharField(max_length=255, blank=True, null=True)
-    zip_code = models.CharField(max_length=255, blank=True, null=True)
-    address_type = models.CharField(max_length=100, choices=ADDRESS_TYPE_CHOICES)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    modified_at = models.DateTimeField(auto_now=True)
+    def set_display_name(self):
+        if self.user.last_name:
+            initial_last_name = self.user.last_name[:1]
+        else:
+            initial_last_name = ''
+        if initial_last_name:
+            display_name = '{first_name} {initial_last_name}.'.format(first_name=self.user.first_name,
+                                                                      initial_last_name=initial_last_name)
+        else:
+            display_name = self.user.first_name
+        self.display_name = display_name
+        self.save()
 
 
 class PhoneNumber(models.Model):
@@ -254,10 +253,10 @@ class InstructorAgeGroup(models.Model):
 
 class InstructorLessonRate(models.Model):
     instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE)
-    mins30 = models.FloatField()
-    mins45 = models.FloatField()
-    mins60 = models.FloatField()
-    mins90 = models.FloatField()
+    mins30 = models.DecimalField(max_digits=9, decimal_places=4)
+    mins45 = models.DecimalField(max_digits=9, decimal_places=4)
+    mins60 = models.DecimalField(max_digits=9, decimal_places=4)
+    mins90 = models.DecimalField(max_digits=9, decimal_places=4)
 
 
 class InstructorPlaceForLessons(models.Model):

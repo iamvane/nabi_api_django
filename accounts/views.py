@@ -95,22 +95,27 @@ class CreateAccount(views.APIView):
 
     @transaction.atomic()
     def post(self, request):
+        if 'role' not in request.data:
+            return Response({'message': 'role is required'}, status=status.HTTP_400_BAD_REQUEST)
         account_serializer = self.get_serializer_class(request)
         serializer = account_serializer(data=request.data)
         if serializer is None:
             return Response(status=status.HTTP_400_BAD_REQUEST)
         if serializer.is_valid():
-            user_cc = serializer.save()
+            account = serializer.save()
             try:
-                send_welcome_email(user_cc)
+                send_welcome_email(account)
             except Exception as e:
                 return Response({
                     "error": str(e)
                 }, status=status.HTTP_400_BAD_REQUEST)
-            user_response = get_user_response(user_cc)
-            user_response['token'] = get_tokens_for_user(user_cc.user)
-            return Response(user_response)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            data = {'id': account.user.id, 'email': account.user.email, 'role': account.user.get_role(),
+                    'firstName': account.user.first_name, 'middleName': account.middle_name,
+                    'lastName': account.user.last_name, 'birthday': account.birthday, 'gender': account.gender,
+                    'referralToken': account.user.referral_token}
+            return Response(data, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def get_serializer_class(self, request):
         if request.data['role'] == 'parent':
@@ -507,7 +512,6 @@ class ReferralInvitation(views.APIView):
         serializer = GuestEmailSerializer(data=request.data)
         if serializer.is_valid():
             user = request.user
-            print(request.data['email'])
             email = request.data['email']
             try:
                 send_referral_invitation_email(user, email)

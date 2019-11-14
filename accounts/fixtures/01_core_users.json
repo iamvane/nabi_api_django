@@ -1,0 +1,182 @@
+[
+{
+   "model": "core.user",
+   "pk": 1,
+   "fields": {
+      "password": "pbkdf2_sha256$150000$jtLXB8gm3DQd$IvkvV3e8xxIe+5ZAH0/ZFRedDerovStwuivvDj974yw=",
+      "last_login": "2019-10-30T23:06:56.004Z",
+      "is_superuser": false,
+      "first_name": "Luis",
+      "last_name": "Student",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2019-10-30T20:31:48.127Z",
+      "email": "luisstudent@yopmail.com",
+      "username": "luisstudent@yopmail.com",
+      "referral_token": "THoANSG6cV60dya1",
+      "referred_by": null,
+      "groups": [],
+      "user_permissions": []
+   }
+},
+{
+   "model": "core.user",
+   "pk": 2,
+   "fields": {
+      "password": "pbkdf2_sha256$150000$D5acUclB0tmg$hXLefhYD2v1lgEueAEZqIRC1X5BL6wIHd8sbvyxJJzI=",
+      "last_login": "2019-10-30T20:52:43.063Z",
+      "is_superuser": false,
+      "first_name": "Luis",
+      "last_name": "Student two",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2019-10-30T20:32:09.410Z",
+      "email": "luisstudent2@yopmail.com",
+      "username": "luisstudent2@yopmail.com",
+      "referral_token": "R72-BlRs7HAAenV0",
+      "referred_by": null,
+      "groups": [],
+      "user_permissions": []
+   }
+},
+{
+   "model": "core.user",
+   "pk": 3,
+   "fields": {
+      "password": "pbkdf2_sha256$150000$1zjW2741saP1$8CJQm3aeIS1CnSkiUFkMgfVv78FVyU5cB9lu4sK80u8=",
+      "last_login": "2019-10-30T22:27:36.370Z",
+      "is_superuser": false,
+      "first_name": "Luis",
+      "last_name": "Parent",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2019-10-30T20:32:51.322Z",
+      "email": "luisparent@yopmail.com",
+      "username": "luisparent@yopmail.com",
+      "referral_token": "EljB8wAa40oDPUIt",
+      "referred_by": null,
+      "groups": [],
+      "user_permissions": []
+   }
+},
+{
+   "model": "core.user",
+   "pk": 4,
+   "fields": {
+      "password": "pbkdf2_sha256$150000$TNSQqHA8oYmt$cy7Vw0I1zbW7mpD67N8i0ZefXNjjGWsThcUWCEPu8G0=",
+      "last_login": "2019-10-30T22:28:00.393Z",
+      "is_superuser": false,
+      "first_name": "Luis",
+      "last_name": "Parent two",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2019-10-30T20:33:15.586Z",
+      "email": "luisparent2@yopmail.com",
+      "username": "luisparent2@yopmail.com",
+      "referral_token": "DQqQrGsGJ5T8aKPi",
+      "referred_by": null,
+      "groups": [],
+      "user_permissions": []
+   }
+},
+{
+   "model": "core.user",
+   "pk": 5,
+   "fields": {
+      "password": "pbkdf2_sha256$150000$nlewR0iztl4K$UtdtQpiWmLUBQYYqm6p6m6ftGdOe6j2tJv6g4fp5cy4=",
+      "last_login": "2019-10-30T21:13:11.472Z",
+      "is_superuser": false,
+      "first_name": "Luis",
+      "last_name": "Instructor",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2019-10-30T20:33:46.872Z",
+      "email": "luisinstruct@yopmail.com",
+      "username": "luisinstruct@yopmail.com",
+      "referral_token": "WVG3Kw4HaDhEpyag",
+      "referred_by": null,
+      "groups": [],
+      "user_permissions": []
+   }
+},
+{
+   "model": "core.user",
+   "pk": 6,
+   "fields": {
+      "password": "pbkdf2_sha256$150000$FbcXNynSow1U$bX+90joQ0uI8kKYMl4xhTpzfJGrxGbUfvixzt/HeQis=",
+      "last_login": "2019-10-30T22:37:15.541Z",
+      "is_superuser": false,
+      "first_name": "Luis",
+      "last_name": "Student three",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2019-10-30T20:36:25.667Z",
+      "email": "luisstudent3@yopmail.com",
+      "username": "luisstudent3@yopmail.com",
+      "referral_token": "e6HYnw1GDChv6Lse",
+      "referred_by": 1,
+      "groups": [],
+      "user_permissions": []
+   }
+},
+{
+   "model": "core.user",
+   "pk": 7,
+   "fields": {
+      "password": "pbkdf2_sha256$150000$LM9c5pFVozdn$LOZOHZ+r+9RVcwtu2GfAvyA83Q3b0Nc7n6d7erEzIms=",
+      "last_login": null,
+      "is_superuser": false,
+      "first_name": "Luis",
+      "last_name": "Instructor two",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2019-10-30T20:40:28.066Z",
+      "email": "luisinstruct2@yopmail.com",
+      "username": "luisinstruct2@yopmail.com",
+      "referral_token": "VMxGjIPkVJ4CXGCM",
+      "referred_by": 5,
+      "groups": [],
+      "user_permissions": []
+   }
+},
+{
+   "model": "core.user",
+   "pk": 8,
+   "fields": {
+      "password": "pbkdf2_sha256$150000$Tde54MHmXWBV$sVTR/qK6/ejBaIX8XBjvclciha4WABp/vwyAzEaist4=",
+      "last_login": null,
+      "is_superuser": false,
+      "first_name": "Luis",
+      "last_name": "Instructor three",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2019-10-30T20:41:02.183Z",
+      "email": "luisinstruct3@yopmail.com",
+      "username": "luisinstruct3@yopmail.com",
+      "referral_token": "TdnULU3FxABzieFR",
+      "referred_by": 5,
+      "groups": [],
+      "user_permissions": []
+   }
+},
+{
+   "model": "core.user",
+   "pk": 9,
+   "fields": {
+      "password": "pbkdf2_sha256$150000$MPZvOfDIrKDH$64icU0HH/GAsZGG/Modl/rK2dDIbFEZirZZHUnx+4/w=",
+      "last_login": "2019-10-30T22:26:38.623Z",
+      "is_superuser": false,
+      "first_name": "Luis",
+      "last_name": "Instructor four",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2019-10-30T20:41:36.379Z",
+      "email": "luisinstruct4@yopmail.com",
+      "username": "luisinstruct4@yopmail.com",
+      "referral_token": "hXqYkPg-EXubSl0L",
+      "referred_by": null,
+      "groups": [],
+      "user_permissions": []
+   }
+}
+]

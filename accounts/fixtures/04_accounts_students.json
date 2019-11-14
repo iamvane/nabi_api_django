@@ -1,0 +1,59 @@
+[
+{
+   "model": "accounts.student",
+   "pk": 1,
+   "fields": {
+      "user": 1,
+      "middle_name": "A.",
+      "display_name": "Luis S.",
+      "gender": "male",
+      "avatar": "",
+      "birthday": "1990-03-13",
+      "location": "Michigan, United States",
+      "lat": "",
+      "lng": "",
+      "email_verified_at": null,
+      "created_at": "2019-10-30T20:31:48.334Z",
+      "modified_at": "2019-10-30T23:08:32.868Z",
+      "parent": null
+   }
+},
+{
+   "model": "accounts.student",
+   "pk": 2,
+   "fields": {
+      "user": 2,
+      "middle_name": null,
+      "display_name": "Luis S.",
+      "gender": null,
+      "avatar": "",
+      "birthday": "1988-07-26",
+      "location": "",
+      "lat": "",
+      "lng": "",
+      "email_verified_at": null,
+      "created_at": "2019-10-30T20:32:09.621Z",
+      "modified_at": "2019-10-30T20:32:09.621Z",
+      "parent": null
+   }
+},
+{
+   "model": "accounts.student",
+   "pk": 3,
+   "fields": {
+      "user": 6,
+      "middle_name": null,
+      "display_name": "Luis S.",
+      "gender": null,
+      "avatar": "",
+      "birthday": "1988-07-26",
+      "location": "",
+      "lat": "",
+      "lng": "",
+      "email_verified_at": null,
+      "created_at": "2019-10-30T20:36:25.871Z",
+      "modified_at": "2019-10-30T20:36:25.871Z",
+      "parent": null
+   }
+}
+]

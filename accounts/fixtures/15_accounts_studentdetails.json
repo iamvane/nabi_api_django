@@ -1,0 +1,58 @@
+[
+{
+   "model": "accounts.studentdetails",
+   "pk": 1,
+   "fields": {
+      "user": 1,
+      "tied_student": null,
+      "instrument": 3,
+      "skill_level": "beginner",
+      "lesson_place": "home",
+      "lesson_duration": "90 mins",
+      "created_at": "2019-10-31T01:11:03.883Z",
+      "updated_at": "2019-10-31T01:11:03.883Z"
+   }
+},
+{
+   "model": "accounts.studentdetails",
+   "pk": 2,
+   "fields": {
+      "user": 3,
+      "tied_student": 1,
+      "instrument": 1,
+      "skill_level": "beginner",
+      "lesson_place": "home",
+      "lesson_duration": "90 mins",
+      "created_at": "2019-10-31T01:27:28.054Z",
+      "updated_at": "2019-10-31T01:27:28.054Z"
+   }
+},
+{
+   "model": "accounts.studentdetails",
+   "pk": 3,
+   "fields": {
+      "user": 3,
+      "tied_student": 2,
+      "instrument": 3,
+      "skill_level": "beginner",
+      "lesson_place": "online",
+      "lesson_duration": "60 mins",
+      "created_at": "2019-10-31T01:28:09.589Z",
+      "updated_at": "2019-10-31T01:28:09.589Z"
+   }
+},
+{
+   "model": "accounts.studentdetails",
+   "pk": 5,
+   "fields": {
+      "user": 3,
+      "tied_student": 4,
+      "instrument": 2,
+      "skill_level": "advanced",
+      "lesson_place": "home",
+      "lesson_duration": "60 mins",
+      "created_at": "2019-10-31T01:29:09.629Z",
+      "updated_at": "2019-10-31T01:29:09.629Z"
+   }
+}
+]
