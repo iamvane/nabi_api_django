@@ -135,6 +135,7 @@ class Instructor(IUserAccount):
     languages = ArrayField(base_field=models.CharField(max_length=100, blank=True), blank=True, null=True)
     music = ArrayField(base_field=models.CharField(max_length=100, blank=True), blank=True, null=True)
 
+    interviewed = models.BooleanField(blank=True, default=False)
     job_preferences = ArrayField(blank=True, null=True, base_field=models.CharField(max_length=100))
     qualifications = ArrayField(blank=True, null=True, base_field=models.CharField(max_length=100))
     place_lessons_preferences = ArrayField(blank=True, null=True, base_field=models.CharField(max_length=100))

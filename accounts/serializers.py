@@ -724,7 +724,7 @@ class InstructorDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = Instructor
         fields = ['id', 'display_name', 'avatar', 'age', 'bio_title', 'bio_description', 'location', 'reviews',
-                  'instruments', 'rates', 'lessons_taught', 'last_login', 'member_since']
+                  'interviewed', 'instruments', 'rates', 'lessons_taught', 'last_login', 'member_since']
 
     def get_location(self, instructor):
         return instructor.get_location()
@@ -747,9 +747,9 @@ class InstructorDataSerializer(serializers.ModelSerializer):
                     'avatar': data.get('avatar') if data.get('avatar') else data.get('avatar'),
                     'bioTitle': data.get('bio_title'), 'bioDescription': data.get('bio_description'),
                     'location': data.get('location'), 'reviews': data.get('reviews'),
-                    'lessonsTaught': data.get('lessons_taught'), 'instruments': data.get('instruments'),
-                    'rates': data.get('rates'), 'lastLogin': data.get('last_login'),
-                    'memberSince': data.get('member_since')}
+                    'interviewed': data.get('interviewed'), 'lessonsTaught': data.get('lessons_taught'),
+                    'instruments': data.get('instruments'), 'rates': data.get('rates'),
+                    'lastLogin': data.get('last_login'), 'memberSince': data.get('member_since')}
         return new_data
 
 
@@ -783,9 +783,9 @@ class InstructorDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Instructor
-        fields = ['id', 'user_id', 'display_name', 'member_since', 'bio_title', 'bio_description', 'music',
-                  'instruments', 'lesson_size', 'age_group', 'rates', 'place_for_lessons', 'availability', 'reviews',
-                  'qualifications', 'languages', 'studio_address', 'travel_distance', 'lessons_taught',
+        fields = ['id', 'user_id', 'display_name', 'member_since', 'bio_title', 'bio_description', 'interviewed',
+                  'music', 'instruments', 'lesson_size', 'age_group', 'rates', 'place_for_lessons', 'availability',
+                  'reviews', 'qualifications', 'languages', 'studio_address', 'travel_distance', 'lessons_taught',
                   'education', 'employment']
 
     def to_representation(self, instance):
