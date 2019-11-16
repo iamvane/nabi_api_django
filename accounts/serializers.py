@@ -778,20 +778,25 @@ class InstructorDetailSerializer(serializers.ModelSerializer):
     lessons_taught = serializers.IntegerField(default=0)
     education = InstructorEducationSerializer(many=True, read_only=True)
     employment = InstructorEmploymentSerializer(many=True, read_only=True)
+    reviews = serializers.IntegerField(default=0)
+    member_since = serializers.DateTimeField(source='created_at', format='%Y')
 
     class Meta:
         model = Instructor
-        fields = ['id', 'user_id', 'bio_title', 'bio_description', 'music', 'instruments', 'lesson_size', 'age_group',
-                  'rates', 'place_for_lessons', 'availability', 'qualifications', 'languages', 'studio_address',
-                  'travel_distance', 'lessons_taught', 'education', 'employment']
+        fields = ['id', 'user_id', 'display_name', 'member_since', 'bio_title', 'bio_description', 'music',
+                  'instruments', 'lesson_size', 'age_group', 'rates', 'place_for_lessons', 'availability', 'reviews',
+                  'qualifications', 'languages', 'studio_address', 'travel_distance', 'lessons_taught',
+                  'education', 'employment']
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data['userId'] = data.pop('user_id')
+        data['displayName'] = data.pop('display_name')
         data['bioTitle'] = data.pop('bio_title')
         data['bioDescription'] = data.pop('bio_description')
         data['studioAddress'] = data.pop('studio_address')
         data['travelDistance'] = data.pop('travel_distance')
+        data['memberSince'] = data.pop('member_since')
         if data.get('lesson_size'):
             data['lessonSize'] = data.pop('lesson_size')[0]
         else:
