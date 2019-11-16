@@ -1,0 +1,12 @@
+[
+{
+   "model": "accounts.instructorlessonsize",
+   "pk": 1,
+   "fields": {
+      "instructor": 1,
+      "one_student": true,
+      "small_groups": true,
+      "large_groups": false
+   }
+}
+]

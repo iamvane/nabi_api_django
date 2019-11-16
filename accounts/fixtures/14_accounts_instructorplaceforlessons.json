@@ -1,0 +1,12 @@
+[
+{
+   "model": "accounts.instructorplaceforlessons",
+   "pk": 1,
+   "fields": {
+      "instructor": 1,
+      "home": true,
+      "studio": false,
+      "online": true
+   }
+}
+]

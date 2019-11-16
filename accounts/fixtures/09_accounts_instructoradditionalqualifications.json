@@ -1,0 +1,19 @@
+[
+{
+   "model": "accounts.instructoradditionalqualifications",
+   "pk": 1,
+   "fields": {
+      "instructor": 1,
+      "certified_teacher": true,
+      "music_therapy": false,
+      "music_production": false,
+      "ear_training": true,
+      "conducting": false,
+      "virtuoso_recognition": false,
+      "performance": false,
+      "music_theory": true,
+      "young_children_experience": false,
+      "repertoire_selection": false
+   }
+}
+]

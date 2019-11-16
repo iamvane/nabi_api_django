@@ -1,0 +1,36 @@
+[
+{
+   "model": "accounts.employment",
+   "pk": 1,
+   "fields": {
+      "instructor": 1,
+      "employer": "Enterprise",
+      "job_title": "Backend",
+      "job_location": "here",
+      "from_month": "august",
+      "from_year": 2015,
+      "to_month": null,
+      "to_year": null,
+      "still_work_here": true,
+      "created_at": "2019-10-31T01:18:52.343Z",
+      "modified_at": "2019-10-31T01:18:52.343Z"
+   }
+},
+{
+   "model": "accounts.employment",
+   "pk": 2,
+   "fields": {
+      "instructor": 1,
+      "employer": "Company",
+      "job_title": "Employer",
+      "job_location": "some place",
+      "from_month": "march",
+      "from_year": 2010,
+      "to_month": "october",
+      "to_year": 2012,
+      "still_work_here": false,
+      "created_at": "2019-10-31T01:19:25.305Z",
+      "modified_at": "2019-10-31T01:19:25.305Z"
+   }
+}
+]
