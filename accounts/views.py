@@ -231,6 +231,7 @@ class WhoAmIView(views.APIView):
             'firstName': request.user.first_name,
             'middleName': account.middle_name,
             'lastName': request.user.last_name,
+            'displayName': account.display_name,
             'birthday': account.birthday,
             'phone': get_user_phone(account),
             'gender': account.gender,
@@ -326,7 +327,10 @@ class WhoAmIView(views.APIView):
             data['studioAddress'] = instructor.studio_address
             data['travelDistance'] = instructor.travel_distance
             data['languages'] = instructor.languages
-            data['employment'] = [{'employer': item.employer, 'jobTitle': item.job_title}
+            data['employment'] = [{'employer': item.employer, 'jobTitle': item.job_title,
+                                   'jobLocation': item.job_location, 'fromMonth': item.from_month,
+                                   'fromYear': item.from_year, 'toMonth': item.to_month, 'toYear': item.to_year,
+                                   'stillWorkHere': item.still_work_here}
                                   for item in instructor.employment.all()]
             data['education'] = [{'degreeType': item.degree_type, 'fieldOfStudy': item.field_of_study}
                                  for item in instructor.education.all()]
