@@ -1,14 +1,19 @@
+import stripe
+
+from django.conf import settings
 from django.db.models import Q
 
 from rest_framework import status, views
-
 from rest_framework.response import Response
 
 from accounts.models import Instructor
+from payments.models import Payment
 
 from .client_provider import AccurateApiClient
 from .models import BackgroundCheckRequest, BackgroundCheckStep
-from .serializers import InstructorIdSerializer
+from .serializers import BGCheckRequestSerializer
+
+stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
 class BackgroundCheckRequestView(views.APIView):
@@ -16,15 +21,26 @@ class BackgroundCheckRequestView(views.APIView):
     def post(self, request):
         """Create a request for instructor's check background"""
         # first, get instructor instance
-        if request.data:
-            serializer = InstructorIdSerializer(data=request.data)
-            if serializer.is_valid():
-                instructor = Instructor.objects.get(id=serializer.data['instructor_id'])
+        serializer = BGCheckRequestSerializer(data=request.data)
+        if serializer.is_valid():
+            if serializer.validated_data.get('instructor_id'):
+                instructor = Instructor.objects.get(id=serializer.validated_data['instructor_id'])
             else:
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                instructor = request.user.instructor
         else:
-            instructor = request.user.instructor
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         resource_id = None
+        # then, make the payment
+        try:
+            charge = stripe.Charge.create(amount='{:.0f}'.format(serializer.validated_data['amount'] * 100),
+                                          currency='usd',
+                                          source=serializer.validated_data['stripe_token'],
+                                          description='Background Check Request')
+        except stripe.error.CardError as ce:
+            return Response(ce, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        Payment.objects.create(user=request.user, amount=serializer.validated_data['amount'],
+                               description='Background Check Request', charge_id=charge.id)
+
         bg_request = BackgroundCheckRequest.objects.filter(user=instructor.user).last()
         if bg_request:
             # Get last step from bg_request. Would be create or update candidate

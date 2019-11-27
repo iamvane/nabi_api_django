@@ -480,10 +480,12 @@ GET localhost:8000/v1/lesson-request-list/?instrument=piano&placeForLessons=home
 POST localhost:8000/v1/background-checks/request/
 
 {
-"instructor_id": 2
+"instructorId": 2,
+"amount": 15.75,
+"stripeToken": "tok_1EpRgYK2gfFa5B9C2sn4L0kG"
 }
 
-# this parameter is optional, when is not provided, try to use the logged user
+# instructorId is optional, when is not provided, data is obtained from logged user
 
 ###
 
