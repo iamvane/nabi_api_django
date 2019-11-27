@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     # 'references',
 
     'drf_yasg',
+    'storages',
 ]
 
 MIDDLEWARE = [
@@ -113,6 +114,7 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
+
 # Static files (CSS, JavaScript, Images)
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 STATIC_URL = '/dj-static/'
@@ -122,6 +124,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/dj-media/'
 
 GOOGLE_FORM_REFERENCES_URL = 'https://forms.gle/MuGhfwUARTW9uzrU9'
+
 
 REST_PAGE_SIZE = 20
 
@@ -166,3 +169,25 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=30),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
 }
+
+# Static files (CSS, JavaScript, Images)
+AWS_S3_CUSTOM_DOMAIN = '%s.s3.us-east-2.amazonaws.com' % AWS_STORAGE_BUCKET_NAME
+AWS_S3_OBJECT_PARAMETERS = {
+    'CacheControl': 'max-age=86400',
+}
+AWS_LOCATION = 'static'
+
+
+STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}/'
+print(STATIC_URL)
+STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
+
+# STATIC_ROOT = os.path.join(BASE_DIR, "static")
+
+# Absolute filesystem path to the directory that will hold user-uploaded files.
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/dj-media/'

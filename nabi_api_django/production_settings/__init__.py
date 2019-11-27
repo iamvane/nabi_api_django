@@ -30,7 +30,8 @@ INSTALLED_APPS = [
     # 'references.apps.ReferencesConfig',
 
     'drf_yasg',
-    'corsheaders'
+    'corsheaders',
+    'storages',
 ]
 
 MIDDLEWARE = [
