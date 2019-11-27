@@ -783,10 +783,10 @@ class InstructorDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Instructor
-        fields = ['id', 'user_id', 'display_name', 'member_since', 'bio_title', 'bio_description', 'interviewed',
+        fields = ['id', 'user_id', 'display_name', 'age', 'member_since', 'bio_title', 'bio_description', 'interviewed',
                   'music', 'instruments', 'lesson_size', 'age_group', 'rates', 'place_for_lessons', 'availability',
                   'reviews', 'qualifications', 'languages', 'studio_address', 'travel_distance', 'lessons_taught',
-                  'education', 'employment']
+                  'education', 'employment', 'experience_years']
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -797,6 +797,7 @@ class InstructorDetailSerializer(serializers.ModelSerializer):
         data['studioAddress'] = data.pop('studio_address')
         data['travelDistance'] = data.pop('travel_distance')
         data['memberSince'] = data.pop('member_since')
+        data['yearsOfExperience'] = data.pop('experience_years')
         if data.get('lesson_size'):
             data['lessonSize'] = data.pop('lesson_size')[0]
         else:

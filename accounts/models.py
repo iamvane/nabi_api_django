@@ -1,3 +1,4 @@
+import datetime
 from pygeocoder import Geocoder, GeocoderError
 
 from django.conf import settings
@@ -11,6 +12,7 @@ from core.constants import (
     ADDRESS_TYPE_CHOICES, DAY_CHOICES, DEGREE_TYPE_CHOICES, GENDER_CHOICES, LESSON_DURATION_CHOICES,
     MONTH_CHOICES, PHONE_TYPE_CHOICES, PLACE_FOR_LESSONS_CHOICES, ROLE_INSTRUCTOR, ROLE_PARENT, SKILL_LEVEL_CHOICES,
 )
+from core.utils import ElapsedTime, get_date_a_month_later, get_month_integer
 from lesson.models import Instrument
 
 User = get_user_model()
@@ -158,6 +160,25 @@ class Instructor(IUserAccount):
     @property
     def role(self):
         return 'Instructor'
+
+    @property
+    def experience_years(self):
+        """Return experience years in base to registered employments"""
+        elapsed_time = ElapsedTime()
+        for employment in self.employment.all():
+            if employment.to_year is None:
+                today = timezone.now()
+                temp_date = get_date_a_month_later(datetime.date(today.year, today.month, today.day))
+            else:
+                temp_date = get_date_a_month_later(datetime.date(employment.to_year,
+                                                                 get_month_integer(employment.to_month),
+                                                                 1)
+                                                   )
+            temp_date = temp_date - datetime.timedelta(days=1)
+            elapsed_time.add_time(datetime.date(employment.from_year, get_month_integer(employment.from_month), 1),
+                                  temp_date)
+        elapsed_time.re_format()
+        return elapsed_time.years
 
 
 class Education(models.Model):
