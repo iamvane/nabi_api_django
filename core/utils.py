@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from dateutil import relativedelta
 from hashlib import sha1
 
 from django.conf import settings
@@ -6,6 +7,8 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.template import loader
+
+from core.constants import MONTH_CHOICES
 
 
 def update_model(instance, **kwargs):
@@ -54,3 +57,46 @@ def get_date_a_month_later(initial_date):
         while final_date.day > initial_date.day:
             final_date -= timedelta(days=1)
     return final_date
+
+
+class ElapsedTime:
+    years = 0
+    months = 0
+
+    def add_time(self, dt_begin, dt_end):
+        elapsed = relativedelta.relativedelta(dt_end, dt_begin)
+        self.years += elapsed.years
+        self.months += elapsed.months
+
+    def re_format(self):
+        while self.months > 11:
+            self.years += 1
+            self.months -= 12
+
+
+def get_month_integer(month):
+    """Return an integer instead of string month"""
+    if month == MONTH_CHOICES[0][0]:
+        return 1
+    elif month == MONTH_CHOICES[1][0]:
+        return 2
+    elif month == MONTH_CHOICES[2][0]:
+        return 3
+    elif month == MONTH_CHOICES[3][0]:
+        return 4
+    elif month == MONTH_CHOICES[4][0]:
+        return 5
+    elif month == MONTH_CHOICES[5][0]:
+        return 6
+    elif month == MONTH_CHOICES[6][0]:
+        return 7
+    elif month == MONTH_CHOICES[7][0]:
+        return 8
+    elif month == MONTH_CHOICES[8][0]:
+        return 9
+    elif month == MONTH_CHOICES[9][0]:
+        return 10
+    elif month == MONTH_CHOICES[10][0]:
+        return 11
+    elif month == MONTH_CHOICES[11][0]:
+        return 12
