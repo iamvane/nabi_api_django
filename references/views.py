@@ -16,7 +16,7 @@ class RegisterRequestReferenceView(views.APIView):
             serializer.save()
             for email in serializer.validated_data['emails']:
                 from_email = 'Nabi Music <' + settings.DEFAULT_FROM_EMAIL + '>'
-                send_email(from_email, email, 'Request for reference',
+                send_email(from_email, email, 'Reference for {}'.format(request.user.first_name),
                            template='references/reference_email.html',
                            template_plain='references/reference_email_plain.html',
                            template_params={'full_name': request.user.get_full_name(),
