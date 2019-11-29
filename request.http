@@ -361,3 +361,11 @@ GET localhost:8000/v1/instructors/
 GET localhost:8000/v1/instructor/1/
 
 ###
+
+POST localhost:8000/v1/request-references/register/
+
+{
+   "emails": ["luisllave12357@gmail.com", "luistest2020@yopmail.com"]
+}
+
+###
