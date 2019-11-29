@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'core.apps.CoreConfig',
     'accounts.apps.AccountsConfig',
     'lesson.apps.LessonConfig',
+    'references',
 
     'drf_yasg',
 ]
@@ -118,6 +119,8 @@ STATIC_URL = '/dj-static/'
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/dj-media/'
+
+GOOGLE_FORM_REFERENCES_URL = 'https://forms.gle/MuGhfwUARTW9uzrU9'
 
 REST_PAGE_SIZE = 20
 
