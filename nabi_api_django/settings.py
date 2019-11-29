@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'core.apps.CoreConfig',
     'accounts.apps.AccountsConfig',
     'lesson.apps.LessonConfig',
+    'notices',
     'references',
 
     'drf_yasg',
@@ -133,7 +134,8 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': REST_PAGE_SIZE
+    'PAGE_SIZE': REST_PAGE_SIZE,
+    'DATETIME_FORMAT': '%Y-%m-%d %H:%M:%S'
 }
 
 AUTH_USER_MODEL = 'core.User'

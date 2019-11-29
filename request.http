@@ -369,3 +369,11 @@ POST localhost:8000/v1/request-references/register/
 }
 
 ###
+
+GET localhost:8000/v1/offers/all/
+
+###
+
+GET localhost:8000/v1/offers/available/
+
+###
