@@ -5,7 +5,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from .models import Offer
-from .serializers import OfferDetailSerializer, OfferSerializer
+from .serializers import OfferDetailSerializer
 
 
 class AvailableOfferListView(views.APIView):
@@ -15,7 +15,7 @@ class AvailableOfferListView(views.APIView):
     def get(self, request):
         today = timezone.now()
         qs = Offer.objects.filter(show_at__lte=today).exclude(hide_at__lte=today).order_by('name')
-        serializer = OfferSerializer(qs, many=True)
+        serializer = OfferDetailSerializer(qs, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
