@@ -370,10 +370,14 @@ POST localhost:8000/v1/request-references/register/
 
 ###
 
-GET localhost:8000/v1/offers/all/
+GET localhost:8000/v1/offers/
 
 ###
 
-GET localhost:8000/v1/offers/available/
+GET localhost:8000/v1/offers-active/
+
+###
+
+GET localhost:8000/v1/minimal-rate/
 
 ###
