@@ -11,7 +11,7 @@ from payments.models import Payment
 
 from .client_provider import AccurateApiClient
 from .models import BackgroundCheckRequest, BackgroundCheckStep
-from .serializers import BGCheckRequestSerializer
+from .serializers import BGCheckRequestSerializer, InstructorIdSerializer
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -30,7 +30,12 @@ class BackgroundCheckRequestView(views.APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         resource_id = None
-        # then, make the payment
+
+        # check if pending background check exists
+        bg_request = BackgroundCheckRequest.objects.filter(user=instructor.user).last()
+        if bg_request and bg_request.status == BackgroundCheckRequest.REQUESTED:
+            return Response({'message': 'Background check in progress already'}, status=status.HTTP_400_BAD_REQUEST)
+        # if does not exist, make the card charge, via stripe
         try:
             charge = stripe.Charge.create(amount='{:.0f}'.format(serializer.validated_data['amount'] * 100),
                                           currency='usd',
@@ -38,16 +43,14 @@ class BackgroundCheckRequestView(views.APIView):
                                           description='Background Check Request')
         except stripe.error.CardError as ce:
             return Response(ce, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # register the charge done
         Payment.objects.create(user=request.user, amount=serializer.validated_data['amount'],
                                description='Background Check Request', charge_id=charge.id)
-
-        bg_request = BackgroundCheckRequest.objects.filter(user=instructor.user).last()
+        # proceed with requests to Accurate
         if bg_request:
             # Get last step from bg_request. Would be create or update candidate
             if bg_request.status == BackgroundCheckRequest.PRELIMINARY:
                 bg_step = BackgroundCheckStep.objects.filter(request=bg_request).last()
-            elif bg_request.status == BackgroundCheckRequest.REQUESTED:
-                return Response({'msg': 'Background check in progress already'}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 bg_step = BackgroundCheckStep.objects.filter(Q(step='candidate_register') | Q(step='candidate_update'),
                                                              request=bg_request).last()
@@ -84,14 +87,15 @@ class BackgroundCheckRequestView(views.APIView):
         if error:
             return Response(resp_dict, status=error)
         else:   # error == 0, no error
-            return Response({'msg': 'success'}, status=status.HTTP_200_OK)
+            return Response({'message': 'success'}, status=status.HTTP_200_OK)
 
 
 class BackgroundCheckView(views.APIView):
+    """If bg request is not register as complete or cancelled, make a request to Accurate, to get status."""
 
     def get(self, request):
         """Get last background check request"""
-        if request.query_params.get('instructor_id'):
+        if request.query_params.get('instructorId'):
             serializer = InstructorIdSerializer(data=request.query_params)
             if serializer.is_valid():
                 instructor = Instructor.objects.get(id=serializer.data['instructor_id'])
@@ -102,9 +106,9 @@ class BackgroundCheckView(views.APIView):
         bg_request = BackgroundCheckRequest.objects.filter(user=instructor.user).last()
         if bg_request:
             if bg_request.status == BackgroundCheckRequest.CANCELLED:
-                return Response({'error': 'Last background check was cancelled'}, status=status.HTTP_404_NOT_FOUND)
+                return Response({'status': 'CANCELLED'}, status=status.HTTP_200_OK)
             elif bg_request.status == BackgroundCheckRequest.COMPLETE:
-                return Response({'msg': 'complete'}, status=status.HTTP_200_OK)
+                return Response({'status': 'COMPLETE'}, status=status.HTTP_200_OK)
             else:
                 provider_client = AccurateApiClient('order')
                 resp_dict = provider_client.check_order(instructor.user)
@@ -112,7 +116,6 @@ class BackgroundCheckView(views.APIView):
                 if error:
                     return Response(resp_dict, status=error)
                 else:  # error == 0, no error
-                    return Response({'msg': 'Order is {}'.format(resp_dict['msg']['status'])},
-                                    status=status.HTTP_200_OK)
+                    return Response({'status': resp_dict['msg']['status']}, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'No background check request for this user'}, status=status.HTTP_404_NOT_FOUND)

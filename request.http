@@ -489,6 +489,8 @@ POST localhost:8000/v1/background-checks/request/
 
 ###
 
-GET localhost:8000/v1/background-checks/status/
+GET localhost:8000/v1/background-checks/status/?instructorId=1
+
+# instructorId parameter is optional, when is not provided, data is obtained from logged user
 
 ###
