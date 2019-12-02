@@ -652,5 +652,5 @@ class InstructorListView(views.APIView):
 class MinimalLessonRateView(views.APIView):
 
     def get(self, request):
-        res = InstructorLessonRate.objects.aggregate(min_rate=Min('mins60'))
+        res = InstructorLessonRate.objects.aggregate(min_rate=Min('mins30'))
         return Response({'minRate': res['min_rate']}, status=status.HTTP_200_OK)
