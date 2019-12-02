@@ -650,6 +650,7 @@ class InstructorListView(views.APIView):
 
 
 class MinimalLessonRateView(views.APIView):
+    permission_classes = (AllowAny, )
 
     def get(self, request):
         res = InstructorLessonRate.objects.aggregate(min_rate=Min('mins30'))
