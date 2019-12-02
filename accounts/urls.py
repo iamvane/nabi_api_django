@@ -31,4 +31,5 @@ urlpatterns = [
     path('api-token-refresh/', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
     path('instructors/', views.InstructorListView.as_view()),
     path('instructors/<int:pk>/', views.InstructorDetailView.as_view()),
+    path('minimal-rate/', views.MinimalLessonRateView.as_view()),
 ]

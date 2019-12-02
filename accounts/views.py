@@ -9,7 +9,7 @@ from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.measure import D
 from django.core.mail import EmailMultiAlternatives
 from django.db import transaction, IntegrityError
-from django.db.models import ObjectDoesNotExist, Prefetch
+from django.db.models import Min, ObjectDoesNotExist, Prefetch
 from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404
 from django.template import loader
@@ -25,8 +25,8 @@ from core.constants import PHONE_TYPE_MAIN, ROLE_INSTRUCTOR, ROLE_STUDENT, HOSTN
 from core.models import UserToken
 from core.utils import generate_hash, get_date_a_month_later
 
-from .models import Education, Employment, Instructor, Instrument, PhoneNumber, StudentDetails, TiedStudent, \
-    get_account, get_user_phone
+from .models import Education, Employment, Instructor, InstructorLessonRate, Instrument, PhoneNumber, \
+    StudentDetails, TiedStudent, get_account, get_user_phone
 
 from .serializers import (
     AvatarInstructorSerializer, AvatarParentSerializer, AvatarStudentSerializer, GuestEmailSerializer,
@@ -647,3 +647,10 @@ class InstructorListView(views.APIView):
         result_page = paginator.paginate_queryset(qs, request)
         serializer = InstructorDataSerializer(result_page, many=True, context={'request': request})
         return paginator.get_paginated_response(serializer.data)
+
+
+class MinimalLessonRateView(views.APIView):
+
+    def get(self, request):
+        res = InstructorLessonRate.objects.aggregate(min_rate=Min('mins60'))
+        return Response({'minRate': res['min_rate']}, status=status.HTTP_200_OK)
