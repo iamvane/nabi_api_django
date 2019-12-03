@@ -27,6 +27,8 @@ INSTALLED_APPS = [
     'core.apps.CoreConfig',
     'accounts.apps.AccountsConfig',
     'lesson.apps.LessonConfig',
+    'notices',
+    'references',
 
     'drf_yasg',
 ]
@@ -118,17 +120,21 @@ STATIC_URL = '/dj-static/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/dj-media/'
 
+GOOGLE_FORM_REFERENCES_URL = 'https://forms.gle/MuGhfwUARTW9uzrU9'
+
 REST_PAGE_SIZE = 20
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': REST_PAGE_SIZE
+    'PAGE_SIZE': REST_PAGE_SIZE,
+    'DATETIME_FORMAT': '%Y-%m-%d %H:%M:%S'
 }
 
 AUTH_USER_MODEL = 'core.User'
@@ -169,3 +175,10 @@ import dj_database_url
 prod_db  =  dj_database_url.config(conn_max_age=500)
 DATABASES['default'].update(prod_db)
 DATABASES['default']['ENGINE'] = 'django.contrib.gis.db.backends.postgis'
+
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=30),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+}
