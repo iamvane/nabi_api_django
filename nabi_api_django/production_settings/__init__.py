@@ -27,7 +27,7 @@ INSTALLED_APPS = [
     'accounts.apps.AccountsConfig',
     'lesson.apps.LessonConfig',
     'notices',
-    'references',
+    'references.apps.ReferencesConfig',
 
     'drf_yasg',
     'corsheaders'
