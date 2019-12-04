@@ -28,7 +28,7 @@ INSTALLED_APPS = [
     'accounts.apps.AccountsConfig',
     'lesson.apps.LessonConfig',
     'notices',
-    # 'references',
+    'references',
 
     'drf_yasg',
     'storages',
@@ -172,7 +172,3 @@ SIMPLE_JWT = {
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
-
-# Absolute filesystem path to the directory that will hold user-uploaded files.
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-MEDIA_URL = '/dj-media/'
