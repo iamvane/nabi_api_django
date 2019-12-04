@@ -21,7 +21,7 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('v1/', include('accounts.urls')),
-    # path('v1/', include('references.urls')),
+    path('v1/', include('references.urls')),
     path('v1/', include('notices.urls')),
 
     path('admin/', admin.site.urls),
