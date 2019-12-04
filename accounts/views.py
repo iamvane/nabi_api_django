@@ -29,7 +29,7 @@ from .models import Education, Employment, Instructor, InstructorLessonRate, Ins
     StudentDetails, TiedStudent, get_account, get_user_phone
 
 from .serializers import (
-    AvatarInstructorSerializer, AvatarParentSerializer, AvatarStudentSerializer, GuestEmailSerializer,
+    AffiliateRegisterSerializer, AvatarInstructorSerializer, AvatarParentSerializer, AvatarStudentSerializer, GuestEmailSerializer,
     InstructorBuildJobPreferencesSerializer, InstructorCreateAccountSerializer, InstructorDataSerializer,
     InstructorDetailSerializer, InstructorEducationSerializer, InstructorEmploymentSerializer,
     InstructorProfileSerializer, ParentCreateAccountSerializer, StudentCreateAccountSerializer,
@@ -655,3 +655,16 @@ class MinimalLessonRateView(views.APIView):
     def get(self, request):
         res = InstructorLessonRate.objects.aggregate(min_rate=Min('mins30'))
         return Response({'minRate': res['min_rate']}, status=status.HTTP_200_OK)
+
+
+class AffiliateRegisterView(views.APIView):
+    permission_classes = (AllowAny, )
+
+    def post(self, request):
+        serializer = AffiliateRegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            ser = AffiliateRegisterSerializer(user)
+            return Response(ser.data, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
