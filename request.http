@@ -381,3 +381,15 @@ GET localhost:8000/v1/offers-active/
 GET localhost:8000/v1/minimal-rate/
 
 ###
+
+POST localhost:8000/v1/registration-affiliate/
+
+{
+	"firstName": "John",
+	"lastName": "Connor",
+	"email": "JohnConnor20@yopmail.com",
+	"password": "Test123456",
+	"birthDate": "1997-03-24"
+}
+
+###

@@ -329,6 +329,13 @@ class StudentDetails(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
 
+class Affiliate(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    birth_date = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
 def get_account(user):
     """Get Instructor, Parent or Student instance, related to User instance."""
     if user.get_role() == ROLE_INSTRUCTOR:

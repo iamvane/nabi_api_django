@@ -32,4 +32,5 @@ urlpatterns = [
     path('instructors/', views.InstructorListView.as_view()),
     path('instructors/<int:pk>/', views.InstructorDetailView.as_view()),
     path('minimal-rate/', views.MinimalLessonRateView.as_view()),
+    path('registration-affiliate/', views.AffiliateRegisterView.as_view()),
 ]
