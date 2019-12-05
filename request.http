@@ -512,3 +512,15 @@ GET localhost:8000/v1/application-list/1/
 # Note: the id value is lesson_request_id
 
 ###
+
+POST localhost:8000/v1/booking-lessons/
+
+{
+	"lessonQty": 2,
+	"totalAmount": 36.5,
+	"lessonRate": 18.25,
+	"instructorId": 1,
+	"stripeToken": "tok_1FmQTxKKgfFa5BBCvtUJE1iU"
+}
+
+###
