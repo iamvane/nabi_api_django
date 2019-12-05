@@ -1,5 +1,7 @@
+import stripe
 from functools import reduce
 
+from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.gis.db.models import PointField
 from django.contrib.gis.db.models.functions import Distance
@@ -16,9 +18,13 @@ from rest_framework.response import Response
 from accounts.models import get_account
 from core.constants import *
 from core.permissions import AccessForInstructor
+from payments.models import Payment
 
 from . import serializers as sers
-from .models import Application, LessonRequest
+from .models import Application, LessonBooking, LessonRequest
+from .serializers import LessonBookingRegisterSerializer
+
+stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
 class LessonRequestView(views.APIView):
@@ -205,3 +211,52 @@ class ApplicationListView(views.APIView):
                             status=status.HTTP_400_BAD_REQUEST)
         serializer = sers.LessonRequestApplicationsSerializer(lesson_request)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class LessonBookingRegisterView(views.APIView):
+
+    def post(self, request):
+        role = request.user.get_role()
+        if role == ROLE_PARENT:
+            request.data['parent_id'] = request.user.parent.id
+        elif role == ROLE_STUDENT:
+            request.data['student_id'] = request.user.student.id
+        else:
+            return Response({'message': 'You are not enable to book lessons'}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = LessonBookingRegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            stripe_token = serializer.validated_data.pop('stripe_token')
+            if role == ROLE_PARENT:
+                qs = LessonBooking.objects.filter(parent_id=request.user.parent.id)
+            else:
+                qs = LessonBooking.objects.filter(student_id=request.user.student.id)
+            qs = qs.filter(quantity=serializer.validated_data['quantity'],
+                           total_amount=serializer.validated_data['total_amount'],
+                           instructor_id=serializer.validated_data['instructor_id'],
+                           lesson_rate=serializer.validated_data['lesson_rate'],
+                           status=LessonBooking.REQUESTED)
+            if qs.count():
+                booking = qs.last()
+            else:
+                booking = serializer.save()
+            # make payment using stripe
+            try:
+                charge = stripe.Charge.create(amount='{:.0f}'.format(serializer.validated_data['total_amount'] * 100),
+                                              currency='usd',
+                                              source=stripe_token,
+                                              description='Lesson Booking')
+            except stripe.error.InvalidRequestError as error:
+                return Response({'stripeToken': [error.user_message, ]}, status=status.HTTP_400_BAD_REQUEST)
+            except stripe.error.StripeError as error:
+                return Response({'message': error.user_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            except Exception as ex:
+                return Response({'message': str(ex)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            # register the charge made
+            payment = Payment.objects.create(user=request.user, amount=serializer.validated_data['total_amount'],
+                                             description='Lesson Booking', charge_id=charge.id)
+            booking.payment = payment
+            booking.status = LessonBooking.PAID
+            booking.save()
+            return Response({'message': 'success'}, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

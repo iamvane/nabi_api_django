@@ -7,7 +7,7 @@ from accounts.serializers import AvailavilitySerializer
 from core.constants import *
 from lesson.models import Instrument
 
-from .models import Application, LessonRequest
+from .models import Application, LessonBooking, LessonRequest
 
 User = get_user_model()
 
@@ -231,7 +231,7 @@ class LessonRequestApplicationsSerializer(serializers.ModelSerializer):
 
 
 class LessonRequestItemSerializer(serializers.ModelSerializer):
-    """Serializer for get data of a lesson request; call made by an instructor"""
+    """Serializer for get data of a lesson request, to build a list; call made by an instructor"""
     avatar = serializers.CharField(max_length=500, source='*', read_only=True)
     created_at = serializers.DateTimeField(format='%Y-%m-%d %H:%M:%S', read_only=True)
     display_name = serializers.SerializerMethodField()
@@ -400,3 +400,32 @@ class LessonRequestListItemSerializer(serializers.ModelSerializer):
         else:
             return [{'name': instance.user.first_name, 'age': instance.user.student.age}]
 
+
+class LessonBookingRegisterSerializer(serializers.ModelSerializer):
+    instructor_id = serializers.IntegerField()
+    student_id = serializers.IntegerField(required=False)
+    parent_id = serializers.IntegerField(required=False)
+    stripe_token = serializers.CharField(max_length=500)
+
+    class Meta:
+        model = LessonBooking
+        fields = ('quantity', 'total_amount', 'instructor_id', 'lesson_rate', 'student_id', 'parent_id', 'stripe_token')
+
+    def to_internal_value(self, data):
+        new_data = {}
+        keys = data.keys()
+        if 'lessonQty' in keys:
+            new_data['quantity'] = data.get('lessonQty')
+        if 'totalAmount' in keys:
+            new_data['total_amount'] = data.get('totalAmount')
+        if 'lessonRate' in keys:
+            new_data['lesson_rate'] = data.get('lessonRate')
+        if 'instructorId' in keys:
+            new_data['instructor_id'] = data.get('instructorId')
+        if 'student_id' in keys:
+            new_data['student_id'] = data.get('student_id')
+        if 'parent_id' in keys:
+            new_data['parent_id'] = data.get('parent_id')
+        if 'stripeToken' in keys:
+            new_data['stripe_token'] = data.get('stripeToken')
+        return super().to_internal_value(new_data)
