@@ -66,6 +66,7 @@ class Application(models.Model):
 class LessonBooking(models.Model):
     REQUESTED = 'requested'
     PAID = 'paid'
+    CANCELLED = 'cancelled'
     STATUSES = (
         (REQUESTED, REQUESTED),
         (PAID, PAID),

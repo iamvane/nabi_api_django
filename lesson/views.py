@@ -214,6 +214,7 @@ class ApplicationListView(views.APIView):
 
 
 class LessonBookingRegisterView(views.APIView):
+    """Register a booking for a lesson (o group of lessons) with an instructor"""
 
     def post(self, request):
         role = request.user.get_role()
@@ -260,3 +261,13 @@ class LessonBookingRegisterView(views.APIView):
             return Response({'message': 'success'}, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PendingLessonBookingView(views.APIView):
+    """Get a list of booking lessons with requested status"""
+
+    def get(self, request):
+        account = get_account(request.user)
+        serializer = LessonBookingRegisterSerializer(account.lesson_bookings.filter(status=LessonBooking.REQUESTED),
+                                                     many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

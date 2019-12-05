@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 
 from rest_framework import serializers
 
-from accounts.models import TiedStudent, get_account
+from accounts.models import Instructor, TiedStudent, get_account
 from accounts.serializers import AvailavilitySerializer
 from core.constants import *
 from lesson.models import Instrument
@@ -403,9 +403,9 @@ class LessonRequestListItemSerializer(serializers.ModelSerializer):
 
 class LessonBookingRegisterSerializer(serializers.ModelSerializer):
     instructor_id = serializers.IntegerField()
-    student_id = serializers.IntegerField(required=False)
-    parent_id = serializers.IntegerField(required=False)
-    stripe_token = serializers.CharField(max_length=500)
+    student_id = serializers.IntegerField(required=False, write_only=True)
+    parent_id = serializers.IntegerField(required=False, write_only=True)
+    stripe_token = serializers.CharField(max_length=500, write_only=True)
 
     class Meta:
         model = LessonBooking
@@ -429,3 +429,10 @@ class LessonBookingRegisterSerializer(serializers.ModelSerializer):
         if 'stripeToken' in keys:
             new_data['stripe_token'] = data.get('stripeToken')
         return super().to_internal_value(new_data)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        instructor = Instructor.objects.get(id=data.pop('instructor_id'))
+        new_data = {'lessonQty': data['quantity'], 'totalAmount': data['total_amount'],
+                    'lessonRate': data['lesson_rate'], 'instructor': instructor.display_name}
+        return new_data

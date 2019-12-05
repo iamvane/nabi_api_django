@@ -524,3 +524,7 @@ POST localhost:8000/v1/booking-lessons/
 }
 
 ###
+
+GET localhost:8000/v1/pending-booking-lessons/
+
+###
