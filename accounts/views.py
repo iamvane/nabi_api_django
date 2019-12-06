@@ -256,6 +256,7 @@ class WhoAmIView(views.APIView):
                 Prefetch('education'),
             ).first()
             data['bioTitle'] = account.bio_title
+            data['instructorId'] = account.id
             data['bioDescription'] = account.bio_description
             data['music'] = account.music
             data['lessonSize'] = {'oneStudent': instructor.lessonsizes[0].one_student,
