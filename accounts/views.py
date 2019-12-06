@@ -5,6 +5,7 @@ from twilio.rest import Client
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.models import AnonymousUser
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.measure import D
 from django.core.mail import EmailMultiAlternatives
@@ -480,6 +481,7 @@ class InstructorEducationItemView(views.APIView):
 
 
 class InstructorDetailView(views.APIView):
+    permission_classes = (AllowAny,)
 
     def get(self, request, pk):
         instructor = get_object_or_404(Instructor, pk=pk)
@@ -634,10 +636,14 @@ class InstructorEmploymentItemView(views.APIView):
 
 
 class InstructorListView(views.APIView):
+    permission_classes = (AllowAny, )
 
     def get(self, request):
-        account = get_account(request.user)
-        if account.coordinates:
+        if isinstance(request.user, AnonymousUser):
+            account = None
+        else:
+            account = get_account(request.user)
+        if account and account.coordinates:
             qs = Instructor.objects.filter(coordinates__isnull=False)\
                 .filter(coordinates__distance_lte=(account.coordinates, D(mi=40)))\
                 .annotate(distance=Distance('coordinates', account.coordinates)).order_by('distance')
