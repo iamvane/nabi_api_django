@@ -5,6 +5,7 @@ from rest_framework.response import Response
 
 from core.utils import send_email
 
+from .models import ReferenceRequest
 from .serializers import RegisterRequestReferenceSerializer
 
 
@@ -26,3 +27,15 @@ class RegisterRequestReferenceView(views.APIView):
             return Response({'message': 'success'}, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RequestReferencesListView(views.APIView):
+    """Get a list of requested references for this user"""
+
+    def get(self, request):
+        qs = ReferenceRequest.objects.filter(user=request.user).order_by('email')
+        if qs.count():
+            list_emails = [item.email for item in qs]
+        else:
+            list_emails = []
+        return Response({'emails': list_emails}, status=status.HTTP_200_OK)
