@@ -136,6 +136,7 @@ class Instructor(IUserAccount):
     instruments = models.ManyToManyField('lesson.Instrument', through='accounts.InstructorInstruments')
     languages = ArrayField(base_field=models.CharField(max_length=100, blank=True), blank=True, null=True)
     music = ArrayField(base_field=models.CharField(max_length=100, blank=True), blank=True, null=True)
+    completed = models.BooleanField(default=False, verbose_name='profile completed')
 
     interviewed = models.BooleanField(blank=True, default=False)
     job_preferences = ArrayField(blank=True, null=True, base_field=models.CharField(max_length=100))
@@ -179,6 +180,31 @@ class Instructor(IUserAccount):
                                   temp_date)
         elapsed_time.re_format()
         return elapsed_time.years
+
+    def is_completed(self):
+        """Return True if instructor has provided values of location, verified phone, bio_title, bio_description,
+        instruments, rates, availability, employment, education"""
+        if not self.coordinates:
+            return False
+        try:
+            self.user.phonenumber
+        except models.ObjectDoesNotExist:
+            return False
+        if not self.user.phonenumber.verified_at:
+            return False
+        if not self.bio_title or not self.bio_description:
+            return False
+        if self.instruments.count() == 0 or self.instructorlessonrate_set.count() == 0 \
+                or self.availability.count() == 0 or self.employment.count() == 0 or self.education.count() == 0:
+            return False
+        return True
+
+    def update_completed(self):
+        """Update value of completed property, if appropriate"""
+        curr_value = bool(self.user.first_name and self.user.last_name and self.is_completed())
+        if curr_value != self.completed:
+            self.completed = curr_value
+            self.save()
 
 
 class Education(models.Model):
