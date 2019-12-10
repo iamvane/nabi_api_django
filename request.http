@@ -360,7 +360,7 @@ GET localhost:8000/v1/instructors/?distance=80&instruments=piano,guitar&min_rate
 
 ###
 
-GET localhost:8000/v1/instructor/1/
+GET localhost:8000/v1/instructors/1/
 
 ###
 
