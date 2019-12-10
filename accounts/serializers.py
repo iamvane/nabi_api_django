@@ -711,6 +711,26 @@ class InstructorEmploymentSerializer(serializers.ModelSerializer):
             return data
 
 
+class InstructorQueryParamsSerializer(serializers.Serializer):
+    distance = serializers.IntegerField(required=False, default=50)
+    reviews = serializers.IntegerField(required=False)
+    lessons_taught = serializers.IntegerField(required=False)
+    instruments = serializers.CharField(max_length=500, required=False)
+    min_rate = serializers.DecimalField(max_digits=9, decimal_places=4, required=False)
+    max_rate = serializers.DecimalField(max_digits=9, decimal_places=4, required=False)
+
+    def to_internal_value(self, data):
+        keys = dict.fromkeys(data, 1)
+        new_data = data.copy()
+        if keys.get('lessonsTaught'):
+            new_data['lessons_taught'] = new_data.pop('lessonsTaught')
+        if keys.get('minRate'):
+            new_data['min_rate'] = new_data.pop('minRate')
+        if keys.get('maxRate'):
+            new_data['max_rate'] = new_data.pop('maxRate')
+        return super().to_internal_value(new_data)
+
+
 class InstructorDataSerializer(serializers.ModelSerializer):
     """Serializer for return instructor data, to usage in searching instructor"""
     location = serializers.SerializerMethodField()

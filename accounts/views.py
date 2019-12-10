@@ -26,9 +26,10 @@ from core.constants import PHONE_TYPE_MAIN, ROLE_INSTRUCTOR, ROLE_STUDENT, HOSTN
 from core.models import UserToken
 from core.utils import generate_hash, get_date_a_month_later
 
-from .models import Education, Employment, Instructor, InstructorLessonRate, Instrument, PhoneNumber, \
-    StudentDetails, TiedStudent, get_account, get_user_phone
+from .models import Education, Employment, Instructor, InstructorInstruments, InstructorLessonRate, Instrument, \
+    PhoneNumber, StudentDetails, TiedStudent, get_account, get_user_phone
 
+from . import serializers as sers
 from .serializers import (
     AffiliateRegisterSerializer, AvatarInstructorSerializer, AvatarParentSerializer, AvatarStudentSerializer, GuestEmailSerializer,
     InstructorBuildJobPreferencesSerializer, InstructorCreateAccountSerializer, InstructorDataSerializer,
@@ -640,20 +641,41 @@ class InstructorListView(views.APIView):
     permission_classes = (AllowAny, )
 
     def get(self, request):
-        if isinstance(request.user, AnonymousUser):
-            account = None
+        qs = Instructor.objects
+        # adjust qs for each received param
+        query_serializer = sers.InstructorQueryParamsSerializer(data=request.query_params.dict())
+        if query_serializer.is_valid():
+            keys = dict.fromkeys(query_serializer.validated_data, 1)
+            # ToDo: pending to define
+            # if keys.get('reviews'):
+            #     qs = qs.filter(reviews__gte=query_serializer.validated_data.get('reviews'))
+            # if keys.get('lessons_taught'):
+            #     qs = qs.filter(lessons_taught__gte=query_serializer.validated_data.get('lessons_taught'))
+            if keys.get('min_rate'):
+                qs = qs.filter(instructorlessonrate__mins30__gte=query_serializer.validated_data.get('min_rate'))
+            if keys.get('max_rate'):
+                qs = qs.filter(instructorlessonrate__mins30__lte=query_serializer.validated_data.get('max_rate'))
+            if keys.get('instruments'):
+                instrument_list = query_serializer.validated_data.get('instruments', '').split(',')
+                qs = qs.filter(id__in=InstructorInstruments.objects.filter(instrument__name__in=instrument_list)\
+                               .values_list('instructor_id'))
+            if isinstance(request.user, AnonymousUser):
+                account = None
+            else:
+                account = get_account(request.user)
+            if account and account.coordinates:
+                qs = qs.filter(coordinates__isnull=False).filter(
+                    coordinates__distance_lte=(account.coordinates, D(mi=query_serializer.validated_data.get('distance')))
+                ).annotate(distance=Distance('coordinates', account.coordinates)).order_by('distance')
+            else:
+                qs = qs.order_by('user__first_name')
+            # return data with pagination
+            paginator = PageNumberPagination()
+            result_page = paginator.paginate_queryset(qs, request)
+            serializer = InstructorDataSerializer(result_page, many=True, context={'request': request})
+            return paginator.get_paginated_response(serializer.data)
         else:
-            account = get_account(request.user)
-        if account and account.coordinates:
-            qs = Instructor.objects.filter(coordinates__isnull=False)\
-                .filter(coordinates__distance_lte=(account.coordinates, D(mi=40)))\
-                .annotate(distance=Distance('coordinates', account.coordinates)).order_by('distance')
-        else:
-            qs = Instructor.objects.order_by('user__first_name')
-        paginator = PageNumberPagination()
-        result_page = paginator.paginate_queryset(qs, request)
-        serializer = InstructorDataSerializer(result_page, many=True, context={'request': request})
-        return paginator.get_paginated_response(serializer.data)
+            return Response(query_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class MinimalLessonRateView(views.APIView):
