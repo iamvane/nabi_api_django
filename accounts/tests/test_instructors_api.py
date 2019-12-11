@@ -6,7 +6,7 @@ from django.conf import settings
 from rest_framework import status
 
 from .base_test_class import BaseTest
-from accounts.models import Instructor
+
 
 class InstructorsTest(BaseTest):
     fixtures = ['01_core_users.json', '02_accounts_instructors.json', '05_lesson_instruments.json',
@@ -19,24 +19,9 @@ class InstructorsTest(BaseTest):
     }
     current_data = [{"id": 1, "displayName": "Luis I.", "age": 44, "avatar": None, "interviewed": False,
                      "bioTitle": "Music instructor", "bioDescription": "I'm a professional music instructor",
-                     "location": None, "reviews": 0, "lessonsTaught": 0, "instruments": [],
-                     "rates": {'mins30': '', 'mins45': '', 'mins60': '', 'mins90': ''},
-                     "lastLogin": "2019-10-30 17:13:11", "memberSince": "2019"},
-                    {"id": 2, "displayName": "Luis I.", "age": 44, "avatar": None, "interviewed": False,
-                     "bioTitle": None, "bioDescription": None,
-                     "location": None, "reviews": 0, "lessonsTaught": 0, "instruments": [],
-                     "rates": {'mins30': '', 'mins45': '', 'mins60': '', 'mins90': ''},
-                     "lastLogin": None, "memberSince": "2019"},
-                    {"id": 3, "displayName": "Luis I.", "age": 44, "avatar": None, "interviewed": False,
-                     "bioTitle": None, "bioDescription": None,
-                     "location": None, "reviews": 0, "lessonsTaught": 0, "instruments": [],
-                     "rates": {'mins30': '', 'mins45': '', 'mins60': '', 'mins90': ''},
-                     "lastLogin": None, "memberSince":"2019"},
-                    {"id": 4, "displayName": "Luis I.", "age": 54, "avatar": None, "interviewed": False,
-                     "bioTitle": None, "bioDescription": None,
-                     "location": None, "reviews": 0, "lessonsTaught": 0, "instruments": [],
-                     "rates": {'mins30': '', 'mins45': '', 'mins60': '', 'mins90': ''},
-                     "lastLogin": "2019-10-30 18:26:38", "memberSince": "2019"}]
+                     "location": "Houston, TX", "reviews": 0, "lessonsTaught": 0, "instruments": ['guitar', 'piano'],
+                     "rates": {'mins30': '10.00', 'mins45': '15.00', 'mins60': '20.00', 'mins90': '30.00'},
+                     "lastLogin": "2019-10-30 17:13:11", "memberSince": "2019"}]
 
     def setUp(self):
         super().setUp()
