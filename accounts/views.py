@@ -19,33 +19,23 @@ from django.utils import timezone
 from rest_framework import status, views
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import MultiPartParser
-from rest_framework.permissions import *
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from core.constants import PHONE_TYPE_MAIN, ROLE_INSTRUCTOR, ROLE_STUDENT, HOSTNAME_PROTOCOL
 from core.models import UserToken
-from core.utils import generate_hash, get_date_a_month_later
-
-from .models import Education, Employment, Instructor, InstructorInstruments, InstructorLessonRate, Instrument, \
-    PhoneNumber, StudentDetails, TiedStudent, get_account, get_user_phone
+from core.utils import generate_hash
 
 from . import serializers as sers
-from .serializers import (
-    AffiliateRegisterSerializer, AvatarInstructorSerializer, AvatarParentSerializer, AvatarStudentSerializer, GuestEmailSerializer,
-    InstructorBuildJobPreferencesSerializer, InstructorCreateAccountSerializer, InstructorDataSerializer,
-    InstructorDetailSerializer, InstructorEducationSerializer, InstructorEmploymentSerializer,
-    InstructorProfileSerializer, ParentCreateAccountSerializer, StudentCreateAccountSerializer,
-    StudentDetailsSerializer, TiedStudentSerializer, TiedStudentItemSerializer,
-    UserEmailSerializer, UserInfoUpdateSerializer, UserPasswordSerializer,
-)
+from .models import Education, Employment, Instructor, InstructorInstruments, InstructorLessonRate, Instrument, \
+    PhoneNumber, StudentDetails, TiedStudent, get_account, get_user_phone
 from .utils import send_welcome_email, send_referral_invitation_email
 
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
 logger = getLogger('api_errors')
-
-from rest_framework_simplejwt.tokens import RefreshToken
 
 
 def get_tokens_for_user(user):
@@ -120,11 +110,11 @@ class CreateAccount(views.APIView):
 
     def get_serializer_class(self, request):
         if request.data['role'] == 'parent':
-            return ParentCreateAccountSerializer
+            return sers.ParentCreateAccountSerializer
         elif request.data['role'] == 'instructor':
-            return InstructorCreateAccountSerializer
+            return sers.InstructorCreateAccountSerializer
         elif request.data['role'] == 'student':
-            return StudentCreateAccountSerializer
+            return sers.StudentCreateAccountSerializer
 
 
 class LoginView(views.APIView):
@@ -148,7 +138,7 @@ class ResetPasswordView(views.APIView):
     permission_classes = (AllowAny,)
 
     def post(self, request):
-        serializer = UserEmailSerializer(data=request.data)
+        serializer = sers.UserEmailSerializer(data=request.data)
         if serializer.is_valid():
             email = serializer.data['email']
             user = User.objects.get(email=email)
@@ -177,7 +167,7 @@ class ResetPasswordView(views.APIView):
         return Response({'message': 'Check your email to set a new password.'}, status=status.HTTP_200_OK)
 
     def put(self, request):
-        serializer = UserPasswordSerializer(data=request.data)
+        serializer = sers.UserPasswordSerializer(data=request.data)
         if serializer.is_valid():
             token = request.query_params.get('token')
             if token:
@@ -377,7 +367,7 @@ class FetchInstructor(views.APIView):
 
 class UpdateProfileView(views.APIView):
     def put(self, request):
-        serializer = InstructorProfileSerializer(data=request.data, instance=Instructor.objects.get(user=request.user),
+        serializer = sers.InstructorProfileSerializer(data=request.data, instance=Instructor.objects.get(user=request.user),
                                                  partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -388,7 +378,7 @@ class UpdateProfileView(views.APIView):
 
 class UpdateUserInfoView(views.APIView):
     def put(self, request):
-        serializer = UserInfoUpdateSerializer(instance=request.user, data=request.data, partial=True)
+        serializer = sers.UserInfoUpdateSerializer(instance=request.user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "success"}, status=status.HTTP_200_OK)
@@ -431,8 +421,8 @@ class VerifyPhoneView(views.APIView):
 
 class InstructorBuildJobPreferences(views.APIView):
     def post(self, request):
-        serializer = InstructorBuildJobPreferencesSerializer(data=request.data,
-                                                             instance=Instructor.objects.get(user=request.user))
+        serializer = sers.InstructorBuildJobPreferencesSerializer(data=request.data,
+                                                                  instance=Instructor.objects.get(user=request.user))
         if serializer.is_valid():
             serializer.save()
             return Response(request.data)
@@ -443,7 +433,7 @@ class InstructorEducationView(views.APIView):
     def post(self, request):
         data = request.data.copy()
         data['instructor'] = request.user.instructor.pk
-        serializer = InstructorEducationSerializer(data=data)
+        serializer = sers.InstructorEducationSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "success"}, status=status.HTTP_200_OK)
@@ -452,7 +442,7 @@ class InstructorEducationView(views.APIView):
 
     def get(self, request):
         if hasattr(request.user.instructor, 'education'):
-            serializer = InstructorEducationSerializer(request.user.instructor.education, many=True)
+            serializer = sers.InstructorEducationSerializer(request.user.instructor.education, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             return Response([], status=status.HTTP_200_OK)
@@ -466,7 +456,7 @@ class InstructorEducationItemView(views.APIView):
             educ_instance = Education.objects.get(pk=pk)
         except ObjectDoesNotExist:
             return Response({"error": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
-        serializer = InstructorEducationSerializer(instance=educ_instance, data=data, partial=True)
+        serializer = sers.InstructorEducationSerializer(instance=educ_instance, data=data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "success"}, status=status.HTTP_200_OK)
@@ -487,7 +477,7 @@ class InstructorDetailView(views.APIView):
 
     def get(self, request, pk):
         instructor = get_object_or_404(Instructor, pk=pk)
-        serializer = InstructorDetailSerializer(instructor)
+        serializer = sers.InstructorDetailSerializer(instructor)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -507,16 +497,16 @@ class UploadAvatarView(views.APIView):
     def get_serializer_class(self, request):
         role = request.user.get_role()
         if role == 'instructor':
-            return AvatarInstructorSerializer
+            return sers.AvatarInstructorSerializer
         elif role == 'parent':
-            return AvatarParentSerializer
+            return sers.AvatarParentSerializer
         else:
-            return AvatarStudentSerializer
+            return sers.AvatarStudentSerializer
 
 
 class ReferralInvitation(views.APIView):
     def post(self, request):
-        serializer = GuestEmailSerializer(data=request.data)
+        serializer = sers.GuestEmailSerializer(data=request.data)
         if serializer.is_valid():
             user = request.user
             email = request.data['email']
@@ -536,9 +526,9 @@ class StudentDetailView(views.APIView):
         data = request.data.copy()
         data['user'] = request.user.pk
         if request.user.student_details.count():
-            serializer = StudentDetailsSerializer(instance=request.user.student_details, data=data, partial=True)
+            serializer = sers.StudentDetailsSerializer(instance=request.user.student_details, data=data, partial=True)
         else:
-            serializer = StudentDetailsSerializer(data=data)
+            serializer = sers.StudentDetailsSerializer(data=data)
         if serializer.is_valid():
             if request.user.student_details.count():
                 serializer.save()
@@ -550,7 +540,7 @@ class StudentDetailView(views.APIView):
 
     def get(self, request):
         if request.user.student_details.count():
-            serializer = StudentDetailsSerializer(request.user.student_details.first())
+            serializer = sers.StudentDetailsSerializer(request.user.student_details.first())
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             return Response({}, status=status.HTTP_200_OK)
@@ -561,7 +551,7 @@ class TiedStudentView(views.APIView):
         # add parent's id to data student
         data = request.data.copy()
         data.update({'user': request.user.pk})
-        serializer = TiedStudentSerializer(data=data)
+        serializer = sers.TiedStudentSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "success"}, status=status.HTTP_200_OK)
@@ -569,7 +559,7 @@ class TiedStudentView(views.APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, request):
-        serializer = TiedStudentSerializer(StudentDetails.objects.filter(user__id=request.user.pk), many=True)
+        serializer = sers.TiedStudentSerializer(StudentDetails.objects.filter(user__id=request.user.pk), many=True)
         return Response(serializer.data)
 
 
@@ -579,7 +569,7 @@ class TiedStudentItemView(views.APIView):
             instance = StudentDetails.objects.get(pk=pk)
         except ObjectDoesNotExist:
             return Response({"error": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
-        serializer = TiedStudentItemSerializer(instance=instance, data=request.data, partial=True)
+        serializer = sers.TiedStudentItemSerializer(instance=instance, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "success"}, status=status.HTTP_200_OK)
@@ -598,7 +588,7 @@ class TiedStudentItemView(views.APIView):
 
 class InstructorEmploymentView(views.APIView):
     def post(self, request):
-        serializer = InstructorEmploymentSerializer(data=request.data, context={'user': request.user})
+        serializer = sers.InstructorEmploymentSerializer(data=request.data, context={'user': request.user})
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "success"}, status=status.HTTP_200_OK)
@@ -607,7 +597,7 @@ class InstructorEmploymentView(views.APIView):
 
     def get(self, request):
         if hasattr(request.user.instructor, 'employment'):
-            serializer = InstructorEmploymentSerializer(request.user.instructor.employment, many=True)
+            serializer = sers.InstructorEmploymentSerializer(request.user.instructor.employment, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             return Response([], status=status.HTTP_200_OK)
@@ -619,7 +609,7 @@ class InstructorEmploymentItemView(views.APIView):
             instance = Employment.objects.get(pk=pk)
         except ObjectDoesNotExist:
             return Response({"error": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
-        serializer = InstructorEmploymentSerializer(instance=instance, data=request.data,
+        serializer = sers.InstructorEmploymentSerializer(instance=instance, data=request.data,
                                                     context={'user': request.user}, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -672,7 +662,7 @@ class InstructorListView(views.APIView):
             # return data with pagination
             paginator = PageNumberPagination()
             result_page = paginator.paginate_queryset(qs, request)
-            serializer = InstructorDataSerializer(result_page, many=True, context={'request': request})
+            serializer = sers.InstructorDataSerializer(result_page, many=True, context={'request': request})
             return paginator.get_paginated_response(serializer.data)
         else:
             return Response(query_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -690,10 +680,10 @@ class AffiliateRegisterView(views.APIView):
     permission_classes = (AllowAny, )
 
     def post(self, request):
-        serializer = AffiliateRegisterSerializer(data=request.data)
+        serializer = sers.AffiliateRegisterSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            ser = AffiliateRegisterSerializer(user)
+            ser = sers.AffiliateRegisterSerializer(user)
             return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
