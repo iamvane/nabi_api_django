@@ -28,6 +28,8 @@ def set_display_name(sender, instance, **kwargs):
 @receiver(post_save, sender=User)
 def change_completed_profile(sender, instance, **kwargs):
     """Call method to update value of completed property"""
+    if kwargs.get('raw', False):   # to don't execute when fixtures are loaded
+        return None
     if isinstance(instance, Instructor):
         instance.update_completed()
     if isinstance(instance, User) and instance.get_role() == ROLE_INSTRUCTOR:
