@@ -15,6 +15,8 @@ class Command(BaseCommand):
         self.stdout.flush()
         for user in User.objects.all():
             account = get_account(user)
+            if not account or account.coordinates:   # if has coordinates value already, skip
+                continue
             if account.lat is not None and account.lng is not None and account.lat != '' and account.lng != '':
                 account.coordinates = Point(float(account.lat), float(account.lng))
                 account.save()
