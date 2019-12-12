@@ -64,7 +64,7 @@ class BaseCreateAccountSerializer(serializers.Serializer):
 
 
 class UserInfoUpdateSerializer(serializers.ModelSerializer):
-    middle_name = serializers.CharField(max_length=50)
+    middle_name = serializers.CharField(max_length=50, required=False)
     gender = serializers.ChoiceField(choices=GENDER_CHOICES)
     location = serializers.CharField(max_length=150)
     lat = serializers.CharField(max_length=150)
