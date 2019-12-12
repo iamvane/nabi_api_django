@@ -1,4 +1,5 @@
 from datetime import timedelta
+from functools import reduce
 from logging import getLogger
 from twilio.rest import Client
 
@@ -10,7 +11,7 @@ from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.measure import D
 from django.core.mail import EmailMultiAlternatives
 from django.db import transaction, IntegrityError
-from django.db.models import Min, ObjectDoesNotExist, Prefetch
+from django.db.models import Min, ObjectDoesNotExist, Prefetch, Q
 from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404
 from django.template import loader
@@ -27,8 +28,9 @@ from core.models import UserToken
 from core.utils import generate_hash
 
 from . import serializers as sers
-from .models import Education, Employment, Instructor, InstructorInstruments, InstructorLessonRate, Instrument, \
-    PhoneNumber, StudentDetails, TiedStudent, get_account, get_user_phone
+from .models import (Availability, Education, Employment, Instructor, InstructorAgeGroup, InstructorInstruments,
+                     InstructorLessonRate, InstructorPlaceForLessons, InstructorAdditionalQualifications, Instrument,
+                     PhoneNumber, StudentDetails, TiedStudent, get_account, get_user_phone)
 from .utils import send_welcome_email, send_referral_invitation_email
 
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -636,11 +638,38 @@ class InstructorListView(views.APIView):
         query_serializer = sers.InstructorQueryParamsSerializer(data=request.query_params.dict())
         if query_serializer.is_valid():
             keys = dict.fromkeys(query_serializer.validated_data, 1)
-            # ToDo: pending to define
-            # if keys.get('reviews'):
-            #     qs = qs.filter(reviews__gte=query_serializer.validated_data.get('reviews'))
-            # if keys.get('lessons_taught'):
-            #     qs = qs.filter(lessons_taught__gte=query_serializer.validated_data.get('lessons_taught'))
+            if keys.get('availability'):
+                filter_bool = reduce(lambda x, y: x | y,
+                                     [Q(**{item: True}) for item in query_serializer
+                                        .validated_data.get('availability').split(',')]
+                                     )
+                qs = qs.filter(id__in=Availability.objects.filter(filter_bool).values_list('instructor_id'))
+            if keys.get('place_for_lessons'):
+                filter_bool = reduce(lambda x, y: x | y,
+                                     [Q(**{item: True}) for item in query_serializer
+                                        .validated_data.get('place_for_lessons').split(',')]
+                                     )
+                qs = qs.filter(id__in=InstructorPlaceForLessons.objects.filter(filter_bool).values_list('instructor_id'))
+            if keys.get('student_ages'):
+                filter_bool = reduce(lambda x, y: x | y,
+                                     [Q(**{item: True}) for item in query_serializer
+                                        .validated_data.get('student_ages').split(',')]
+                                     )
+                qs = qs.filter(id__in=InstructorAgeGroup.objects.filter(filter_bool).values_list('instructor_id'))
+            if keys.get('qualifications'):
+                filter_bool = reduce(lambda x, y: x | y,
+                                     [Q(**{item: True}) for item in query_serializer
+                                        .validated_data.get('qualifications').split(',')]
+                                     )
+                qs = qs.filter(id__in=InstructorAdditionalQualifications.objects.filter(filter_bool).values_list('instructor_id'))
+            if keys.get('languages'):
+                filter_bool = reduce(lambda x, y: x | y,
+                                     [Q(languages__contains=[item, ]) for item in query_serializer
+                                        .validated_data.get('languages').split(',')]
+                                     )
+                qs = qs.filter(filter_bool)
+            if keys.get('gender'):
+                qs = qs.filter(gender=query_serializer.validated_data.get('gender'))
             if keys.get('min_rate'):
                 qs = qs.filter(instructorlessonrate__mins30__gte=query_serializer.validated_data.get('min_rate'))
             if keys.get('max_rate'):
