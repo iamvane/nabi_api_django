@@ -736,6 +736,42 @@ class InstructorQueryParamsSerializer(serializers.Serializer):
             new_data['max_rate'] = new_data.pop('maxRate')
         return super().to_internal_value(new_data)
 
+    def validate_availability(self, value):
+        if value == '':
+            raise serializers.ValidationError('Wrong availability value')
+        list_values = value.split(',')
+        for item in list_values:
+            if not hasattr(Availability, item):
+                raise serializers.ValidationError('Wrong availability value')
+        return value
+
+    def validate_place_for_lessons(self, value):
+        if value == '':
+            raise serializers.ValidationError('Wrong placeForLessons value')
+        list_values = value.split(',')
+        for item in list_values:
+            if not hasattr(InstructorPlaceForLessons, item):
+                raise serializers.ValidationError('Wrong placeForLessons value')
+        return value
+
+    def validate_qualifications(self, value):
+        if value == '':
+            raise serializers.ValidationError('Wrong qualifications value')
+        list_values = value.split(',')
+        for item in list_values:
+            if not hasattr(InstructorAdditionalQualifications, item):
+                raise serializers.ValidationError('Wrong qualifications value')
+        return value
+
+    def validate_student_ages(self, value):
+        if value == '':
+            raise serializers.ValidationError('Wrong studentAges value')
+        list_values = value.split(',')
+        for item in list_values:
+            if not hasattr(InstructorAgeGroup, item):
+                raise serializers.ValidationError('Wrong studentAges value')
+        return value
+
 
 class InstructorDataSerializer(serializers.ModelSerializer):
     """Serializer for return instructor data, to usage in searching instructor"""
