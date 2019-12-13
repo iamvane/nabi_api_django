@@ -651,7 +651,9 @@ class InstructorListView(views.APIView):
                            const.DAY_FRIDAY: (Q(fri8to10=True) | Q(fri10to12=True) | Q(fri12to3=True)
                                               | Q(fri3to6=True) | Q(fri6to9=True)),
                            const.DAY_SATURDAY: (Q(sat8to10=True) | Q(sat10to12=True) | Q(sat12to3=True)
-                                                | Q(sat3to6=True) | Q(sat6to9=True))
+                                                | Q(sat3to6=True) | Q(sat6to9=True)),
+                           const.DAY_SUNDAY: (Q(sun8to10=True) | Q(sun10to12=True) | Q(sun12to3=True)
+                                              | Q(sun3to6=True) | Q(sun6to9=True))
                            }
                 filter_bool = reduce(lambda x, y: x | y, [exp_dic.get(item) for item in query_serializer
                                      .validated_data.get('availability').split(',')]
