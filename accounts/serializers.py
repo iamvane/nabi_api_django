@@ -802,8 +802,7 @@ class InstructorDataSerializer(serializers.ModelSerializer):
             return {}
 
     def get_location(self, instructor):
-        return ''
-        # return instructor.get_location()
+        return instructor.get_location()
 
     def get_instruments(self, instructor):
         return [item.instrument.name
