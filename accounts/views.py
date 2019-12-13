@@ -23,6 +23,7 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
+from core import constants as const
 from core.constants import PHONE_TYPE_MAIN, ROLE_INSTRUCTOR, ROLE_STUDENT, HOSTNAME_PROTOCOL
 from core.models import UserToken
 from core.utils import generate_hash
@@ -639,9 +640,21 @@ class InstructorListView(views.APIView):
         if query_serializer.is_valid():
             keys = dict.fromkeys(query_serializer.validated_data, 1)
             if keys.get('availability'):
-                filter_bool = reduce(lambda x, y: x | y,
-                                     [Q(**{item: True}) for item in query_serializer
-                                        .validated_data.get('availability').split(',')]
+                exp_dic = {const.DAY_MONDAY: (Q(mon8to10=True) | Q(mon10to12=True) | Q(mon12to3=True)
+                                              | Q(mon3to6=True) | Q(mon6to9=True)),
+                           const.DAY_TUESDAY: (Q(tue8to10=True) | Q(tue10to12=True) | Q(tue12to3=True)
+                                               | Q(tue3to6=True) | Q(tue6to9=True)),
+                           const.DAY_WEDNESDAY: (Q(wed8to10=True) | Q(wed10to12=True) | Q(wed12to3=True)
+                                                 | Q(wed3to6=True) | Q(wed6to9=True)),
+                           const.DAY_THURSDAY: (Q(thu8to10=True) | Q(thu10to12=True) | Q(thu12to3=True)
+                                                | Q(thu3to6=True) | Q(thu6to9=True)),
+                           const.DAY_FRIDAY: (Q(fri8to10=True) | Q(fri10to12=True) | Q(fri12to3=True)
+                                              | Q(fri3to6=True) | Q(fri6to9=True)),
+                           const.DAY_SATURDAY: (Q(sat8to10=True) | Q(sat10to12=True) | Q(sat12to3=True)
+                                                | Q(sat3to6=True) | Q(sat6to9=True))
+                           }
+                filter_bool = reduce(lambda x, y: x | y, [exp_dic.get(item) for item in query_serializer
+                                     .validated_data.get('availability').split(',')]
                                      )
                 qs = qs.filter(id__in=Availability.objects.filter(filter_bool).values_list('instructor_id'))
             if keys.get('place_for_lessons'):

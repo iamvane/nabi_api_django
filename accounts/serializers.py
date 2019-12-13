@@ -5,7 +5,7 @@ from django.db.models import ObjectDoesNotExist
 from rest_framework import serializers, validators
 
 from core.constants import (
-    DEGREE_TYPE_CHOICES, GENDER_CHOICES, LESSON_DURATION_CHOICES, MONTH_CHOICES,
+    DAY_TUPLE, DEGREE_TYPE_CHOICES, GENDER_CHOICES, LESSON_DURATION_CHOICES, MONTH_CHOICES,
     PLACE_FOR_LESSONS_CHOICES, SKILL_LEVEL_CHOICES,
 )
 from core.utils import update_model
@@ -741,7 +741,7 @@ class InstructorQueryParamsSerializer(serializers.Serializer):
             raise serializers.ValidationError('Wrong availability value')
         list_values = value.split(',')
         for item in list_values:
-            if not hasattr(Availability, item):
+            if item not in DAY_TUPLE:
                 raise serializers.ValidationError('Wrong availability value')
         return value
 
