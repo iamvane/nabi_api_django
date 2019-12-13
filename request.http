@@ -354,9 +354,9 @@ X-CSRFToken: 8LUV70LbEX0JeWQFfd8N3XTzdH105FTjruMxyy5xRm39TfysDiZRDzd2SIkHlQbf
 
 ###
 
-GET localhost:8000/v1/instructors/?distance=80&instruments=piano,guitar&min_rate=10.0&max_rate=14.5
+GET localhost:8000/v1/instructors/?distance=80&instruments=piano,guitar&min_rate=10.0&max_rate=14.5&availability=mon8to10,wed8to10&placeForLessons=home&studentAges=children,teens&gender=female&languages=english,spanish&qualifications=youngChildrenExperience,earTraining
 
-# GET parameters are optionals. Distance value is in miles, default 50 value is used (when another value isn't provided)
+# GET parameters are optionals. Distance value is in miles, default 50 value is used (when no value is provided)
 
 ###
 
