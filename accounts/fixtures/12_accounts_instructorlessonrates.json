@@ -4,10 +4,21 @@
    "pk": 1,
    "fields": {
       "instructor": 1,
-      "mins30": 10.0,
-      "mins45": 15.0,
-      "mins60": 20.0,
-      "mins90": 30.0
+      "mins30": "10.0000",
+      "mins45": "15.0000",
+      "mins60": "20.0000",
+      "mins90": "30.0000"
+   }
+},
+{
+   "model": "accounts.instructorlessonrate",
+   "pk": 2,
+   "fields": {
+      "instructor": 2,
+      "mins30": "12.0000",
+      "mins45": "18.0000",
+      "mins60": "24.0000",
+      "mins90": "36.0000"
    }
 }
 ]

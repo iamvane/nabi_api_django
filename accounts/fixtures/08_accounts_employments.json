@@ -32,5 +32,22 @@
       "created_at": "2019-10-31T01:19:25.305Z",
       "modified_at": "2019-10-31T01:19:25.305Z"
    }
+},
+{
+   "model": "accounts.employment",
+   "pk": 3,
+   "fields": {
+      "instructor": 2,
+      "employer": "OtherCompany",
+      "job_title": "Assistant",
+      "job_location": "there",
+      "from_month": "january",
+      "from_year": 2011,
+      "to_month": "september",
+      "to_year": 2014,
+      "still_work_here": false,
+      "created_at": "2019-11-04T23:56:49.302Z",
+      "modified_at": "2019-11-04T23:56:49.302Z"
+   }
 }
 ]

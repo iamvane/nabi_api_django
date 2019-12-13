@@ -1,0 +1,26 @@
+[
+{
+   "model": "accounts.phonenumber",
+   "pk": 1,
+   "fields": {
+      "user": 5,
+      "number": "+1123456789",
+      "type": "mobile",
+      "verified_at": "2019-11-02T16:43:13.038Z",
+      "created_at": "2019-11-01T21:25:06.071Z",
+      "modified_at": "2019-11-02T16:43:13.038Z"
+   }
+},
+{
+   "model": "accounts.phonenumber",
+   "pk": 2,
+   "fields": {
+      "user": 7,
+      "number": "+1123456788",
+      "type": "mobile",
+      "verified_at": "2019-11-02T23:25:08.759Z",
+      "created_at": "2019-11-02T19:23:18.762Z",
+      "modified_at": "2019-11-02T23:25:08.759Z"
+   }
+}
+]

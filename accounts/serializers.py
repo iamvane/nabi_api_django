@@ -5,7 +5,7 @@ from django.db.models import ObjectDoesNotExist
 from rest_framework import serializers, validators
 
 from core.constants import (
-    DEGREE_TYPE_CHOICES, GENDER_CHOICES, LESSON_DURATION_CHOICES, MONTH_CHOICES,
+    DAY_TUPLE, DEGREE_TYPE_CHOICES, GENDER_CHOICES, LESSON_DURATION_CHOICES, MONTH_CHOICES,
     PLACE_FOR_LESSONS_CHOICES, SKILL_LEVEL_CHOICES,
 )
 from core.utils import update_model
@@ -711,20 +711,95 @@ class InstructorEmploymentSerializer(serializers.ModelSerializer):
             return data
 
 
+class InstructorQueryParamsSerializer(serializers.Serializer):
+    availability = serializers.CharField(max_length=500, required=False)
+    distance = serializers.IntegerField(required=False, default=50)
+    gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=False)
+    instruments = serializers.CharField(max_length=500, required=False)
+    languages = serializers.CharField(max_length=500, required=False)
+    min_rate = serializers.DecimalField(max_digits=9, decimal_places=4, required=False)
+    max_rate = serializers.DecimalField(max_digits=9, decimal_places=4, required=False)
+    place_for_lessons = serializers.CharField(max_length=300, required=False)
+    qualifications = serializers.CharField(max_length=500, required=False)
+    student_ages = serializers.CharField(max_length=100, required=False)
+
+    def to_internal_value(self, data):
+        keys = dict.fromkeys(data, 1)
+        new_data = data.copy()
+        if keys.get('placeForLessons'):
+            new_data['place_for_lessons'] = new_data.pop('placeForLessons')
+        if keys.get('studentAges'):
+            new_data['student_ages'] = new_data.pop('studentAges')
+        if keys.get('minRate'):
+            new_data['min_rate'] = new_data.pop('minRate')
+        if keys.get('maxRate'):
+            new_data['max_rate'] = new_data.pop('maxRate')
+        return super().to_internal_value(new_data)
+
+    def validate_availability(self, value):
+        if value == '':
+            raise serializers.ValidationError('Wrong availability value')
+        list_values = value.split(',')
+        for item in list_values:
+            if item not in DAY_TUPLE:
+                raise serializers.ValidationError('Wrong availability value')
+        return value
+
+    def validate_place_for_lessons(self, value):
+        if value == '':
+            raise serializers.ValidationError('Wrong placeForLessons value')
+        list_values = value.split(',')
+        for item in list_values:
+            if not hasattr(InstructorPlaceForLessons, item):
+                raise serializers.ValidationError('Wrong placeForLessons value')
+        return value
+
+    def validate_qualifications(self, value):
+        if value == '':
+            raise serializers.ValidationError('Wrong qualifications value')
+        list_values = value.split(',')
+        for item in list_values:
+            if not hasattr(InstructorAdditionalQualifications, item):
+                raise serializers.ValidationError('Wrong qualifications value')
+        return value
+
+    def validate_student_ages(self, value):
+        if value == '':
+            raise serializers.ValidationError('Wrong studentAges value')
+        list_values = value.split(',')
+        for item in list_values:
+            if not hasattr(InstructorAgeGroup, item):
+                raise serializers.ValidationError('Wrong studentAges value')
+        return value
+
+
 class InstructorDataSerializer(serializers.ModelSerializer):
     """Serializer for return instructor data, to usage in searching instructor"""
-    location = serializers.SerializerMethodField()
-    reviews = serializers.IntegerField(default=0)
-    lessons_taught = serializers.IntegerField(default=0)
+    availability = serializers.SerializerMethodField()
     instruments = serializers.SerializerMethodField()
+    lessons_taught = serializers.IntegerField(default=0, read_only=True)
+    location = serializers.SerializerMethodField()
+    place_for_lessons = serializers.SerializerMethodField()
     rates = serializers.SerializerMethodField()
-    last_login = serializers.DateTimeField(source='user.last_login', format='%Y-%m-%d %H:%M:%S')
-    member_since = serializers.DateTimeField(source='created_at', format='%Y')
+    qualifications = serializers.SerializerMethodField()
+    student_ages = serializers.SerializerMethodField()
+    reviews = serializers.IntegerField(default=0, read_only=True)
+    last_login = serializers.DateTimeField(source='user.last_login', format='%Y-%m-%d %H:%M:%S', read_only=True)
+    member_since = serializers.DateTimeField(source='created_at', format='%Y', read_only=True)
 
     class Meta:
         model = Instructor
-        fields = ['id', 'display_name', 'avatar', 'age', 'bio_title', 'bio_description', 'location', 'reviews',
-                  'interviewed', 'instruments', 'rates', 'lessons_taught', 'last_login', 'member_since']
+        fields = ('id', 'display_name', 'avatar', 'age', 'gender', 'bio_title', 'bio_description', 'languages',
+                  'reviews', 'location', 'interviewed', 'instruments', 'rates', 'availability', 'place_for_lessons',
+                  'qualifications', 'lessons_taught', 'student_ages', 'last_login', 'member_since')
+
+    def get_availability(self, instructor):
+        items = instructor.availability.all()
+        if len(items):
+            ser = AvailavilitySerializer(items[0])
+            return ser.data
+        else:
+            return {}
 
     def get_location(self, instructor):
         return instructor.get_location()
@@ -741,14 +816,41 @@ class InstructorDataSerializer(serializers.ModelSerializer):
         else:
             return {'mins30': '', 'mins45': '', 'mins60': '', 'mins90': ''}
 
+    def get_place_for_lessons(self, instructor):
+        items = instructor.instructorplaceforlessons_set.all()
+        if len(items):
+            ser = PlaceForLessonsSerializer(items[0])
+            return ser.data
+        else:
+            return {}
+
+    def get_qualifications(self, instructor):
+        items = instructor.instructoradditionalqualifications_set.all()
+        if len(items):
+            ser = AdditionalQualifications(items[0])
+            return ser.data
+        else:
+            return {}
+
+    def get_student_ages(self, instructor):
+        items = instructor.instructoragegroup_set.all()
+        if len(items):
+            ser = AgeGroupsSerializer(items[0])
+            return ser.data
+        else:
+            return {}
+
     def to_representation(self, instance):
         data = super().to_representation(instance)
         new_data = {'id': data.get('id'), 'displayName': data.get('display_name'), 'age': data.get('age'),
                     'avatar': data.get('avatar') if data.get('avatar') else data.get('avatar'),
                     'bioTitle': data.get('bio_title'), 'bioDescription': data.get('bio_description'),
-                    'location': data.get('location'), 'reviews': data.get('reviews'),
-                    'interviewed': data.get('interviewed'), 'lessonsTaught': data.get('lessons_taught'),
-                    'instruments': data.get('instruments'), 'rates': data.get('rates'),
+                    'gender': data.get('gender'), 'reviews': data.get('reviews'), 'location': data.get('location'),
+                    'qualifications': data.get('qualifications'), 'interviewed': data.get('interviewed'),
+                    'lessonsTaught': data.get('lessons_taught'), 'instruments': data.get('instruments'),
+                    'rates': data.get('rates'), 'placeForLessons': data.get('place_for_lessons'),
+                    'availability': data.get('availability'), 'student_ages': data.get('student_ages'),
+                    'languages': data.get('languages'),
                     'lastLogin': data.get('last_login'), 'memberSince': data.get('member_since')}
         return new_data
 
