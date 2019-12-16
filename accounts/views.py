@@ -8,6 +8,7 @@ from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.gis.db.models.functions import Distance
+from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import D
 from django.core.mail import EmailMultiAlternatives
 from django.db import transaction, IntegrityError
@@ -697,12 +698,29 @@ class InstructorListView(views.APIView):
                 account = None
             else:
                 account = get_account(request.user)
-            if account and account.coordinates:
-                qs = qs.filter(coordinates__isnull=False).filter(
-                    coordinates__distance_lte=(account.coordinates, D(mi=query_serializer.validated_data.get('distance')))
-                ).annotate(distance=Distance('coordinates', account.coordinates)).order_by('distance')
+            if query_serializer.validated_data.get('location'):
+                coordinates = Point(*query_serializer.validated_data.get('location'))
+            elif account and account.coordinates:
+                coordinates = account.coordinates
             else:
-                qs = qs.order_by('user__first_name')
+                coordinates = None
+            if coordinates:
+                qs = qs.filter(coordinates__isnull=False).filter(
+                    coordinates__distance_lte=(coordinates, D(mi=query_serializer.validated_data.get('distance')))
+                ).annotate(distance=Distance('coordinates', coordinates))
+                if query_serializer.validated_data['sort'] == 'rate':
+                    qs = qs.order_by('instructorlessonrate__mins30', 'user__first_name')
+                elif query_serializer.validated_data['sort'] == '-rate':
+                    qs = qs.order_by('-instructorlessonrate__mins30', 'user__first_name')
+                else:
+                    qs = qs.order_by(query_serializer.validated_data['sort'], 'user__first_name')
+            else:
+                if query_serializer.validated_data['sort'] == 'rate':
+                    qs = qs.order_by('instructorlessonrate__mins30', 'user__first_name')
+                if query_serializer.validated_data['sort'] == '-rate':
+                    qs = qs.order_by('-instructorlessonrate__mins30', 'user__first_name')
+                else:
+                    qs = qs.order_by('user__first_name')
             # return data with pagination
             paginator = PageNumberPagination()
             result_page = paginator.paginate_queryset(qs, request)
