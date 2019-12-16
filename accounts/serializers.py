@@ -717,11 +717,13 @@ class InstructorQueryParamsSerializer(serializers.Serializer):
     gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=False)
     instruments = serializers.CharField(max_length=500, required=False)
     languages = serializers.CharField(max_length=500, required=False)
+    location = serializers.CharField(max_length=200, required=False)
     min_rate = serializers.DecimalField(max_digits=9, decimal_places=4, required=False)
     max_rate = serializers.DecimalField(max_digits=9, decimal_places=4, required=False)
     place_for_lessons = serializers.CharField(max_length=300, required=False)
     qualifications = serializers.CharField(max_length=500, required=False)
     student_ages = serializers.CharField(max_length=100, required=False)
+    sort = serializers.CharField(max_length=50, required=False)
 
     def to_internal_value(self, data):
         keys = dict.fromkeys(data, 1)
@@ -771,6 +773,25 @@ class InstructorQueryParamsSerializer(serializers.Serializer):
             if not hasattr(InstructorAgeGroup, item):
                 raise serializers.ValidationError('Wrong studentAges value')
         return value
+
+    def validate_sort(self, value):
+        if value not in ('distance', '-distance', 'rate', '-rate'):
+            raise serializers.ValidationError('Wrong sort value')
+        else:
+            return value
+
+    def validate_location(self, value):
+        try:
+            [lat, lng] = value.split(',')
+            lat = float(lat)
+            lng = float(lng)
+        except ValueError:
+            raise serializers.ValidationError('Location value should have format latitude,longitude, both float values')
+        if lat < -90 or lat > 90:
+            raise serializers.ValidationError('Wrong latitude value')
+        if lng < -180 or lng >= 180:
+            raise serializers.ValidationError('Wrong longitude value')
+        return lat, lng
 
 
 class InstructorDataSerializer(serializers.ModelSerializer):
