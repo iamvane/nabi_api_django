@@ -19,15 +19,21 @@ class Instrument(models.Model):
 
 class LessonRequest(models.Model):
     # user making the request, can be Parent or Student
+    SEEN_STATUS = 'seen'
+    NO_SEEN_STATUS = 'no seen'
+    STATUSES = (
+        (SEEN_STATUS, SEEN_STATUS),
+        (NO_SEEN_STATUS, NO_SEEN_STATUS),
+    )
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=100)
     message = models.TextField()
-    instrument = models.ForeignKey(Instrument, on_delete=models.SET_NULL, blank=True, null=True)
-    skill_level = models.CharField(max_length=100, blank=True, null=True, choices=SKILL_LEVEL_CHOICES)
-    place_for_lessons = models.CharField(max_length=100, blank=True, null=True, choices=PLACE_FOR_LESSONS_CHOICES)
-    lessons_duration = models.CharField(max_length=100, blank=True, null=True, choices=LESSON_DURATION_CHOICES)
+    instrument = models.ForeignKey(Instrument, on_delete=models.PROTECT)
+    skill_level = models.CharField(max_length=100, choices=SKILL_LEVEL_CHOICES)
+    place_for_lessons = models.CharField(max_length=100, choices=PLACE_FOR_LESSONS_CHOICES)
+    lessons_duration = models.CharField(max_length=100, choices=LESSON_DURATION_CHOICES)
     students = models.ManyToManyField('accounts.Student', through='lesson.LessonStudent')
-    status = models.CharField(max_length=100, blank=True, null=True)  # TODO set choices
+    status = models.CharField(max_length=100, choices=STATUSES, blank=True, default=NO_SEEN_STATUS)
 
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
