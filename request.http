@@ -357,7 +357,7 @@ X-CSRFToken: 8LUV70LbEX0JeWQFfd8N3XTzdH105FTjruMxyy5xRm39TfysDiZRDzd2SIkHlQbf
 GET localhost:8000/v1/instructors/?distance=80&instruments=piano,guitar&min_rate=10.0&max_rate=14.5&availability=monday,wednesday&placeForLessons=home&studentAges=children,teens&gender=female&languages=english,spanish&qualifications=youngChildrenExperience,earTraining&location=31.1654019,-83.31360716&sort=distance
 
 # GET parameters are optionals. Distance value is in miles, default 50 value is used (when no value is provided)
-# sort parameter is required and can take the values: distance, -distance, rate, -rate
+# sort parameter can take the values: distance, -distance, rate, -rate
 
 ###
 

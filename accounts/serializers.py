@@ -723,7 +723,7 @@ class InstructorQueryParamsSerializer(serializers.Serializer):
     place_for_lessons = serializers.CharField(max_length=300, required=False)
     qualifications = serializers.CharField(max_length=500, required=False)
     student_ages = serializers.CharField(max_length=100, required=False)
-    sort = serializers.CharField(max_length=50)
+    sort = serializers.CharField(max_length=50, required=False)
 
     def to_internal_value(self, data):
         keys = dict.fromkeys(data, 1)

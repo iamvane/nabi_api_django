@@ -708,19 +708,25 @@ class InstructorListView(views.APIView):
                 qs = qs.filter(coordinates__isnull=False).filter(
                     coordinates__distance_lte=(coordinates, D(mi=query_serializer.validated_data.get('distance')))
                 ).annotate(distance=Distance('coordinates', coordinates))
-                if query_serializer.validated_data['sort'] == 'rate':
-                    qs = qs.order_by('instructorlessonrate__mins30', 'user__first_name')
-                elif query_serializer.validated_data['sort'] == '-rate':
-                    qs = qs.order_by('-instructorlessonrate__mins30', 'user__first_name')
+                if query_serializer.validated_data.get('sort'):
+                    if query_serializer.validated_data['sort'] == 'rate':
+                        qs = qs.order_by('instructorlessonrate__mins30', '-user__last_login')
+                    elif query_serializer.validated_data['sort'] == '-rate':
+                        qs = qs.order_by('-instructorlessonrate__mins30', '-user__last_login')
+                    else:
+                        qs = qs.order_by(query_serializer.validated_data['sort'], '-user__last_login')
                 else:
-                    qs = qs.order_by(query_serializer.validated_data['sort'], 'user__first_name')
+                    qs = qs.order_by('-user__last_login')
             else:
-                if query_serializer.validated_data['sort'] == 'rate':
-                    qs = qs.order_by('instructorlessonrate__mins30', 'user__first_name')
-                if query_serializer.validated_data['sort'] == '-rate':
-                    qs = qs.order_by('-instructorlessonrate__mins30', 'user__first_name')
+                if query_serializer.validated_data.get('sort'):
+                    if query_serializer.validated_data['sort'] == 'rate':
+                        qs = qs.order_by('instructorlessonrate__mins30', 'user__first_name')
+                    elif query_serializer.validated_data['sort'] == '-rate':
+                        qs = qs.order_by('-instructorlessonrate__mins30', 'user__first_name')
+                    else:
+                        qs = qs.order_by('-user__last_login')
                 else:
-                    qs = qs.order_by('user__first_name')
+                    qs = qs.order_by('-user__last_login')
             # return data with pagination
             paginator = PageNumberPagination()
             result_page = paginator.paginate_queryset(qs, request)
