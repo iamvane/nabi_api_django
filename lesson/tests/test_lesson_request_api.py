@@ -34,17 +34,16 @@ class LessonRequestCreateTest(BaseTest):
             {
                 'name': 'Santiago',
                 'age': 9,
-                'skillLevel': "beginner",
             },
             {
                 'name': 'Teresa',
                 'age': 7,
-                'skillLevel': "beginner",
             }
         ],
         'requestTitle': "Piano Instructor needed in Boston MA",
         'instrument': "piano",
         'placeForLessons': "home",
+        'skillLevel': "beginner",
         'lessonDuration': "60mins",
         'requestMessage': "My twins want to take piano lessons together"
     }

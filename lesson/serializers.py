@@ -13,16 +13,9 @@ from .models import LessonRequest
 class LessonRequestStudentCreateSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=250)
     age = serializers.IntegerField()
-    skill_level = serializers.ChoiceField(choices=SKILL_LEVEL_CHOICES)
-
-    def to_internal_value(self, data):
-        new_data = data.copy()
-        if new_data.get('skillLevel'):
-            new_data['skill_level'] = new_data.pop('skillLevel')
-        return super().to_internal_value(new_data)
 
 
-class LessonRequestCreateSerializer(serializers.ModelSerializer):
+class LessonRequestSerializer(serializers.ModelSerializer):
     MINS30_DURATION = '30mins'
     MINS45_DURATION = '45mins'
     MINS60_DURATION = '60mins'
@@ -31,7 +24,7 @@ class LessonRequestCreateSerializer(serializers.ModelSerializer):
     instrument = serializers.CharField(max_length=250)
     lessons_duration = serializers.ChoiceField(choices=LESSON_DURATION_CHOICES)
     place_for_lessons = serializers.ChoiceField(choices=PLACE_FOR_LESSONS_CHOICES)
-    skill_level = serializers.ChoiceField(choices=SKILL_LEVEL_CHOICES, required=False)
+    skill_level = serializers.ChoiceField(choices=SKILL_LEVEL_CHOICES)
     students = serializers.ListField(child=serializers.DictField(), required=False)
     user_id = serializers.IntegerField(source='user.id')
 
@@ -78,8 +71,9 @@ class LessonRequestCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
-        if not attrs.get('students') and not attrs.get('skill_level'):
-            raise serializers.ValidationError('skillLevel or students data must be provided')
+        if not self.instance:
+            if self.context['is_parent'] and not attrs.get('students'):
+                raise serializers.ValidationError('students data must be provided')
         return attrs
 
     def create(self, validated_data):
@@ -97,7 +91,6 @@ class LessonRequestCreateSerializer(serializers.ModelSerializer):
             validated_data['lessons_duration'] = LESSON_DURATION_90
         if self.context['is_parent']:
             students_data = validated_data.pop('students')
-            validated_data['skill_level'] = students_data[0]['skill_level']
             res = super().create(validated_data)
             for student_item in students_data:
                 tied_student = TiedStudent.objects.get(name=student_item['name'], age=student_item['age'])
@@ -105,3 +98,28 @@ class LessonRequestCreateSerializer(serializers.ModelSerializer):
             return res
         else:
             return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        if validated_data.get('students'):
+            student_data = validated_data.pop('students')
+        else:
+            student_data = None
+        if validated_data['user']:
+            user_data = validated_data.pop('user')
+            validated_data['user_id'] = user_data['id']
+        if validated_data.get('instrument'):
+            instrument = Instrument.objects.get(name=validated_data.pop('instrument'))
+            validated_data['instrument_id'] = instrument.id
+        if validated_data:
+            super().update(instance, validated_data)
+            instance.refresh_from_db()
+        if student_data:
+            if isinstance(student_data, list):
+                ts_id_list = []
+                for student_item in student_data:
+                    if TiedStudent.objects.filter(**student_item).exists():
+                        ts_id_list.append(TiedStudent.objects.get(**student_item))
+                instance.students.set(ts_id_list)
+            else:
+                instance.students.add(TiedStudent.objects.get(name=student_data['name'], age=student_data['age']))
+        return instance

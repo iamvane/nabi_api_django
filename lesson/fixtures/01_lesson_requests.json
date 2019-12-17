@@ -5,7 +5,7 @@
    "fields": {
       "user": 1,
       "title": "Piano Instructor needed in Boston MA",
-      "message": "Hello I am looking for a piano instructor for my 6 year old daughter, she is a beginner",
+      "message": "Hello, I am looking for a piano instructor",
       "instrument": 1,
       "skill_level": "beginner",
       "place_for_lessons": "home",
@@ -22,7 +22,7 @@
    "fields": {
       "user": 3,
       "title": "Guitar Instructor needed",
-      "message": "Hello I am looking for a guitar instructor for my children",
+      "message": "Hi, I am looking for a guitar instructor for my children",
       "instrument": 2,
       "skill_level": "beginner",
       "place_for_lessons": "home",
