@@ -29,9 +29,11 @@ from core.constants import PHONE_TYPE_MAIN, ROLE_INSTRUCTOR, ROLE_STUDENT, HOSTN
 from core.models import UserToken
 from core.utils import generate_hash
 
+from lesson.models import Instrument
+
 from . import serializers as sers
 from .models import (Availability, Education, Employment, Instructor, InstructorAgeGroup, InstructorInstruments,
-                     InstructorLessonRate, InstructorPlaceForLessons, InstructorAdditionalQualifications, Instrument,
+                     InstructorLessonRate, InstructorPlaceForLessons, InstructorAdditionalQualifications,
                      PhoneNumber, StudentDetails, TiedStudent, get_account, get_user_phone)
 from .utils import send_welcome_email, send_referral_invitation_email
 
