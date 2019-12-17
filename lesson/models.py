@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 
+from accounts.models import TiedStudent
 from core.constants import SKILL_LEVEL_CHOICES, PLACE_FOR_LESSONS_CHOICES, LESSON_DURATION_CHOICES
 
 User = get_user_model()
@@ -32,16 +33,8 @@ class LessonRequest(models.Model):
     skill_level = models.CharField(max_length=100, choices=SKILL_LEVEL_CHOICES)
     place_for_lessons = models.CharField(max_length=100, choices=PLACE_FOR_LESSONS_CHOICES)
     lessons_duration = models.CharField(max_length=100, choices=LESSON_DURATION_CHOICES)
-    students = models.ManyToManyField('accounts.Student', through='lesson.LessonStudent')
+    students = models.ManyToManyField(TiedStudent)
     status = models.CharField(max_length=100, choices=STATUSES, blank=True, default=NO_SEEN_STATUS)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    modified_at = models.DateTimeField(auto_now=True)
-
-
-class LessonStudent(models.Model):
-    lesson = models.ForeignKey(LessonRequest, on_delete=models.CASCADE)
-    student = models.ForeignKey('accounts.Student', on_delete=models.CASCADE)
 
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)

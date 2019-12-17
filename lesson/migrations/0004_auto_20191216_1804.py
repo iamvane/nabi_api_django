@@ -11,6 +11,10 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RemoveField(
+            model_name='lessonrequest',
+            name='students',
+        ),
         migrations.AlterField(
             model_name='lessonrequest',
             name='instrument',
@@ -20,23 +24,23 @@ class Migration(migrations.Migration):
             model_name='lessonrequest',
             name='lessons_duration',
             field=models.CharField(choices=[('30 mins', '30 mins'), ('45 mins', '45 mins'), ('60 mins', '60 mins'), ('90 mins', '90 mins')], max_length=100),
-            preserve_default=False,
         ),
         migrations.AlterField(
             model_name='lessonrequest',
             name='place_for_lessons',
             field=models.CharField(choices=[('home', 'home'), ('studio', 'studio'), ('online', 'online')], max_length=100),
-            preserve_default=False,
         ),
         migrations.AlterField(
             model_name='lessonrequest',
             name='skill_level',
             field=models.CharField(choices=[('beginner', 'beginner'), ('intermediate', 'intermediate'), ('advanced', 'advanced')], max_length=100),
-            preserve_default=False,
         ),
         migrations.AlterField(
             model_name='lessonrequest',
             name='status',
             field=models.CharField(blank=True, choices=[('seen', 'seen'), ('no seen', 'no seen')], default='no seen', max_length=100),
+        ),
+        migrations.DeleteModel(
+            name='LessonStudent',
         ),
     ]
