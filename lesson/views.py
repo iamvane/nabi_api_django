@@ -1,8 +1,11 @@
+from django.db.models import ObjectDoesNotExist
+
 from rest_framework import status, views
 from rest_framework.response import Response
 
 from core.constants import ROLE_PARENT, ROLE_STUDENT
 
+from .models import LessonRequest
 from .serializers import LessonRequestCreateSerializer
 
 
@@ -32,4 +35,10 @@ class LessonRequestItemView(views.APIView):
         return Response({}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def delete(self, request, pk):
-        return Response({}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        try:
+            lesson_request = LessonRequest.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            return Response({'message': 'There is not lesson request with provided id'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        lesson_request.delete()
+        return Response({'message': 'success'}, status=status.HTTP_200_OK)
