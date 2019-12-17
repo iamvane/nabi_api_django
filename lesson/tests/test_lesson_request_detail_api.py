@@ -180,3 +180,74 @@ class LessonRequestUpdateTest(BaseTest):
         self.assertEqual(LessonRequest.objects.count(), self.qty)
         lesson_request.refresh_from_db()
         self.assertListEqual(list(lesson_request.students.values_list('id', flat=True)), [1, 4])
+
+
+class LessonRequestFetchTest(BaseTest):
+    """Tests for fetching lesson requests"""
+    fixtures = ['01_core_users.json', '03_accounts_parents.json', '04_accounts_students.json',
+                '05_lesson_instruments.json', '15_accounts_tiedstudents', '16_accounts_studentdetails',
+                '01_lesson_requests.json']
+    student_login_data = {
+        'email': 'luisstudent@yopmail.com',
+        'password': 'T3st11ng'
+    }
+    parent_login_data = {
+        'email': 'luisparent@yopmail.com',
+        'password': 'T3st11ng'
+    }
+    current_data = [
+        {
+            "id": 1,
+            "title": "Piano Instructor needed in Boston MA",
+            "message": "Hello, I am looking for a piano instructor",
+            "instrument": "piano",
+            "skillLevel": "beginner",
+            "placeForLessons": "home",
+            "lessonDuration": "45 mins",
+            "students": [],
+        },
+        {
+            "id": 2,
+            "title": "Guitar Instructor needed",
+            "message": "Hi, I am looking for a guitar instructor for my children",
+            "instrument": "guitar",
+            "skillLevel": "beginner",
+            "placeForLessons": "home",
+            "lessonDuration": "60 mins",
+            "students": [{"name": "Santiago", "age": 9}, {"name": "Teresa", "age": 7}],
+        },
+    ]
+
+    def setUp(self):
+        self.url = '{}/v1/lesson-request-item/'.format(settings.HOSTNAME_PROTOCOL)
+        self.qty = LessonRequest.objects.count()
+
+    def test_student_success(self):
+        self.login_data = self.student_login_data
+        super().setUp()
+        response = self.client.get(self.url + '1/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
+        self.assertEqual(LessonRequest.objects.count(), self.qty)
+        self.assertDictEqual(response.json(), self.current_data[0])
+
+    def test_student_fail(self):
+        self.login_data = self.student_login_data
+        super().setUp()
+        response = self.client.get(self.url + '21/')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, msg=response.content.decode())
+        self.assertEqual(LessonRequest.objects.count(), self.qty)
+
+    def test_parent_success(self):
+        self.login_data = self.parent_login_data
+        super().setUp()
+        response = self.client.get(self.url + '2/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
+        self.assertEqual(LessonRequest.objects.count(), self.qty)
+        self.assertDictEqual(response.json(), self.current_data[1])
+
+    def test_parent_fail(self):
+        self.login_data = self.parent_login_data
+        super().setUp()
+        response = self.client.get(self.url + '22/')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, msg=response.content.decode())
+        self.assertEqual(LessonRequest.objects.count(), self.qty)

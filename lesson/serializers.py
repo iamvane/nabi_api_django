@@ -10,9 +10,15 @@ from lesson.models import Instrument
 from .models import LessonRequest
 
 
-class LessonRequestStudentCreateSerializer(serializers.Serializer):
+class LessonRequestStudentSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=250)
     age = serializers.IntegerField()
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if isinstance(data, list):
+            data = sorted(data, key=lambda item: item["name"])
+        return data
 
 
 class LessonRequestSerializer(serializers.ModelSerializer):
@@ -61,7 +67,7 @@ class LessonRequestSerializer(serializers.ModelSerializer):
             return value
 
     def validate_students(self, value):
-        ser = LessonRequestStudentCreateSerializer(data=value, many=True)
+        ser = LessonRequestStudentSerializer(data=value, many=True)
         if not ser.is_valid():
             raise serializers.ValidationError(ser.errors)
         for item in value:
@@ -123,3 +129,21 @@ class LessonRequestSerializer(serializers.ModelSerializer):
             else:
                 instance.students.add(TiedStudent.objects.get(name=student_data['name'], age=student_data['age']))
         return instance
+
+
+class LessonRequestDetailSerializer(serializers.ModelSerializer):
+    """Serializer for fetching only"""
+    instrument = serializers.CharField(read_only=True, source='instrument.name')
+    students = LessonRequestStudentSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = LessonRequest
+        fields = ('id', 'instrument', 'message', 'title', 'lessons_duration', 'skill_level', 'place_for_lessons',
+                  'students')
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['lessonDuration'] = data.pop('lessons_duration')
+        data['placeForLessons'] = data.pop('place_for_lessons')
+        data['skillLevel'] = data.pop('skill_level')
+        return data

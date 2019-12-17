@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from core.constants import ROLE_PARENT, ROLE_STUDENT
 
 from .models import LessonRequest
-from .serializers import LessonRequestSerializer
+from .serializers import LessonRequestDetailSerializer, LessonRequestSerializer
 
 
 class LessonRequestView(views.APIView):
@@ -61,3 +61,12 @@ class LessonRequestItemView(views.APIView):
                             status=status.HTTP_400_BAD_REQUEST)
         lesson_request.delete()
         return Response({'message': 'success'}, status=status.HTTP_200_OK)
+
+    def get(self, request, pk):
+        try:
+            lesson_request = LessonRequest.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            return Response({'message': 'There is not lesson request with provided id'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        ser = LessonRequestDetailSerializer(lesson_request)
+        return Response(ser.data, status=status.HTTP_200_OK)
