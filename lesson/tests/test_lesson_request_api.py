@@ -53,7 +53,7 @@ class LessonRequestCreateTest(BaseTest):
         self.qty = LessonRequest.objects.count()
 
     def test_student_success(self):
-        """Create a lesson request successfully, by an student"""
+        """Successful request, by student"""
         self.login_data = self.student_login_data
         super().setUp()
         response = self.client.post(self.url, data=json.dumps(self.student_data), content_type='application/json')
@@ -61,7 +61,7 @@ class LessonRequestCreateTest(BaseTest):
         self.assertEqual(LessonRequest.objects.count(), self.qty + 1)
 
     def test_parent_success(self):
-        """Create a lesson request successfully, by a parent"""
+        """Successful request, by parent"""
         self.login_data = self.parent_login_data
         super().setUp()
         response = self.client.post(self.url, data=json.dumps(self.parent_data), content_type='application/json')
@@ -69,7 +69,7 @@ class LessonRequestCreateTest(BaseTest):
         self.assertEqual(LessonRequest.objects.count(), self.qty + 1)
 
     def test_missing_data(self):
-        """Fail with creation of lesson request, because data is missing"""
+        """Failed request, by student, because some data is missing. Tests missing fields independently"""
         self.login_data = self.student_login_data
         super().setUp()
         # test without requestTitle
@@ -105,7 +105,70 @@ class LessonRequestCreateTest(BaseTest):
         self.assertEqual(LessonRequest.objects.count(), self.qty)
 
     def test_not_logged_user(self):
-        """Fail with creation a lesson request, because there isn't a logged user"""
+        """Failed request, because user is not logged"""
         response = self.client.post(self.url, data=json.dumps(self.student_data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED, msg=response.content.decode())
         self.assertEqual(LessonRequest.objects.count(), self.qty)
+
+
+class LessonRequestListTest(BaseTest):
+    """Tests for get a list of lesson requests"""
+    fixtures = ['01_core_users.json', '03_accounts_parents.json', '04_accounts_students.json',
+                '05_lesson_instruments.json', '15_accounts_tiedstudents', '16_accounts_studentdetails',
+                "01_lesson_requests.json"]
+    student_login_data = {
+        'email': 'luisstudent@yopmail.com',
+        'password': 'T3st11ng'
+    }
+    another_student_login_data = {
+        'email': 'luisstudent3@yopmail.com',
+        'password': 'T3st11ng'
+    }
+    parent_login_data = {
+        'email': 'luisparent@yopmail.com',
+        'password': 'T3st11ng'
+    }
+    another_parent_login_data = {
+        'email': 'luisparent2@yopmail.com',
+        'password': 'T3st11ng'
+    }
+
+    def setUp(self):
+        self.url = '{}/v1/lesson-request/'.format(settings.HOSTNAME_PROTOCOL)
+        self.qty = LessonRequest.objects.count()
+
+    def test_student_full_data(self):
+        """Get a list of data, with length > 0, by student"""
+        self.login_data = self.student_login_data
+        super().setUp()
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(LessonRequest.objects.count(), self.qty)
+        self.assertEqual(len(response.json()), 2)
+
+    def test_student_empty_data(self):
+        """Get an empty list, by student"""
+        self.login_data = self.another_student_login_data
+        super().setUp()
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(LessonRequest.objects.count(), self.qty)
+        self.assertEqual(response.json(), [])
+
+    def test_parent_full_data(self):
+        """Get a list of data, with length > 0, by parent"""
+        self.login_data = self.parent_login_data
+        super().setUp()
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(LessonRequest.objects.count(), self.qty)
+        self.assertEqual(len(response.json()), 1)
+
+    def test_parent_empty_data(self):
+        """Get an empty list, by parent"""
+        self.login_data = self.another_parent_login_data
+        super().setUp()
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(LessonRequest.objects.count(), self.qty)
+        self.assertEqual(response.json(), [])

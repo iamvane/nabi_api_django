@@ -25,13 +25,13 @@ class LessonRequestDeleteTest(BaseTest):
         self.qty = LessonRequest.objects.count()
 
     def test_success(self):
-        """Delete lesson request successfully"""
+        """Successful request"""
         response = self.client.delete(self.url + '1/')
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
         self.assertEqual(LessonRequest.objects.count(), self.qty - 1)
 
     def test_fail(self):
-        """Fail in deletion of lesson request, because id don't exists"""
+        """Failed request"""
         response = self.client.delete(self.url + '15/')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, msg=response.content.decode())
         self.assertEqual(LessonRequest.objects.count(), self.qty)
@@ -77,6 +77,7 @@ class LessonRequestUpdateTest(BaseTest):
         self.qty = LessonRequest.objects.count()
 
     def test_student_success(self):
+        """Successful request, by student user. Make tests for changing fields independently"""
         self.login_data = self.student_login_data
         super().setUp()
         lesson_request = LessonRequest.objects.get(id=1)
@@ -130,6 +131,7 @@ class LessonRequestUpdateTest(BaseTest):
         self.assertEqual(lesson_request.lessons_duration, "90mins")
 
     def test_parent_success(self):
+        """Successful request, by parent user. Make tests for changing fields independently"""
         self.login_data = self.parent_login_data
         super().setUp()
         lesson_request = LessonRequest.objects.get(id=2)
@@ -223,6 +225,7 @@ class LessonRequestFetchTest(BaseTest):
         self.qty = LessonRequest.objects.count()
 
     def test_student_success(self):
+        """Successful request, by student"""
         self.login_data = self.student_login_data
         super().setUp()
         response = self.client.get(self.url + '1/')
@@ -231,6 +234,7 @@ class LessonRequestFetchTest(BaseTest):
         self.assertDictEqual(response.json(), self.current_data[0])
 
     def test_student_fail(self):
+        """Failed request, by student, with wrong id"""
         self.login_data = self.student_login_data
         super().setUp()
         response = self.client.get(self.url + '21/')
@@ -238,6 +242,7 @@ class LessonRequestFetchTest(BaseTest):
         self.assertEqual(LessonRequest.objects.count(), self.qty)
 
     def test_parent_success(self):
+        """Successful request, by parent"""
         self.login_data = self.parent_login_data
         super().setUp()
         response = self.client.get(self.url + '2/')
@@ -246,6 +251,7 @@ class LessonRequestFetchTest(BaseTest):
         self.assertDictEqual(response.json(), self.current_data[1])
 
     def test_parent_fail(self):
+        """Failed request, by parent, with wrong id"""
         self.login_data = self.parent_login_data
         super().setUp()
         response = self.client.get(self.url + '22/')

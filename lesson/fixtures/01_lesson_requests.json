@@ -35,5 +35,22 @@
          2
       ]
    }
+},
+{
+   "model": "lesson.lessonrequest",
+   "pk": 3,
+   "fields": {
+      "user": 1,
+      "title": "Flute Instructor needed",
+      "message": "Hello, I am looking for a flute instructor",
+      "instrument": 3,
+      "skill_level": "beginner",
+      "place_for_lessons": "studio",
+      "lessons_duration": "30 mins",
+      "status": "no seen",
+      "created_at": "2019-12-18T16:12:35.136Z",
+      "modified_at": "2019-12-18T16:12:35.136Z",
+      "students": []
+   }
 }
 ]
