@@ -206,7 +206,7 @@ class LessonRequestFetchTest(BaseTest):
             "skillLevel": "beginner",
             "placeForLessons": "home",
             "lessonDuration": "45 mins",
-            "students": [],
+            "studentDetails": [],
         },
         {
             "id": 2,
@@ -216,7 +216,7 @@ class LessonRequestFetchTest(BaseTest):
             "skillLevel": "beginner",
             "placeForLessons": "home",
             "lessonDuration": "60 mins",
-            "students": [{"name": "Santiago", "age": 9}, {"name": "Teresa", "age": 7}],
+            "studentDetails": [{"name": "Santiago", "age": 9}, {"name": "Teresa", "age": 7}],
         },
     ]
 

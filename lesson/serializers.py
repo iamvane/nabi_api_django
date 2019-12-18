@@ -146,4 +146,5 @@ class LessonRequestDetailSerializer(serializers.ModelSerializer):
         data['lessonDuration'] = data.pop('lessons_duration')
         data['placeForLessons'] = data.pop('place_for_lessons')
         data['skillLevel'] = data.pop('skill_level')
+        data['studentDetails'] = data.pop('students')
         return data
