@@ -7,7 +7,7 @@ from rest_framework import status
 from accounts.models import TiedStudent
 from accounts.tests.base_test_class import BaseTest
 
-from ..models import LessonRequest
+from ..models import Instrument, LessonRequest
 
 
 class LessonRequestDeleteTest(BaseTest):
@@ -100,12 +100,14 @@ class LessonRequestUpdateTest(BaseTest):
         self.assertEqual(lesson_request.message, "Hi, I'm searching for an instructor")
         # update instrument
         self.assertEqual(lesson_request.instrument_id, self.current_data[0]['instrument_id'])
+        inst_qty = Instrument.objects.count()
         response = self.client.put(self.url + '1/', content_type='application/json',
-                                   data=json.dumps({'instrument': "flute"}))
+                                   data=json.dumps({'instrument': "accordion"}))
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
         self.assertEqual(LessonRequest.objects.count(), self.qty)
         lesson_request.refresh_from_db()
-        self.assertEqual(lesson_request.instrument.name, "flute")
+        self.assertEqual(lesson_request.instrument.name, "accordion")
+        self.assertEqual(Instrument.objects.count(), inst_qty + 1)   # check that new instrument was added
         # update skill_level
         self.assertEqual(lesson_request.skill_level, self.current_data[0]['skill_level'])
         response = self.client.put(self.url + '1/', content_type='application/json',

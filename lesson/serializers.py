@@ -92,7 +92,7 @@ class LessonRequestSerializer(serializers.ModelSerializer):
             user_data = validated_data.pop('user')
             validated_data['user_id'] = user_data['id']
         if validated_data.get('instrument'):
-            instrument = Instrument.objects.get(name=validated_data.pop('instrument'))
+            instrument, _ = Instrument.objects.get_or_create(name=validated_data.pop('instrument'))
             validated_data['instrument_id'] = instrument.id
         if validated_data:
             super().update(instance, validated_data)
