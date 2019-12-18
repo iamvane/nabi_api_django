@@ -54,12 +54,6 @@ class LessonRequestSerializer(serializers.ModelSerializer):
             new_data['students'] = data.get('students')
         return super().to_internal_value(new_data)
 
-    def validate_instrument(self, value):
-        if not Instrument.objects.filter(name=value).exists():
-            raise serializers.ValidationError('Instrument value is not registered')
-        else:
-            return value
-
     def validate_students(self, value):
         ser = LessonRequestStudentSerializer(data=value, many=True)
         if not ser.is_valid():
@@ -77,7 +71,7 @@ class LessonRequestSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        instrument = Instrument.objects.get(name=validated_data.pop('instrument'))
+        instrument, _ = Instrument.objects.get_or_create(name=validated_data.pop('instrument'))
         validated_data['user_id'] = validated_data.get('user', {}).get('id')
         validated_data.pop('user')
         validated_data['instrument_id'] = instrument.id
