@@ -23,8 +23,8 @@ class LessonRequestView(views.APIView):
             return Response({'message': "You are not enabled to request for lessons"},
                             status=status.HTTP_400_BAD_REQUEST)
         if ser.is_valid():
-            ser.save()
-            return Response({'message': 'success'}, status=status.HTTP_200_OK)
+            obj = ser.save()
+            return Response({'object_id': obj.id}, status=status.HTTP_200_OK)
         else:
             return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
 
