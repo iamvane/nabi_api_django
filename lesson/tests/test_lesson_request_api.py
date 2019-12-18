@@ -26,7 +26,7 @@ class LessonRequestCreateTest(BaseTest):
         'instrument': "guitar",
         'placeForLessons': "home",
         'skillLevel': "beginner",
-        'lessonDuration': "45mins",
+        'lessonDuration': "45 mins",
         'requestMessage': "Hello I am looking for a guitar instructor"
     }
     parent_data = {
@@ -44,7 +44,7 @@ class LessonRequestCreateTest(BaseTest):
         'instrument': "piano",
         'placeForLessons': "home",
         'skillLevel': "beginner",
-        'lessonDuration': "60mins",
+        'lessonDuration': "60 mins",
         'requestMessage': "My twins want to take piano lessons together"
     }
 

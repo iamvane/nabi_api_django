@@ -1,10 +1,7 @@
-from django.db.models import ObjectDoesNotExist
-
 from rest_framework import serializers
 
 from accounts.models import TiedStudent
-from core.constants import (LESSON_DURATION_30, LESSON_DURATION_45, LESSON_DURATION_60, LESSON_DURATION_90,
-                            PLACE_FOR_LESSONS_CHOICES, SKILL_LEVEL_CHOICES)
+from core.constants import LESSON_DURATION_CHOICES, PLACE_FOR_LESSONS_CHOICES, SKILL_LEVEL_CHOICES
 from lesson.models import Instrument
 
 from .models import LessonRequest
@@ -22,11 +19,6 @@ class LessonRequestStudentSerializer(serializers.Serializer):
 
 
 class LessonRequestSerializer(serializers.ModelSerializer):
-    MINS30_DURATION = '30mins'
-    MINS45_DURATION = '45mins'
-    MINS60_DURATION = '60mins'
-    MINS90_DURATION = '90mins'
-    LESSON_DURATION_CHOICES = [MINS30_DURATION, MINS45_DURATION, MINS60_DURATION, MINS90_DURATION]
     instrument = serializers.CharField(max_length=250)
     lessons_duration = serializers.ChoiceField(choices=LESSON_DURATION_CHOICES)
     place_for_lessons = serializers.ChoiceField(choices=PLACE_FOR_LESSONS_CHOICES)
@@ -87,14 +79,6 @@ class LessonRequestSerializer(serializers.ModelSerializer):
         validated_data['user_id'] = validated_data.get('user', {}).get('id')
         validated_data.pop('user')
         validated_data['instrument_id'] = instrument.id
-        if validated_data['lessons_duration'] == self.MINS30_DURATION:
-            validated_data['lessons_duration'] = LESSON_DURATION_30
-        elif validated_data['lessons_duration'] == self.MINS45_DURATION:
-            validated_data['lessons_duration'] = LESSON_DURATION_45
-        elif validated_data['lessons_duration'] == self.MINS60_DURATION:
-            validated_data['lessons_duration'] = LESSON_DURATION_60
-        else:
-            validated_data['lessons_duration'] = LESSON_DURATION_90
         if self.context['is_parent']:
             students_data = validated_data.pop('students')
             res = super().create(validated_data)

@@ -124,11 +124,11 @@ class LessonRequestUpdateTest(BaseTest):
         # update lessons_duration
         self.assertEqual(lesson_request.lessons_duration, self.current_data[0]['lessons_duration'])
         response = self.client.put(self.url + '1/', content_type='application/json',
-                                   data=json.dumps({'lessonDuration': "90mins"}))
+                                   data=json.dumps({'lessonDuration': "90 mins"}))
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
         self.assertEqual(LessonRequest.objects.count(), self.qty)
         lesson_request.refresh_from_db()
-        self.assertEqual(lesson_request.lessons_duration, "90mins")
+        self.assertEqual(lesson_request.lessons_duration, "90 mins")
 
     def test_parent_success(self):
         """Successful request, by parent user. Make tests for changing fields independently"""
