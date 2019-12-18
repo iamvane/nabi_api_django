@@ -400,3 +400,57 @@ POST localhost:8000/v1/registration-affiliate/
 }
 
 ###
+
+POST localhost:8000/v1/lesson-request/
+Content-Type: application/json
+
+{
+  "requestTitle": "Guitar Instructor needed in Boston MA",
+  "instrument": "guitar",
+  "placeForLessons": "home",
+  "skillLevel": "beginner",
+  "lessonDuration": "45mins",
+  "requestMessage": "Hello I am looking for a guitar instructor"
+}
+or
+{
+  "students": [
+    {
+      "name": "Santiago",
+      "age": 9
+    },
+    {
+      "name": "Teresa",
+      "age": 7
+    }
+  ],
+  "requestTitle": "Piano Instructor needed in Boston MA",
+  "instrument": "piano",
+  "placeForLessons": "home",
+  "skillLevel": "beginner",
+  "lessonDuration": "60mins",
+  "requestMessage": "My twins want to take piano lessons together"
+}
+
+# return the dic {"object_id": 3}
+
+###
+
+PUT localhost:8000/v1/lesson-request-item/1/
+Content-Type: application/json
+
+# same data as required in POST method
+
+###
+
+DELETE localhost:8000/v1/lesson-request-item/1/
+
+###
+
+GET localhost:8000/v1/lesson-request-item/1/
+
+###
+
+GET localhost:8000/v1/lesson-request/
+
+###
