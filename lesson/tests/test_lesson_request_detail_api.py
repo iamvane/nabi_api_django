@@ -21,7 +21,7 @@ class LessonRequestDeleteTest(BaseTest):
 
     def setUp(self):
         super().setUp()
-        self.url = '{}/v1/lesson-request-item/'.format(settings.HOSTNAME_PROTOCOL)
+        self.url = '{}/v1/lesson-request/'.format(settings.HOSTNAME_PROTOCOL)
         self.qty = LessonRequest.objects.count()
 
     def test_success(self):
@@ -73,7 +73,7 @@ class LessonRequestUpdateTest(BaseTest):
     ]
 
     def setUp(self):
-        self.url = '{}/v1/lesson-request-item/'.format(settings.HOSTNAME_PROTOCOL)
+        self.url = '{}/v1/lesson-request/'.format(settings.HOSTNAME_PROTOCOL)
         self.qty = LessonRequest.objects.count()
 
     def test_student_success(self):
@@ -221,7 +221,7 @@ class LessonRequestFetchTest(BaseTest):
     ]
 
     def setUp(self):
-        self.url = '{}/v1/lesson-request-item/'.format(settings.HOSTNAME_PROTOCOL)
+        self.url = '{}/v1/lesson-request/'.format(settings.HOSTNAME_PROTOCOL)
         self.qty = LessonRequest.objects.count()
 
     def test_student_success(self):
