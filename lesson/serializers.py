@@ -8,6 +8,7 @@ from .models import LessonRequest
 
 
 class LessonRequestStudentSerializer(serializers.Serializer):
+    """To support lesson request serializers"""
     name = serializers.CharField(max_length=250)
     age = serializers.IntegerField()
 
@@ -19,6 +20,7 @@ class LessonRequestStudentSerializer(serializers.Serializer):
 
 
 class LessonRequestSerializer(serializers.ModelSerializer):
+    """Serializer for create or update a lesson request"""
     instrument = serializers.CharField(max_length=250)
     lessons_duration = serializers.ChoiceField(choices=LESSON_DURATION_CHOICES)
     place_for_lessons = serializers.ChoiceField(choices=PLACE_FOR_LESSONS_CHOICES)
