@@ -13,7 +13,6 @@ from core.constants import (
     MONTH_CHOICES, PHONE_TYPE_CHOICES, PLACE_FOR_LESSONS_CHOICES, ROLE_INSTRUCTOR, ROLE_PARENT, SKILL_LEVEL_CHOICES,
 )
 from core.utils import ElapsedTime, get_date_a_month_later, get_month_integer
-from lesson.models import Instrument
 
 User = get_user_model()
 
@@ -347,7 +346,7 @@ class StudentDetails(models.Model):
     user = models.ForeignKey(User, related_name='student_details', on_delete=models.CASCADE)   # student or parent user
     tied_student = models.OneToOneField(TiedStudent, null=True, blank=True, related_name='tied_student_details',
                                         on_delete=models.SET_NULL)
-    instrument = models.ForeignKey(Instrument, on_delete=models.PROTECT)
+    instrument = models.ForeignKey('lesson.Instrument', on_delete=models.PROTECT)
     skill_level = models.CharField(max_length=50, choices=SKILL_LEVEL_CHOICES)
     lesson_place = models.CharField(max_length=50, choices=PLACE_FOR_LESSONS_CHOICES)
     lesson_duration = models.CharField(max_length=50, choices=LESSON_DURATION_CHOICES)

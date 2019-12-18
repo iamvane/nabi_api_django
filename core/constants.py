@@ -158,6 +158,14 @@ LESSON_DURATION_CHOICES = (
     (LESSON_DURATION_90, LESSON_DURATION_90),
 )
 
+# --- lesson request status ---
+LR_SEEN = 'seen'
+LR_NO_SEEN = 'no seen'
+LR_STATUSES = (
+    (LR_SEEN, LR_SEEN),
+    (LR_NO_SEEN, LR_NO_SEEN),
+)
+
 # --- Job preferences ---
 JOB_PREFS_ONE_STUDENT = 'one student'
 JOB_PREFS_SMALL_GROUPS = 'small groups'
