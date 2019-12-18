@@ -1,3 +1,5 @@
+from django.contrib.auth import get_user_model
+
 from rest_framework import serializers
 
 from accounts.models import TiedStudent
@@ -5,6 +7,8 @@ from core.constants import LESSON_DURATION_CHOICES, PLACE_FOR_LESSONS_CHOICES, S
 from lesson.models import Instrument
 
 from .models import LessonRequest
+
+User = get_user_model()
 
 
 class LessonRequestStudentSerializer(serializers.Serializer):
@@ -54,15 +58,6 @@ class LessonRequestSerializer(serializers.ModelSerializer):
             new_data['students'] = data.get('students')
         return super().to_internal_value(new_data)
 
-    def validate_students(self, value):
-        ser = LessonRequestStudentSerializer(data=value, many=True)
-        if not ser.is_valid():
-            raise serializers.ValidationError(ser.errors)
-        for item in value:
-            if not TiedStudent.objects.filter(name=item['name'], age=item['age']).exists():
-                raise serializers.ValidationError('There are not registered student for provided data')
-        return ser.validated_data
-
     def validate(self, attrs):
         attrs = super().validate(attrs)
         if not self.instance:
@@ -76,10 +71,13 @@ class LessonRequestSerializer(serializers.ModelSerializer):
         validated_data.pop('user')
         validated_data['instrument_id'] = instrument.id
         if self.context['is_parent']:
+            parent_obj = User.objects.get(id=validated_data['user_id']).parent
             students_data = validated_data.pop('students')
             res = super().create(validated_data)
             for student_item in students_data:
-                tied_student = TiedStudent.objects.get(name=student_item['name'], age=student_item['age'])
+                tied_student, _ = TiedStudent.objects.get_or_create(name=student_item['name'],
+                                                                    age=student_item['age'],
+                                                                    parent=parent_obj)
                 res.students.add(tied_student)
             return res
         else:
@@ -100,14 +98,18 @@ class LessonRequestSerializer(serializers.ModelSerializer):
             super().update(instance, validated_data)
             instance.refresh_from_db()
         if student_data:
+            parent = User.objects.get(id=validated_data['user_id']).parent
             if isinstance(student_data, list):
-                ts_id_list = []
+                ts_list = []
                 for student_item in student_data:
-                    if TiedStudent.objects.filter(**student_item).exists():
-                        ts_id_list.append(TiedStudent.objects.get(**student_item))
-                instance.students.set(ts_id_list)
+                    student_item['parent'] = parent
+                    ts, _ = TiedStudent.objects.get_or_create(**student_item)
+                    ts_list.append(ts)
+                instance.students.set(ts_list)
             else:
-                instance.students.add(TiedStudent.objects.get(name=student_data['name'], age=student_data['age']))
+                ts, _ = TiedStudent.objects.get_or_create(name=student_data['name'], age=student_data['age'],
+                                                          parent=parent)
+                instance.students.add(ts)
         return instance
 
 

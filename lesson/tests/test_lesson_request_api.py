@@ -4,6 +4,7 @@ from django.conf import settings
 
 from rest_framework import status
 
+from accounts.models import TiedStudent
 from accounts.tests.base_test_class import BaseTest
 
 from ..models import Instrument, LessonRequest
@@ -32,8 +33,8 @@ class LessonRequestCreateTest(BaseTest):
     parent_data = {
         'students': [
             {
-                'name': 'Santiago',
-                'age': 9,
+                'name': 'Eduardo',
+                'age': 8,
             },
             {
                 'name': 'Teresa',
@@ -65,10 +66,12 @@ class LessonRequestCreateTest(BaseTest):
         self.login_data = self.parent_login_data
         super().setUp()
         self.assertEqual(Instrument.objects.count(), 3)
+        self.assertEqual(TiedStudent.objects.count(), 3)
         response = self.client.post(self.url, data=json.dumps(self.parent_data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
         self.assertEqual(LessonRequest.objects.count(), self.qty + 1)
         self.assertEqual(Instrument.objects.count(), 4)   # check that new instrument was added
+        self.assertEqual(TiedStudent.objects.count(), 4)   # check that another student was added
 
     def test_missing_data(self):
         """Failed request, by student, because some data is missing. Tests missing fields independently"""

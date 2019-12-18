@@ -4,6 +4,7 @@ from django.conf import settings
 
 from rest_framework import status
 
+from accounts.models import TiedStudent
 from accounts.tests.base_test_class import BaseTest
 
 from ..models import LessonRequest
@@ -172,16 +173,18 @@ class LessonRequestUpdateTest(BaseTest):
         self.assertListEqual(list(lesson_request.students.values_list('id', flat=True)), [1, ])
         # update students 2
         self.assertEqual(lesson_request.students.count(), 1)
+        ts_qty = TiedStudent.objects.count()
         self.assertListEqual(list(lesson_request.students.values_list('id', flat=True)), [1, ])
         response = self.client.put(self.url + '2/', content_type='application/json',
                                    data=json.dumps({'students': [{"name": "Santiago", "age": 9},
-                                                                 {"name": "John", "age": 8}]
+                                                                 {"name": "Mary", "age": 8}]
                                                     })
                                    )
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
         self.assertEqual(LessonRequest.objects.count(), self.qty)
+        self.assertEqual(TiedStudent.objects.count(), ts_qty + 1)
         lesson_request.refresh_from_db()
-        self.assertListEqual(list(lesson_request.students.values_list('id', flat=True)), [1, 4])
+        self.assertListEqual(list(lesson_request.students.values_list('id', flat=True)), [1, 5])
 
 
 class LessonRequestFetchTest(BaseTest):
