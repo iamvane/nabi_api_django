@@ -436,18 +436,18 @@ or
 
 ###
 
-PUT localhost:8000/v1/lesson-request-item/1/
+PUT localhost:8000/v1/lesson-request/1/
 Content-Type: application/json
 
 # same data as required in POST method
 
 ###
 
-DELETE localhost:8000/v1/lesson-request-item/1/
+DELETE localhost:8000/v1/lesson-request/1/
 
 ###
 
-GET localhost:8000/v1/lesson-request-item/1/
+GET localhost:8000/v1/lesson-request/1/
 
 ###
 
