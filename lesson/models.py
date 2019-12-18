@@ -26,7 +26,7 @@ class LessonRequest(models.Model):
         (SEEN_STATUS, SEEN_STATUS),
         (NO_SEEN_STATUS, NO_SEEN_STATUS),
     )
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='lesson_requests')
     title = models.CharField(max_length=100)
     message = models.TextField()
     instrument = models.ForeignKey(Instrument, on_delete=models.PROTECT)
