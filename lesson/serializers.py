@@ -126,5 +126,11 @@ class LessonRequestDetailSerializer(serializers.ModelSerializer):
         data['lessonDuration'] = data.pop('lessons_duration')
         data['placeForLessons'] = data.pop('place_for_lessons')
         data['skillLevel'] = data.pop('skill_level')
-        data['studentDetails'] = data.pop('students')
+        data['requestTitle'] = data.pop('title')
+        data['requestMessage'] = data.pop('message')
+        if instance.students.count() == 0:
+            data.pop('students')
+            data['studentDetails'] = [{'name': instance.user.first_name, 'age': instance.user.student.age}]
+        else:
+            data['studentDetails'] = data.pop('students')
         return data

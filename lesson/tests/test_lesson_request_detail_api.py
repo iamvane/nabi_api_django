@@ -200,18 +200,18 @@ class LessonRequestFetchTest(BaseTest):
     current_data = [
         {
             "id": 1,
-            "title": "Piano Instructor needed in Boston MA",
-            "message": "Hello, I am looking for a piano instructor",
+            "requestTitle": "Piano Instructor needed in Boston MA",
+            "requestMessage": "Hello, I am looking for a piano instructor",
             "instrument": "piano",
             "skillLevel": "beginner",
             "placeForLessons": "home",
             "lessonDuration": "45 mins",
-            "studentDetails": [],
+            "studentDetails": [{"name": "Luis"}, ],
         },
         {
             "id": 2,
-            "title": "Guitar Instructor needed",
-            "message": "Hi, I am looking for a guitar instructor for my children",
+            "requestTitle": "Guitar Instructor needed",
+            "requestMessage": "Hi, I am looking for a guitar instructor for my children",
             "instrument": "guitar",
             "skillLevel": "beginner",
             "placeForLessons": "home",
@@ -231,7 +231,9 @@ class LessonRequestFetchTest(BaseTest):
         response = self.client.get(self.url + '1/')
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
         self.assertEqual(LessonRequest.objects.count(), self.qty)
-        self.assertDictEqual(response.json(), self.current_data[0])
+        response_data = response.json()
+        response_data['studentDetails'][0].pop('age')
+        self.assertDictEqual(response_data, self.current_data[0])
 
     def test_student_fail(self):
         """Failed request, by student, with wrong id"""
