@@ -456,3 +456,18 @@ GET localhost:8000/v1/lesson-request/1/
 GET localhost:8000/v1/lesson-request/
 
 ###
+
+POST localhost:8000/v1/applications/
+Content-Type: application/json
+
+{
+  "requestId": 1,
+  "rate": "30.00",
+  "message": "Hello, I'm available for teaching lessons"
+}
+
+###
+
+GET localhost:8000/v1/applications/
+
+###
