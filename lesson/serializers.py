@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 
 from rest_framework import serializers
 
-from accounts.models import TiedStudent
+from accounts.models import TiedStudent, get_account
 from core.constants import LESSON_DURATION_CHOICES, PLACE_FOR_LESSONS_CHOICES, SKILL_LEVEL_CHOICES
 from lesson.models import Instrument
 
@@ -167,3 +167,27 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
         if new_data.get('requestId'):
             new_data['request_id'] = new_data.pop('requestId')
         return super().to_internal_value(new_data)
+
+
+class ApplicationListSerializer(serializers.ModelSerializer):
+    """Serializer for get a list of application made by current instructor"""
+    display_name = serializers.SerializerMethodField()
+    id = serializers.IntegerField(read_only=True)
+    request_id = serializers.IntegerField(read_only=True)
+    title = serializers.CharField(max_length=100, source='request.title', read_only=True)
+    date_applied = serializers.DateTimeField(format='%Y-%m-%d', source='created_at')
+
+    class Meta:
+        model = Application
+        fields = ('display_name', 'id', 'request_id', 'status', 'title', 'date_applied')
+
+    def get_display_name(self, instance):
+        account = get_account(instance.request.user)
+        return account.display_name
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['displayName'] = data.pop('display_name')
+        data['requestId'] = data.pop('request_id')
+        data['dateApplied'] = data.pop('date_applied')
+        return data

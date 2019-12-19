@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from core.constants import ROLE_PARENT, ROLE_STUDENT
 from core.permissions import AccessForInstructor
 
-from .models import LessonRequest
+from .models import Application, LessonRequest
 from . import serializers as sers
 
 
@@ -84,6 +84,7 @@ class LessonRequestItemView(views.APIView):
 
 
 class ApplicationView(views.APIView):
+    """Create or retrieve applications for lesson request"""
     permission_classes = (IsAuthenticated, AccessForInstructor)
 
     def post(self, request):
@@ -95,3 +96,7 @@ class ApplicationView(views.APIView):
             return Response({'message': 'success'}, status=status.HTTP_200_OK)
         else:
             return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request):
+        ser = sers.ApplicationListSerializer(Application.objects.filter(instructor=request.user.instructor), many=True)
+        return Response(ser.data, status=status.HTTP_200_OK)
