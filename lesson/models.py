@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 
-from accounts.models import TiedStudent
+from accounts.models import Instructor, TiedStudent
 from core.constants import (LESSON_DURATION_CHOICES, LR_NO_SEEN, LR_STATUSES, PLACE_FOR_LESSONS_CHOICES,
                             SKILL_LEVEL_CHOICES, )
 
@@ -35,3 +35,13 @@ class LessonRequest(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
+
+
+class Application(models.Model):
+    request = models.ForeignKey(LessonRequest, related_name='applications', on_delete=models.PROTECT)
+    instructor = models.ForeignKey(Instructor, related_name='applications', on_delete=models.CASCADE)
+    rate = models.DecimalField(max_digits=9, decimal_places=4)
+    message = models.TextField()
+    status = models.CharField(max_length=100, choices=LR_STATUSES, default=LR_NO_SEEN)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)

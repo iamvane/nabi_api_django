@@ -83,6 +83,15 @@ class User(AbstractUser):
             UserBenefits.objects.create(user=self.referred_by, user_origin=self,
                                         benefit_type=BENEFIT_LESSON, status=BENEFIT_DISABLED)
 
+    def is_instructor(self):
+        return hasattr(self, 'instructor')
+
+    def is_parent(self):
+        return hasattr(self, 'parent')
+
+    def is_student(self):
+        return hasattr(self, 'student')
+
 
 class UserToken(models.Model):
     """Model to store token used in reset password."""

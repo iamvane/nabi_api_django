@@ -6,7 +6,7 @@ from accounts.models import TiedStudent
 from core.constants import LESSON_DURATION_CHOICES, PLACE_FOR_LESSONS_CHOICES, SKILL_LEVEL_CHOICES
 from lesson.models import Instrument
 
-from .models import LessonRequest
+from .models import Application, LessonRequest
 
 User = get_user_model()
 
@@ -151,3 +151,19 @@ class LessonRequestDetailSerializer(serializers.ModelSerializer):
         else:
             data['studentDetails'] = data.pop('students')
         return data
+
+
+class ApplicationCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creation of application"""
+    instructor_id = serializers.IntegerField()
+    request_id = serializers.IntegerField()
+
+    class Meta:
+        model = Application
+        fields = ('request_id', 'rate', 'message', 'instructor_id')
+
+    def to_internal_value(self, data):
+        new_data = data.copy()
+        if new_data.get('requestId'):
+            new_data['request_id'] = new_data.pop('requestId')
+        return super().to_internal_value(new_data)
