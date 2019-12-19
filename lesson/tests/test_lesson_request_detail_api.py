@@ -71,6 +71,16 @@ class LessonRequestUpdateTest(BaseTest):
             "status": "no seen",
             "students": [1, 2],
         },
+        {
+            "title": "Flute Instructor needed",
+            "message": "Hello, I am looking for a flute instructor",
+            "instrument_id": 3,
+            "skill_level": "beginner",
+            "place_for_lessons": "online",
+            "lessons_duration": "30 mins",
+            "status": "no seen",
+            "students": [],
+        },
     ]
 
     def setUp(self):
@@ -82,6 +92,7 @@ class LessonRequestUpdateTest(BaseTest):
         self.login_data = self.student_login_data
         super().setUp()
         lesson_request = LessonRequest.objects.get(id=1)
+        another_lesson_request = LessonRequest.objects.get(id=3)
         # update title
         self.assertEqual(lesson_request.title, self.current_data[0]['title'])
         response = self.client.put(self.url + '1/', content_type='application/json',
@@ -117,13 +128,14 @@ class LessonRequestUpdateTest(BaseTest):
         lesson_request.refresh_from_db()
         self.assertEqual(lesson_request.skill_level, "intermediate")
         # update place_for_lessons
-        self.assertEqual(lesson_request.place_for_lessons, self.current_data[0]['place_for_lessons'])
-        response = self.client.put(self.url + '1/', content_type='application/json',
-                                   data=json.dumps({'placeForLessons': "studio"}))
+        self.assertEqual(another_lesson_request.place_for_lessons, self.current_data[2]['place_for_lessons'])
+        response = self.client.put(self.url + '3/', content_type='application/json',
+                                   data=json.dumps({'placeForLessons': "studio", 'travelDistance': 50}))
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
         self.assertEqual(LessonRequest.objects.count(), self.qty)
-        lesson_request.refresh_from_db()
-        self.assertEqual(lesson_request.place_for_lessons, "studio")
+        another_lesson_request.refresh_from_db()
+        self.assertEqual(another_lesson_request.place_for_lessons, "studio")
+        self.assertEqual(another_lesson_request.travel_distance, 50)
         # update lessons_duration
         self.assertEqual(lesson_request.lessons_duration, self.current_data[0]['lessons_duration'])
         response = self.client.put(self.url + '1/', content_type='application/json',

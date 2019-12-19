@@ -47,13 +47,13 @@
       "message": "Hello, I am looking for a flute instructor",
       "instrument": 3,
       "skill_level": "beginner",
-      "place_for_lessons": "studio",
+      "place_for_lessons": "online",
       "lessons_duration": "30 mins",
       "status": "no seen",
       "created_at": "2019-12-18T16:12:35.136Z",
       "modified_at": "2019-12-18T16:12:35.136Z",
       "students": [],
-      "travel_distance": 100
+      "travel_distance": null
    }
 }
 ]

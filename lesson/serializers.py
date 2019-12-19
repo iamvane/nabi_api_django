@@ -65,8 +65,15 @@ class LessonRequestSerializer(serializers.ModelSerializer):
         if not self.instance:
             if self.context['is_parent'] and not attrs.get('students'):
                 raise serializers.ValidationError('students data must be provided')
-        if attrs['place_for_lessons'] == 'studio' and not attrs.get('travel_distance'):
-            raise serializers.ValidationError('travel_distance value must be provided')
+            if attrs['place_for_lessons'] == 'studio' and not attrs.get('travel_distance'):
+                raise serializers.ValidationError('travel_distance value must be provided')
+        else:
+            if attrs.get('place_for_lessons') == 'studio' and (
+                    (self.instance.travel_distance is None and attrs.get('travel_distance') is None)
+                    or (self.instance.travel_distance is not None and 'travel_distance' in attrs.keys()
+                        and attrs.get('travel_distance') is None)
+            ):
+                raise serializers.ValidationError('travel_distance value must be provided')
         return attrs
 
     def create(self, validated_data):
@@ -130,7 +137,10 @@ class LessonRequestDetailSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data['lessonDuration'] = data.pop('lessons_duration')
-        data['travelDistance'] = data.pop('travel_distance')
+        if data.get('travel_distance') is not None:
+            data['travelDistance'] = data.pop('travel_distance')
+        else:
+            data.pop('travel_distance')
         data['placeForLessons'] = data.pop('place_for_lessons')
         data['skillLevel'] = data.pop('skill_level')
         data['requestTitle'] = data.pop('title')
