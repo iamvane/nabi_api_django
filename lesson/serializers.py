@@ -34,7 +34,7 @@ class LessonRequestSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LessonRequest
-        fields = ('user_id', 'title', 'message', 'instrument', 'lessons_duration', 'max_travel_distance',
+        fields = ('user_id', 'title', 'message', 'instrument', 'lessons_duration', 'travel_distance',
                   'place_for_lessons', 'skill_level', 'students')
 
     def to_internal_value(self, data):
@@ -50,8 +50,8 @@ class LessonRequestSerializer(serializers.ModelSerializer):
             new_data['instrument'] = data.get('instrument')
         if keys.get('lessonDuration'):
             new_data['lessons_duration'] = data.get('lessonDuration')
-        if keys.get('maxTravelDistance'):
-            new_data['max_travel_distance'] = data.get('maxTravelDistance')
+        if keys.get('travelDistance'):
+            new_data['travel_distance'] = data.get('travelDistance')
         if keys.get('placeForLessons'):
             new_data['place_for_lessons'] = data.get('placeForLessons')
         if keys.get('skillLevel'):
@@ -65,6 +65,8 @@ class LessonRequestSerializer(serializers.ModelSerializer):
         if not self.instance:
             if self.context['is_parent'] and not attrs.get('students'):
                 raise serializers.ValidationError('students data must be provided')
+        if attrs['place_for_lessons'] == 'studio' and not attrs.get('travel_distance'):
+            raise serializers.ValidationError('travel_distance value must be provided')
         return attrs
 
     def create(self, validated_data):
@@ -122,13 +124,13 @@ class LessonRequestDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LessonRequest
-        fields = ('id', 'instrument', 'message', 'title', 'lessons_duration', 'max_travel_distance',
+        fields = ('id', 'instrument', 'message', 'title', 'lessons_duration', 'travel_distance',
                   'place_for_lessons', 'skill_level', 'students')
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data['lessonDuration'] = data.pop('lessons_duration')
-        data['maxTravelDistance'] = data.pop('max_travel_distance')
+        data['travelDistance'] = data.pop('travel_distance')
         data['placeForLessons'] = data.pop('place_for_lessons')
         data['skillLevel'] = data.pop('skill_level')
         data['requestTitle'] = data.pop('title')

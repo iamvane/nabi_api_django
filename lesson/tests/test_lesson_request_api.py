@@ -29,7 +29,7 @@ class LessonRequestCreateTest(BaseTest):
         'skillLevel': "beginner",
         'lessonDuration': "45 mins",
         'requestMessage': "Hello I am looking for a guitar instructor",
-        "maxTravelDistance": 100
+        "travelDistance": 100
     }
     parent_data = {
         'students': [
@@ -48,7 +48,7 @@ class LessonRequestCreateTest(BaseTest):
         'skillLevel': "beginner",
         'lessonDuration': "60 mins",
         'requestMessage': "My twins want to take ukulele lessons together",
-        "maxTravelDistance": 100
+        "travelDistance": 100
     }
 
     def setUp(self):
@@ -104,9 +104,10 @@ class LessonRequestCreateTest(BaseTest):
         data.pop('lessonDuration')
         response = self.client.post(self.url, data=json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, msg=response.content.decode())
-        # test without maxTravelDistance
+        # test without travelDistance
         data = self.student_data.copy()
-        data.pop('maxTravelDistance')
+        data['placeForLessons'] = 'studio'
+        data.pop('travelDistance')
         response = self.client.post(self.url, data=json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, msg=response.content.decode())
         # test without requestMessage
