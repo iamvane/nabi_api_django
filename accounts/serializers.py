@@ -712,6 +712,12 @@ class InstructorEmploymentSerializer(serializers.ModelSerializer):
 
 
 class InstructorQueryParamsSerializer(serializers.Serializer):
+    qualifications_dict = {'certifiedTeacher': 'certified_teacher', 'musicTherapy': 'music_therapy',
+                           'musicProduction': 'music_production', 'earTraining': 'ear_training',
+                           'conducting': 'conducting', 'virtuosoRecognition': 'virtuoso_recognition',
+                           'performance': 'performance', 'musicTheory': 'music_theory',
+                           'youngChildrenExperience': 'young_children_experience',
+                           'repertoireSelection': 'repertoire_selection'}
     availability = serializers.CharField(max_length=500, required=False)
     distance = serializers.IntegerField(required=False, default=50)
     gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=False)
@@ -760,10 +766,16 @@ class InstructorQueryParamsSerializer(serializers.Serializer):
         if value == '':
             raise serializers.ValidationError('Wrong qualifications value')
         list_values = value.split(',')
+        new_value = ''
         for item in list_values:
-            if not hasattr(InstructorAdditionalQualifications, item):
+            if self.qualifications_dict.get(item):
+                if new_value:
+                    new_value += ',' + self.qualifications_dict.get(item)
+                else:
+                    new_value += self.qualifications_dict.get(item)
+            else:
                 raise serializers.ValidationError('Wrong qualifications value')
-        return value
+        return new_value
 
     def validate_student_ages(self, value):
         if value == '':
