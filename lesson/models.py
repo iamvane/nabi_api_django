@@ -28,6 +28,8 @@ class LessonRequest(models.Model):
     skill_level = models.CharField(max_length=100, choices=SKILL_LEVEL_CHOICES)
     place_for_lessons = models.CharField(max_length=100, choices=PLACE_FOR_LESSONS_CHOICES)
     lessons_duration = models.CharField(max_length=100, choices=LESSON_DURATION_CHOICES)
+    max_travel_distance = models.IntegerField()
+
     students = models.ManyToManyField(TiedStudent)
     status = models.CharField(max_length=100, choices=LR_STATUSES, blank=True, default=LR_NO_SEEN)
 

@@ -212,6 +212,7 @@ class LessonRequestFetchTest(BaseTest):
             "placeForLessons": "home",
             "lessonDuration": "45 mins",
             "studentDetails": [{"name": "Luis"}, ],
+            "maxTravelDistance": 100
         },
         {
             "id": 2,
@@ -222,6 +223,7 @@ class LessonRequestFetchTest(BaseTest):
             "placeForLessons": "home",
             "lessonDuration": "60 mins",
             "studentDetails": [{"name": "Santiago", "age": 9}, {"name": "Teresa", "age": 7}],
+            "maxTravelDistance": 100
         },
     ]
 
