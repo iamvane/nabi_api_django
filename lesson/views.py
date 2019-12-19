@@ -1,10 +1,12 @@
+import math
+
 from django.db.models import ObjectDoesNotExist
 
 from rest_framework import status, views
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from core.constants import ROLE_PARENT, ROLE_STUDENT
+from core.constants import ROLE_INSTRUCTOR, ROLE_PARENT, ROLE_STUDENT
 from core.permissions import AccessForInstructor
 
 from .models import Application, LessonRequest
@@ -101,3 +103,16 @@ class ApplicationView(views.APIView):
     def get(self, request):
         ser = sers.ApplicationListSerializer(Application.objects.filter(instructor=request.user.instructor), many=True)
         return Response(ser.data, status=status.HTTP_200_OK)
+
+
+class LessonRequestList(views.APIView):
+    """API for get a list of lesson requests made for parents or students"""
+    def get(self, request):
+        role = request.user.get_role()
+        if role != ROLE_INSTRUCTOR:
+            return Response({'message': 'Access denied'}, status=status.HTTP_400_BAD_REQUEST)
+        qs = LessonRequest.objects
+        ser = sers.LessonRequestItemSerializer(qs, many=True, context={'user_id': request.user.id})
+        ordered_data = sorted(ser.data, key=lambda item: item.get('distance') if item.get('distance') is not None \
+            else math.inf)
+        return Response(ordered_data, status=status.HTTP_200_OK)

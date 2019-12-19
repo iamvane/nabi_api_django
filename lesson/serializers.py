@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from accounts.models import TiedStudent, get_account
-from core.constants import LESSON_DURATION_CHOICES, PLACE_FOR_LESSONS_CHOICES, SKILL_LEVEL_CHOICES
+from core.constants import (LESSON_DURATION_CHOICES, PLACE_FOR_LESSONS_CHOICES, ROLE_STUDENT, SKILL_LEVEL_CHOICES)
 from lesson.models import Instrument
 
 from .models import Application, LessonRequest
@@ -191,3 +191,54 @@ class ApplicationListSerializer(serializers.ModelSerializer):
         data['requestId'] = data.pop('request_id')
         data['dateApplied'] = data.pop('date_applied')
         return data
+
+
+class LessonRequestItemSerializer(serializers.ModelSerializer):
+    """Serializer for get data of a lesson request; call made by an instructor"""
+    avatar = serializers.CharField(max_length=500, source='*', read_only=True)
+    created_at = serializers.DateTimeField(format='%Y-%m-%d %H:%M:%S', read_only=True)
+    instrument = serializers.CharField(max_length=250, source='instrument.name', read_only=True)
+    location = serializers.CharField(max_length=150, source='*', read_only=True)
+    students = LessonRequestStudentSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = LessonRequest
+        fields = ('avatar', 'created_at', 'id', 'instrument',  'lessons_duration', 'location', 'message',
+                  'place_for_lessons', 'skill_level', 'students', 'title', )
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        new_data = {}
+        new_data['createdAt'] = data.get('created_at')
+        new_data['id'] = data.get('id')
+        new_data['instrument'] = data.get('instrument')
+        new_data['lessonDuration'] = data.get('lessons_duration')
+        new_data['requestMessage'] = data.get('message')
+        new_data['placeForLessons'] = data.get('place_for_lessons')
+        new_data['skillLevel'] = data.get('skill_level')
+        new_data['requestTitle'] = data.get('title')
+        role = instance.user.get_role()
+        if role == ROLE_STUDENT:
+            new_data['studentDetails'] = [{'name': instance.user.first_name, 'age': instance.user.student.age}]
+            try:
+                new_data['avatar'] = instance.user.student.avatar.path
+            except ValueError:
+                new_data['avatar'] = ''
+            new_data['location'] = instance.user.student.location
+            coords_requestor = instance.user.student.coordinates
+        else:
+            new_data['studentDetails'] = data.pop('students')
+            try:
+                new_data['avatar'] = instance.user.parent.avatar.path
+            except ValueError:
+                new_data['avatar'] = ''
+            new_data['location'] = instance.user.parent.location
+            coords_requestor = instance.user.parent.coordinates
+        new_data['applicationsReceived'] = 0   # ToDo: review this
+        new_data['applied'] = False   # ToDo: review this
+        if coords_requestor:
+            new_data['distance'] = User.objects.get(id=self.context.get('user_id'))\
+                .instructor.coordinates.distance(coords_requestor)
+        else:
+            new_data['distance'] = None
+        return new_data
