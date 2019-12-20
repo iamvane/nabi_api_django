@@ -1,6 +1,8 @@
 import math
 
-from django.db.models import ObjectDoesNotExist
+from django.contrib.gis.db.models.functions import Distance
+from django.contrib.gis.geos import Point
+from django.db.models import Case, F, ObjectDoesNotExist, When
 
 from rest_framework import status, views
 from rest_framework.permissions import IsAuthenticated
@@ -115,16 +117,34 @@ class LessonRequestList(views.APIView):
         query_ser = sers.LessonRequestListQueryParamsSerializer(data=request.query_params.dict())
         if query_ser.is_valid():
             keys = dict.fromkeys(query_ser.validated_data, 1)
-            if keys.get('lat') and keys.get('lng') and keys.get('distance'):
-                pass
+            point = None
+            distance = None
+            if (keys.get('lat') and not keys.get('lng')) or (keys.get('lng') and not keys.get('lat')):
+                return Response({'message': "Both latitude and longitude values should be send"},
+                                status=status.HTTP_400_BAD_REQUEST)
             elif keys.get('lat') and keys.get('lng'):
-                pass
+                point = Point(query_ser.validated_data['lat'], query_ser.validated_data['lng'])
+            if keys.get('distance'):
+                distance = query_ser.validated_data['distance']
+            if point and distance is None:
+                distance = 50
+            if point is None and distance is not None:
+                point = request.user.instructor.coordinates
+            if point and distance is not None:
+                qs = qs.annotate(coords=Case(
+                    When(user__parent__isnull=False, then=F('user__parent__coordinates')),
+                    When(user__student__isnull=False,  then=F('user__student__coordinates')),
+                    default=None)
+                ).filter(coords__isnull=False).annotate(distance=Distance('coords', point))\
+                    .filter(distance__lte=distance)
             if keys.get('instrument'):
                 qs = qs.filter(instrument__name=query_ser.validated_data.get('instrument'))
             if keys.get('place_for_lessons'):
                 qs = qs.filter(place_for_lessons=query_ser.validated_data['place_for_lessons'])
             if keys.get('age'):
                 pass
+        else:
+            return Response(query_ser.errors, status=status.HTTP_400_BAD_REQUEST)
         ser = sers.LessonRequestItemSerializer(qs, many=True, context={'user_id': request.user.id})
         ordered_data = sorted(ser.data,
                               key=lambda item: item.get('distance') if item.get('distance') is not None else math.inf)

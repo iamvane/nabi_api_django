@@ -9,4 +9,3 @@ urlpatterns = [
     path('applications/', views.ApplicationView.as_view()),
     path('lesson-request-list/', views.LessonRequestList.as_view()),
 ]
-g
