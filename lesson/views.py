@@ -1,12 +1,14 @@
 from django.db.models import ObjectDoesNotExist
 
 from rest_framework import status, views
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from core.constants import ROLE_PARENT, ROLE_STUDENT
+from core.permissions import AccessForInstructor
 
-from .models import LessonRequest
-from .serializers import LessonRequestDetailSerializer, LessonRequestSerializer
+from .models import Application, LessonRequest
+from . import serializers as sers
 
 
 class LessonRequestView(views.APIView):
@@ -17,9 +19,9 @@ class LessonRequestView(views.APIView):
         data['user_id'] = request.user.id
         role = request.user.get_role()
         if role == ROLE_STUDENT:
-            ser = LessonRequestSerializer(data=data, context={'is_parent': False})
+            ser = sers.LessonRequestSerializer(data=data, context={'is_parent': False})
         elif role == ROLE_PARENT:
-            ser = LessonRequestSerializer(data=data, context={'is_parent': True})
+            ser = sers.LessonRequestSerializer(data=data, context={'is_parent': True})
         else:
             return Response({'message': "You are not enabled to request for lessons"},
                             status=status.HTTP_400_BAD_REQUEST)
@@ -31,7 +33,7 @@ class LessonRequestView(views.APIView):
 
     def get(self, request):
         """Get a list of lesson requests, registered by current user"""
-        ser = LessonRequestDetailSerializer(request.user.lesson_requests.all(), many=True)
+        ser = sers.LessonRequestDetailSerializer(request.user.lesson_requests.all(), many=True)
         return Response(ser.data, status=status.HTTP_200_OK)
 
 
@@ -48,9 +50,9 @@ class LessonRequestItemView(views.APIView):
         data['user_id'] = request.user.id
         role = request.user.get_role()
         if role == ROLE_STUDENT:
-            ser = LessonRequestSerializer(data=data, instance=instance, context={'is_parent': False}, partial=True)
+            ser = sers.LessonRequestSerializer(data=data, instance=instance, context={'is_parent': False}, partial=True)
         elif role == ROLE_PARENT:
-            ser = LessonRequestSerializer(data=data, instance=instance, context={'is_parent': True}, partial=True)
+            ser = sers.LessonRequestSerializer(data=data, instance=instance, context={'is_parent': True}, partial=True)
         else:
             return Response({'message': "You are not enabled to request for lessons"},
                             status=status.HTTP_400_BAD_REQUEST)
@@ -77,5 +79,24 @@ class LessonRequestItemView(views.APIView):
         except ObjectDoesNotExist:
             return Response({'message': 'There is not lesson request with provided id'},
                             status=status.HTTP_400_BAD_REQUEST)
-        ser = LessonRequestDetailSerializer(lesson_request)
+        ser = sers.LessonRequestDetailSerializer(lesson_request)
+        return Response(ser.data, status=status.HTTP_200_OK)
+
+
+class ApplicationView(views.APIView):
+    """Create or retrieve applications for lesson request"""
+    permission_classes = (IsAuthenticated, AccessForInstructor)
+
+    def post(self, request):
+        data = request.data.copy()
+        data['instructor_id'] = request.user.instructor.id
+        ser = sers.ApplicationCreateSerializer(data=data)
+        if ser.is_valid():
+            ser.save()
+            return Response({'message': 'success'}, status=status.HTTP_200_OK)
+        else:
+            return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request):
+        ser = sers.ApplicationListSerializer(Application.objects.filter(instructor=request.user.instructor), many=True)
         return Response(ser.data, status=status.HTTP_200_OK)
