@@ -434,8 +434,6 @@ or
   "maxTravelDistance": 100
 }
 
-# return the dic {"object_id": 3}
-
 ###
 
 PUT localhost:8000/v1/lesson-request/1/

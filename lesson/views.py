@@ -27,7 +27,8 @@ class LessonRequestView(views.APIView):
                             status=status.HTTP_400_BAD_REQUEST)
         if ser.is_valid():
             obj = ser.save()
-            return Response({'object_id': obj.id}, status=status.HTTP_200_OK)
+            ser = sers.LessonRequestDetailSerializer(obj)
+            return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
 
