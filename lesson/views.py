@@ -9,8 +9,8 @@ from rest_framework.response import Response
 from core.constants import ROLE_INSTRUCTOR, ROLE_PARENT, ROLE_STUDENT
 from core.permissions import AccessForInstructor
 
-from .models import Application, LessonRequest
 from . import serializers as sers
+from .models import Application, LessonRequest
 
 
 class LessonRequestView(views.APIView):
@@ -112,7 +112,20 @@ class LessonRequestList(views.APIView):
         if role != ROLE_INSTRUCTOR:
             return Response({'message': 'Access denied'}, status=status.HTTP_400_BAD_REQUEST)
         qs = LessonRequest.objects
+        query_ser = sers.LessonRequestListQueryParamsSerializer(data=request.query_params.dict())
+        if query_ser.is_valid():
+            keys = dict.fromkeys(query_ser.validated_data, 1)
+            if keys.get('lat') and keys.get('lng') and keys.get('distance'):
+                pass
+            elif keys.get('lat') and keys.get('lng'):
+                pass
+            if keys.get('instrument'):
+                qs = qs.filter(instrument__name=query_ser.validated_data.get('instrument'))
+            if keys.get('place_for_lessons'):
+                qs = qs.filter(place_for_lessons=query_ser.validated_data['place_for_lessons'])
+            if keys.get('age'):
+                pass
         ser = sers.LessonRequestItemSerializer(qs, many=True, context={'user_id': request.user.id})
-        ordered_data = sorted(ser.data, key=lambda item: item.get('distance') if item.get('distance') is not None \
-            else math.inf)
+        ordered_data = sorted(ser.data,
+                              key=lambda item: item.get('distance') if item.get('distance') is not None else math.inf)
         return Response(ordered_data, status=status.HTTP_200_OK)
