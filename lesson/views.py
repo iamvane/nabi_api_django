@@ -109,6 +109,7 @@ class ApplicationView(views.APIView):
 
 class LessonRequestList(views.APIView):
     """API for get a list of lesson requests made for parents or students"""
+
     def get(self, request):
         role = request.user.get_role()
         if role != ROLE_INSTRUCTOR:
@@ -133,19 +134,25 @@ class LessonRequestList(views.APIView):
             if point and distance is not None:
                 qs = qs.annotate(coords=Case(
                     When(user__parent__isnull=False, then=F('user__parent__coordinates')),
-                    When(user__student__isnull=False,  then=F('user__student__coordinates')),
+                    When(user__student__isnull=False, then=F('user__student__coordinates')),
                     default=None)
-                ).filter(coords__isnull=False).annotate(distance=Distance('coords', point))\
+                ).filter(coords__isnull=False).annotate(distance=Distance('coords', point)) \
                     .filter(distance__lte=distance)
             if keys.get('instrument'):
                 qs = qs.filter(instrument__name=query_ser.validated_data.get('instrument'))
             if keys.get('place_for_lessons'):
                 qs = qs.filter(place_for_lessons=query_ser.validated_data['place_for_lessons'])
-            if keys.get('age'):
-                pass
+            if keys.get('min_age') or keys.get('max_age'):
+                qs = [item for item in qs.all() if
+                      item.has_accepted_age(min_age=query_ser.validated_data.get('min_age'),
+                                            max_age=query_ser.validated_data.get('max_age'))
+                      ]
         else:
             return Response(query_ser.errors, status=status.HTTP_400_BAD_REQUEST)
         ser = sers.LessonRequestItemSerializer(qs, many=True, context={'user_id': request.user.id})
-        ordered_data = sorted(ser.data,
-                              key=lambda item: item.get('distance') if item.get('distance') is not None else math.inf)
-        return Response(ordered_data, status=status.HTTP_200_OK)
+        if point and distance is not None:
+            returned_data = sorted(ser.data,
+                                   key=lambda item: item.get('distance') if item.get('distance') is not None else math.inf)
+        else:
+            returned_data = ser.data
+        return Response(returned_data, status=status.HTTP_200_OK)

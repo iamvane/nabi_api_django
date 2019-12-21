@@ -245,15 +245,21 @@ class LessonRequestItemSerializer(serializers.ModelSerializer):
 
 
 class LessonRequestListQueryParamsSerializer(serializers.Serializer):
-    age = serializers.IntegerField(min_value=0, max_value=120, required=False)
     distance = serializers.IntegerField(min_value=0, required=False)
     instrument = serializers.CharField(max_length=250, required=False)
     lat = serializers.FloatField(min_value=-90.00, max_value=90.00, required=False)
     lng = serializers.FloatField(min_value=-180.00, max_value=-180.00, required=False)
+    min_age = serializers.IntegerField(min_value=0, max_value=120, required=False)
+    max_age = serializers.IntegerField(min_value=0, max_value=120, required=False)
     place_for_lessons = serializers.ChoiceField(choices=PLACE_FOR_LESSONS_CHOICES, required=False)
 
     def to_internal_value(self, data):
         new_data = data.copy()
-        if 'placeForLessons' in new_data.keys():
+        keys = dict.fromkeys(data, 1)
+        if keys.get('placeForLessons'):
             new_data['place_for_lessons'] = new_data.pop('placeForLessons')
+        if keys.get('minAge'):
+            new_data['min_age'] = new_data.pop('minAge')
+        if keys.get('maxAge'):
+            new_data['max_age'] = new_data.pop('maxAge')
         return super().to_internal_value(new_data)
