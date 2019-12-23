@@ -88,7 +88,7 @@ class UserInfoUpdateSerializer(serializers.ModelSerializer):
         latitude = validated_data.pop('lat', None)
         longitude = validated_data.pop('lng', None)
         if latitude is not None and longitude is not None:
-            point = Point(float(latitude), float(longitude))
+            point = Point(float(longitude), float(latitude))
             account.coordinates = point
             account_changed = True
         middle_name = validated_data.pop('middle_name', None)
