@@ -22,4 +22,21 @@ class LessonRequestsListTest(BaseTest):
     def test_success(self):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
+        self.assertEqual(len(response.json()), 4)
+
+    def test_success_with_filters(self):
+        # filter by age
+        response = self.client.get(self.url + '?minAge=10')
+        self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
         self.assertEqual(len(response.json()), 3)
+        # filter by distance
+        response = self.client.get(self.url + '?distance=120')
+        self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
+        resp_data = response.json()
+        self.assertEqual(len(resp_data), 2)
+        for item in resp_data:
+            self.assertIn(item.get('id'), [2, 4])
+        # filter by placeForlessons
+        response = self.client.get(self.url + '?placeForLessons=home')
+        self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
+        self.assertEqual(len(response.json()), 2)

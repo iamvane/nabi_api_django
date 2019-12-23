@@ -1,7 +1,10 @@
 import math
 
+
+from django.contrib.gis.db.models import PointField
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Point
+from django.contrib.gis.measure import D
 from django.db.models import Case, F, ObjectDoesNotExist, When
 
 from rest_framework import status, views
@@ -124,7 +127,7 @@ class LessonRequestList(views.APIView):
                 return Response({'message': "Both latitude and longitude values should be send"},
                                 status=status.HTTP_400_BAD_REQUEST)
             elif keys.get('lat') and keys.get('lng'):
-                point = Point(query_ser.validated_data['lat'], query_ser.validated_data['lng'])
+                point = Point(query_ser.validated_data['lng'], query_ser.validated_data['lat'])
             if keys.get('distance'):
                 distance = query_ser.validated_data['distance']
             if point and distance is None:
@@ -135,9 +138,10 @@ class LessonRequestList(views.APIView):
                 qs = qs.annotate(coords=Case(
                     When(user__parent__isnull=False, then=F('user__parent__coordinates')),
                     When(user__student__isnull=False, then=F('user__student__coordinates')),
-                    default=None)
-                ).filter(coords__isnull=False).annotate(distance=Distance('coords', point)) \
-                    .filter(distance__lte=distance)
+                    default=None,
+                    output_field=PointField())
+                ).filter(coords__isnull=False).filter(coords__distance_lte=(point, D(mi=distance)))\
+                    .annotate(distance=Distance('coords', point))
             if keys.get('instrument'):
                 qs = qs.filter(instrument__name=query_ser.validated_data.get('instrument'))
             if keys.get('place_for_lessons'):

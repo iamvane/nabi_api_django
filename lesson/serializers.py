@@ -200,16 +200,18 @@ class LessonRequestItemSerializer(serializers.ModelSerializer):
     instrument = serializers.CharField(max_length=250, source='instrument.name', read_only=True)
     location = serializers.CharField(max_length=150, source='*', read_only=True)
     students = LessonRequestStudentSerializer(many=True, read_only=True)
+    distance = serializers.FloatField(source='distance.mi', required=False)
 
     class Meta:
         model = LessonRequest
-        fields = ('avatar', 'created_at', 'id', 'instrument',  'lessons_duration', 'location', 'message',
+        fields = ('avatar', 'created_at', 'distance', 'id', 'instrument',  'lessons_duration', 'location', 'message',
                   'place_for_lessons', 'skill_level', 'students', 'title', )
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
         new_data = {}
         new_data['createdAt'] = data.get('created_at')
+        new_data['distance'] = data.get('distance')
         new_data['id'] = data.get('id')
         new_data['instrument'] = data.get('instrument')
         new_data['lessonDuration'] = data.get('lessons_duration')
@@ -225,7 +227,6 @@ class LessonRequestItemSerializer(serializers.ModelSerializer):
             except ValueError:
                 new_data['avatar'] = ''
             new_data['location'] = instance.user.student.location
-            coords_requestor = instance.user.student.coordinates
         else:
             new_data['studentDetails'] = data.pop('students')
             try:
@@ -233,14 +234,8 @@ class LessonRequestItemSerializer(serializers.ModelSerializer):
             except ValueError:
                 new_data['avatar'] = ''
             new_data['location'] = instance.user.parent.location
-            coords_requestor = instance.user.parent.coordinates
         new_data['applicationsReceived'] = 0   # ToDo: review this
         new_data['applied'] = False   # ToDo: review this
-        if coords_requestor:
-            new_data['distance'] = User.objects.get(id=self.context.get('user_id'))\
-                .instructor.coordinates.distance(coords_requestor)
-        else:
-            new_data['distance'] = None
         return new_data
 
 

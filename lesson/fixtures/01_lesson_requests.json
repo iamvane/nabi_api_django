@@ -55,5 +55,25 @@
       "students": [],
       "travel_distance": null
    }
+},
+{
+   "model": "lesson.lessonrequest",
+   "pk": 4,
+   "fields": {
+      "user": 4,
+      "title": "Piano Instructor needed",
+      "message": "Hi, I am looking for a piano instructor for my child",
+      "instrument": 1,
+      "skill_level": "beginner",
+      "place_for_lessons": "online",
+      "lessons_duration": "30 mins",
+      "status": "no seen",
+      "created_at": "2019-12-19T11:42:36.164Z",
+      "modified_at": "2019-12-19T11:42:36.164Z",
+      "students": [
+         5
+      ],
+      "travel_distance": 100
+   }
 }
 ]
