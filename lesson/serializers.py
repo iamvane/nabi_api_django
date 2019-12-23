@@ -200,12 +200,21 @@ class LessonRequestItemSerializer(serializers.ModelSerializer):
     instrument = serializers.CharField(max_length=250, source='instrument.name', read_only=True)
     location = serializers.CharField(max_length=150, source='*', read_only=True)
     students = LessonRequestStudentSerializer(many=True, read_only=True)
-    distance = serializers.FloatField(source='distance.mi', required=False)
+    distance = serializers.FloatField(source='distance.mi', read_only=True)
+    applications_received = serializers.SerializerMethodField()
+    applied = serializers.SerializerMethodField()
 
     class Meta:
         model = LessonRequest
         fields = ('avatar', 'created_at', 'distance', 'id', 'instrument',  'lessons_duration', 'location', 'message',
-                  'place_for_lessons', 'skill_level', 'students', 'title', )
+                  'place_for_lessons', 'skill_level', 'students', 'title', 'applications_received', 'applied')
+
+    def get_applications_received(self, instance):
+        return instance.applications.count()
+
+    def get_applied(self, instance):
+        user = User.objects.get(id=self.context['user_id'])
+        return instance.applications.filter(instructor=user.instructor).exists()
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -219,6 +228,8 @@ class LessonRequestItemSerializer(serializers.ModelSerializer):
         new_data['placeForLessons'] = data.get('place_for_lessons')
         new_data['skillLevel'] = data.get('skill_level')
         new_data['requestTitle'] = data.get('title')
+        new_data['applicationsReceived'] = data.get('applications_received')
+        new_data['applied'] = data.get('applied')
         role = instance.user.get_role()
         if role == ROLE_STUDENT:
             new_data['studentDetails'] = [{'name': instance.user.first_name, 'age': instance.user.student.age}]
@@ -228,14 +239,12 @@ class LessonRequestItemSerializer(serializers.ModelSerializer):
                 new_data['avatar'] = ''
             new_data['location'] = instance.user.student.location
         else:
-            new_data['studentDetails'] = data.pop('students')
+            new_data['studentDetails'] = data.get('students')
             try:
                 new_data['avatar'] = instance.user.parent.avatar.path
             except ValueError:
                 new_data['avatar'] = ''
             new_data['location'] = instance.user.parent.location
-        new_data['applicationsReceived'] = 0   # ToDo: review this
-        new_data['applied'] = False   # ToDo: review this
         return new_data
 
 
