@@ -255,7 +255,7 @@ class LessonRequestListQueryParamsSerializer(serializers.Serializer):
     distance = serializers.IntegerField(min_value=0, required=False)
     instrument = serializers.CharField(max_length=250, required=False)
     lat = serializers.FloatField(min_value=-90.00, max_value=90.00, required=False)
-    lng = serializers.FloatField(min_value=-180.00, max_value=-180.00, required=False)
+    lng = serializers.FloatField(min_value=-180.00, max_value=180.00, required=False)
     min_age = serializers.IntegerField(min_value=0, max_value=120, required=False)
     max_age = serializers.IntegerField(min_value=0, max_value=120, required=False)
     place_for_lessons = serializers.ChoiceField(choices=PLACE_FOR_LESSONS_CHOICES, required=False)
