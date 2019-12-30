@@ -23,11 +23,19 @@ def send_welcome_email(user_cc):
         referral_token)
 
     if role == 'instructor':
-        text = "Invite your colleagues to join Nabi and you and them will get a lesson FREE of fees!"
+        cta = "Get $5 in Cash"
+        text = "Invite your colleagues to join Nabi, and get $5 in cash"
+        bullet = "Invite your colleagues to join Nabi, and get $5 in cash."
+        todo = "Make sure your profile is 100% complete."
     else:
-        text = "Invite people you know to join Nabi and you and them will get a FREE lesson!"
+        cta = "Give 20% off, Get $5"
+        text = "Give your friends 20% off music lessons when they book lessons from your referral link. You get $5 in cash!"
+        bullet = "Invite your friends to join Nabi, and get $5 in cash."
+        todo = "Make sure your student details are set."
 
-    context = {'referral_link': referral_link, 'referral_text': text }
+    context = {
+        'referral_link': referral_link, 'referral_text': text,
+        'referral_cta': cta, 'referral_bullet': bullet, todo: 'todo' }
     text_content = loader.render_to_string('welcome_to_nabi_plain.html', context)
     html_content = loader.render_to_string('welcome_to_nabi.html', context)
     from_email = 'Nabi Music <' + settings.DEFAULT_FROM_EMAIL + '>'
