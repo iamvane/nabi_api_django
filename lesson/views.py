@@ -1,6 +1,6 @@
 import math
 
-
+from django.contrib.auth.models import AnonymousUser
 from django.contrib.gis.db.models import PointField
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Point
@@ -8,10 +8,11 @@ from django.contrib.gis.measure import D
 from django.db.models import Case, F, ObjectDoesNotExist, When
 
 from rest_framework import status, views
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from core.constants import ROLE_INSTRUCTOR, ROLE_PARENT, ROLE_STUDENT
+from accounts.models import get_account
+from core.constants import ROLE_PARENT, ROLE_STUDENT
 from core.permissions import AccessForInstructor
 
 from . import serializers as sers
@@ -112,11 +113,13 @@ class ApplicationView(views.APIView):
 
 class LessonRequestList(views.APIView):
     """API for get a list of lesson requests made for parents or students"""
+    permission_classes = (AllowAny, )
 
     def get(self, request):
-        role = request.user.get_role()
-        if role != ROLE_INSTRUCTOR:
-            return Response({'message': 'Access denied'}, status=status.HTTP_400_BAD_REQUEST)
+        if isinstance(request.user, AnonymousUser):
+            account = None
+        else:
+            account = get_account(request.user)
         qs = LessonRequest.objects
         query_ser = sers.LessonRequestListQueryParamsSerializer(data=request.query_params.dict())
         if query_ser.is_valid():
@@ -133,7 +136,8 @@ class LessonRequestList(views.APIView):
             if point and distance is None:
                 distance = 50
             if point is None and distance is not None:
-                point = request.user.instructor.coordinates
+                if account:
+                    point = account.coordinates
             if point and distance is not None:
                 qs = qs.annotate(coords=Case(
                     When(user__parent__isnull=False, then=F('user__parent__coordinates')),
@@ -153,7 +157,10 @@ class LessonRequestList(views.APIView):
                       ]
         else:
             return Response(query_ser.errors, status=status.HTTP_400_BAD_REQUEST)
-        ser = sers.LessonRequestItemSerializer(qs, many=True, context={'user_id': request.user.id})
+        if account:
+            ser = sers.LessonRequestItemSerializer(qs, many=True, context={'user_id': request.user.id})
+        else:
+            ser = sers.LessonRequestItemSerializer(qs, many=True)
         if point and distance is not None:
             returned_data = sorted(ser.data,
                                    key=lambda item: item.get('distance') if item.get('distance') is not None else math.inf)

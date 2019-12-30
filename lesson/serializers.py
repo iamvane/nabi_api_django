@@ -213,8 +213,11 @@ class LessonRequestItemSerializer(serializers.ModelSerializer):
         return instance.applications.count()
 
     def get_applied(self, instance):
-        user = User.objects.get(id=self.context['user_id'])
-        return instance.applications.filter(instructor=user.instructor).exists()
+        if self.context.get('user_id'):
+            user = User.objects.get(id=self.context['user_id'])
+            return instance.applications.filter(instructor=user.instructor).exists()
+        else:
+            return False
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
