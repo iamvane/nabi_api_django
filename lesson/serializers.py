@@ -254,8 +254,7 @@ class LessonRequestItemSerializer(serializers.ModelSerializer):
 class LessonRequestListQueryParamsSerializer(serializers.Serializer):
     distance = serializers.IntegerField(min_value=0, required=False)
     instrument = serializers.CharField(max_length=250, required=False)
-    lat = serializers.FloatField(min_value=-90.00, max_value=90.00, required=False)
-    lng = serializers.FloatField(min_value=-180.00, max_value=180.00, required=False)
+    location = serializers.CharField(max_length=200, required=False)
     min_age = serializers.IntegerField(min_value=0, max_value=120, required=False)
     max_age = serializers.IntegerField(min_value=0, max_value=120, required=False)
     place_for_lessons = serializers.ChoiceField(choices=PLACE_FOR_LESSONS_CHOICES, required=False)
@@ -270,3 +269,16 @@ class LessonRequestListQueryParamsSerializer(serializers.Serializer):
         if keys.get('maxAge'):
             new_data['max_age'] = new_data.pop('maxAge')
         return super().to_internal_value(new_data)
+
+    def validate_location(self, value):
+        try:
+            [lat, lng] = value.split(',')
+            lat = float(lat)
+            lng = float(lng)
+        except ValueError:
+            raise serializers.ValidationError('Location value should have format latitude,longitude, both float values')
+        if lat < -90 or lat > 90:
+            raise serializers.ValidationError('Wrong latitude value')
+        if lng < -180 or lng >= 180:
+            raise serializers.ValidationError('Wrong longitude value')
+        return lat, lng

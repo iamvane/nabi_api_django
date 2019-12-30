@@ -126,11 +126,8 @@ class LessonRequestList(views.APIView):
             keys = dict.fromkeys(query_ser.validated_data, 1)
             point = None
             distance = None
-            if (keys.get('lat') and not keys.get('lng')) or (keys.get('lng') and not keys.get('lat')):
-                return Response({'message': "Both latitude and longitude values should be send"},
-                                status=status.HTTP_400_BAD_REQUEST)
-            elif keys.get('lat') and keys.get('lng'):
-                point = Point(query_ser.validated_data['lng'], query_ser.validated_data['lat'])
+            if keys.get('location'):
+                point = Point(query_ser.validated_data['location'][1], query_ser.validated_data['location'][0])
             if keys.get('distance'):
                 distance = query_ser.validated_data['distance']
             if point and distance is None:
