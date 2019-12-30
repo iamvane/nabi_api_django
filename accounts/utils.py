@@ -35,7 +35,7 @@ def send_welcome_email(user_cc):
 
     context = {
         'referral_link': referral_link, 'referral_text': text,
-        'referral_cta': cta, 'referral_bullet': bullet, todo: 'todo' }
+        'referral_cta': cta, 'referral_bullet': bullet, 'todo': todo }
     text_content = loader.render_to_string('welcome_to_nabi_plain.html', context)
     html_content = loader.render_to_string('welcome_to_nabi.html', context)
     from_email = 'Nabi Music <' + settings.DEFAULT_FROM_EMAIL + '>'
