@@ -22,18 +22,18 @@ class LessonRequestsListTest(BaseTest):
     def test_success(self):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
-        self.assertEqual(len(response.json()), 4)
+        self.assertEqual(len(response.json().get('results')), 4)
 
     def test_success_filter_by_age(self):
         # filter by age
-        response = self.client.get(self.url + '?minAge=10')
+        response = self.client.get(self.url + '?studentAge=child')
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
         resp_data = response.json()
-        self.assertEqual(len(resp_data), 3)
-        for item in resp_data:
+        self.assertEqual(len(resp_data.get('results')), 2)
+        for item in resp_data.get('results'):
             comply = False
             for student in item.get('studentDetails'):
-                if student.get('age') >= 10:
+                if student.get('age') <= 12:
                     comply = True
             self.assertTrue(comply)
 
@@ -42,8 +42,8 @@ class LessonRequestsListTest(BaseTest):
         response = self.client.get(self.url + '?instrument=piano')
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
         resp_data = response.json()
-        self.assertEqual(len(resp_data), 2)
-        for item in resp_data:
+        self.assertEqual(len(resp_data.get('results')), 2)
+        for item in resp_data.get('results'):
             self.assertIn(item.get('instrument'), 'piano')
 
     def test_success_filter_by_distance(self):
@@ -51,12 +51,12 @@ class LessonRequestsListTest(BaseTest):
         response = self.client.get(self.url + '?distance=120')
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
         resp_data = response.json()
-        self.assertEqual(len(resp_data), 2)
-        for item in resp_data:
+        self.assertEqual(len(resp_data.get('results')), 2)
+        for item in resp_data.get('results'):
             self.assertIn(item.get('id'), [2, 4])
 
     def test_success_by_placeforlessons(self):
         # filter by placeForlessons
         response = self.client.get(self.url + '?placeForLessons=home')
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
-        self.assertEqual(len(response.json()), 2)
+        self.assertEqual(len(response.json().get('results')), 2)
