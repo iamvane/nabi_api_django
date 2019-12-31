@@ -5,9 +5,11 @@ from django.contrib.gis.db.models import PointField
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import D
-from django.db.models import Case, F, ObjectDoesNotExist, When
+from django.db.models import Case, F, ObjectDoesNotExist, When, Value
+from django.db.models.functions import Cast
 
 from rest_framework import status, views
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
@@ -120,7 +122,12 @@ class LessonRequestList(views.APIView):
             account = None
         else:
             account = get_account(request.user)
-        qs = LessonRequest.objects
+        qs = LessonRequest.objects.annotate(coords=Case(
+            When(user__parent__isnull=False, then=F('user__parent__coordinates')),
+            When(user__student__isnull=False, then=F('user__student__coordinates')),
+            default=None,
+            output_field=PointField())
+        )
         query_ser = sers.LessonRequestListQueryParamsSerializer(data=request.query_params.dict())
         if query_ser.is_valid():
             keys = dict.fromkeys(query_ser.validated_data, 1)
@@ -136,13 +143,13 @@ class LessonRequestList(views.APIView):
                 if account:
                     point = account.coordinates
             if point and distance is not None:
-                qs = qs.annotate(coords=Case(
-                    When(user__parent__isnull=False, then=F('user__parent__coordinates')),
-                    When(user__student__isnull=False, then=F('user__student__coordinates')),
-                    default=None,
-                    output_field=PointField())
-                ).filter(coords__isnull=False).filter(coords__distance_lte=(point, D(mi=distance)))\
+                qs = qs.filter(coords__isnull=False).filter(coords__distance_lte=(point, D(mi=distance)))\
                     .annotate(distance=Distance('coords', point))
+            else:
+                if account and account.coordinates:
+                    qs = qs.annotate(distance=Distance('coords', account.coordinates))
+                else:
+                    qs = qs.annotate(distance=Distance('coords', Cast(None, PointField())))
             if keys.get('instrument'):
                 qs = qs.filter(instrument__name=query_ser.validated_data.get('instrument'))
             if keys.get('place_for_lessons'):
@@ -154,13 +161,12 @@ class LessonRequestList(views.APIView):
                       ]
         else:
             return Response(query_ser.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        # return data with pagination
+        paginator = PageNumberPagination()
+        result_page = paginator.paginate_queryset(qs.order_by('-id'), request)
         if account:
-            ser = sers.LessonRequestItemSerializer(qs, many=True, context={'user_id': request.user.id})
+            ser = sers.LessonRequestItemSerializer(result_page, many=True, context={'user_id': request.user.id})
         else:
-            ser = sers.LessonRequestItemSerializer(qs, many=True)
-        if point and distance is not None:
-            returned_data = sorted(ser.data,
-                                   key=lambda item: item.get('distance') if item.get('distance') is not None else math.inf)
-        else:
-            returned_data = ser.data
-        return Response(returned_data, status=status.HTTP_200_OK)
+            ser = sers.LessonRequestItemSerializer(result_page, many=True)
+        return paginator.get_paginated_response(ser.data)
