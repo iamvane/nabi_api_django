@@ -197,8 +197,10 @@ class LessonRequestItemSerializer(serializers.ModelSerializer):
     """Serializer for get data of a lesson request; call made by an instructor"""
     avatar = serializers.CharField(max_length=500, source='*', read_only=True)
     created_at = serializers.DateTimeField(format='%Y-%m-%d %H:%M:%S', read_only=True)
+    display_name = serializers.SerializerMethodField()
     instrument = serializers.CharField(max_length=250, source='instrument.name', read_only=True)
     location = serializers.CharField(max_length=150, source='*', read_only=True)
+    role = serializers.CharField(max_length=100, source='user.get_role', read_only=True)
     students = LessonRequestStudentSerializer(many=True, read_only=True)
     distance = serializers.FloatField(source='distance.mi', read_only=True)
     applications_received = serializers.SerializerMethodField()
@@ -206,8 +208,9 @@ class LessonRequestItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LessonRequest
-        fields = ('avatar', 'created_at', 'distance', 'id', 'instrument',  'lessons_duration', 'location', 'message',
-                  'place_for_lessons', 'skill_level', 'students', 'title', 'applications_received', 'applied')
+        fields = ('avatar', 'created_at', 'display_name', 'distance', 'id', 'instrument',  'lessons_duration',
+                  'location', 'message', 'place_for_lessons', 'role', 'skill_level', 'students', 'title',
+                  'applications_received', 'applied')
 
     def get_applications_received(self, instance):
         return instance.applications.count()
@@ -219,22 +222,30 @@ class LessonRequestItemSerializer(serializers.ModelSerializer):
         else:
             return False
 
+    def get_display_name(self, instance):
+        account = get_account(instance.user)
+        if account:
+            return account.display_name
+        else:
+            return ''
+
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        new_data = {}
-        new_data['createdAt'] = data.get('created_at')
-        new_data['distance'] = data.get('distance')
-        new_data['id'] = data.get('id')
-        new_data['instrument'] = data.get('instrument')
-        new_data['lessonDuration'] = data.get('lessons_duration')
-        new_data['requestMessage'] = data.get('message')
-        new_data['placeForLessons'] = data.get('place_for_lessons')
-        new_data['skillLevel'] = data.get('skill_level')
-        new_data['requestTitle'] = data.get('title')
-        new_data['applicationsReceived'] = data.get('applications_received')
-        new_data['applied'] = data.get('applied')
-        role = instance.user.get_role()
-        if role == ROLE_STUDENT:
+        new_data = {'createdAt': data.get('created_at'),
+                    'displayName': data.get('display_name'),
+                    'distance': data.get('distance'),
+                    'id': data.get('id'),
+                    'instrument': data.get('instrument'),
+                    'lessonDuration': data.get('lessons_duration'),
+                    'requestMessage': data.get('message'),
+                    'placeForLessons': data.get('place_for_lessons'),
+                    'skillLevel': data.get('skill_level'),
+                    'requestTitle': data.get('title'),
+                    'role': data.get('role'),
+                    'applicationsReceived': data.get('applications_received'),
+                    'applied': data.get('applied')
+                    }
+        if data.get('role') == ROLE_STUDENT:
             new_data['studentDetails'] = [{'name': instance.user.first_name, 'age': instance.user.student.age}]
             try:
                 new_data['avatar'] = instance.user.student.avatar.path
