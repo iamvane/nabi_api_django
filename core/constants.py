@@ -220,6 +220,19 @@ RATE_CHOICES = (
     (RATE_90, RATE_90),
 )
 
+# --- student age group ---
+# for search/filter
+AGE_CHILD = 'child'
+AGE_TEEN = 'teen'
+AGE_ADULT = 'adult'
+AGE_SENIOR = 'senior'
+AGE_CHOICES = (
+    (AGE_CHILD, AGE_CHILD),
+    (AGE_TEEN, AGE_TEEN),
+    (AGE_ADULT, AGE_ADULT),
+    (AGE_SENIOR, AGE_SENIOR)
+)
+
 # --- status of background check request
 BG_STATUS_VERIFIED = 'VERIFIED'
 BG_STATUS_PENDING = 'PENDING'

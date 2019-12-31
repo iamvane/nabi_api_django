@@ -1,11 +1,9 @@
-import math
-
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.gis.db.models import PointField
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import D
-from django.db.models import Case, F, ObjectDoesNotExist, When, Value
+from django.db.models import Case, F, ObjectDoesNotExist, When
 from django.db.models.functions import Cast
 
 from rest_framework import status, views
@@ -14,7 +12,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from accounts.models import get_account
-from core.constants import ROLE_PARENT, ROLE_STUDENT
+from core.constants import *
 from core.permissions import AccessForInstructor
 
 from . import serializers as sers
@@ -154,17 +152,23 @@ class LessonRequestList(views.APIView):
                 qs = qs.filter(instrument__name=query_ser.validated_data.get('instrument'))
             if keys.get('place_for_lessons'):
                 qs = qs.filter(place_for_lessons=query_ser.validated_data['place_for_lessons'])
-            if keys.get('min_age') or keys.get('max_age'):
-                qs = [item for item in qs.all() if
-                      item.has_accepted_age(min_age=query_ser.validated_data.get('min_age'),
-                                            max_age=query_ser.validated_data.get('max_age'))
-                      ]
+            qs = qs.order_by('-id')
+            if keys.get('student_age'):
+                if query_ser.validated_data.get('student_age') == AGE_CHILD:
+                    min_age, max_age = 0, 12
+                elif query_ser.validated_data.get('student_age') == AGE_TEEN:
+                    min_age, max_age = 13, 17
+                elif query_ser.validated_data.get('student_age') == AGE_ADULT:
+                    min_age, max_age = 18, 65
+                else:
+                    min_age, max_age = 65, 150
+                qs = [item for item in qs.all() if item.has_accepted_age(min_age=min_age, max_age=max_age)]
         else:
             return Response(query_ser.errors, status=status.HTTP_400_BAD_REQUEST)
 
         # return data with pagination
         paginator = PageNumberPagination()
-        result_page = paginator.paginate_queryset(qs.order_by('-id'), request)
+        result_page = paginator.paginate_queryset(qs, request)
         if account:
             ser = sers.LessonRequestItemSerializer(result_page, many=True, context={'user_id': request.user.id})
         else:

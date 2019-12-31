@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from accounts.models import TiedStudent, get_account
-from core.constants import (LESSON_DURATION_CHOICES, PLACE_FOR_LESSONS_CHOICES, ROLE_STUDENT, SKILL_LEVEL_CHOICES)
+from core.constants import *
 from lesson.models import Instrument
 
 from .models import Application, LessonRequest
@@ -266,8 +266,7 @@ class LessonRequestListQueryParamsSerializer(serializers.Serializer):
     distance = serializers.IntegerField(min_value=0, required=False)
     instrument = serializers.CharField(max_length=250, required=False)
     location = serializers.CharField(max_length=200, required=False)
-    min_age = serializers.IntegerField(min_value=0, max_value=120, required=False)
-    max_age = serializers.IntegerField(min_value=0, max_value=120, required=False)
+    student_age = serializers.ChoiceField(choices=AGE_CHOICES, required=False)
     place_for_lessons = serializers.ChoiceField(choices=PLACE_FOR_LESSONS_CHOICES, required=False)
 
     def to_internal_value(self, data):
@@ -275,10 +274,8 @@ class LessonRequestListQueryParamsSerializer(serializers.Serializer):
         keys = dict.fromkeys(data, 1)
         if keys.get('placeForLessons'):
             new_data['place_for_lessons'] = new_data.pop('placeForLessons')
-        if keys.get('minAge'):
-            new_data['min_age'] = new_data.pop('minAge')
-        if keys.get('maxAge'):
-            new_data['max_age'] = new_data.pop('maxAge')
+        if keys.get('studentAge'):
+            new_data['student_age'] = new_data.pop('studentAge')
         return super().to_internal_value(new_data)
 
     def validate_location(self, value):
