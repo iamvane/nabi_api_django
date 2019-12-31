@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from accounts.models import TiedStudent, get_account
-from core.constants import LESSON_DURATION_CHOICES, PLACE_FOR_LESSONS_CHOICES, SKILL_LEVEL_CHOICES
+from core.constants import (LESSON_DURATION_CHOICES, PLACE_FOR_LESSONS_CHOICES, ROLE_STUDENT, SKILL_LEVEL_CHOICES)
 from lesson.models import Instrument
 
 from .models import Application, LessonRequest
@@ -191,3 +191,105 @@ class ApplicationListSerializer(serializers.ModelSerializer):
         data['requestId'] = data.pop('request_id')
         data['dateApplied'] = data.pop('date_applied')
         return data
+
+
+class LessonRequestItemSerializer(serializers.ModelSerializer):
+    """Serializer for get data of a lesson request; call made by an instructor"""
+    avatar = serializers.CharField(max_length=500, source='*', read_only=True)
+    created_at = serializers.DateTimeField(format='%Y-%m-%d %H:%M:%S', read_only=True)
+    display_name = serializers.SerializerMethodField()
+    instrument = serializers.CharField(max_length=250, source='instrument.name', read_only=True)
+    location = serializers.CharField(max_length=150, source='*', read_only=True)
+    role = serializers.CharField(max_length=100, source='user.get_role', read_only=True)
+    students = LessonRequestStudentSerializer(many=True, read_only=True)
+    distance = serializers.FloatField(source='distance.mi', read_only=True)
+    applications_received = serializers.SerializerMethodField()
+    applied = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LessonRequest
+        fields = ('avatar', 'created_at', 'display_name', 'distance', 'id', 'instrument',  'lessons_duration',
+                  'location', 'message', 'place_for_lessons', 'role', 'skill_level', 'students', 'title',
+                  'applications_received', 'applied')
+
+    def get_applications_received(self, instance):
+        return instance.applications.count()
+
+    def get_applied(self, instance):
+        if self.context.get('user_id'):
+            user = User.objects.get(id=self.context['user_id'])
+            return instance.applications.filter(instructor=user.instructor).exists()
+        else:
+            return False
+
+    def get_display_name(self, instance):
+        account = get_account(instance.user)
+        if account:
+            return account.display_name
+        else:
+            return ''
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        new_data = {'createdAt': data.get('created_at'),
+                    'displayName': data.get('display_name'),
+                    'distance': data.get('distance'),
+                    'id': data.get('id'),
+                    'instrument': data.get('instrument'),
+                    'lessonDuration': data.get('lessons_duration'),
+                    'requestMessage': data.get('message'),
+                    'placeForLessons': data.get('place_for_lessons'),
+                    'skillLevel': data.get('skill_level'),
+                    'requestTitle': data.get('title'),
+                    'role': data.get('role'),
+                    'applicationsReceived': data.get('applications_received'),
+                    'applied': data.get('applied')
+                    }
+        if data.get('role') == ROLE_STUDENT:
+            new_data['studentDetails'] = [{'name': instance.user.first_name, 'age': instance.user.student.age}]
+            try:
+                new_data['avatar'] = instance.user.student.avatar.path
+            except ValueError:
+                new_data['avatar'] = ''
+            new_data['location'] = instance.user.student.location
+        else:
+            new_data['studentDetails'] = data.get('students')
+            try:
+                new_data['avatar'] = instance.user.parent.avatar.path
+            except ValueError:
+                new_data['avatar'] = ''
+            new_data['location'] = instance.user.parent.location
+        return new_data
+
+
+class LessonRequestListQueryParamsSerializer(serializers.Serializer):
+    distance = serializers.IntegerField(min_value=0, required=False)
+    instrument = serializers.CharField(max_length=250, required=False)
+    location = serializers.CharField(max_length=200, required=False)
+    min_age = serializers.IntegerField(min_value=0, max_value=120, required=False)
+    max_age = serializers.IntegerField(min_value=0, max_value=120, required=False)
+    place_for_lessons = serializers.ChoiceField(choices=PLACE_FOR_LESSONS_CHOICES, required=False)
+
+    def to_internal_value(self, data):
+        new_data = data.copy()
+        keys = dict.fromkeys(data, 1)
+        if keys.get('placeForLessons'):
+            new_data['place_for_lessons'] = new_data.pop('placeForLessons')
+        if keys.get('minAge'):
+            new_data['min_age'] = new_data.pop('minAge')
+        if keys.get('maxAge'):
+            new_data['max_age'] = new_data.pop('maxAge')
+        return super().to_internal_value(new_data)
+
+    def validate_location(self, value):
+        try:
+            [lat, lng] = value.split(',')
+            lat = float(lat)
+            lng = float(lng)
+        except ValueError:
+            raise serializers.ValidationError('Location value should have format latitude,longitude, both float values')
+        if lat < -90 or lat > 90:
+            raise serializers.ValidationError('Wrong latitude value')
+        if lng < -180 or lng >= 180:
+            raise serializers.ValidationError('Wrong longitude value')
+        return lat, lng

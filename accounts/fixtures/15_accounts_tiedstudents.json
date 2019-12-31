@@ -25,5 +25,23 @@
       "name": "John",
       "age": 8
    }
+},
+{
+   "model": "accounts.tiedstudent",
+   "pk": 5,
+   "fields": {
+      "parent": 2,
+      "name": "Paul",
+      "age": 10
+   }
+},
+{
+   "model": "accounts.tiedstudent",
+   "pk": 6,
+   "fields": {
+      "parent": 2,
+      "name": "Sara",
+      "age": 12
+   }
 }
 ]

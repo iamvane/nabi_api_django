@@ -1,14 +1,24 @@
-from django.db.models import ObjectDoesNotExist
+import math
+
+from django.contrib.auth.models import AnonymousUser
+from django.contrib.gis.db.models import PointField
+from django.contrib.gis.db.models.functions import Distance
+from django.contrib.gis.geos import Point
+from django.contrib.gis.measure import D
+from django.db.models import Case, F, ObjectDoesNotExist, When, Value
+from django.db.models.functions import Cast
 
 from rest_framework import status, views
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
+from accounts.models import get_account
 from core.constants import ROLE_PARENT, ROLE_STUDENT
 from core.permissions import AccessForInstructor
 
-from .models import Application, LessonRequest
 from . import serializers as sers
+from .models import Application, LessonRequest
 
 
 class LessonRequestView(views.APIView):
@@ -101,3 +111,62 @@ class ApplicationView(views.APIView):
     def get(self, request):
         ser = sers.ApplicationListSerializer(Application.objects.filter(instructor=request.user.instructor), many=True)
         return Response(ser.data, status=status.HTTP_200_OK)
+
+
+class LessonRequestList(views.APIView):
+    """API for get a list of lesson requests made for parents or students"""
+    permission_classes = (AllowAny, )
+
+    def get(self, request):
+        if isinstance(request.user, AnonymousUser):
+            account = None
+        else:
+            account = get_account(request.user)
+        qs = LessonRequest.objects.annotate(coords=Case(
+            When(user__parent__isnull=False, then=F('user__parent__coordinates')),
+            When(user__student__isnull=False, then=F('user__student__coordinates')),
+            default=None,
+            output_field=PointField())
+        )
+        query_ser = sers.LessonRequestListQueryParamsSerializer(data=request.query_params.dict())
+        if query_ser.is_valid():
+            keys = dict.fromkeys(query_ser.validated_data, 1)
+            point = None
+            distance = None
+            if keys.get('location'):
+                point = Point(query_ser.validated_data['location'][1], query_ser.validated_data['location'][0])
+            if keys.get('distance'):
+                distance = query_ser.validated_data['distance']
+            if point and distance is None:
+                distance = 50
+            if point is None and distance is not None:
+                if account:
+                    point = account.coordinates
+            if point and distance is not None:
+                qs = qs.filter(coords__isnull=False).filter(coords__distance_lte=(point, D(mi=distance)))\
+                    .annotate(distance=Distance('coords', point))
+            else:
+                if account and account.coordinates:
+                    qs = qs.annotate(distance=Distance('coords', account.coordinates))
+                else:
+                    qs = qs.annotate(distance=Distance('coords', Cast(None, PointField())))
+            if keys.get('instrument'):
+                qs = qs.filter(instrument__name=query_ser.validated_data.get('instrument'))
+            if keys.get('place_for_lessons'):
+                qs = qs.filter(place_for_lessons=query_ser.validated_data['place_for_lessons'])
+            if keys.get('min_age') or keys.get('max_age'):
+                qs = [item for item in qs.all() if
+                      item.has_accepted_age(min_age=query_ser.validated_data.get('min_age'),
+                                            max_age=query_ser.validated_data.get('max_age'))
+                      ]
+        else:
+            return Response(query_ser.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        # return data with pagination
+        paginator = PageNumberPagination()
+        result_page = paginator.paginate_queryset(qs.order_by('-id'), request)
+        if account:
+            ser = sers.LessonRequestItemSerializer(result_page, many=True, context={'user_id': request.user.id})
+        else:
+            ser = sers.LessonRequestItemSerializer(result_page, many=True)
+        return paginator.get_paginated_response(ser.data)

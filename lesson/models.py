@@ -36,6 +36,20 @@ class LessonRequest(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
 
+    def has_accepted_age(self, min_age=None, max_age=None):
+        """Indicates if student related to LessonRequest has age in range [min_age, max_age]"""
+        if min_age is None:
+            min_age = -1
+        if max_age is None:
+            max_age = 200
+        if self.user.is_parent():
+            for item in self.students.all():
+                if min_age <= item.age <= max_age:
+                    return True
+            return False
+        else:
+            return min_age <= self.user.student.age <= max_age
+
 
 class Application(models.Model):
     request = models.ForeignKey(LessonRequest, related_name='applications', on_delete=models.PROTECT)
