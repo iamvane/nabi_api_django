@@ -26,7 +26,7 @@ class LessonRequestsListTest(BaseTest):
 
     def test_success_filter_by_age(self):
         # filter by age
-        response = self.client.get(self.url + '?studentAge=child')
+        response = self.client.get(self.url + '?studentAge=children')
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
         resp_data = response.json()
         self.assertEqual(len(resp_data.get('results')), 2)

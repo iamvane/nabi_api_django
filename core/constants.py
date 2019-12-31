@@ -222,10 +222,10 @@ RATE_CHOICES = (
 
 # --- student age group ---
 # for search/filter
-AGE_CHILD = 'child'
-AGE_TEEN = 'teen'
-AGE_ADULT = 'adult'
-AGE_SENIOR = 'senior'
+AGE_CHILD = 'children'
+AGE_TEEN = 'teens'
+AGE_ADULT = 'adults'
+AGE_SENIOR = 'seniors'
 AGE_CHOICES = (
     (AGE_CHILD, AGE_CHILD),
     (AGE_TEEN, AGE_TEEN),
