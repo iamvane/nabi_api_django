@@ -37,15 +37,23 @@ class BackgroundCheckRequestView(views.APIView):
             return Response({'message': 'Background check in progress already'}, status=status.HTTP_400_BAD_REQUEST)
         # if does not exist, make the card charge, via stripe
         try:
-            charge = stripe.Charge.create(amount='{:.0f}'.format(serializer.validated_data['amount'] * 100),
-                                          currency='usd',
-                                          source=serializer.validated_data['stripe_token'],
-                                          description='Background Check Request')
+            charge = stripe.Charge.create(
+                amount='{:.0f}'.format(serializer.validated_data['amount'] * 100),
+                currency='usd',
+                source=serializer.validated_data['stripe_token'],
+                description='BackgroundCheck request for instructor {dname} ({inst_id}), requestor: {email}'.format(
+                    dname=instructor.display_name, inst_id=instructor.id, email=request.user.email)
+            )
         except stripe.error.CardError as ce:
             return Response(ce, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         # register the charge done
-        Payment.objects.create(user=request.user, amount=serializer.validated_data['amount'],
-                               description='Background Check Request', charge_id=charge.id)
+        Payment.objects.create(
+            user=request.user,
+            amount=serializer.validated_data['amount'],
+            description='BackgroundCheck request for instructor {dname} ({inst_id}), requestor: {email}'.format(
+                dname=instructor.display_name, inst_id=instructor.id, email=request.user.email),
+            charge_id=charge.id
+        )
         # proceed with requests to Accurate
         if bg_request:
             # Get last step from bg_request. Would be create or update candidate
