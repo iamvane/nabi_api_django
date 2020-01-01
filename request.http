@@ -477,7 +477,7 @@ GET localhost:8000/v1/lesson-request-list/?instrument=piano&placeForLessons=home
 
 ###
 
-POST localhost:8000/v1/background-checks-request/
+POST localhost:8000/v1/background-check-request/
 
 {
 "instructorId": 2,
@@ -489,7 +489,7 @@ POST localhost:8000/v1/background-checks-request/
 
 ###
 
-GET localhost:8000/v1/background-checks-status/?instructorId=1
+GET localhost:8000/v1/background-check-status/?instructorId=1
 
 # instructorId parameter is optional, when is not provided, data is obtained from logged user
 

@@ -4,6 +4,6 @@ from . import views
 
 
 urlpatterns = [
-    path('background-checks-request/', views.BackgroundCheckRequestView.as_view(), name='background-checks-request'),
-    path('background-checks-status/', views.BackgroundCheckView.as_view(), name='background-checks-status'),
+    path('background-check-request/', views.BackgroundCheckRequestView.as_view(), name='background-checks-request'),
+    path('background-check-status/', views.BackgroundCheckView.as_view(), name='background-checks-status'),
 ]
