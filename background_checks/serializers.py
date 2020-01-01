@@ -23,6 +23,8 @@ class BGCheckRequestSerializer(serializers.Serializer):
             new_data['instructor_id'] = data.get('instructorId')
         if 'stripeToken' in data.keys():
             new_data['stripe_token'] = data.get('stripeToken')
+        if 'amount' in data.keys():
+            new_data['amount'] = data.get('amount')
         return super().to_internal_value(new_data)
 
 
