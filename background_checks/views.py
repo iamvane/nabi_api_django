@@ -7,6 +7,7 @@ from rest_framework import status, views
 from rest_framework.response import Response
 
 from accounts.models import Instructor
+from core.constants import *
 from payments.models import Payment
 
 from .client_provider import AccurateApiClient
@@ -35,25 +36,34 @@ class BackgroundCheckRequestView(views.APIView):
         bg_request = BackgroundCheckRequest.objects.filter(user=instructor.user).last()
         if bg_request and bg_request.status == BackgroundCheckRequest.REQUESTED:
             return Response({'message': 'Background check in progress already'}, status=status.HTTP_400_BAD_REQUEST)
-        # if does not exist, make the card charge, via stripe
-        try:
-            charge = stripe.Charge.create(
-                amount='{:.0f}'.format(serializer.validated_data['amount'] * 100),
-                currency='usd',
-                source=serializer.validated_data['stripe_token'],
+
+        # check if registered payment exists for that user
+        qs_payments = Payment.objects.filter(user=request.user, service=SERVICE_BG_CHECK, status=PY_REGISTERED,
+                                             amount=serializer.validated_data['amount'])
+        if qs_payments.exists():
+            payment = qs_payments.first()
+        else:
+            # if does not exist, make the card charge, via stripe
+            try:
+                charge = stripe.Charge.create(
+                    amount='{:.0f}'.format(serializer.validated_data['amount'] * 100),
+                    currency='usd',
+                    source=serializer.validated_data['stripe_token'],
+                    description='BackgroundCheck request for instructor {dname} ({inst_id}), requestor: {email}'.format(
+                        dname=instructor.display_name, inst_id=instructor.id, email=request.user.email)
+                )
+            except stripe.error.CardError as ce:
+                return Response(ce, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            # register the charge done
+            payment = Payment.objects.create(
+                user=request.user,
+                service=SERVICE_BG_CHECK,
+                amount=serializer.validated_data['amount'],
                 description='BackgroundCheck request for instructor {dname} ({inst_id}), requestor: {email}'.format(
-                    dname=instructor.display_name, inst_id=instructor.id, email=request.user.email)
+                    dname=instructor.display_name, inst_id=instructor.id, email=request.user.email),
+                charge_id=charge.id
             )
-        except stripe.error.CardError as ce:
-            return Response(ce, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        # register the charge done
-        Payment.objects.create(
-            user=request.user,
-            amount=serializer.validated_data['amount'],
-            description='BackgroundCheck request for instructor {dname} ({inst_id}), requestor: {email}'.format(
-                dname=instructor.display_name, inst_id=instructor.id, email=request.user.email),
-            charge_id=charge.id
-        )
+
         # proceed with requests to Accurate
         if bg_request:
             # Get last step from bg_request. Would be create or update candidate
@@ -95,6 +105,10 @@ class BackgroundCheckRequestView(views.APIView):
         if error:
             return Response(resp_dict, status=error)
         else:   # error == 0, no error
+            # update payment data
+            bg_request_step = BackgroundCheckStep.objects.get(id=resp_dict.get('bg_step_id'))
+            payment.service_id = bg_request_step.request.id
+            payment.save()
             return Response({'message': 'success'}, status=status.HTTP_200_OK)
 
 
