@@ -145,6 +145,7 @@ REST_FRAMEWORK = {
 AUTH_USER_MODEL = 'core.User'
 
 DEFAULT_FROM_EMAIL = 'test@nabimusic.com'
+ADMIN_EMAIL = 'info@nabimusic.com'
 
 
 try:

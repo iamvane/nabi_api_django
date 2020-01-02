@@ -3,7 +3,7 @@ from dateutil import relativedelta
 from hashlib import sha1
 
 from django.conf import settings
-from django.core.mail import EmailMultiAlternatives
+from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.template import loader
@@ -31,6 +31,13 @@ def generate_hash(value):
     text = '{}{}'.format(value, now.microsecond)
     hash_value = sha1(text.encode())
     return hash_value.hexdigest()
+
+
+def send_admin_email(subject, content):
+    """Send email to admin in text only (not html)"""
+    email = EmailMessage(subject=subject, body=content, from_email=settings.DEFAULT_FROM_EMAIL,
+                         to=[settings.ADMIN_EMAIL])
+    email.send()
 
 
 def send_email(sender, receivers, subject, template, template_plain, template_params=None):

@@ -9,6 +9,9 @@ from core.models import ProviderRequest
 from .models import BackgroundCheckRequest, BackgroundCheckStep
 
 PROVIDER_NAME = 'accurate'
+CANDIDATE_REGISTER_STEP = 'candidate_register'
+CANDIDATE_UPDATE_STEP = 'candidate_update'
+ORDER_PLACE_STEP = 'order_place'
 
 
 class AccurateApiClient:
@@ -53,17 +56,18 @@ class AccurateApiClient:
         else:
             return {'pr_id': provider.id, 'code': response.status_code, 'format': resp_format, 'content': resp_content}
 
-    def create_candidate(self, instructor):
-        """Request to create candidate API provider"""
+    def create_candidate(self, bg_request_id, instructor):
+        """Request to create candidate API provider.
+        bg_request_id allows to update info about this process in DB"""
         data = {'firstName': instructor.user.first_name, 'lastName': instructor.user.last_name,
                 'email': instructor.user.email, 'middleName': '', 'suffix': ''}
         resp = self.send_request('candidate', method='POST', headers={'Content-Type': 'application/json'}, data=data)
         if resp['code'] == 200:
             if resp['format'] == 'json':
-                # after request to provider, create entries in DB
-                bg_request = BackgroundCheckRequest.objects.create(user=instructor.user,
-                                                                   status=BackgroundCheckRequest.PRELIMINARY)
-                bg_step = BackgroundCheckStep(request=bg_request, step='candidate_register',
+                # after request to provider, update entries in DB
+                BackgroundCheckRequest.objects.filter(id=bg_request_id).update(
+                    user=instructor.user, status=BackgroundCheckRequest.PRELIMINARY)
+                bg_step = BackgroundCheckStep(request_id=bg_request_id, step=CANDIDATE_REGISTER_STEP,
                                               provider_request_id=resp['pr_id'])
                 bg_step.resource_id = resp['content']['id']
                 bg_step.data = {'id': resp['content']['id'], 'firstName': resp['content']['firstName'],
@@ -77,8 +81,9 @@ class AccurateApiClient:
             result = {'error_code': resp['code'], 'msg': resp['content']}
         return result
 
-    def update_candidate(self, instructor, old_data):
-        """Request to update candidate API provider"""
+    def update_candidate(self, bg_request_id, instructor, old_data):
+        """Request to update candidate API provider.
+        bg_request_id allows to update info about this process in DB"""
         data = {}
         if old_data['firstName'] != instructor.user.first_name:
             data['firstName'] = instructor.user.first_name
@@ -94,9 +99,9 @@ class AccurateApiClient:
             if resp['code'] == 200:
                 if resp['format'] == 'json':
                     # after request to provider, create entries in DB
-                    bg_request = BackgroundCheckRequest.objects.create(user=instructor.user,
-                                                                       status=BackgroundCheckRequest.PRELIMINARY)
-                    bg_step = BackgroundCheckStep(request=bg_request, step='candidate_update',
+                    BackgroundCheckRequest.objects.filter(id=bg_request_id).update(
+                        user=instructor.user, status=BackgroundCheckRequest.PRELIMINARY)
+                    bg_step = BackgroundCheckStep(request_id=bg_request_id, step=CANDIDATE_UPDATE_STEP,
                                                   provider_request_id=resp['pr_id'])
                     bg_step.resource_id = resp['content']['id']
                     bg_step.data = {'id': resp['content']['id'], 'firstName': resp['content']['firstName'],
@@ -110,7 +115,7 @@ class AccurateApiClient:
                 result = {'error_code': resp['code'], 'msg': resp['content']}
         return result
 
-    def place_order(self, user, candidate_id, previous_step=None):
+    def place_order(self, bg_request_id, user, candidate_id, previous_step=None):
         """Request to place order API provider"""
         location = user.instructor.get_location(result_type='tuple')
         if not location:
@@ -122,14 +127,8 @@ class AccurateApiClient:
         # after request to provider, create entries in DB
         if resp['code'] == 200:
             if resp['format'] == 'json':
-                if previous_step:
-                    bg_request = previous_step.request
-                    bg_request.status = BackgroundCheckRequest.REQUESTED
-                    bg_request.save()
-                else:
-                    bg_request = BackgroundCheckRequest.objects.create(user=user,
-                                                                       status=BackgroundCheckRequest.REQUESTED)
-                bg_step = BackgroundCheckStep(request=bg_request, step='order_place',
+                BackgroundCheckRequest.objects.filter(id=bg_request_id).update(status=BackgroundCheckRequest.REQUESTED)
+                bg_step = BackgroundCheckStep(request_id=bg_request_id, step=ORDER_PLACE_STEP,
                                               provider_request_id=resp['pr_id'], previous_step=previous_step)
                 bg_step.resource_id = resp['content']['id']
                 bg_step.data = {'id': resp['content']['id'],
