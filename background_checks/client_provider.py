@@ -5,6 +5,7 @@ from django.conf import settings
 from django.db.models import ObjectDoesNotExist
 
 from core.models import ProviderRequest
+from core.utils import send_admin_email
 
 from .models import BackgroundCheckRequest, BackgroundCheckStep
 
@@ -127,7 +128,8 @@ class AccurateApiClient:
         # after request to provider, create entries in DB
         if resp['code'] == 200:
             if resp['format'] == 'json':
-                BackgroundCheckRequest.objects.filter(id=bg_request_id).update(status=BackgroundCheckRequest.REQUESTED)
+                BackgroundCheckRequest.objects.filter(id=bg_request_id).update(
+                    status=BackgroundCheckRequest.REQUESTED, observation='Request made to provider successfully')
                 bg_step = BackgroundCheckStep(request_id=bg_request_id, step=ORDER_PLACE_STEP,
                                               provider_request_id=resp['pr_id'], previous_step=previous_step)
                 bg_step.resource_id = resp['content']['id']
@@ -166,13 +168,20 @@ class AccurateApiClient:
             bg_step = BackgroundCheckStep.objects.filter(request=bg_request).last()
         except ObjectDoesNotExist:
             return {'error_code': 500, 'msg': 'There is no order to this user'}
-        if bg_step.request.status != BackgroundCheckRequest.REQUESTED:
+        if bg_request.status != BackgroundCheckRequest.REQUESTED:
             return {'error_code': 500, 'msg': 'No pending order'}
         self.target_url += '/' + bg_step.resource_id
         resp = self.send_request('order', method='GET')
         if resp['code'] == 200:
             if resp['format'] == 'json':
+                # get prev status
+                qs_pr = ProviderRequest.objects.filter(url_request=self.target_url, method='GET').order_by('-id')
+                if qs_pr.count() > 1:
+                    prev_status = qs_pr[1].data.get('status')
+                else:
+                    prev_status = None
                 data_result = {'id': resp['content']['id'], 'status': resp['content']['result'],
+                               'provider_id': resp['pr_id'], 'previousStatus': prev_status,
                                'packageType': resp['content']['packageType'], 'workflow': resp['content']['workflow'],
                                'candidate': {'id': resp['content']['candidateId'],
                                              'firstName': resp['content']['candidate']['firstName'],
@@ -182,6 +191,23 @@ class AccurateApiClient:
                                              'email': resp['content']['candidate']['email'],
                                              }
                                }
+                if data_result['status'] == 'COMPLETE':
+                    bg_request.status = BackgroundCheckRequest.COMPLETE
+                    bg_request.observation = 'Provider marks background check as completed'
+                    bg_request.save()
+                    send_admin_email('[INFO] Background check is completed',
+                                     "The background check with id {} (instructor {}, id {}) was marked as complete."
+                                     .format(bg_request.id, bg_request.instructor.display_name, bg_request.instructor.id)
+                                     )
+                elif bg_request.status == BackgroundCheckRequest.REQUESTED and data_result['status'] != prev_status:
+                    if data_result['status'] == 'PENDING' and prev_status is not None:
+                        send_admin_email('[INFO] Background check change its status',
+                                         "The background check with id {bg_id} (instructor {ins_name}, id {ins_id}) "
+                                         "had changed its status from {prev_status} to {curr_status}."
+                                         .format(bg_id=bg_request.id, ins_name=bg_request.instructor.display_name,
+                                                 ins_id=bg_request.instructor.id, prev_status=prev_status,
+                                                 curr_status=data_result['status'])
+                                         )
                 result = {'error_code': 0, 'msg': data_result}
             else:
                 result = {'error_code': 500, 'msg': 'Bad format response'}

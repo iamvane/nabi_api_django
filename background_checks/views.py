@@ -68,7 +68,8 @@ class BackgroundCheckRequestView(views.APIView):
                 dname=instructor.display_name, inst_id=instructor.id, email=request.user.email),
             charge_id=charge.id
         )
-        current_bg_request = BackgroundCheckRequest.objects.create(user=request.user, instructor=instructor)
+        current_bg_request = BackgroundCheckRequest.objects.create(user=request.user, instructor=instructor,
+                                                                   status_description='Payment done')
 
         # Proceed with requests to Accurate. From here, response is 200 code always
         if last_bg_request:
@@ -157,9 +158,9 @@ class BackgroundCheckView(views.APIView):
         bg_request = BackgroundCheckRequest.objects.filter(user=instructor.user).last()
         if bg_request:
             if bg_request.status == BackgroundCheckRequest.CANCELLED:
-                return Response({'status': 'CANCELLED'}, status=status.HTTP_200_OK)
+                return Response({'request_id': bg_request.id, 'status': 'CANCELLED'}, status=status.HTTP_200_OK)
             elif bg_request.status == BackgroundCheckRequest.COMPLETE:
-                return Response({'status': 'COMPLETE'}, status=status.HTTP_200_OK)
+                return Response({'request_id': bg_request.id, 'status': 'COMPLETE'}, status=status.HTTP_200_OK)
             else:
                 provider_client = AccurateApiClient('order')
                 resp_dict = provider_client.check_order(instructor.user)
@@ -167,6 +168,8 @@ class BackgroundCheckView(views.APIView):
                 if error:
                     return Response(resp_dict, status=error)
                 else:  # error == 0, no error
-                    return Response({'status': resp_dict['msg']['status']}, status=status.HTTP_200_OK)
+                    return Response({'request_id': bg_request.id, 'status': resp_dict['msg']['status']},
+                                    status=status.HTTP_200_OK)
         else:
-            return Response({'error': 'No background check request for this user'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'No background check request for this instructor'},
+                            status=status.HTTP_400_BAD_REQUEST)
