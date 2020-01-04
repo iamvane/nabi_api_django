@@ -177,7 +177,8 @@ CORS_ORIGIN_WHITELIST = [
     'https://www.nabimusiccenter.com',
     'https://nabimusicstaging.herokuapp.com/',
     'https://nabinextprod.herokuapp.com/',
-    'https://nabinext.herokuapp.com/'
+    'https://nabinext.herokuapp.com/',
+    'http://localhost:3000'
 ]
 
 CORS_ALLOW_CREDENTIALS = True
