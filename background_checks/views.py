@@ -13,10 +13,9 @@ from core.constants import *
 from core.utils import send_admin_email
 from payments.models import Payment
 
+from . import serializers as sers
 from .client_provider import AccurateApiClient, CANDIDATE_REGISTER_STEP, CANDIDATE_UPDATE_STEP, ORDER_PLACE_STEP
 from .models import BackgroundCheckRequest, BackgroundCheckStep
-from . import serializers as sers
-from .serializers import BGCheckRequestModelSerializer, BGCheckRequestSerializer, InstructorIdSerializer
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -34,7 +33,7 @@ class BackgroundCheckRequestView(views.APIView):
     def post(self, request):
         """Create a request for instructor's check background"""
         # first, get instructor instance
-        serializer = BGCheckRequestSerializer(data=request.data)
+        serializer = sers.BGCheckRequestSerializer(data=request.data)
         if serializer.is_valid():
             if serializer.validated_data.get('instructor_id'):
                 instructor = Instructor.objects.get(id=serializer.validated_data['instructor_id'])
@@ -71,7 +70,7 @@ class BackgroundCheckRequestView(views.APIView):
             charge_id=charge.id
         )
         current_bg_request = BackgroundCheckRequest.objects.create(user=request.user, instructor=instructor,
-                                                                   status_description='Payment done')
+                                                                   observation='Payment done')
 
         # Proceed with requests to Accurate. From here, response is 200 code always
         if last_bg_request:
@@ -146,7 +145,7 @@ class BackgroundCheckRequestView(views.APIView):
     def get(self, request):
         """Get last background check request of an instructor"""
         if request.query_params.get('instructorId'):
-            serializer = InstructorIdSerializer(data=request.query_params)
+            serializer = sers.InstructorIdSerializer(data=request.query_params)
             if serializer.is_valid():
                 instructor = Instructor.objects.get(id=serializer.data['instructor_id'])
             else:
@@ -172,7 +171,7 @@ class BackgroundCheckStatusView(views.APIView):
     def get(self, request):
         """Get last background check request"""
         if request.query_params.get('instructorId'):
-            serializer = InstructorIdSerializer(data=request.query_params)
+            serializer = sers.InstructorIdSerializer(data=request.query_params)
             if serializer.is_valid():
                 instructor = Instructor.objects.get(id=serializer.data['instructor_id'])
             else:
@@ -198,7 +197,8 @@ class BackgroundCheckStatusView(views.APIView):
                 else:  # error == 0, no error
                     return Response({'requestId': bg_request.id, 'status': resp_dict['msg']['status'],
                                      'percentageComplete': resp_dict['msg']['percentageComplete'],
-                                     'createdAt': bg_request.created_at.strftime('%Y-%m-%d %H:%M:%S')},
+                                     'createdAt': bg_request.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                                     'foundList': resp_dict['found_list']},
                                     status=status.HTTP_200_OK)
         else:
             return Response({'error': 'No background check request for this instructor'},
