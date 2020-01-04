@@ -189,7 +189,8 @@ class AccurateApiClient:
                                              'middleName': resp['content']['candidate']['middleName'],
                                              'suffix': resp['content']['candidate']['suffix'],
                                              'email': resp['content']['candidate']['email'],
-                                             }
+                                             },
+                               'percentageComplete': resp['content']['percentageComplete'],
                                }
                 if data_result['status'] == 'COMPLETE':
                     bg_request.status = BackgroundCheckRequest.COMPLETE

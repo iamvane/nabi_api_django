@@ -182,9 +182,13 @@ class BackgroundCheckStatusView(views.APIView):
         bg_request = BackgroundCheckRequest.objects.filter(instructor=instructor).last()
         if bg_request:
             if bg_request.status == BackgroundCheckRequest.CANCELLED:
-                return Response({'request_id': bg_request.id, 'status': 'CANCELLED'}, status=status.HTTP_200_OK)
+                return Response({'requestId': bg_request.id, 'status': 'CANCELLED',
+                                 'createdAt': bg_request.created_at.strftime('%Y-%m-%d %H:%M:%S')},
+                                status=status.HTTP_200_OK)
             elif bg_request.status == BackgroundCheckRequest.COMPLETE:
-                return Response({'request_id': bg_request.id, 'status': 'COMPLETE'}, status=status.HTTP_200_OK)
+                return Response({'requestId': bg_request.id, 'status': 'COMPLETE',
+                                 'createdAt': bg_request.created_at.strftime('%Y-%m-%d %H:%M:%S')},
+                                status=status.HTTP_200_OK)
             else:
                 provider_client = AccurateApiClient('order')
                 resp_dict = provider_client.check_order(instructor.user)
@@ -192,7 +196,9 @@ class BackgroundCheckStatusView(views.APIView):
                 if error:
                     return Response(resp_dict, status=error)
                 else:  # error == 0, no error
-                    return Response({'request_id': bg_request.id, 'status': resp_dict['msg']['status']},
+                    return Response({'requestId': bg_request.id, 'status': resp_dict['msg']['status'],
+                                     'percentageComplete': resp_dict['msg']['percentageComplete'],
+                                     'createdAt': bg_request.created_at.strftime('%Y-%m-%d %H:%M:%S')},
                                     status=status.HTTP_200_OK)
         else:
             return Response({'error': 'No background check request for this instructor'},
