@@ -4,8 +4,11 @@ from rest_framework import serializers, validators
 
 from accounts.models import Instructor
 
+from .models import BackgroundCheckRequest
+
 
 class BGCheckRequestSerializer(serializers.Serializer):
+    """Serializer to create a background check request"""
     instructor_id = serializers.IntegerField(required=False)
     amount = serializers.DecimalField(max_digits=9, decimal_places=4)
     stripe_token = serializers.CharField(max_length=500)
@@ -29,6 +32,7 @@ class BGCheckRequestSerializer(serializers.Serializer):
 
 
 class InstructorIdSerializer(serializers.Serializer):
+    """Serializer to validate received instructorId value"""
     instructor_id = serializers.IntegerField()
 
     def to_internal_value(self, data):
@@ -43,3 +47,14 @@ class InstructorIdSerializer(serializers.Serializer):
         except ObjectDoesNotExist:
             raise validators.ValidationError('Wrong instructor_id value')
         return value
+
+
+class BGCheckRequestModelSerializer(serializers.ModelSerializer):
+    """Serializer to retrieve data of a background check"""
+    requestorEmail = serializers.EmailField(source='user.email')
+    instructorName = serializers.CharField(source='instructor.display_name')
+    createdAt = serializers.DateTimeField(source='created_at', format='%Y-%m-%d %H:%M:%S')
+
+    class Meta:
+        model = BackgroundCheckRequest
+        fields = ('requestorEmail', 'instructorName', 'status', 'createdAt')

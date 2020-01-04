@@ -2,7 +2,7 @@ import json
 import stripe
 
 from django.conf import settings
-from django.db.models import Q
+from django.db.models import ObjectDoesNotExist, Q
 from django.utils import timezone
 
 from rest_framework import status, views
@@ -15,7 +15,8 @@ from payments.models import Payment
 
 from .client_provider import AccurateApiClient, CANDIDATE_REGISTER_STEP, CANDIDATE_UPDATE_STEP, ORDER_PLACE_STEP
 from .models import BackgroundCheckRequest, BackgroundCheckStep
-from .serializers import BGCheckRequestSerializer, InstructorIdSerializer
+from . import serializers as sers
+from .serializers import BGCheckRequestModelSerializer, BGCheckRequestSerializer, InstructorIdSerializer
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -28,6 +29,7 @@ Obtained error code: {error_code}, error info: {error_info}.
 
 
 class BackgroundCheckRequestView(views.APIView):
+    """Create or retrieve a background check request"""
 
     def post(self, request):
         """Create a request for instructor's check background"""
@@ -141,8 +143,30 @@ class BackgroundCheckRequestView(views.APIView):
             payment.save()
             return Response({'message': 'success'}, status=status.HTTP_200_OK)
 
+    def get(self, request):
+        """Get last background check request of an instructor"""
+        if request.query_params.get('instructorId'):
+            serializer = InstructorIdSerializer(data=request.query_params)
+            if serializer.is_valid():
+                instructor = Instructor.objects.get(id=serializer.data['instructor_id'])
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            try:
+                instructor = request.user.instructor
+            except ObjectDoesNotExist:
+                return Response({'message': 'User should be instructor or provide an instructorId'},
+                                status=status.HTTP_400_BAD_REQUEST)
+        bg_request = BackgroundCheckRequest.objects.filter(instructor=instructor).last()
+        serializer = sers.BGCheckRequestModelSerializer(bg_request)
+        if bg_request:
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'No background check request for this instructor'},
+                            status=status.HTTP_400_BAD_REQUEST)
 
-class BackgroundCheckView(views.APIView):
+
+class BackgroundCheckStatusView(views.APIView):
     """If bg request is not register as complete or cancelled, make a request to Accurate, to get status."""
 
     def get(self, request):
@@ -155,7 +179,7 @@ class BackgroundCheckView(views.APIView):
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
             instructor = request.user.instructor
-        bg_request = BackgroundCheckRequest.objects.filter(user=instructor.user).last()
+        bg_request = BackgroundCheckRequest.objects.filter(instructor=instructor).last()
         if bg_request:
             if bg_request.status == BackgroundCheckRequest.CANCELLED:
                 return Response({'request_id': bg_request.id, 'status': 'CANCELLED'}, status=status.HTTP_200_OK)

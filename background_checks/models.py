@@ -16,7 +16,7 @@ class BackgroundCheckRequest(models.Model):
         (COMPLETE, COMPLETE),
         (CANCELLED, CANCELLED),
     )
-    user = models.ForeignKey(User, null=True, on_delete=models.SET_NULL, related_name='bg_check_requests')
+    user = models.ForeignKey(User, null=True, on_delete=models.SET_NULL, related_name='bg_check_requests')   # requestor
     instructor = models.ForeignKey(Instructor, null=True, on_delete=models.SET_NULL, related_name='bg_check_requests')
     status = models.CharField(max_length=100, choices=STATUSES, default=PRELIMINARY)
     observation = models.CharField(max_length=500, blank=True, null=True)
