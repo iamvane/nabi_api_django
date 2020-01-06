@@ -220,6 +220,18 @@ RATE_CHOICES = (
     (RATE_90, RATE_90),
 )
 
+# --- status of background check request
+BG_STATUS_VERIFIED = 'verified'
+BG_STATUS_PENDING = 'pending'
+BG_STATUS_WARNING = 'warning'
+BG_STATUS_NOT_VERIFIED = 'not verified'
+BG_STATUSES = (
+    (BG_STATUS_NOT_VERIFIED, BG_STATUS_NOT_VERIFIED),
+    (BG_STATUS_PENDING, BG_STATUS_PENDING),
+    (BG_STATUS_VERIFIED, BG_STATUS_VERIFIED),
+    (BG_STATUS_WARNING, BG_STATUS_WARNING)
+)
+
 # --- benefit types ---
 BENEFIT_LESSON = 'lesson'
 BENEFIT_TYPES = (

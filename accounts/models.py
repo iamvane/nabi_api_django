@@ -8,10 +8,7 @@ from django.contrib.postgres.fields import HStoreField, ArrayField
 from django.db import models
 from django.utils import timezone
 
-from core.constants import (
-    ADDRESS_TYPE_CHOICES, DAY_CHOICES, DEGREE_TYPE_CHOICES, GENDER_CHOICES, LESSON_DURATION_CHOICES,
-    MONTH_CHOICES, PHONE_TYPE_CHOICES, PLACE_FOR_LESSONS_CHOICES, ROLE_INSTRUCTOR, ROLE_PARENT, SKILL_LEVEL_CHOICES,
-)
+from core.constants import *
 from core.utils import ElapsedTime, get_date_a_month_later, get_month_integer
 
 User = get_user_model()
@@ -137,6 +134,7 @@ class Instructor(IUserAccount):
     music = ArrayField(base_field=models.CharField(max_length=100, blank=True), blank=True, null=True)
     completed = models.BooleanField(default=False, verbose_name='profile completed')
 
+    bg_status = models.CharField(max_length=100, choices=BG_STATUSES, blank=True, default=BG_STATUS_NOT_VERIFIED)
     interviewed = models.BooleanField(blank=True, default=False)
     job_preferences = ArrayField(blank=True, null=True, base_field=models.CharField(max_length=100))
     qualifications = ArrayField(blank=True, null=True, base_field=models.CharField(max_length=100))
