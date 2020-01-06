@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Point
 from django.db.models import ObjectDoesNotExist
 
@@ -809,6 +810,7 @@ class InstructorQueryParamsSerializer(serializers.Serializer):
 class InstructorDataSerializer(serializers.ModelSerializer):
     """Serializer for return instructor data, to usage in searching instructor"""
     availability = serializers.SerializerMethodField()
+    distance = serializers.FloatField(source='distance.mi', read_only=True)
     instruments = serializers.SerializerMethodField()
     lessons_taught = serializers.IntegerField(default=0, read_only=True)
     location = serializers.SerializerMethodField()
@@ -823,8 +825,9 @@ class InstructorDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = Instructor
         fields = ('id', 'display_name', 'avatar', 'age', 'gender', 'bio_title', 'bio_description', 'languages',
-                  'reviews', 'location', 'interviewed', 'instruments', 'rates', 'availability', 'place_for_lessons',
-                  'qualifications', 'lessons_taught', 'student_ages', 'last_login', 'member_since')
+                  'bg_status', 'distance', 'reviews', 'location', 'interviewed', 'instruments', 'rates', 'availability',
+                  'place_for_lessons', 'experience_years', 'qualifications', 'lessons_taught', 'student_ages',
+                  'last_login', 'member_since')
 
     def get_availability(self, instructor):
         items = instructor.availability.all()
@@ -877,13 +880,14 @@ class InstructorDataSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         new_data = {'id': data.get('id'), 'displayName': data.get('display_name'), 'age': data.get('age'),
                     'avatar': data.get('avatar') if data.get('avatar') else data.get('avatar'),
+                    'backgroundCheckStatus': data.get('bg_status'), 'distance': data.get('distance'),
                     'bioTitle': data.get('bio_title'), 'bioDescription': data.get('bio_description'),
                     'gender': data.get('gender'), 'reviews': data.get('reviews'), 'location': data.get('location'),
                     'qualifications': data.get('qualifications'), 'interviewed': data.get('interviewed'),
                     'lessonsTaught': data.get('lessons_taught'), 'instruments': data.get('instruments'),
                     'rates': data.get('rates'), 'placeForLessons': data.get('place_for_lessons'),
                     'availability': data.get('availability'), 'student_ages': data.get('student_ages'),
-                    'languages': data.get('languages'),
+                    'languages': data.get('languages'), 'yearsOfExperience': data.get('experience_years'),
                     'lastLogin': data.get('last_login'), 'memberSince': data.get('member_since')}
         return new_data
 
@@ -902,6 +906,8 @@ class InstructorInstrumentSerializer(serializers.ModelSerializer):
 
 
 class InstructorDetailSerializer(serializers.ModelSerializer):
+    """Serializer to get data of an instructor"""
+    distance = serializers.SerializerMethodField()
     instruments = InstructorInstrumentSerializer(source='instructorinstruments_set', many=True, read_only=True)
     lesson_size = LessonSizeSerializer(source='instructorlessonsize_set', many=True, read_only=True)
     age_group = AgeGroupsSerializer(source='instructoragegroup_set', many=True, read_only=True)
@@ -918,15 +924,26 @@ class InstructorDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Instructor
-        fields = ['id', 'user_id', 'display_name', 'age', 'member_since', 'bio_title', 'bio_description', 'interviewed',
-                  'music', 'instruments', 'lesson_size', 'age_group', 'rates', 'place_for_lessons', 'availability',
-                  'reviews', 'qualifications', 'languages', 'studio_address', 'travel_distance', 'lessons_taught',
-                  'education', 'employment', 'experience_years', 'avatar']
+        fields = ['id', 'user_id', 'display_name', 'age', 'member_since', 'bg_status', 'bio_title', 'bio_description',
+                  'interviewed', 'location', 'distance', 'music', 'instruments', 'lesson_size', 'age_group', 'rates',
+                  'place_for_lessons', 'availability', 'reviews', 'qualifications', 'languages', 'studio_address',
+                  'travel_distance', 'lessons_taught', 'education', 'employment', 'experience_years', 'avatar']
+
+    def get_distance(self, instance):
+        if self.context.get('account') and self.context.get('account').coordinates:
+            coords = self.context.get('account').coordinates
+        else:
+            coords = None
+        if instance.coordinates and coords:
+            return instance.coordinates.distance(coords) * 100 * 0.62137119223733
+        else:
+            return None
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data['userId'] = data.pop('user_id')
         data['displayName'] = data.pop('display_name')
+        data['backgroundCheckStatus'] = data.pop('bg_status')
         data['bioTitle'] = data.pop('bio_title')
         data['bioDescription'] = data.pop('bio_description')
         data['studioAddress'] = data.pop('studio_address')
