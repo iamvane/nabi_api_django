@@ -57,4 +57,4 @@ class BGCheckRequestModelSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = BackgroundCheckRequest
-        fields = ('requestorEmail', 'instructorName', 'status', 'createdAt')
+        fields = ('requestorEmail', 'instructorName', 'status', 'result', 'createdAt')
