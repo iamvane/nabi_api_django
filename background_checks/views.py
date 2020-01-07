@@ -143,7 +143,7 @@ class BackgroundCheckRequestView(views.APIView):
             return Response({'message': 'success'}, status=status.HTTP_200_OK)
 
     def get(self, request):
-        """Get last background check request of an instructor"""
+        """Get stored data from last registered background check request for an instructor"""
         if request.query_params.get('instructorId'):
             serializer = sers.InstructorIdSerializer(data=request.query_params)
             if serializer.is_valid():
@@ -166,7 +166,8 @@ class BackgroundCheckRequestView(views.APIView):
 
 
 class BackgroundCheckStatusView(views.APIView):
-    """If bg request is not register as complete or cancelled, make a request to Accurate, to get status."""
+    """Make a request to Accurate, to get status, if background request is not register as complete or cancelled;
+    return stored data otherwise."""
 
     def get(self, request):
         """Get last background check request"""
@@ -180,12 +181,11 @@ class BackgroundCheckStatusView(views.APIView):
             instructor = request.user.instructor
         bg_request = BackgroundCheckRequest.objects.filter(instructor=instructor).last()
         if bg_request:
-            if bg_request.status == BackgroundCheckRequest.CANCELLED:
-                return Response({'requestId': bg_request.id, 'status': 'CANCELLED', 'result': bg_request.result,
-                                 'createdAt': bg_request.created_at.strftime('%Y-%m-%d %H:%M:%S')},
-                                status=status.HTTP_200_OK)
-            elif bg_request.status == BackgroundCheckRequest.COMPLETE:
-                return Response({'requestId': bg_request.id, 'status': 'COMPLETE', 'result': bg_request.result,
+            if bg_request.status == BackgroundCheckRequest.CANCELLED \
+                    or bg_request.status == BackgroundCheckRequest.COMPLETE:
+                return Response({'requestId': bg_request.id, 'status': bg_request.status.upper(),
+                                 'result': bg_request.provider_results.get('result'),
+                                 'observation': bg_request.observation,
                                  'createdAt': bg_request.created_at.strftime('%Y-%m-%d %H:%M:%S')},
                                 status=status.HTTP_200_OK)
             else:
@@ -195,8 +195,10 @@ class BackgroundCheckStatusView(views.APIView):
                 if error:
                     return Response(resp_dict, status=error)
                 else:  # error == 0, no error
-                    return Response({'requestId': bg_request.id,
-                                     'status': resp_dict['msg']['status'], 'result': resp_dict['msg']['result'],
+                    bg_request.refresh_from_db()
+                    return Response({'requestId': bg_request.id, 'status': resp_dict['msg']['status'],
+                                     'result': resp_dict['msg']['result'],
+                                     'observation': bg_request.observation,
                                      'percentageComplete': resp_dict['msg']['percentageComplete'],
                                      'createdAt': bg_request.created_at.strftime('%Y-%m-%d %H:%M:%S')},
                                     status=status.HTTP_200_OK)

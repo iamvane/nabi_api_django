@@ -190,7 +190,7 @@ class AccurateApiClient:
                 else:
                     prev_status = None
                 data_result = {'id': resp['content']['id'],
-                               'status': resp['content']['status'].upper(), 'result': resp['content']['result'].upper(),
+                               'status': resp['content']['status'], 'result': resp['content']['result'],
                                'provider_id': resp['pr_id'], 'previousStatus': prev_status,
                                'packageType': resp['content']['packageType'], 'workflow': resp['content']['workflow'],
                                'additionalProductTypes': resp['content']['additionalProductTypes'],
@@ -205,7 +205,10 @@ class AccurateApiClient:
                                'percentageComplete': resp['content']['percentageComplete'],
                                'createdAt': bg_request.created_at.strftime('%Y-%m-%d %H:%M:%S')
                                }
-                if bg_request.provider_results.get('status') != data_result['status']:
+                if bg_request.provider_results.get('status') != data_result['status'] \
+                    or (bg_request.provider_results.get('status') == 'COMPLETE'
+                        and bg_request.provider_results.get('result') == 'NEEDS REVIEW'
+                        and data_result['result'] != 'NEEDS REVIEW'):
                     if data_result['status'] == 'OTHER INFO NEEDED':
                         send_admin_email('[INFO] Background check needs information',
                                          "The background check with id {bg_id} (instructor {ins_name}, id {ins_id}) "
@@ -239,15 +242,15 @@ class AccurateApiClient:
                     elif data_result['status'] == 'COMPLETE':
                         if data_result['result'] == 'FAIL':
                             bg_request.status = BackgroundCheckRequest.COMPLETE
-                            bg_request.observation = 'Provider bg check result was FAIL'
+                            bg_request.observation = 'Provider background check result was FAIL'
                             bg_request.instructor.bg_status = BG_STATUS_WARNING
                             bg_request.instructor.save()
                         elif data_result['result'] == 'PASS':
                             bg_request.status = BackgroundCheckRequest.COMPLETE
-                            bg_request.observation = 'Provider bg check result was PASS'
+                            bg_request.observation = 'Provider background check result was PASS'
                             bg_request.instructor.bg_status = BG_STATUS_VERIFIED
                             bg_request.instructor.save()
-                        elif data_result['status'] == 'NOT APPLICABLE':
+                        elif data_result['result'] == 'NOT APPLICABLE':
                             bg_request.status = BackgroundCheckRequest.COMPLETE
                             found_list = [
                                 'Product: {}, flag: {}, result: {}.'.format(product['productType'], product['flag'],
@@ -256,7 +259,7 @@ class AccurateApiClient:
                                 if product['flag'] or (product['result'] not in PRODUCT_SAFE_RESULTS)
                             ]
                             if found_list:
-                                bg_request.observation = 'Provider result products are interpreted as FAIL'
+                                bg_request.observation = 'Provider result products were interpreted as FAIL'
                                 bg_request.instructor.bg_status = BG_STATUS_WARNING
                                 bg_request.instructor.save()
                                 send_admin_email('[ADVICE] Background check was interpreted as FAIL',
@@ -264,7 +267,7 @@ class AccurateApiClient:
                                                  + ") the following was found:\n\n"
                                                  + '\n'.join(found_list))
                             else:
-                                bg_request.observation = 'Provider result products are interpreted as PASS'
+                                bg_request.observation = 'Provider result products were interpreted as PASS'
                                 bg_request.instructor.bg_status = BG_STATUS_VERIFIED
                                 bg_request.instructor.save()
                         elif data_result['result'] == 'NEEDS REVIEW':

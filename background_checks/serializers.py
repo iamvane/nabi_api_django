@@ -58,7 +58,7 @@ class BGCheckRequestModelSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = BackgroundCheckRequest
-        fields = ('requestorEmail', 'instructorName', 'status', 'result', 'createdAt')
+        fields = ('requestorEmail', 'instructorName', 'observation', 'status', 'result', 'createdAt')
 
     def get_result(self, instance):
         return instance.provider_results.get('result')
