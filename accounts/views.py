@@ -254,6 +254,7 @@ class WhoAmIView(views.APIView):
                 Prefetch('employment', ),
                 Prefetch('education'),
             ).first()
+            data['backgroundCheckStatus'] = account.bg_status
             data['bioTitle'] = account.bio_title
             data['instructorId'] = account.id
             data['bioDescription'] = account.bio_description
