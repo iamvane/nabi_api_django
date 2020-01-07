@@ -52,9 +52,13 @@ class InstructorIdSerializer(serializers.Serializer):
 class BGCheckRequestModelSerializer(serializers.ModelSerializer):
     """Serializer to retrieve data of a background check"""
     requestorEmail = serializers.EmailField(source='user.email')
-    instructorName = serializers.CharField(source='instructor.display_name')
+    instructorName = serializers.CharField(max_length=200, source='instructor.display_name')
+    result = serializers.CharField(max_length=200, source='provider_results')
     createdAt = serializers.DateTimeField(source='created_at', format='%Y-%m-%d %H:%M:%S')
 
     class Meta:
         model = BackgroundCheckRequest
         fields = ('requestorEmail', 'instructorName', 'status', 'result', 'createdAt')
+
+    def get_result(self, instance):
+        return instance.provider_results.get('result')
