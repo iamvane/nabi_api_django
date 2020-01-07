@@ -7,12 +7,14 @@ from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import AnonymousUser
+from django.contrib.gis.db.models import PointField
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import D
 from django.core.mail import EmailMultiAlternatives
 from django.db import transaction, IntegrityError
 from django.db.models import Min, ObjectDoesNotExist, Prefetch, Q
+from django.db.models.functions import Cast
 from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404
 from django.template import loader
@@ -483,7 +485,11 @@ class InstructorDetailView(views.APIView):
 
     def get(self, request, pk):
         instructor = get_object_or_404(Instructor, pk=pk)
-        serializer = sers.InstructorDetailSerializer(instructor)
+        if isinstance(request.user, AnonymousUser):
+            account = None
+        else:
+            account = get_account(request.user)
+        serializer = sers.InstructorDetailSerializer(instructor, context={'account': account})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -721,6 +727,7 @@ class InstructorListView(views.APIView):
                 else:
                     qs = qs.order_by('-user__last_login')
             else:
+                qs = qs.annotate(distance=Distance('coordinates', Cast(None, PointField())))
                 if query_serializer.validated_data.get('sort'):
                     if query_serializer.validated_data['sort'] == 'rate':
                         qs = qs.order_by('instructorlessonrate__mins30', 'user__first_name')
