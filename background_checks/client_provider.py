@@ -4,6 +4,7 @@ import requests
 from django.conf import settings
 from django.db.models import ObjectDoesNotExist
 
+from core.constants import BG_STATUS_NOT_VERIFIED, BG_STATUS_VERIFIED, BG_STATUS_WARNING
 from core.models import ProviderRequest
 from core.utils import send_admin_email
 
@@ -13,7 +14,7 @@ PROVIDER_NAME = 'accurate'
 CANDIDATE_REGISTER_STEP = 'candidate_register'
 CANDIDATE_UPDATE_STEP = 'candidate_update'
 ORDER_PLACE_STEP = 'order_place'
-WARNING_RESULTS = ['RECORD FOUND', 'UNABLE TO VERIFY', 'NEGATIVE', 'POSITIVE']
+PRODUCT_SAFE_RESULTS = ['PENDING', 'COMPLETE', 'NO RECORD FOUND', 'VERIFIED', 'NOT APPLICABLE']
 
 
 class AccurateApiClient:
@@ -125,6 +126,10 @@ class AccurateApiClient:
         data = {'candidateId': candidate_id,
                 'jobLocation': {'country': location[0], 'region': location[1], 'city': location[2]},
                 'packageType': settings.ACCURATE_PLAN_PARAMETER, 'workflow': 'INTERACTIVE'}
+        if settings.ACCURATE_PLAN_ADDITIONALS:
+            data['additionalProductTypes'] = []
+            for additional in settings.ACCURATE_PLAN_ADDITIONALS:
+                data['additionalProductTypes'].append({"productType": additional})
         resp = self.send_request('order', method='POST', headers={'Content-Type': 'application/json'}, data=data)
         # after request to provider, create entries in DB
         if resp['code'] == 200:
@@ -181,9 +186,12 @@ class AccurateApiClient:
                     prev_status = qs_pr[1].data.get('status')
                 else:
                     prev_status = None
-                data_result = {'id': resp['content']['id'], 'status': resp['content']['status'],
+                data_result = {'id': resp['content']['id'],
+                               'status': resp['content']['status'].upper(), 'result': resp['content']['result'].upper(),
                                'provider_id': resp['pr_id'], 'previousStatus': prev_status,
                                'packageType': resp['content']['packageType'], 'workflow': resp['content']['workflow'],
+                               'additionalProductTypes': resp['content']['additionalProductTypes'],
+                               'products': resp['content']['products'],
                                'candidate': {'id': resp['content']['candidateId'],
                                              'firstName': resp['content']['candidate']['firstName'],
                                              'lastName': resp['content']['candidate']['lastName'],
@@ -192,45 +200,84 @@ class AccurateApiClient:
                                              'email': resp['content']['candidate']['email'],
                                              },
                                'percentageComplete': resp['content']['percentageComplete'],
+                               'createdAt': bg_request.created_at.strftime('%Y-%m-%d %H:%M:%S')
                                }
-                found_list = []
-                if data_result['status'] == 'COMPLETE':
-                    bg_request.status = BackgroundCheckRequest.COMPLETE
-                    bg_request.observation = 'Provider marks background check as completed'
+                if bg_request.provider_results.get('status') != data_result['status']:
+                    if data_result['status'] == 'OTHER INFO NEEDED':
+                        send_admin_email('[INFO] Background check needs information',
+                                         "The background check with id {bg_id} (instructor {ins_name}, id {ins_id}) "
+                                         "had changed its status from {prev_status} to {curr_status}."
+                                         .format(bg_id=bg_request.id,
+                                                 ins_name=bg_request.instructor.display_name,
+                                                 ins_id=bg_request.instructor.id,
+                                                 prev_status=bg_request.provider_results.get('status'),
+                                                 curr_status=data_result['status'])
+                                         )
+                    elif data_result['status'] == 'CANCELLED':
+                        bg_request.status = BackgroundCheckRequest.CANCELLED
+                        bg_request.instructor.bg_status = BG_STATUS_NOT_VERIFIED
+                        bg_request.instructor.save()
+                        send_admin_email('[ALERT] Background check was cancelled',
+                                         "The background check with id {bg_id} (instructor {ins_name}, id {ins_id}) "
+                                         "was cancelled, and status in Instructor remains as PENDING."
+                                         .format(bg_id=bg_request.id,
+                                                 ins_name=bg_request.instructor.display_name,
+                                                 ins_id=bg_request.instructor.id)
+                                         )
+                    elif data_result['status'] == 'DISPUTED':
+                        send_admin_email('[INFO] Background check was disputed by instructor',
+                                         "The background check with id {bg_id} (instructor {ins_name}, id {ins_id}) "
+                                         "was disputed, previous status was {prev_status}."
+                                         .format(bg_id=bg_request.id,
+                                                 ins_name=bg_request.instructor.display_name,
+                                                 ins_id=bg_request.instructor.id,
+                                                 prev_status=bg_request.provider_results.get('status'))
+                                         )
+                    elif data_result['status'] == 'COMPLETE':
+                        if data_result['result'] == 'FAIL':
+                            bg_request.status = BackgroundCheckRequest.COMPLETE
+                            bg_request.observation = 'Provider bg check result was FAIL'
+                            bg_request.instructor.bg_status = BG_STATUS_WARNING
+                            bg_request.instructor.save()
+                        elif data_result['result'] == 'PASS':
+                            bg_request.status = BackgroundCheckRequest.COMPLETE
+                            bg_request.observation = 'Provider bg check result was PASS'
+                            bg_request.instructor.bg_status = BG_STATUS_VERIFIED
+                            bg_request.instructor.save()
+                        elif data_result['status'] == 'NOT APPLICABLE':
+                            bg_request.status = BackgroundCheckRequest.COMPLETE
+                            found_list = [
+                                'Product: {}, flag: {}, result: {}.'.format(product['productType'], product['flag'],
+                                                                            product['result'])
+                                for product in resp['content']['products']
+                                if product['flag'] or (product['result'] not in PRODUCT_SAFE_RESULTS)
+                            ]
+                            if found_list:
+                                bg_request.observation = 'Provider result products are interpreted as FAIL'
+                                bg_request.instructor.bg_status = BG_STATUS_WARNING
+                                bg_request.instructor.save()
+                                send_admin_email('[ADVICE] Background check was interpreted as FAIL',
+                                                 "In the background check (id: " + str(bg_request.id)
+                                                 + ") the following was found:\n\n"
+                                                 + '\n'.join(found_list))
+                            else:
+                                bg_request.observation = 'Provider result products are interpreted as PASS'
+                                bg_request.instructor.bg_status = BG_STATUS_VERIFIED
+                                bg_request.instructor.save()
+                        elif data_result['result'] == 'NEEDS REVIEW':
+                            send_admin_email('[ALERT] Background check needs to be reviewed',
+                                             "The background check with id {bg_id} (instructor {ins_name}, id {ins_id}) "
+                                             "should be reviewed, previous status was {prev_status}."
+                                             .format(bg_id=bg_request.id,
+                                                     ins_name=bg_request.instructor.display_name,
+                                                     ins_id=bg_request.instructor.id,
+                                                     prev_status=bg_request.provider_results.get('status'))
+                                             )
+                    bg_request.provider_results = {'status': data_result['status'], 'result': data_result['result']}
                     bg_request.save()
-                    send_admin_email('[INFO] Background check is completed',
-                                     "The background check with id {} (instructor {}, id {}) was marked as complete."
-                                     .format(bg_request.id, bg_request.instructor.display_name, bg_request.instructor.id)
-                                     )
-                    found_list = [
-                        'Product: {}, flag: {}, result: {}.'.format(product['productType'], product['flag'],
-                                                                    product['result'])
-                        for product in resp['content']['products']
-                        if product['flag'] or (product['result'] in WARNING_RESULTS)
-                    ]
-                elif bg_request.status == BackgroundCheckRequest.REQUESTED and prev_status \
-                        and data_result['status'] != prev_status:
-                    send_admin_email('[INFO] Background check change its status',
-                                     "The background check with id {bg_id} (instructor {ins_name}, id {ins_id}) "
-                                     "had changed its status from {prev_status} to {curr_status}."
-                                     .format(bg_id=bg_request.id, ins_name=bg_request.instructor.display_name,
-                                             ins_id=bg_request.instructor.id, prev_status=prev_status,
-                                             curr_status=data_result['status'])
-                                     )
-                    found_list = [
-                        'Product: {}, flag: {}, result: {}.'.format(product['productType'], product['flag'],
-                                                                    product['result'])
-                        for product in resp['content']['products']
-                        if product['flag'] or (product['result'] in WARNING_RESULTS)
-                    ]
-                if found_list:
-                    send_admin_email('[ADVICE] Background check found something',
-                                     "In the background check (id: " + str(bg_request.id)
-                                     + ") the following was found:\n\n"
-                                     + '\n'.join(found_list))
-                    result = {'error_code': 0, 'msg': data_result, 'found_list': found_list}
+                    result = {'error_code': 0, 'msg': data_result}
                 else:
-                    result = {'error_code': 0, 'msg': data_result, 'found_list': []}
+                    result = {'error_code': 0, 'msg': data_result}
             else:
                 result = {'error_code': 500, 'msg': 'Bad format response'}
         else:

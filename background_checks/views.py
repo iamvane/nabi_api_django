@@ -181,11 +181,11 @@ class BackgroundCheckStatusView(views.APIView):
         bg_request = BackgroundCheckRequest.objects.filter(instructor=instructor).last()
         if bg_request:
             if bg_request.status == BackgroundCheckRequest.CANCELLED:
-                return Response({'requestId': bg_request.id, 'status': 'CANCELLED',
+                return Response({'requestId': bg_request.id, 'status': 'CANCELLED', 'result': bg_request.result,
                                  'createdAt': bg_request.created_at.strftime('%Y-%m-%d %H:%M:%S')},
                                 status=status.HTTP_200_OK)
             elif bg_request.status == BackgroundCheckRequest.COMPLETE:
-                return Response({'requestId': bg_request.id, 'status': 'COMPLETE',
+                return Response({'requestId': bg_request.id, 'status': 'COMPLETE', 'result': bg_request.result,
                                  'createdAt': bg_request.created_at.strftime('%Y-%m-%d %H:%M:%S')},
                                 status=status.HTTP_200_OK)
             else:
@@ -195,10 +195,10 @@ class BackgroundCheckStatusView(views.APIView):
                 if error:
                     return Response(resp_dict, status=error)
                 else:  # error == 0, no error
-                    return Response({'requestId': bg_request.id, 'status': resp_dict['msg']['status'],
+                    return Response({'requestId': bg_request.id,
+                                     'status': resp_dict['msg']['status'], 'result': resp_dict['msg']['result'],
                                      'percentageComplete': resp_dict['msg']['percentageComplete'],
-                                     'createdAt': bg_request.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-                                     'foundList': resp_dict['found_list']},
+                                     'createdAt': bg_request.created_at.strftime('%Y-%m-%d %H:%M:%S')},
                                     status=status.HTTP_200_OK)
         else:
             return Response({'error': 'No background check request for this instructor'},
