@@ -4,7 +4,7 @@ import requests
 from django.conf import settings
 from django.db.models import ObjectDoesNotExist
 
-from core.constants import BG_STATUS_NOT_VERIFIED, BG_STATUS_VERIFIED, BG_STATUS_WARNING
+from core.constants import BG_STATUS_NOT_VERIFIED, BG_STATUS_PENDING, BG_STATUS_VERIFIED, BG_STATUS_WARNING
 from core.models import ProviderRequest
 from core.utils import send_admin_email
 
@@ -136,6 +136,9 @@ class AccurateApiClient:
             if resp['format'] == 'json':
                 BackgroundCheckRequest.objects.filter(id=bg_request_id).update(
                     status=BackgroundCheckRequest.REQUESTED, observation='Request made to provider successfully')
+                bg_request = BackgroundCheckRequest.objects.get(id=bg_request_id)
+                bg_request.instructor.bg_status = BG_STATUS_PENDING
+                bg_request.instructor.save()
                 bg_step = BackgroundCheckStep(request_id=bg_request_id, step=ORDER_PLACE_STEP,
                                               provider_request_id=resp['pr_id'], previous_step=previous_step)
                 bg_step.resource_id = resp['content']['id']
