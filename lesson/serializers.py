@@ -267,7 +267,7 @@ class LessonRequestListQueryParamsSerializer(serializers.Serializer):
     instrument = serializers.CharField(max_length=250, required=False)
     location = serializers.CharField(max_length=200, required=False)
     student_age = serializers.ChoiceField(choices=AGE_CHOICES, required=False)
-    place_for_lessons = serializers.ChoiceField(choices=PLACE_FOR_LESSONS_CHOICES, required=False)
+    place_for_lessons = serializers.CharField(max_length=200, required=False)
 
     def to_internal_value(self, data):
         new_data = data.copy()
@@ -290,3 +290,11 @@ class LessonRequestListQueryParamsSerializer(serializers.Serializer):
         if lng < -180 or lng >= 180:
             raise serializers.ValidationError('Wrong longitude value')
         return lat, lng
+
+    def validate_place_for_lessons(self, value):
+        places = value.split(',')
+        valid_places = [item[0] for item in PLACE_FOR_LESSONS_CHOICES]
+        for place in places:
+            if place not in valid_places:
+                raise serializers.ValidationError('{} is not a valid placeForLesson value'.format(place))
+        return places

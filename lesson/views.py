@@ -1,9 +1,11 @@
+from functools import reduce
+
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.gis.db.models import PointField
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import D
-from django.db.models import Case, F, ObjectDoesNotExist, When
+from django.db.models import Case, F, ObjectDoesNotExist, Q, When
 from django.db.models.functions import Cast
 
 from rest_framework import status, views
@@ -151,7 +153,10 @@ class LessonRequestList(views.APIView):
             if keys.get('instrument'):
                 qs = qs.filter(instrument__name=query_ser.validated_data.get('instrument'))
             if keys.get('place_for_lessons'):
-                qs = qs.filter(place_for_lessons=query_ser.validated_data['place_for_lessons'])
+                bool_filters = reduce(lambda x, y: x | y,
+                                      [Q(place_for_lessons=item) for item in query_ser.validated_data.get('place_for_lessons')]
+                                      )
+                qs = qs.filter(bool_filters)
             qs = qs.order_by('-id')
             if keys.get('student_age'):
                 if query_ser.validated_data.get('student_age') == AGE_CHILD:

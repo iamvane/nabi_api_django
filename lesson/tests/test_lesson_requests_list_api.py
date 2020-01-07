@@ -55,8 +55,22 @@ class LessonRequestsListTest(BaseTest):
         for item in resp_data.get('results'):
             self.assertIn(item.get('id'), [2, 4])
 
-    def test_success_by_placeforlessons(self):
+    def test_success_placeforlessons(self):
         # filter by placeForlessons
         response = self.client.get(self.url + '?placeForLessons=home')
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
-        self.assertEqual(len(response.json().get('results')), 2)
+        result_data = response.json().get('results')
+        self.assertEqual(len(result_data), 2)
+        # verify that all requests have placeForLessons = home
+        for item in result_data:
+            self.assertEqual(item['placeForLessons'], 'home')
+
+    def test_success_placeforlessons_various_values(self):
+        # filter by placeForlessons
+        response = self.client.get(self.url + '?placeForLessons=home,online')
+        self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
+        result_data = response.json().get('results')
+        self.assertEqual(len(response.json().get('results')), 4)
+        # verify that all requests have placeForLessons = home or placeForLessons = online
+        for item in result_data:
+            self.assertIn(item['placeForLessons'], ['home', 'online'])
