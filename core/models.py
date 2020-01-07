@@ -1,6 +1,7 @@
 import secrets
 
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.contrib.postgres.fields import JSONField
 from django.db import models
 
 from .constants import (
@@ -107,3 +108,26 @@ class UserBenefits(models.Model):
     status = models.CharField(max_length=50, choices=BENEFIT_STATUSES)
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
+
+
+class ProviderRequest(models.Model):
+    """Model to register a request to provider"""
+    METHOD_TYPES = (('GET', 'GET'),
+                    ('POST', 'POST'),
+                    ('PUT', 'PUT'),
+                    ('PATCH', 'PATCH'),
+                    ('DELETE', 'DELETE'),
+                    )
+    provider = models.CharField(max_length=50)
+    api_name = models.CharField(max_length=200)
+    url_request = models.CharField(max_length=500)
+    method = models.CharField(max_length=50, choices=METHOD_TYPES)
+    headers = JSONField(blank=True, default=dict)
+    parameters = JSONField(blank=True, default=dict)
+    data = JSONField(blank=True, default=dict)
+    data_text = models.TextField(blank=True, default='')   # when json format is not accepted
+    response_status = models.SmallIntegerField(blank=True, null=True)
+    response_content = JSONField(blank=True, default=dict)
+    response_content_text = models.TextField(blank=True, default='')   # when json format is not accepted
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)

@@ -248,5 +248,21 @@ BENEFIT_STATUSES = (
     (BENEFIT_USED, BENEFIT_USED),
 )
 
+# --- services for payment ---
+SERVICE_BG_CHECK = 'background check'
+SERVICES_CHOICES = (
+    (SERVICE_BG_CHECK, SERVICE_BG_CHECK),
+)
+
+# --- statuses for payment ---
+PY_REGISTERED = 'registered'
+PY_PROCESSED = 'processed'
+PY_CANCELLED = 'cancelled'
+PY_STATUSES = (
+    (PY_REGISTERED, PY_REGISTERED),
+    (PY_PROCESSED, PY_PROCESSED),
+    (PY_CANCELLED, PY_CANCELLED),
+)
+
 HOSTNAME = "www.nabimusic.com"
 HOSTNAME_PROTOCOL = "http://" + HOSTNAME

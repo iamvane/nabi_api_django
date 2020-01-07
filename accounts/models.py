@@ -49,33 +49,44 @@ class IUserAccount(models.Model):
             years -= 1
         return years
 
-    def get_location(self):
+    def get_location(self, result_type='string'):
+        """ :param result_type: indicates how data should be returned
+            :type result_type: 'string' (to return 'city, state' string), 'tuple' (to return country, state, city)"""
         if self.coordinates:
             try:
-                lat = self.coordinates.coords[0]
-                lng = self.coordinates.coords[1]
+                lat = self.coordinates.coords[1]
+                lng = self.coordinates.coords[0]
             except Exception:
-                return ''
-            if lat < -90 or lat > 90 or lng < -180 or lng > 180:
-                return ''
+                if result_type == 'string':
+                    return ''
+                else:
+                    return ()
             try:
                 geocoder = Geocoder(api_key=settings.GOOGLE_MAPS_API_KEY)
                 locations = geocoder.reverse_geocode(lat, lng)
             except GeocoderError:
                 locations = []
             city = state = ''
+            if len(locations):
+                country = locations[0].country__short_name
             for item in locations:
-                if item.country__short_name == 'US':
+                if country == 'US':
                     state = item.state__short_name
                 else:
                     state = item.state
                 if item.city:
                     city = item.city
                     break
-            if state:
-                return '{}, {}'.format(city, state)
+            if result_type == 'string':
+                if state:
+                    return '{}, {}'.format(city, state)
+                else:
+                    return ''
             else:
-                return ''
+                if state:
+                    return country, state, city
+                else:
+                    return ()
 
     def set_display_name(self):
         if self.user.last_name:
