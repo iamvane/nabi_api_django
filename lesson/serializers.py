@@ -308,13 +308,14 @@ class LessonRequestListItemSerializer(serializers.ModelSerializer):
     placeForLessons = serializers.CharField(max_length=100, source='place_for_lessons', read_only=True)
     requestTitle = serializers.CharField(max_length=100, source='title', read_only=True)
     requestMessage = serializers.CharField(source='message', read_only=True)
+    skillLevel = serializers.CharField(max_length=100, source='skill_level', read_only=True)
     studentDetails = serializers.SerializerMethodField()
     application = serializers.SerializerMethodField()
 
     class Meta:
         model = LessonRequest
         fields = ('id', 'avatar', 'displayName', 'instrument',  'lessonDuration', 'location',
-                  'requestMessage', 'placeForLessons', 'studentDetails', 'requestTitle', 'application')
+                  'requestMessage', 'placeForLessons', 'skillLevel', 'studentDetails', 'requestTitle', 'application')
 
     def get_avatar(self, instance):
         account = get_account(instance.user)
