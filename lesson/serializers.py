@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from accounts.models import TiedStudent, get_account
-from core.constants import (LESSON_DURATION_CHOICES, PLACE_FOR_LESSONS_CHOICES, ROLE_STUDENT, SKILL_LEVEL_CHOICES)
+from core.constants import *
 from lesson.models import Instrument
 
 from .models import Application, LessonRequest
@@ -266,19 +266,14 @@ class LessonRequestListQueryParamsSerializer(serializers.Serializer):
     distance = serializers.IntegerField(min_value=0, required=False)
     instrument = serializers.CharField(max_length=250, required=False)
     location = serializers.CharField(max_length=200, required=False)
-    min_age = serializers.IntegerField(min_value=0, max_value=120, required=False)
-    max_age = serializers.IntegerField(min_value=0, max_value=120, required=False)
-    place_for_lessons = serializers.ChoiceField(choices=PLACE_FOR_LESSONS_CHOICES, required=False)
+    age = serializers.ChoiceField(choices=AGE_CHOICES, required=False)
+    place_for_lessons = serializers.CharField(max_length=200, required=False)
 
     def to_internal_value(self, data):
         new_data = data.copy()
         keys = dict.fromkeys(data, 1)
         if keys.get('placeForLessons'):
             new_data['place_for_lessons'] = new_data.pop('placeForLessons')
-        if keys.get('minAge'):
-            new_data['min_age'] = new_data.pop('minAge')
-        if keys.get('maxAge'):
-            new_data['max_age'] = new_data.pop('maxAge')
         return super().to_internal_value(new_data)
 
     def validate_location(self, value):
@@ -293,3 +288,11 @@ class LessonRequestListQueryParamsSerializer(serializers.Serializer):
         if lng < -180 or lng >= 180:
             raise serializers.ValidationError('Wrong longitude value')
         return lat, lng
+
+    def validate_place_for_lessons(self, value):
+        places = value.split(',')
+        valid_places = [item[0] for item in PLACE_FOR_LESSONS_CHOICES]
+        for place in places:
+            if place not in valid_places:
+                raise serializers.ValidationError('{} is not a valid placeForLesson value'.format(place))
+        return places
