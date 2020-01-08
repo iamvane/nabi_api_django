@@ -31,7 +31,6 @@ INSTALLED_APPS = [
     'notices',
     'references',
     'background_checks.apps.BackgroundChecksConfig',
-    'payments',
 
     'drf_yasg',
     'storages',
