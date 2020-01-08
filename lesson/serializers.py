@@ -311,11 +311,12 @@ class LessonRequestListItemSerializer(serializers.ModelSerializer):
     skillLevel = serializers.CharField(max_length=100, source='skill_level', read_only=True)
     studentDetails = serializers.SerializerMethodField()
     application = serializers.SerializerMethodField()
+    applied = serializers.SerializerMethodField()
 
     class Meta:
         model = LessonRequest
-        fields = ('id', 'avatar', 'displayName', 'instrument',  'lessonDuration', 'location',
-                  'requestMessage', 'placeForLessons', 'skillLevel', 'studentDetails', 'requestTitle', 'application')
+        fields = ('id', 'avatar', 'displayName', 'instrument',  'lessonDuration', 'location', 'requestMessage',
+                  'placeForLessons', 'skillLevel', 'studentDetails', 'requestTitle', 'application', 'applied')
 
     def get_avatar(self, instance):
         account = get_account(instance.user)
@@ -332,6 +333,11 @@ class LessonRequestListItemSerializer(serializers.ModelSerializer):
                         'rate': application.rate,
                         'message': application.message}
         return {}
+
+    def get_applied(self, instance):
+        if self.context.get('user') and self.context.get('user').is_instructor():
+            return Application.objects.filter(request=instance, instructor=self.context.get('user').instructor).exists()
+        return False
 
     def get_displayName(self, instance):
         account = get_account(instance.user)

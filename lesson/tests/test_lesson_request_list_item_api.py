@@ -30,6 +30,7 @@ class LessonRequestsListTest(BaseTest):
                                          'skillLevel': 'beginner',
                                          'studentDetails': [{'name': 'Luis', 'age': 29}],
                                          'requestTitle': 'Piano Instructor needed in Boston MA',
+                                         'applied': True,
                                          'application': {'rate': 35.0,
                                                          'message': "Hello I'm available for teaching lessons",
                                                          'dateApplied': '2019-12-19 21:07:30'}
@@ -49,6 +50,7 @@ class LessonRequestsListTest(BaseTest):
                                                             {'name': 'Teresa', 'age': 7}],
                                          'requestMessage': 'Hi, I am looking for a guitar instructor for my children',
                                          'requestTitle': 'Guitar Instructor needed',
+                                         'applied': False,
                                          'application': {}
                                          })
 
