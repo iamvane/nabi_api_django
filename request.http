@@ -477,6 +477,10 @@ GET localhost:8000/v1/lesson-request-list/?instrument=piano&placeForLessons=home
 
 ###
 
+GET localhost:8000/v1/lesson-request-item/1/
+
+###
+
 POST localhost:8000/v1/background-check-request/
 
 {

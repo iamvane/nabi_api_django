@@ -296,3 +296,70 @@ class LessonRequestListQueryParamsSerializer(serializers.Serializer):
             if place not in valid_places:
                 raise serializers.ValidationError('{} is not a valid placeForLesson value'.format(place))
         return places
+
+
+class LessonRequestListItemSerializer(serializers.ModelSerializer):
+    """Serializer for get data of a lesson request; call made by an instructor"""
+    avatar = serializers.SerializerMethodField()
+    displayName = serializers.SerializerMethodField()
+    instrument = serializers.CharField(max_length=250, source='instrument.name', read_only=True)
+    lessonDuration = serializers.CharField(max_length=100, source='lessons_duration', read_only=True)
+    location = serializers.SerializerMethodField()
+    placeForLessons = serializers.CharField(max_length=100, source='place_for_lessons', read_only=True)
+    requestTitle = serializers.CharField(max_length=100, source='title', read_only=True)
+    requestMessage = serializers.CharField(source='message', read_only=True)
+    skillLevel = serializers.CharField(max_length=100, source='skill_level', read_only=True)
+    studentDetails = serializers.SerializerMethodField()
+    application = serializers.SerializerMethodField()
+    applied = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LessonRequest
+        fields = ('id', 'avatar', 'displayName', 'instrument',  'lessonDuration', 'location', 'requestMessage',
+                  'placeForLessons', 'skillLevel', 'studentDetails', 'requestTitle', 'application', 'applied')
+
+    def get_avatar(self, instance):
+        account = get_account(instance.user)
+        if account and account.avatar:
+            return account.avatar.path
+        else:
+            return ''
+
+    def get_application(self, instance):
+        if self.context.get('user') and self.context.get('user').is_instructor():
+            application = Application.objects.filter(request=instance, instructor=self.context.get('user').instructor).last()
+            if application:
+                return {'dateApplied': application.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                        'rate': application.rate,
+                        'message': application.message}
+        return {}
+
+    def get_applied(self, instance):
+        if self.context.get('user') and self.context.get('user').is_instructor():
+            return Application.objects.filter(request=instance, instructor=self.context.get('user').instructor).exists()
+        return False
+
+    def get_displayName(self, instance):
+        account = get_account(instance.user)
+        if account:
+            return account.display_name
+        else:
+            return ''
+
+    def get_location(self, instance):
+        account = get_account(instance.user)
+        if account:
+            _, state, city = account.get_location(result_type='tuple')
+            return '{}, {}'.format(city, state)
+        else:
+            return ''
+
+    def get_studentDetails(self, instance):
+        if instance.user.is_parent():
+            student_list = []
+            for student in instance.students.all():
+                student_list.append({'name': student.name, 'age': student.age})
+            return student_list
+        else:
+            return [{'name': instance.user.first_name, 'age': instance.user.student.age}]
+
