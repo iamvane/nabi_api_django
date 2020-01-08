@@ -266,7 +266,7 @@ class LessonRequestListQueryParamsSerializer(serializers.Serializer):
     distance = serializers.IntegerField(min_value=0, required=False)
     instrument = serializers.CharField(max_length=250, required=False)
     location = serializers.CharField(max_length=200, required=False)
-    student_age = serializers.ChoiceField(choices=AGE_CHOICES, required=False)
+    age = serializers.ChoiceField(choices=AGE_CHOICES, required=False)
     place_for_lessons = serializers.CharField(max_length=200, required=False)
 
     def to_internal_value(self, data):
@@ -274,8 +274,6 @@ class LessonRequestListQueryParamsSerializer(serializers.Serializer):
         keys = dict.fromkeys(data, 1)
         if keys.get('placeForLessons'):
             new_data['place_for_lessons'] = new_data.pop('placeForLessons')
-        if keys.get('studentAge'):
-            new_data['student_age'] = new_data.pop('studentAge')
         return super().to_internal_value(new_data)
 
     def validate_location(self, value):

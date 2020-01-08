@@ -158,12 +158,12 @@ class LessonRequestList(views.APIView):
                                       )
                 qs = qs.filter(bool_filters)
             qs = qs.order_by('-id')
-            if keys.get('student_age'):
-                if query_ser.validated_data.get('student_age') == AGE_CHILD:
+            if keys.get('age'):
+                if query_ser.validated_data.get('age') == AGE_CHILD:
                     min_age, max_age = 0, 12
-                elif query_ser.validated_data.get('student_age') == AGE_TEEN:
+                elif query_ser.validated_data.get('age') == AGE_TEEN:
                     min_age, max_age = 13, 17
-                elif query_ser.validated_data.get('student_age') == AGE_ADULT:
+                elif query_ser.validated_data.get('age') == AGE_ADULT:
                     min_age, max_age = 18, 65
                 else:
                     min_age, max_age = 65, 150
