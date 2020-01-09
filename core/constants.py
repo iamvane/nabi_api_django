@@ -273,8 +273,10 @@ BENEFIT_STATUSES = (
 
 # --- services for payment ---
 SERVICE_BG_CHECK = 'background check'
+SERVICE_LESSON = 'lessons'
 SERVICES_CHOICES = (
     (SERVICE_BG_CHECK, SERVICE_BG_CHECK),
+    (SERVICE_LESSON, SERVICE_LESSON),
 )
 
 # --- statuses for payment ---

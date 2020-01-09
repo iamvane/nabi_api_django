@@ -62,18 +62,19 @@ class Application(models.Model):
 
 class LessonBooking(models.Model):
     REQUESTED = 'requested'
+    PAID = 'paid'
     CANCELLED = 'cancelled'
     STATUSES = (
         (REQUESTED, REQUESTED),
+        (PAID, PAID),
         (CANCELLED, CANCELLED),
     )
     user = models.ForeignKey(User, on_delete=models.PROTECT, related_name='lesson_bookings')
     quantity = models.IntegerField()
     total_amount = models.DecimalField(max_digits=9, decimal_places=4)
-    request = models.ForeignKey(LessonRequest, on_delete=models.CASCADE, related_name='booking')
-    application = models.ForeignKey(Application, on_delete=models.CASCADE, related_name='booking')
+    application = models.OneToOneField(Application, on_delete=models.CASCADE, related_name='booking')
     status = models.CharField(max_length=50, choices=STATUSES, default=REQUESTED)
-    payment = models.ForeignKey(Payment, blank=True, null=True, on_delete=models.CASCADE,
-                                related_name='lesson_bookings')
+    payment = models.OneToOneField(Payment, blank=True, null=True, on_delete=models.SET_NULL,
+                                   related_name='lesson_bookings')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
