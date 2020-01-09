@@ -506,3 +506,9 @@ GET localhost:8000/v1/background-check-status/?instructorId=1
 # Note: this endpoint make a call to Provider API and change status in DB if required
 
 ###
+
+GET localhost:8000/v1/application-list/1/
+
+# Note: the id value is lesson_request_id
+
+###

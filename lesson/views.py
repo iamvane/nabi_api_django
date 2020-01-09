@@ -94,25 +94,6 @@ class LessonRequestItemView(views.APIView):
         return Response(ser.data, status=status.HTTP_200_OK)
 
 
-class ApplicationView(views.APIView):
-    """Create or retrieve applications for lesson request"""
-    permission_classes = (IsAuthenticated, AccessForInstructor)
-
-    def post(self, request):
-        data = request.data.copy()
-        data['instructor_id'] = request.user.instructor.id
-        ser = sers.ApplicationCreateSerializer(data=data)
-        if ser.is_valid():
-            ser.save()
-            return Response({'message': 'success'}, status=status.HTTP_200_OK)
-        else:
-            return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def get(self, request):
-        ser = sers.ApplicationListSerializer(Application.objects.filter(instructor=request.user.instructor), many=True)
-        return Response(ser.data, status=status.HTTP_200_OK)
-
-
 class LessonRequestListView(views.APIView):
     """API for get a list of lesson requests made for parents or students"""
     permission_classes = (AllowAny, )
@@ -191,4 +172,36 @@ class LessonRequestItemListView(views.APIView):
             return Response({'message': 'There is not lesson request with provider id'},
                             status=status.HTTP_400_BAD_REQUEST)
         serializer = sers.LessonRequestListItemSerializer(lesson_request, context={'user': request.user})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class ApplicationView(views.APIView):
+    """Create or retrieve applications for lesson request"""
+    permission_classes = (IsAuthenticated, AccessForInstructor)
+
+    def post(self, request):
+        data = request.data.copy()
+        data['instructor_id'] = request.user.instructor.id
+        ser = sers.ApplicationCreateSerializer(data=data)
+        if ser.is_valid():
+            ser.save()
+            return Response({'message': 'success'}, status=status.HTTP_200_OK)
+        else:
+            return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request):
+        ser = sers.ApplicationListSerializer(Application.objects.filter(instructor=request.user.instructor), many=True)
+        return Response(ser.data, status=status.HTTP_200_OK)
+
+
+class ApplicationListView(views.APIView):
+    """Get a list of applications made to a lesson request, called by student or parent"""
+
+    def get(self, request, lesson_req_id):
+        try:
+            lesson_request = LessonRequest.objects.get(id=lesson_req_id)
+        except ObjectDoesNotExist:
+            return Response({'message': "There is no lesson request with provided id"},
+                            status=status.HTTP_400_BAD_REQUEST)
+        serializer = sers.LessonRequestApplicationsSerializer(lesson_request)
         return Response(serializer.data, status=status.HTTP_200_OK)

@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from accounts.models import TiedStudent, get_account
+from accounts.serializers import AvailavilitySerializer
 from core.constants import *
 from lesson.models import Instrument
 
@@ -191,6 +192,42 @@ class ApplicationListSerializer(serializers.ModelSerializer):
         data['requestId'] = data.pop('request_id')
         data['dateApplied'] = data.pop('date_applied')
         return data
+
+
+class ApplicationItemSerializer(serializers.ModelSerializer):
+    """Serializer to be used in a list of lesson request's applications"""
+    age = serializers.IntegerField(source='instructor.age', read_only=True)
+    applicationMessage = serializers.CharField(source='message', read_only=True)
+    applicationRate = serializers.DecimalField(max_digits=9, decimal_places=4, source='rate', read_only=True)
+    availability = AvailavilitySerializer(source='instructor.availability.all', many=True, read_only=True)
+    avatar = serializers.CharField(source='instructor.avatar', read_only=True)
+    backgroundCheckStatus = serializers.CharField(max_length=100, source='instructor.bg_status', read_only=True)
+    displayName = serializers.CharField(max_length=100, source='instructor.display_name', read_only=True)
+    instructorId = serializers.IntegerField(source='instructor.id', read_only=True)
+    reviews = serializers.IntegerField(default=0)
+    yearsOfExperience = serializers.IntegerField(source='instructor.experience_years', read_only=True)
+
+    class Meta:
+        model = Application
+        fields = ('instructorId', 'applicationMessage', 'applicationRate', 'age', 'availability', 'avatar',
+                  'backgroundCheckStatus', 'displayName', 'reviews', 'yearsOfExperience')
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if data['availability']:
+            data['availability'] = data['availability'][0]
+        return data
+
+
+class LessonRequestApplicationsSerializer(serializers.ModelSerializer):
+    """Serializer to get data of applications made in a lesson request; called by a parent or student"""
+    requestTitle = serializers.CharField(max_length=100, source='title', read_only=True)
+    dateCreated = serializers.DateTimeField(source='created_at', format='%Y-%m-%d %H:%M:%S', read_only=True)
+    applications = ApplicationItemSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = LessonRequest
+        fields = ('id', 'requestTitle', 'dateCreated', 'applications')
 
 
 class LessonRequestItemSerializer(serializers.ModelSerializer):
