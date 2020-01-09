@@ -252,6 +252,8 @@ class LessonBookingRegisterView(views.APIView):
                 booking.payment = payment
                 booking.status = LessonBooking.PAID
                 booking.save()
+                booking.application.request.status = LESSON_REQUEST_CLOSED
+                booking.application.request.save()
                 payment.status = PY_PROCESSED
                 payment.save()
             return Response({'message': 'success'}, status=status.HTTP_200_OK)
