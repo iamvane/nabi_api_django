@@ -17,3 +17,9 @@ class AccessForStudent(permissions.BasePermission):
     """Enable access for Students only"""
     def has_permission(self, request, view):
         return request.user.is_student()
+
+
+class AccessForParentOrStudent(permissions.BasePermission):
+    """Enable access for Parents or Students only"""
+    def has_permission(self, request, view):
+        return request.user.is_parent() or request.user.is_student()

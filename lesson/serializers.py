@@ -402,14 +402,15 @@ class LessonRequestListItemSerializer(serializers.ModelSerializer):
 
 
 class LessonBookingRegisterSerializer(serializers.ModelSerializer):
-    instructor_id = serializers.IntegerField()
-    student_id = serializers.IntegerField(required=False, write_only=True)
-    parent_id = serializers.IntegerField(required=False, write_only=True)
+    """Serializer for registration of a lesson booking"""
+    application_id = serializers.IntegerField(source='application.id')
+    user_id = serializers.IntegerField(source='user.id', write_only=True)
     stripe_token = serializers.CharField(max_length=500, write_only=True)
+    charge_description = serializers.CharField(max_length=300)
 
     class Meta:
         model = LessonBooking
-        fields = ('quantity', 'total_amount', 'instructor_id', 'lesson_rate', 'student_id', 'parent_id', 'stripe_token')
+        fields = ('application_id', 'quantity', 'total_amount', 'user_id', 'stripe_token', 'charge_description')
 
     def to_internal_value(self, data):
         new_data = {}
@@ -418,21 +419,12 @@ class LessonBookingRegisterSerializer(serializers.ModelSerializer):
             new_data['quantity'] = data.get('lessonQty')
         if 'totalAmount' in keys:
             new_data['total_amount'] = data.get('totalAmount')
-        if 'lessonRate' in keys:
-            new_data['lesson_rate'] = data.get('lessonRate')
-        if 'instructorId' in keys:
-            new_data['instructor_id'] = data.get('instructorId')
-        if 'student_id' in keys:
-            new_data['student_id'] = data.get('student_id')
-        if 'parent_id' in keys:
-            new_data['parent_id'] = data.get('parent_id')
+        if 'applicationId' in keys:
+            new_data['application_id'] = data.get('applicationId')
+        if 'user_id' in keys:
+            new_data['user_id'] = data.get('user_id')
         if 'stripeToken' in keys:
             new_data['stripe_token'] = data.get('stripeToken')
+        if 'chargeDescription' in keys:
+            new_data['charge_description'] = data.get('chargeDescription')
         return super().to_internal_value(new_data)
-
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        instructor = Instructor.objects.get(id=data.pop('instructor_id'))
-        new_data = {'lessonQty': data['quantity'], 'totalAmount': data['total_amount'],
-                    'lessonRate': data['lesson_rate'], 'instructor': instructor.display_name}
-        return new_data
