@@ -172,7 +172,7 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
 
 class ApplicationListSerializer(serializers.ModelSerializer):
     """Serializer for get a list of application made by current instructor"""
-    display_name = serializers.SerializerMethodField()
+    display_name = serializers.SerializerMethodField()   # name of requestor (student/parent)
     id = serializers.IntegerField(read_only=True)
     request_id = serializers.IntegerField(read_only=True)
     title = serializers.CharField(max_length=100, source='request.title', read_only=True)
