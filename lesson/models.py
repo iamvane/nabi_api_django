@@ -55,7 +55,7 @@ class Application(models.Model):
     instructor = models.ForeignKey(Instructor, related_name='applications', on_delete=models.CASCADE)
     rate = models.DecimalField(max_digits=9, decimal_places=4)
     message = models.TextField()
-    status = models.CharField(max_length=100, choices=APPLICATION_STATUSES, default=APPLICATION_NO_SEEN)
+    seen = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
