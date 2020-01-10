@@ -30,7 +30,8 @@ class IUserAccount(models.Model):
     lat = models.CharField(max_length=50, default='')
     lng = models.CharField(max_length=50, default='')
     email_verified_at = models.DateTimeField(blank=True, null=True)
-
+    reference = models.CharField(max_length=200, blank=True)
+    terms_accepted = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
 
