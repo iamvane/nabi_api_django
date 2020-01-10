@@ -197,6 +197,7 @@ class ApplicationListSerializer(serializers.ModelSerializer):
 
 class ApplicationItemSerializer(serializers.ModelSerializer):
     """Serializer to be used in a list of lesson request's applications"""
+    applicationId = serializers.IntegerField(source='id', read_only=True)
     age = serializers.IntegerField(source='instructor.age', read_only=True)
     applicationMessage = serializers.CharField(source='message', read_only=True)
     applicationRate = serializers.DecimalField(max_digits=9, decimal_places=4, source='rate', read_only=True)
@@ -210,8 +211,8 @@ class ApplicationItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Application
-        fields = ('instructorId', 'applicationMessage', 'applicationRate', 'age', 'availability', 'avatar',
-                  'backgroundCheckStatus', 'displayName', 'reviews', 'yearsOfExperience')
+        fields = ('instructorId', 'applicationId', 'applicationMessage', 'applicationRate', 'age', 'availability',
+                  'avatar', 'backgroundCheckStatus', 'displayName', 'reviews', 'yearsOfExperience')
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -430,3 +431,12 @@ class LessonBookingRegisterSerializer(serializers.ModelSerializer):
         if 'chargeDescription' in keys:
             new_data['charge_description'] = data.get('chargeDescription')
         return super().to_internal_value(new_data)
+
+
+class ApplicationDataSerializer(serializers.ModelSerializer):
+    """Serializer to get data of an application"""
+    lessonRate = serializers.DecimalField(max_digits=9, decimal_places=4, source='rate', read_only=True)
+
+    class Meta:
+        model = Application
+        fields = ('lessonRate', )
