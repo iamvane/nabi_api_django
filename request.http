@@ -6,7 +6,11 @@ Content-Type: application/json
   "password": "123456",
   "role": "instructor",
   "birthday": "1990-10-24",
-  "referringCode": "z6Gu5W6VckRTQoi6"
+  "referringCode": "z6Gu5W6VckRTQoi6",
+  "firstName": "Idekel",
+  "lastName": "Santana",
+  "reference": "facebook",
+  "termsAccepted": true
 }
 
 ### Set-Cookie:  csrftoken=zDbcXUdR4RCvgb7XwRP64VgW69EUc0OJSm3OosxdhgFVVuPKUWGaExApLaXBsb6F; expires=Sat, 22 Aug 2020 11:59:50 GMT; Max-Age=31449600; Path=/; SameSite=Lax
