@@ -431,3 +431,12 @@ class LessonBookingRegisterSerializer(serializers.ModelSerializer):
         if 'chargeDescription' in keys:
             new_data['charge_description'] = data.get('chargeDescription')
         return super().to_internal_value(new_data)
+
+
+class ApplicationDataSerializer(serializers.ModelSerializer):
+    """Serializer to get data of an application"""
+    lessonRate = serializers.DecimalField(max_digits=9, decimal_places=4, source='rate', read_only=True)
+
+    class Meta:
+        model = Application
+        fields = ('lessonRate', )

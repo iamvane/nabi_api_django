@@ -255,3 +255,16 @@ class LessonBookingRegisterView(views.APIView):
             return Response({'message': 'success'}, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ApplicationDataView(views.APIView):
+    """To return data of an application"""
+
+    def get(self, request, app_id):
+        try:
+            application = Application.objects.get(id=app_id)
+        except ObjectDoesNotExist:
+            return Response({'message': 'There is not an application with provided id'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        serializer = sers.ApplicationDataSerializer(application)
+        return Response(serializer.data, status=status.HTTP_200_OK)
