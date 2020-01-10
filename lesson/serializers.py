@@ -2,12 +2,12 @@ from django.contrib.auth import get_user_model
 
 from rest_framework import serializers
 
-from accounts.models import TiedStudent, get_account
+from accounts.models import Instructor, TiedStudent, get_account
 from accounts.serializers import AvailavilitySerializer
 from core.constants import *
 from lesson.models import Instrument
 
-from .models import Application, LessonRequest
+from .models import Application, LessonBooking, LessonRequest
 
 User = get_user_model()
 
@@ -126,7 +126,7 @@ class LessonRequestSerializer(serializers.ModelSerializer):
 
 
 class LessonRequestDetailSerializer(serializers.ModelSerializer):
-    """Serializer for fetching only"""
+    """Serializer for fetching only. Call made by parent or student."""
     instrument = serializers.CharField(read_only=True, source='instrument.name')
     students = LessonRequestStudentSerializer(many=True, read_only=True)
 
@@ -172,7 +172,7 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
 
 class ApplicationListSerializer(serializers.ModelSerializer):
     """Serializer for get a list of application made by current instructor"""
-    display_name = serializers.SerializerMethodField()
+    display_name = serializers.SerializerMethodField()   # display_name of requestor (student/parent)
     id = serializers.IntegerField(read_only=True)
     request_id = serializers.IntegerField(read_only=True)
     title = serializers.CharField(max_length=100, source='request.title', read_only=True)
@@ -180,9 +180,10 @@ class ApplicationListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Application
-        fields = ('display_name', 'id', 'request_id', 'status', 'title', 'date_applied')
+        fields = ('display_name', 'id', 'request_id', 'seen', 'title', 'date_applied')
 
     def get_display_name(self, instance):
+        """Get display name of requestor"""
         account = get_account(instance.request.user)
         return account.display_name
 
@@ -231,7 +232,7 @@ class LessonRequestApplicationsSerializer(serializers.ModelSerializer):
 
 
 class LessonRequestItemSerializer(serializers.ModelSerializer):
-    """Serializer for get data of a lesson request; call made by an instructor"""
+    """Serializer for get data of a lesson request, to build a list; call made by an instructor mostly time."""
     avatar = serializers.CharField(max_length=500, source='*', read_only=True)
     created_at = serializers.DateTimeField(format='%Y-%m-%d %H:%M:%S', read_only=True)
     display_name = serializers.SerializerMethodField()
@@ -300,6 +301,7 @@ class LessonRequestItemSerializer(serializers.ModelSerializer):
 
 
 class LessonRequestListQueryParamsSerializer(serializers.Serializer):
+    """Serializer to be used with GET parameters in lesson request list endpoint."""
     distance = serializers.IntegerField(min_value=0, required=False)
     instrument = serializers.CharField(max_length=250, required=False)
     location = serializers.CharField(max_length=200, required=False)
@@ -400,3 +402,31 @@ class LessonRequestListItemSerializer(serializers.ModelSerializer):
         else:
             return [{'name': instance.user.first_name, 'age': instance.user.student.age}]
 
+
+class LessonBookingRegisterSerializer(serializers.ModelSerializer):
+    """Serializer for registration of a lesson booking"""
+    application_id = serializers.IntegerField(source='application.id')
+    user_id = serializers.IntegerField(source='user.id', write_only=True)
+    stripe_token = serializers.CharField(max_length=500, write_only=True)
+    charge_description = serializers.CharField(max_length=300)
+
+    class Meta:
+        model = LessonBooking
+        fields = ('application_id', 'quantity', 'total_amount', 'user_id', 'stripe_token', 'charge_description')
+
+    def to_internal_value(self, data):
+        new_data = {}
+        keys = data.keys()
+        if 'lessonQty' in keys:
+            new_data['quantity'] = data.get('lessonQty')
+        if 'totalAmount' in keys:
+            new_data['total_amount'] = data.get('totalAmount')
+        if 'applicationId' in keys:
+            new_data['application_id'] = data.get('applicationId')
+        if 'user_id' in keys:
+            new_data['user_id'] = data.get('user_id')
+        if 'stripeToken' in keys:
+            new_data['stripe_token'] = data.get('stripeToken')
+        if 'chargeDescription' in keys:
+            new_data['charge_description'] = data.get('chargeDescription')
+        return super().to_internal_value(new_data)

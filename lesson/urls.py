@@ -10,4 +10,5 @@ urlpatterns = [
     path('lesson-request-list/', views.LessonRequestListView.as_view()),
     path('lesson-request-item/<int:pk>/', views.LessonRequestItemListView.as_view()),
     path('application-list/<int:lesson_req_id>/', views.ApplicationListView.as_view()),
+    path('booking-lessons/', views.LessonBookingRegisterView.as_view()),
 ]

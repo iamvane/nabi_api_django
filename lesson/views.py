@@ -1,10 +1,13 @@
+import stripe
 from functools import reduce
 
+from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.gis.db.models import PointField
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import D
+from django.db import transaction
 from django.db.models import Case, F, ObjectDoesNotExist, Q, When
 from django.db.models.functions import Cast
 
@@ -15,26 +18,27 @@ from rest_framework.response import Response
 
 from accounts.models import get_account
 from core.constants import *
-from core.permissions import AccessForInstructor
+from core.permissions import AccessForInstructor, AccessForParentOrStudent
+from payments.models import Payment
 
 from . import serializers as sers
-from .models import Application, LessonRequest
+from .models import Application, LessonBooking, LessonRequest
+
+stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
 class LessonRequestView(views.APIView):
+    """View for usage of parents and students."""
+    permission_classes = (IsAuthenticated, AccessForParentOrStudent)
 
     def post(self, request):
-        """Register a lesson request. Works for student and parent users"""
+        """Register a lesson request."""
         data = request.data.copy()
         data['user_id'] = request.user.id
-        role = request.user.get_role()
-        if role == ROLE_STUDENT:
-            ser = sers.LessonRequestSerializer(data=data, context={'is_parent': False})
-        elif role == ROLE_PARENT:
+        if request.user.is_parent():
             ser = sers.LessonRequestSerializer(data=data, context={'is_parent': True})
         else:
-            return Response({'message': "You are not enabled to request for lessons"},
-                            status=status.HTTP_400_BAD_REQUEST)
+            ser = sers.LessonRequestSerializer(data=data, context={'is_parent': False})
         if ser.is_valid():
             obj = ser.save()
             ser = sers.LessonRequestDetailSerializer(obj)
@@ -49,6 +53,8 @@ class LessonRequestView(views.APIView):
 
 
 class LessonRequestItemView(views.APIView):
+    """View for usage of parents and students."""
+    permission_classes = (IsAuthenticated, AccessForParentOrStudent)
 
     def put(self, request, pk):
         """Update an existing lesson request"""
@@ -59,14 +65,10 @@ class LessonRequestItemView(views.APIView):
                             status=status.HTTP_400_BAD_REQUEST)
         data = request.data.copy()
         data['user_id'] = request.user.id
-        role = request.user.get_role()
-        if role == ROLE_STUDENT:
-            ser = sers.LessonRequestSerializer(data=data, instance=instance, context={'is_parent': False}, partial=True)
-        elif role == ROLE_PARENT:
+        if request.user.is_parent():
             ser = sers.LessonRequestSerializer(data=data, instance=instance, context={'is_parent': True}, partial=True)
         else:
-            return Response({'message': "You are not enabled to request for lessons"},
-                            status=status.HTTP_400_BAD_REQUEST)
+            ser = sers.LessonRequestSerializer(data=data, instance=instance, context={'is_parent': False}, partial=True)
         if ser.is_valid():
             ser.save()
             return Response({'message': 'success'}, status=status.HTTP_200_OK)
@@ -95,7 +97,7 @@ class LessonRequestItemView(views.APIView):
 
 
 class LessonRequestListView(views.APIView):
-    """API for get a list of lesson requests made for parents or students"""
+    """API for get a list of lesson requests created by parents or students"""
     permission_classes = (AllowAny, )
 
     def get(self, request):
@@ -205,3 +207,51 @@ class ApplicationListView(views.APIView):
                             status=status.HTTP_400_BAD_REQUEST)
         serializer = sers.LessonRequestApplicationsSerializer(lesson_request)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class LessonBookingRegisterView(views.APIView):
+    """Register a booking for a lesson (o group of lessons) with an instructor"""
+    permission_classes = (IsAuthenticated, AccessForParentOrStudent)
+
+    def post(self, request):
+        request.data['user_id'] = request.user.id
+        serializer = sers.LessonBookingRegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            stripe_token = serializer.validated_data.pop('stripe_token')
+            booking = LessonBooking.objects.filter(user_id=serializer.validated_data['user']['id'],
+                                                   quantity=serializer.validated_data['quantity'],
+                                                   total_amount=serializer.validated_data['total_amount'],
+                                                   application_id=serializer.validated_data['application']['id'],
+                                                   status=LessonBooking.REQUESTED)
+            if not booking:
+                booking = LessonBooking.objects.create(user_id=serializer.validated_data['user']['id'],
+                                                       quantity=serializer.validated_data['quantity'],
+                                                       total_amount=serializer.validated_data['total_amount'],
+                                                       application_id=serializer.validated_data['application']['id'])
+            # make payment using stripe
+            try:
+                charge = stripe.Charge.create(amount='{:.0f}'.format(serializer.validated_data['total_amount'] * 100),
+                                              currency='usd',
+                                              source=stripe_token,
+                                              description='Lesson Booking ({})'.format(request.user.email))
+            except stripe.error.InvalidRequestError as error:
+                return Response({'stripeToken': [error.user_message, ]}, status=status.HTTP_400_BAD_REQUEST)
+            except stripe.error.StripeError as error:
+                return Response({'message': error.user_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            except Exception as ex:
+                return Response({'message': str(ex)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            # register the charge made
+            payment = Payment.objects.create(user=request.user, amount=serializer.validated_data['total_amount'],
+                                             description=serializer.validated_data['charge_description'],
+                                             charge_id=charge.id)
+            with transaction.atomic():
+                booking.payment = payment
+                booking.status = LessonBooking.PAID
+                booking.save()
+                booking.application.request.status = LESSON_REQUEST_CLOSED
+                booking.application.request.save()
+                payment.status = PY_PROCESSED
+                payment.save()
+            return Response({'message': 'success'}, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

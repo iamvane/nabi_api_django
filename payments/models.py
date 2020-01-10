@@ -8,8 +8,6 @@ User = get_user_model()
 
 class Payment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payments')
-    service = models.CharField(max_length=100, choices=SERVICES_CHOICES)
-    service_id = models.IntegerField(blank=True, null=True)
     amount = models.DecimalField(max_digits=9, decimal_places=4)
     description = models.CharField(max_length=300)
     charge_id = models.CharField(max_length=300)

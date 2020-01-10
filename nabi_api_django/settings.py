@@ -26,11 +26,11 @@ INSTALLED_APPS = [
 
     'core.apps.CoreConfig',
     'accounts.apps.AccountsConfig',
+    'payments.apps.PaymentsConfig',
     'lesson.apps.LessonConfig',
     'notices',
     'references',
     'background_checks.apps.BackgroundChecksConfig',
-    'payments',
 
     'drf_yasg',
     'storages',

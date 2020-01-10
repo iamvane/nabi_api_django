@@ -25,12 +25,12 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from core import constants as const
 from core.constants import PHONE_TYPE_MAIN, ROLE_INSTRUCTOR, ROLE_STUDENT, HOSTNAME_PROTOCOL
 from core.models import UserToken
-from core.utils import generate_hash
-
+from core.utils import generate_hash, get_date_a_month_later
 from lesson.models import Instrument
 
 from . import serializers as sers
@@ -38,9 +38,6 @@ from .models import (Availability, Education, Employment, Instructor, Instructor
                      InstructorLessonRate, InstructorPlaceForLessons, InstructorAdditionalQualifications,
                      PhoneNumber, StudentDetails, TiedStudent, get_account, get_user_phone)
 from .utils import send_welcome_email, send_referral_invitation_email
-
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
 logger = getLogger('api_errors')

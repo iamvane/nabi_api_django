@@ -198,7 +198,7 @@ class LessonRequestUpdateTest(BaseTest):
         self.assertEqual(LessonRequest.objects.count(), self.qty)
         self.assertEqual(TiedStudent.objects.count(), ts_qty + 1)
         lesson_request.refresh_from_db()
-        self.assertListEqual(list(lesson_request.students.values_list('id', flat=True)), [1, 5])
+        self.assertListEqual(list(lesson_request.students.values_list('id', flat=True)), [1, 7])
 
 
 class LessonRequestFetchTest(BaseTest):

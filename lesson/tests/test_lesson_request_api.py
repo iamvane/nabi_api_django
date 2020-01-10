@@ -68,12 +68,12 @@ class LessonRequestCreateTest(BaseTest):
         self.login_data = self.parent_login_data
         super().setUp()
         self.assertEqual(Instrument.objects.count(), 3)
-        self.assertEqual(TiedStudent.objects.count(), 3)
+        self.assertEqual(TiedStudent.objects.filter(parent_id=1).count(), 3)
         response = self.client.post(self.url, data=json.dumps(self.parent_data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
         self.assertEqual(LessonRequest.objects.count(), self.qty + 1)
         self.assertEqual(Instrument.objects.count(), 4)   # check that new instrument was added
-        self.assertEqual(TiedStudent.objects.count(), 4)   # check that another student was added
+        self.assertEqual(TiedStudent.objects.filter(parent_id=1).count(), 4)   # check that another student was added
 
     def test_missing_data(self):
         """Failed request, by student, because some data is missing. Tests missing fields independently"""
@@ -142,7 +142,7 @@ class LessonRequestListTest(BaseTest):
         'password': 'T3st11ng'
     }
     another_parent_login_data = {
-        'email': 'luisparent2@yopmail.com',
+        'email': 'luisparent3@yopmail.com',
         'password': 'T3st11ng'
     }
 

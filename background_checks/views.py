@@ -63,14 +63,13 @@ class BackgroundCheckRequestView(views.APIView):
         # register the charge done and service request
         payment = Payment.objects.create(
             user=request.user,
-            service=SERVICE_BG_CHECK,
             amount=serializer.validated_data['amount'],
             description='BackgroundCheck request for instructor {dname} ({inst_id}), requestor: {email}'.format(
                 dname=instructor.display_name, inst_id=instructor.id, email=request.user.email),
             charge_id=charge.id
         )
         current_bg_request = BackgroundCheckRequest.objects.create(user=request.user, instructor=instructor,
-                                                                   observation='Payment done')
+                                                                   observation='Payment done', payment=payment)
 
         # Proceed with requests to Accurate. From here, response is 200 code always
         if last_bg_request:
@@ -137,8 +136,7 @@ class BackgroundCheckRequestView(views.APIView):
             return Response({'message': 'registered'}, status=status.HTTP_200_OK)
         else:   # error == 0, no error
             # update payment data
-            bg_request_step = BackgroundCheckStep.objects.get(id=resp_dict.get('bg_step_id'))
-            payment.service_id = bg_request_step.request.id
+            payment.status = PY_PROCESSED
             payment.save()
             return Response({'message': 'success'}, status=status.HTTP_200_OK)
 

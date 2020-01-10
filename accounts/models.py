@@ -352,6 +352,7 @@ class TiedStudent(models.Model):
 
 
 class StudentDetails(models.Model):
+    from lesson.models import Instrument
     user = models.ForeignKey(User, related_name='student_details', on_delete=models.CASCADE)   # student or parent user
     tied_student = models.OneToOneField(TiedStudent, null=True, blank=True, related_name='tied_student_details',
                                         on_delete=models.SET_NULL)

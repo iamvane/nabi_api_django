@@ -3,6 +3,7 @@ from django.db import models
 
 from accounts.models import Instructor
 from core.models import ProviderRequest, User
+from payments.models import Payment
 
 
 class BackgroundCheckRequest(models.Model):
@@ -21,6 +22,7 @@ class BackgroundCheckRequest(models.Model):
     status = models.CharField(max_length=100, choices=STATUSES, default=PRELIMINARY)
     provider_results = JSONField(default=dict)
     observation = models.CharField(max_length=500, blank=True)
+    payment = models.OneToOneField(Payment, null=True, on_delete=models.SET_NULL)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
