@@ -1,6 +1,3 @@
-import json
-import operator
-
 from django.conf import settings
 
 from rest_framework import status
@@ -26,5 +23,20 @@ class DashboardStudentTest(BaseTest):
     def test_dashboard(self):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.json(), {'age': 29, 'instrument': 'piano', 'skillLevel': 'beginner',
-                                           'instructor': 'Luis I.', 'lessonsRemaining': 2})
+        self.assertDictEqual(response.json(), {'booking': {'age': 29, 'instrument': 'piano', 'skillLevel': 'beginner',
+                                                           'instructor': 'Luis I.', 'lessonsRemaining': 2},
+                                               'requests': [{'id': 3, 'instrument': 'flute', 'placeForLessons': 'online',
+                                                             'requestTitle': 'Flute Instructor needed',
+                                                             'requestMessage': 'Hello, I am looking for a flute instructor',
+                                                             'studentDetails': {'age': 29},
+                                                             'applications': 0, 'createdAt': '2019-12-18 11:12:35'}
+                                                            ]
+                                               }
+                             )
+
+    def test_dashboard_empty(self):
+        self.login_data = {'email': 'luisstudent2@yopmail.com', 'password': 'T3st11ng'}
+        super().setUp()
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertDictEqual(response.json(), {'booking': {}, 'requests': []})

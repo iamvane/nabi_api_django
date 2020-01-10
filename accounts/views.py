@@ -28,11 +28,11 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from core import constants as const
-from core.constants import PHONE_TYPE_MAIN, ROLE_INSTRUCTOR, ROLE_STUDENT, HOSTNAME_PROTOCOL, LESSON_REQUEST_CLOSED
+from core.constants import *
 from core.models import UserToken
 from core.utils import generate_hash, get_date_a_month_later
 from lesson.models import Instrument
-from lesson.serializers import LessonBookingStudentDashboardSerializer
+from lesson.serializers import LessonBookingStudentDashboardSerializer, LessonRequestStudentDashboardSerializer
 
 from . import serializers as sers
 from .models import (Availability, Education, Employment, Instructor, InstructorAgeGroup, InstructorInstruments,
@@ -776,5 +776,9 @@ class DashboardView(views.APIView):
             data = {}
         else:
             serializer = LessonBookingStudentDashboardSerializer(request.user.lesson_bookings.last())
-            data = serializer.data.copy()
+            data = {'booking': serializer.data}
+        ser_rl = LessonRequestStudentDashboardSerializer(
+            request.user.lesson_requests.filter(status=LESSON_REQUEST_ACTIVE).order_by('id'), many=True
+        )
+        data.update({'requests': ser_rl.data})
         return Response(data, status=status.HTTP_200_OK)
