@@ -78,3 +78,7 @@ class LessonBooking(models.Model):
                                    related_name='lesson_bookings')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def remaining_lessons(self):
+        """How many lessons remain from booking"""
+        return self.quantity - 0   # ToDo: update when Grade Lesson is available

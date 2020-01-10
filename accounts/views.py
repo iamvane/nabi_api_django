@@ -28,10 +28,11 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from core import constants as const
-from core.constants import PHONE_TYPE_MAIN, ROLE_INSTRUCTOR, ROLE_STUDENT, HOSTNAME_PROTOCOL
+from core.constants import PHONE_TYPE_MAIN, ROLE_INSTRUCTOR, ROLE_STUDENT, HOSTNAME_PROTOCOL, LESSON_REQUEST_CLOSED
 from core.models import UserToken
 from core.utils import generate_hash, get_date_a_month_later
 from lesson.models import Instrument
+from lesson.serializers import LessonBookingStudentDashboardSerializer
 
 from . import serializers as sers
 from .models import (Availability, Education, Employment, Instructor, InstructorAgeGroup, InstructorInstruments,
@@ -763,3 +764,17 @@ class AffiliateRegisterView(views.APIView):
             return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class DashboardView(views.APIView):
+    """Return data for display in user dashboard"""
+
+    def get(self, request):
+        if request.user.is_instructor():
+            data = {}
+        elif request.user.is_parent():
+            data = {}
+        else:
+            serializer = LessonBookingStudentDashboardSerializer(request.user.lesson_bookings.last())
+            data = serializer.data.copy()
+        return Response(data, status=status.HTTP_200_OK)
