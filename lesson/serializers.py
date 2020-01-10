@@ -130,24 +130,21 @@ class LessonRequestSerializer(serializers.ModelSerializer):
 class LessonRequestDetailSerializer(serializers.ModelSerializer):
     """Serializer for fetching only. Call made by parent or student."""
     instrument = serializers.CharField(read_only=True, source='instrument.name')
+    lessonDuration = serializers.CharField(max_length=100, source='lessons_duration', read_only=True)
+    placeForLessons = serializers.CharField(max_length=100, source='place_for_lessons', read_only=True)
+    requestMessage = serializers.CharField(max_length=100000, source='message', read_only=True)
+    requestTitle = serializers.CharField(max_length=100, source='title', read_only=True)
+    skillLevel = serializers.CharField(max_length=100, source='skill_level', read_only=True)
+    travelDistance = serializers.IntegerField(source='travel_distance', read_only=True)
     students = LessonRequestStudentSerializer(many=True, read_only=True)
 
     class Meta:
         model = LessonRequest
-        fields = ('id', 'instrument', 'message', 'title', 'lessons_duration', 'travel_distance',
-                  'place_for_lessons', 'skill_level', 'students')
+        fields = ('id', 'instrument', 'requestMessage', 'requestTitle', 'lessonDuration', 'travelDistance',
+                  'placeForLessons', 'skillLevel', 'students')
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        data['lessonDuration'] = data.pop('lessons_duration')
-        if data.get('travel_distance') is not None:
-            data['travelDistance'] = data.pop('travel_distance')
-        else:
-            data.pop('travel_distance')
-        data['placeForLessons'] = data.pop('place_for_lessons')
-        data['skillLevel'] = data.pop('skill_level')
-        data['requestTitle'] = data.pop('title')
-        data['requestMessage'] = data.pop('message')
         if instance.students.count() == 0:
             data.pop('students')
             data['studentDetails'] = [{'name': instance.user.first_name, 'age': instance.user.student.age}]
