@@ -517,14 +517,10 @@ POST localhost:8000/v1/booking-lessons/
 
 {
 	"lessonQty": 2,
-	"totalAmount": 36.5,
-	"lessonRate": 18.25,
-	"instructorId": 1,
+	"totalAmount": 42.50,
+	"applicationId": 1,
+	"charge_description": "Booking lessons using Basic package",
 	"stripeToken": "tok_1FmQTxKKgfFa5BBCvtUJE1iU"
 }
-
-###
-
-GET localhost:8000/v1/pending-booking-lessons/
 
 ###
