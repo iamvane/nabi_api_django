@@ -126,7 +126,7 @@ class LessonRequestSerializer(serializers.ModelSerializer):
 
 
 class LessonRequestDetailSerializer(serializers.ModelSerializer):
-    """Serializer for fetching only"""
+    """Serializer for fetching only. Call made by parent or student."""
     instrument = serializers.CharField(read_only=True, source='instrument.name')
     students = LessonRequestStudentSerializer(many=True, read_only=True)
 
@@ -232,7 +232,7 @@ class LessonRequestApplicationsSerializer(serializers.ModelSerializer):
 
 
 class LessonRequestItemSerializer(serializers.ModelSerializer):
-    """Serializer for get data of a lesson request, to build a list; call made by an instructor"""
+    """Serializer for get data of a lesson request, to build a list; call made by an instructor mostly time."""
     avatar = serializers.CharField(max_length=500, source='*', read_only=True)
     created_at = serializers.DateTimeField(format='%Y-%m-%d %H:%M:%S', read_only=True)
     display_name = serializers.SerializerMethodField()
@@ -301,6 +301,7 @@ class LessonRequestItemSerializer(serializers.ModelSerializer):
 
 
 class LessonRequestListQueryParamsSerializer(serializers.Serializer):
+    """Serializer to be used with GET parameters in lesson request list endpoint."""
     distance = serializers.IntegerField(min_value=0, required=False)
     instrument = serializers.CharField(max_length=250, required=False)
     location = serializers.CharField(max_length=200, required=False)

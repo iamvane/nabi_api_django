@@ -28,19 +28,17 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
 class LessonRequestView(views.APIView):
+    """View for usage of parents and students."""
+    permission_classes = (IsAuthenticated, AccessForParentOrStudent)
 
     def post(self, request):
-        """Register a lesson request. Works for student and parent users"""
+        """Register a lesson request."""
         data = request.data.copy()
         data['user_id'] = request.user.id
-        role = request.user.get_role()
-        if role == ROLE_STUDENT:
-            ser = sers.LessonRequestSerializer(data=data, context={'is_parent': False})
-        elif role == ROLE_PARENT:
+        if request.user.is_parent():
             ser = sers.LessonRequestSerializer(data=data, context={'is_parent': True})
         else:
-            return Response({'message': "You are not enabled to request for lessons"},
-                            status=status.HTTP_400_BAD_REQUEST)
+            ser = sers.LessonRequestSerializer(data=data, context={'is_parent': False})
         if ser.is_valid():
             obj = ser.save()
             ser = sers.LessonRequestDetailSerializer(obj)
@@ -55,6 +53,8 @@ class LessonRequestView(views.APIView):
 
 
 class LessonRequestItemView(views.APIView):
+    """View for usage of parents and students."""
+    permission_classes = (IsAuthenticated, AccessForParentOrStudent)
 
     def put(self, request, pk):
         """Update an existing lesson request"""
@@ -65,14 +65,10 @@ class LessonRequestItemView(views.APIView):
                             status=status.HTTP_400_BAD_REQUEST)
         data = request.data.copy()
         data['user_id'] = request.user.id
-        role = request.user.get_role()
-        if role == ROLE_STUDENT:
-            ser = sers.LessonRequestSerializer(data=data, instance=instance, context={'is_parent': False}, partial=True)
-        elif role == ROLE_PARENT:
+        if request.user.is_parent():
             ser = sers.LessonRequestSerializer(data=data, instance=instance, context={'is_parent': True}, partial=True)
         else:
-            return Response({'message': "You are not enabled to request for lessons"},
-                            status=status.HTTP_400_BAD_REQUEST)
+            ser = sers.LessonRequestSerializer(data=data, instance=instance, context={'is_parent': False}, partial=True)
         if ser.is_valid():
             ser.save()
             return Response({'message': 'success'}, status=status.HTTP_200_OK)
@@ -101,7 +97,7 @@ class LessonRequestItemView(views.APIView):
 
 
 class LessonRequestListView(views.APIView):
-    """API for get a list of lesson requests made for parents or students"""
+    """API for get a list of lesson requests created by parents or students"""
     permission_classes = (AllowAny, )
 
     def get(self, request):
