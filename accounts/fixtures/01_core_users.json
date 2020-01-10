@@ -178,5 +178,25 @@
       "groups": [],
       "user_permissions": []
    }
+},
+{
+   "model": "core.user",
+   "pk": 10,
+   "fields": {
+      "password": "pbkdf2_sha256$150000$MPZvOfDIrKDH$64icU0HH/GAsZGG/Modl/rK2dDIbFEZirZZHUnx+4/w=",
+      "last_login": "2019-10-31T11:14:27.729Z",
+      "is_superuser": false,
+      "first_name": "Luis",
+      "last_name": "Parent three",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2019-10-30T23:12:34.806Z",
+      "email": "luisparent3@yopmail.com",
+      "username": "luisparent3@yopmail.com",
+      "referral_token": "e2qFxQc-BTiqWk1R",
+      "referred_by": null,
+      "groups": [],
+      "user_permissions": []
+   }
 }
 ]
