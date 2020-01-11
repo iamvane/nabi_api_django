@@ -32,7 +32,8 @@ from core.constants import *
 from core.models import UserToken
 from core.utils import generate_hash, get_date_a_month_later
 from lesson.models import Instrument
-from lesson.serializers import LessonBookingStudentDashboardSerializer, LessonRequestStudentDashboardSerializer
+from lesson.serializers import (LessonBookingParentDashboardSerializer, LessonBookingStudentDashboardSerializer,
+                                LessonRequestParentDashboardSerializer, LessonRequestStudentDashboardSerializer)
 
 from . import serializers as sers
 from .models import (Availability, Education, Employment, Instructor, InstructorAgeGroup, InstructorInstruments,
@@ -773,12 +774,17 @@ class DashboardView(views.APIView):
         if request.user.is_instructor():
             data = {}
         elif request.user.is_parent():
-            data = {}
+            serializer = LessonBookingParentDashboardSerializer(request.user.lesson_bookings.last())
+            data = {'booking': serializer.data}
+            ser_rl = LessonRequestParentDashboardSerializer(
+                request.user.lesson_requests.filter(status=LESSON_REQUEST_ACTIVE).order_by('id'), many=True
+            )
+            data.update({'requests': ser_rl.data})
         else:
             serializer = LessonBookingStudentDashboardSerializer(request.user.lesson_bookings.last())
             data = {'booking': serializer.data}
-        ser_rl = LessonRequestStudentDashboardSerializer(
-            request.user.lesson_requests.filter(status=LESSON_REQUEST_ACTIVE).order_by('id'), many=True
-        )
-        data.update({'requests': ser_rl.data})
+            ser_rl = LessonRequestStudentDashboardSerializer(
+                request.user.lesson_requests.filter(status=LESSON_REQUEST_ACTIVE).order_by('id'), many=True
+            )
+            data.update({'requests': ser_rl.data})
         return Response(data, status=status.HTTP_200_OK)

@@ -450,8 +450,21 @@ class LessonBookingStudentDashboardSerializer(serializers.ModelSerializer):
     lessonsRemaining = serializers.IntegerField(source='remaining_lessons', read_only=True)
 
     class Meta:
-        model = LessonRequest
+        model = LessonBooking
         fields = ('age', 'instrument', 'skillLevel', 'instructor', 'lessonsRemaining')
+
+
+class LessonBookingParentDashboardSerializer(serializers.ModelSerializer):
+    """Serializer to get data of lesson booking created by a parent"""
+    instrument = serializers.CharField(max_length=250, source='application.request.instrument.name', read_only=True)
+    skillLevel = serializers.CharField(max_length=100, source='application.request.skill_level', read_only=True)
+    instructor = serializers.CharField(max_length=100, source='application.instructor.display_name', read_only=True)
+    lessonsRemaining = serializers.IntegerField(source='remaining_lessons', read_only=True)
+    students = LessonRequestStudentSerializer(source='application.request.students', many=True, read_only=True)
+
+    class Meta:
+        model = LessonBooking
+        fields = ('instrument', 'skillLevel', 'instructor', 'lessonsRemaining', 'students')
 
 
 class LessonRequestStudentDashboardSerializer(serializers.ModelSerializer):
@@ -470,3 +483,18 @@ class LessonRequestStudentDashboardSerializer(serializers.ModelSerializer):
 
     def get_studentDetails(self, instance):
         return {'age': instance.user.student.age}
+
+
+class LessonRequestParentDashboardSerializer(serializers.ModelSerializer):
+    instrument = serializers.CharField(read_only=True, source='instrument.name')
+    placeForLessons = serializers.CharField(max_length=100, source='place_for_lessons', read_only=True)
+    requestMessage = serializers.CharField(max_length=100000, source='message', read_only=True)
+    requestTitle = serializers.CharField(max_length=100, source='title', read_only=True)
+    studentDetails = LessonRequestStudentSerializer(source='students', many=True, read_only=True)
+    applications = serializers.IntegerField(source='applications.count', read_only=True)
+    createdAt = serializers.DateTimeField(source='created_at', read_only=True)
+
+    class Meta:
+        model = LessonRequest
+        fields = ('id', 'instrument', 'placeForLessons', 'requestMessage', 'requestTitle', 'studentDetails',
+                  'applications', 'createdAt')
