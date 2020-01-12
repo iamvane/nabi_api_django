@@ -83,3 +83,45 @@ class DashboardParentTest(BaseTest):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertDictEqual(response.json(), {'booking': {}, 'requests': []})
+
+
+class DashboardInstructorTest(BaseTest):
+    """Test dashboard endpoint for an instructor"""
+    fixtures = ['01_core_users.json', '02_accounts_instructors.json', '03_accounts_parents.json',
+                '04_accounts_students.json', '05_lesson_instruments.json',
+                '08_accounts_employments.json',
+                '15_accounts_tiedstudents.json', '16_accounts_studentdetails.json', '01_lesson_requests.json',
+                '01_payments.json', '02_applications.json', '03_instruments.json', '04_lesson_bookings.json']
+    login_data = {
+        'email': 'luisinstruct@yopmail.com',
+        'password': 'T3st11ng'
+    }
+
+    def setUp(self):
+        super().setUp()
+        self.url = '{}/v1/dashboard/'.format(settings.HOSTNAME_PROTOCOL)
+
+    def test_dashboard(self):
+        expected_data = {'backgroundCheckStatus': 'NOT_VERIFIED', 'completed': True, 'missingFields': [],
+                         'lessons': [{'bookingId': 1, 'instrument': 'piano', 'lessonsBooked': 2, 'lessonsRemaining': 2,
+                                      'skillLevel': 'beginner',  'studentName': 'Luis S.', 'age': 29},
+                                     {'bookingId': 2, 'instrument': 'guitar', 'lessonsBooked': 2, 'lessonsRemaining': 2,
+                                      'skillLevel': 'beginner', 'parent': 'Luis P.',
+                                      'students': [{'age': 9, 'name': 'Santiago'}, {'age': 7, 'name': 'Teresa'}]}
+                                     ]
+                         }
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertDictEqual(expected_data, response.json())
+
+    def test_dashboard_without_lessons(self):
+        expected_data = {'backgroundCheckStatus': 'NOT_VERIFIED', 'completed': False,
+                         'missingFields': ['location', 'phone_number', 'biography', 'availability', 'lesson_rate',
+                                           'instruments',  'education', 'employment'],
+                         'lessons': []
+                         }
+        self.login_data = {'email': 'luisinstruct4@yopmail.com', 'password': 'T3st11ng'}
+        super().setUp()
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertDictEqual(expected_data, response.json())

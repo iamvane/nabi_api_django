@@ -498,3 +498,41 @@ class LessonRequestParentDashboardSerializer(serializers.ModelSerializer):
         model = LessonRequest
         fields = ('id', 'instrument', 'placeForLessons', 'requestMessage', 'requestTitle', 'studentDetails',
                   'applications', 'createdAt')
+
+
+class InstructorDashboardSerializer(serializers.ModelSerializer):
+    """Serializer to get data about instructor, for display in dashboard"""
+    class LessonBookingSerializer(serializers.ModelSerializer):
+        bookingId = serializers.IntegerField(source='id', read_only=True)
+        instrument = serializers.CharField(max_length=250, source='application.request.instrument.name', read_only=True)
+        lessonsBooked = serializers.IntegerField(source='quantity', read_only=True)
+        lessonsRemaining = serializers.IntegerField(source='remaining_lessons', read_only=True)
+        skillLevel = serializers.CharField(max_length=100, source='application.request.skill_level', read_only=True)
+        studentName = serializers.CharField(max_length=30, required=False, read_only=True)
+        age = serializers.IntegerField(required=False, read_only=True)
+        parent = serializers.CharField(max_length=30, required=False, read_only=True)
+        students = serializers.ListField(required=False, read_only=True)
+
+        class Meta:
+            model = LessonBooking
+            fields = ('bookingId', 'instrument', 'lessonsBooked', 'lessonsRemaining', 'skillLevel',
+                      'studentName', 'age', 'parent', 'students')
+
+        def to_representation(self, instance):
+            data = super().to_representation(instance)
+            if instance.user.is_parent():
+                data['parent'] = instance.user.parent.display_name
+                data['students'] = [{'name': student.name, 'age': student.age}
+                                    for student in instance.application.request.students.all()]
+            else:
+                data['studentName'] = instance.user.student.display_name
+                data['age'] = instance.user.student.age
+            return data
+
+    backgroundCheckStatus = serializers.CharField(max_length=100, source='bg_status', read_only=True)
+    missingFields = serializers.ListField(source='missing_fields', read_only=True)
+    lessons = LessonBookingSerializer(source='lesson_bookings', many=True)
+
+    class Meta:
+        model = Instructor
+        fields = ('backgroundCheckStatus', 'completed', 'missingFields', 'lessons')

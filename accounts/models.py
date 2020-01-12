@@ -214,6 +214,45 @@ class Instructor(IUserAccount):
             self.completed = curr_value
             self.save()
 
+    def missing_fields(self):
+        """Return a list of fields with absence of values set 'completed' field to False value"""
+        list_fields = []
+        if self.completed:
+            return list_fields
+        else:
+            if not self.user.first_name:
+                list_fields.append('first_name')
+            if not self.user.last_name:
+                list_fields.append('last_name')
+            if not self.coordinates:
+                list_fields.append('location')
+            try:
+                self.user.phonenumber
+            except models.ObjectDoesNotExist:
+                list_fields.append('phone_number')
+            else:
+                if not self.user.phonenumber.verified_at:
+                    list_fields.append('phone_number')
+            if not self.bio_description or not self.bio_title:
+                list_fields.append('biography')
+            if self.availability.count() == 0:
+                list_fields.append('availability')
+            if self.instructorlessonrate_set.count() == 0:
+                list_fields.append('lesson_rate')
+            if self.instruments.count() == 0:
+                list_fields.append('instruments')
+            if self.education.count() == 0:
+                list_fields.append('education')
+            if self.employment.count() == 0:
+                list_fields.append('employment')
+            return list_fields
+
+    def lesson_bookings(self):
+        """Return a list of lesson bookings related to application of this instructor"""
+        from lesson.models import LessonBooking
+        return [item for item in LessonBooking.objects.filter(application__instructor=self, status=LessonBooking.PAID)
+            .order_by('id')]
+
 
 class Education(models.Model):
     instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE, related_name='education')
