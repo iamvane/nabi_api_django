@@ -13,7 +13,7 @@ from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import D
 from django.core.mail import EmailMultiAlternatives
 from django.db import transaction, IntegrityError
-from django.db.models import Min, ObjectDoesNotExist, Prefetch, Q
+from django.db.models import Case, F, Min, ObjectDoesNotExist, Prefetch, Q, When
 from django.db.models.functions import Cast
 from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404
@@ -31,10 +31,10 @@ from core import constants as const
 from core.constants import *
 from core.models import UserToken
 from core.utils import generate_hash, get_date_a_month_later
-from lesson.models import Instrument
+from lesson.models import Application, Instrument, LessonRequest
 from lesson.serializers import (LessonBookingParentDashboardSerializer, LessonBookingStudentDashboardSerializer,
                                 LessonRequestParentDashboardSerializer, LessonRequestStudentDashboardSerializer,
-                                InstructorDashboardSerializer)
+                                InstructorDashboardSerializer, LessonRequestInstructorDashboardSerializer)
 
 from . import serializers as sers
 from .models import (Availability, Education, Employment, Instructor, InstructorAgeGroup, InstructorInstruments,
@@ -775,13 +775,27 @@ class DashboardView(views.APIView):
         if request.user.is_instructor():
             serializer = InstructorDashboardSerializer(request.user.instructor)
             data = serializer.data.copy()
+            if request.user.instructor.coordinates:
+                requests = LessonRequest.objects.exclude(applications__in=Application.objects.filter(
+                    instructor=request.user.instructor)
+                ).annotate(coords=Case(
+                    When(user__parent__isnull=False, then=F('user__parent__coordinates')),
+                    When(user__student__isnull=False, then=F('user__student__coordinates')),
+                    default=None,
+                    output_field=PointField())
+                ).exclude(coords__isnull=True)\
+                    .annotate(distance=Distance('coords', request.user.instructor.coordinates)).order_by('id')[:3]
+            else:
+                requests = []
+            ser_lr = LessonRequestInstructorDashboardSerializer(requests, many=True)
+            data.update({'requests': ser_lr.data})
         elif request.user.is_parent():
             serializer = LessonBookingParentDashboardSerializer(request.user.lesson_bookings.last())
             data = {'booking': serializer.data}
-            ser_rl = LessonRequestParentDashboardSerializer(
+            ser_lr = LessonRequestParentDashboardSerializer(
                 request.user.lesson_requests.filter(status=LESSON_REQUEST_ACTIVE).order_by('id'), many=True
             )
-            data.update({'requests': ser_rl.data})
+            data.update({'requests': ser_lr.data})
         else:
             serializer = LessonBookingStudentDashboardSerializer(request.user.lesson_bookings.last())
             data = {'booking': serializer.data}

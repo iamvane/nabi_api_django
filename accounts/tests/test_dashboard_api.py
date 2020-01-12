@@ -107,18 +107,42 @@ class DashboardInstructorTest(BaseTest):
                                       'skillLevel': 'beginner',  'studentName': 'Luis S.', 'age': 29},
                                      {'bookingId': 2, 'instrument': 'guitar', 'lessonsBooked': 2, 'lessonsRemaining': 2,
                                       'skillLevel': 'beginner', 'parent': 'Luis P.',
-                                      'students': [{'age': 9, 'name': 'Santiago'}, {'age': 7, 'name': 'Teresa'}]}
-                                     ]
+                                      'students': [{'name': 'Santiago', 'age': 9}, {'name': 'Teresa', 'age': 7}]}
+                                     ],
+                         'requests': [{'requestId': 3, 'displayName': 'Luis S.', 'role': 'student',
+                                       'distance': '1143.40', 'requestTitle': 'Flute Instructor needed',
+                                       'instrument': 'flute', 'placeForLessons': 'online', 'skillLevel': 'beginner',
+                                       'lessonDuration': '30 mins',
+                                       'studentDetails': {'age': 29},
+                                       'applications': 0},
+                                      {'requestId': 4, 'displayName': 'Luis P.', 'role': 'parent',
+                                       'distance': '36.96', 'requestTitle': 'Piano Instructor needed',
+                                       'instrument': 'piano', 'placeForLessons': 'online', 'skillLevel': 'beginner',
+                                       'lessonDuration': '30 mins',
+                                       'studentDetails': [{'name': 'Paul', 'age': 10}],
+                                       'applications': 0},
+                                      {'requestId': 5, 'displayName': 'Luis P.', 'role': 'parent',
+                                       'distance': '110.79', 'requestTitle': 'Searching for a Guitar Instructor',
+                                       'instrument': 'guitar', 'placeForLessons': 'home', 'skillLevel': 'beginner',
+                                       'lessonDuration': '30 mins',
+                                       'studentDetails': [{'name': 'Santiago', 'age': 9}, {'name': 'Teresa', 'age': 7}],
+                                       'applications': 0}
+                                      ]
                          }
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertDictEqual(expected_data, response.json())
+        resp_data = response.json()
+        num_items = len(resp_data['requests'])
+        for i in range(num_items):
+            self.assertIsNotNone(resp_data['requests'][i].pop('elapsedTime'))
+        self.assertDictEqual(expected_data, resp_data)
 
     def test_dashboard_without_lessons(self):
         expected_data = {'backgroundCheckStatus': 'NOT_VERIFIED', 'completed': False,
                          'missingFields': ['location', 'phone_number', 'biography', 'availability', 'lesson_rate',
                                            'instruments',  'education', 'employment'],
-                         'lessons': []
+                         'lessons': [],
+                         'requests': []
                          }
         self.login_data = {'email': 'luisinstruct4@yopmail.com', 'password': 'T3st11ng'}
         super().setUp()

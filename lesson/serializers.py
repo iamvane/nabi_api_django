@@ -1,4 +1,7 @@
+from dateutil import relativedelta
+
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
 from rest_framework import serializers
 
@@ -536,3 +539,58 @@ class InstructorDashboardSerializer(serializers.ModelSerializer):
     class Meta:
         model = Instructor
         fields = ('backgroundCheckStatus', 'completed', 'missingFields', 'lessons')
+
+
+class LessonRequestInstructorDashboardSerializer(serializers.ModelSerializer):
+    """Serializer to get data of lesson requests available to apply by an instructor"""
+    requestId = serializers.IntegerField(source='id', read_only=True)
+    requestTitle = serializers.CharField(max_length=100, source='title', read_only=True)
+    displayName = serializers.SerializerMethodField()
+    distance = serializers.FloatField(source='distance.mi', read_only=True)
+    instrument = serializers.CharField(max_length=250, source='instrument.name', read_only=True)
+    lessonDuration = serializers.ChoiceField(LESSON_DURATION_CHOICES, source='lessons_duration', read_only=True)
+    placeForLessons = serializers.ChoiceField(PLACE_FOR_LESSONS_CHOICES, source='place_for_lessons', read_only=True)
+    skillLevel = serializers.CharField(max_length=100, source='skill_level', read_only=True)
+    elapsedTime = serializers.SerializerMethodField()
+    role = serializers.CharField(max_length=100, source='user.get_role', read_only=True)
+    applications = serializers.IntegerField(source='applications.count', read_only=True)
+    studentDetails = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LessonRequest
+        fields = ('requestId', 'requestTitle', 'displayName', 'distance', 'instrument', 'lessonDuration',
+                  'placeForLessons', 'skillLevel', 'elapsedTime', 'role', 'applications', 'studentDetails')
+
+    def get_displayName(self, instance):
+        if instance.user.is_parent():
+            return instance.user.parent.display_name
+        else:
+            return instance.user.student.display_name
+
+    def get_studentDetails(self, instance):
+        if instance.user.is_parent():
+            return [{'name': item.name, 'age': item.age} for item in instance.students.all()]
+        else:
+            return {'age': instance.user.student.age}
+
+    def get_elapsedTime(self, instance):
+        elapsed_time = relativedelta.relativedelta(timezone.now(), instance.created_at)
+        if elapsed_time.years > 0:
+            elapsed_str = '{} years'.format(elapsed_time.years)
+        elif elapsed_time.months > 0:
+            elapsed_str = '{} months'.format(elapsed_time.months)
+        elif elapsed_time.days > 0:
+            elapsed_str = '{} days'.format(elapsed_time.days)
+        elif elapsed_time.hours > 0:
+            elapsed_str = '{} hours'.format(elapsed_time.hours)
+        elif elapsed_time.minutes > 0:
+            elapsed_str = '{} minutes'.format(elapsed_time.minutes)
+        else:
+            elapsed_str = '{} seconds'.format(elapsed_time.seconds)
+        return elapsed_str
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if data['distance'] is not None:
+            data['distance'] = format(data['distance'], '.2f')
+        return data
