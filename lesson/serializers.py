@@ -63,7 +63,7 @@ class LessonRequestSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
-        if not self.instance:
+        if not self.instance:   # when calls to create (POST)
             if self.context['is_parent'] and not attrs.get('students'):
                 raise serializers.ValidationError('students data must be provided')
             if attrs['place_for_lessons'] == 'studio' and not attrs.get('travel_distance'):
@@ -98,6 +98,8 @@ class LessonRequestSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         if validated_data.get('students'):
             student_data = validated_data.pop('students')
+            if not self.context['is_parent']:
+                student_data = None
         else:
             student_data = None
         if validated_data['user']:
@@ -109,7 +111,7 @@ class LessonRequestSerializer(serializers.ModelSerializer):
         if validated_data:
             super().update(instance, validated_data)
             instance.refresh_from_db()
-        if student_data:
+        if student_data:   # if student_data, user is parent (checked at beginning)
             parent = User.objects.get(id=validated_data['user_id']).parent
             if isinstance(student_data, list):
                 ts_list = []
