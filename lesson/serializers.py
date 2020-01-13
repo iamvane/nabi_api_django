@@ -540,6 +540,24 @@ class InstructorDashboardSerializer(serializers.ModelSerializer):
         model = Instructor
         fields = ('backgroundCheckStatus', 'completed', 'missingFields', 'lessons')
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if data.get('missingFields'):
+            new_list = []
+            for item in data.get('missingFields'):
+                if item == 'first_name':
+                    new_list.append('firstName')
+                elif item == 'last_name':
+                    new_list.append('lastName')
+                elif item == 'phone_number':
+                    new_list.append('phoneNumber')
+                elif item == 'lesson_rate':
+                    new_list.append('lessonRate')
+                else:
+                    new_list.append(item)
+            data['missingFields'] = new_list
+        return data
+
 
 class LessonRequestInstructorDashboardSerializer(serializers.ModelSerializer):
     """Serializer to get data of lesson requests available to apply by an instructor"""

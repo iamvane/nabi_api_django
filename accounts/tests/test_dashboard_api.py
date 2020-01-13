@@ -139,7 +139,7 @@ class DashboardInstructorTest(BaseTest):
 
     def test_dashboard_without_lessons(self):
         expected_data = {'backgroundCheckStatus': 'NOT_VERIFIED', 'completed': False,
-                         'missingFields': ['location', 'phone_number', 'biography', 'availability', 'lesson_rate',
+                         'missingFields': ['location', 'phoneNumber', 'biography', 'availability', 'lessonRate',
                                            'instruments',  'education', 'employment'],
                          'lessons': [],
                          'requests': []
