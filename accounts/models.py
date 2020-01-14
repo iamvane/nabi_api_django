@@ -461,6 +461,9 @@ class TiedStudent(models.Model):
     name = models.CharField(max_length=250)
     age = models.IntegerField()
 
+    def __str__(self):
+        return '{name} ({age} years)'.format(name=self.name, age=self.age)
+
 
 class StudentDetails(models.Model):
     from lesson.models import Instrument
