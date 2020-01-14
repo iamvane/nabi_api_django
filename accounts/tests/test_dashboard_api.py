@@ -102,31 +102,31 @@ class DashboardInstructorTest(BaseTest):
         self.url = '{}/v1/dashboard/'.format(settings.HOSTNAME_PROTOCOL)
 
     def test_dashboard(self):
-        expected_data = {'backgroundCheckStatus': 'NOT_VERIFIED', 'completed': True, 'missingFields': [],
+        expected_data = {'backgroundCheckStatus': 'NOT_VERIFIED', 'complete': True, 'missingFields': ['qualification', ],
                          'lessons': [{'bookingId': 1, 'instrument': 'piano', 'lessonsBooked': 2, 'lessonsRemaining': 2,
                                       'skillLevel': 'beginner',  'studentName': 'Luis S.', 'age': 29},
                                      {'bookingId': 2, 'instrument': 'guitar', 'lessonsBooked': 2, 'lessonsRemaining': 2,
                                       'skillLevel': 'beginner', 'parent': 'Luis P.',
                                       'students': [{'name': 'Santiago', 'age': 9}, {'name': 'Teresa', 'age': 7}]}
                                      ],
-                         'requests': [{'requestId': 3, 'displayName': 'Luis S.', 'role': 'student',
+                         'requests': [{'id': 3, 'displayName': 'Luis S.', 'role': 'student', 'avatar': '',
                                        'distance': '1143.40', 'requestTitle': 'Flute Instructor needed',
                                        'instrument': 'flute', 'placeForLessons': 'online', 'skillLevel': 'beginner',
-                                       'lessonDuration': '30 mins',
+                                       'lessonDuration': '30 mins', 'location': 'Boon, MI',
                                        'studentDetails': {'age': 29},
-                                       'applications': 0},
-                                      {'requestId': 4, 'displayName': 'Luis P.', 'role': 'parent',
+                                       'applicationsReceived': 0},
+                                      {'id': 4, 'displayName': 'Luis P.', 'role': 'parent', 'avatar': '',
                                        'distance': '36.96', 'requestTitle': 'Piano Instructor needed',
                                        'instrument': 'piano', 'placeForLessons': 'online', 'skillLevel': 'beginner',
-                                       'lessonDuration': '30 mins',
+                                       'lessonDuration': '30 mins', 'location': 'Montgomery, TX',
                                        'studentDetails': [{'name': 'Paul', 'age': 10}],
-                                       'applications': 0},
-                                      {'requestId': 5, 'displayName': 'Luis P.', 'role': 'parent',
+                                       'applicationsReceived': 0},
+                                      {'id': 5, 'displayName': 'Luis P.', 'role': 'parent', 'avatar': '',
                                        'distance': '110.79', 'requestTitle': 'Searching for a Guitar Instructor',
                                        'instrument': 'guitar', 'placeForLessons': 'home', 'skillLevel': 'beginner',
-                                       'lessonDuration': '30 mins',
+                                       'lessonDuration': '30 mins', 'location': 'Cameron, LA',
                                        'studentDetails': [{'name': 'Santiago', 'age': 9}, {'name': 'Teresa', 'age': 7}],
-                                       'applications': 0}
+                                       'applicationsReceived': 0}
                                       ]
                          }
         response = self.client.get(self.url)
@@ -138,9 +138,11 @@ class DashboardInstructorTest(BaseTest):
         self.assertDictEqual(expected_data, resp_data)
 
     def test_dashboard_without_lessons(self):
-        expected_data = {'backgroundCheckStatus': 'NOT_VERIFIED', 'completed': False,
-                         'missingFields': ['location', 'phoneNumber', 'biography', 'availability', 'lessonRate',
-                                           'instruments',  'education', 'employment'],
+        expected_data = {'backgroundCheckStatus': 'NOT_VERIFIED', 'complete': False,
+                         'missingFields': ['location', 'avatar', 'references', 'isPhoneVerified',
+                                           'bioTitle', 'bioDescription', 'instruments', 'lessonSize', 'ageGroup',
+                                           'rates', 'availability', 'employment', 'education', 'qualification',
+                                           'music', ],
                          'lessons': [],
                          'requests': []
                          }

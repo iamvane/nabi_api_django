@@ -551,7 +551,6 @@ class InstructorDashboardSerializer(serializers.ModelSerializer):
 
 class LessonRequestInstructorDashboardSerializer(serializers.ModelSerializer):
     """Serializer to get data of lesson requests available to apply by an instructor"""
-    requestId = serializers.IntegerField(source='id', read_only=True)
     requestTitle = serializers.CharField(max_length=100, source='title', read_only=True)
     displayName = serializers.SerializerMethodField()
     distance = serializers.FloatField(source='distance.mi', read_only=True)
@@ -561,13 +560,16 @@ class LessonRequestInstructorDashboardSerializer(serializers.ModelSerializer):
     skillLevel = serializers.CharField(max_length=100, source='skill_level', read_only=True)
     elapsedTime = serializers.SerializerMethodField()
     role = serializers.CharField(max_length=100, source='user.get_role', read_only=True)
-    applications = serializers.IntegerField(source='applications.count', read_only=True)
+    applicationsReceived = serializers.IntegerField(source='applications.count', read_only=True)
     studentDetails = serializers.SerializerMethodField()
+    avatar = serializers.SerializerMethodField()
+    location = serializers.SerializerMethodField()
 
     class Meta:
         model = LessonRequest
-        fields = ('requestId', 'requestTitle', 'displayName', 'distance', 'instrument', 'lessonDuration',
-                  'placeForLessons', 'skillLevel', 'elapsedTime', 'role', 'applications', 'studentDetails')
+        fields = ('id', 'requestTitle', 'displayName', 'distance', 'instrument', 'lessonDuration',
+                  'placeForLessons', 'skillLevel', 'elapsedTime', 'role', 'applicationsReceived', 'studentDetails',
+                  'avatar', 'location')
 
     def get_displayName(self, instance):
         if instance.user.is_parent():
@@ -580,6 +582,24 @@ class LessonRequestInstructorDashboardSerializer(serializers.ModelSerializer):
             return [{'name': item.name, 'age': item.age} for item in instance.students.all()]
         else:
             return {'age': instance.user.student.age}
+
+    def get_avatar(self, instance):
+        if instance.user.is_parent():
+            if instance.user.parent.avatar:
+                return instance.user.parent.avatar.path
+            else:
+                return ''
+        else:
+            if instance.user.student.avatar:
+                return instance.user.student.avatar.path
+            else:
+                return ''
+
+    def get_location(self, instance):
+        if instance.user.is_parent():
+            return instance.user.parent.get_location()
+        else:
+            return instance.user.student.get_location()
 
     def get_elapsedTime(self, instance):
         elapsed_time = relativedelta.relativedelta(timezone.now(), instance.created_at)
