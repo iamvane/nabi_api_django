@@ -487,7 +487,7 @@ class LessonRequestStudentDashboardSerializer(serializers.ModelSerializer):
                   'studentDetails', 'skillLevel', 'applications', 'createdAt')
 
     def get_studentDetails(self, instance):
-        return {'age': instance.user.student.age}
+        return {'name': instance.user.first_name, 'age': instance.user.student.age}
 
 
 class LessonRequestParentDashboardSerializer(serializers.ModelSerializer):
