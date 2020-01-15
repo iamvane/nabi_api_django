@@ -472,17 +472,19 @@ class LessonBookingParentDashboardSerializer(serializers.ModelSerializer):
 
 class LessonRequestStudentDashboardSerializer(serializers.ModelSerializer):
     instrument = serializers.CharField(read_only=True, source='instrument.name')
+    lessonDuration = serializers.CharField(max_length=100, source='lessons_duration', read_only=True)
     placeForLessons = serializers.CharField(max_length=100, source='place_for_lessons', read_only=True)
     requestMessage = serializers.CharField(max_length=100000, source='message', read_only=True)
     requestTitle = serializers.CharField(max_length=100, source='title', read_only=True)
+    skillLevel = serializers.CharField(max_length=100, source='skill_level', read_only=True)
     studentDetails = serializers.SerializerMethodField()
     applications = serializers.IntegerField(source='applications.count', read_only=True)
     createdAt = serializers.DateTimeField(source='created_at', read_only=True)
 
     class Meta:
         model = LessonRequest
-        fields = ('id', 'instrument', 'placeForLessons', 'requestMessage', 'requestTitle', 'studentDetails',
-                  'applications', 'createdAt')
+        fields = ('id', 'instrument', 'lessonDuration', 'placeForLessons', 'requestMessage', 'requestTitle',
+                  'studentDetails', 'skillLevel', 'applications', 'createdAt')
 
     def get_studentDetails(self, instance):
         return {'age': instance.user.student.age}
@@ -490,17 +492,19 @@ class LessonRequestStudentDashboardSerializer(serializers.ModelSerializer):
 
 class LessonRequestParentDashboardSerializer(serializers.ModelSerializer):
     instrument = serializers.CharField(read_only=True, source='instrument.name')
+    lessonDuration = serializers.CharField(max_length=100, source='lessons_duration', read_only=True)
     placeForLessons = serializers.CharField(max_length=100, source='place_for_lessons', read_only=True)
     requestMessage = serializers.CharField(max_length=100000, source='message', read_only=True)
     requestTitle = serializers.CharField(max_length=100, source='title', read_only=True)
+    skillLevel = serializers.CharField(max_length=100, source='skill_level', read_only=True)
     studentDetails = LessonRequestStudentSerializer(source='students', many=True, read_only=True)
     applications = serializers.IntegerField(source='applications.count', read_only=True)
     createdAt = serializers.DateTimeField(source='created_at', read_only=True)
 
     class Meta:
         model = LessonRequest
-        fields = ('id', 'instrument', 'placeForLessons', 'requestMessage', 'requestTitle', 'studentDetails',
-                  'applications', 'createdAt')
+        fields = ('id', 'instrument', 'lessonDuration', 'placeForLessons', 'requestMessage', 'requestTitle',
+                  'studentDetails', 'skillLevel', 'applications', 'createdAt')
 
 
 class InstructorDashboardSerializer(serializers.ModelSerializer):

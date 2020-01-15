@@ -27,6 +27,7 @@ class DashboardStudentTest(BaseTest):
         self.assertDictEqual(response.json(), {'booking': {'age': 29, 'instrument': 'piano', 'skillLevel': 'beginner',
                                                            'instructor': 'Luis I.', 'lessonsRemaining': 2},
                                                'requests': [{'id': 3, 'instrument': 'flute', 'placeForLessons': 'online',
+                                                             'lessonDuration': '30 mins', 'skillLevel': 'beginner',
                                                              'requestTitle': 'Flute Instructor needed',
                                                              'requestMessage': 'Hello, I am looking for a flute instructor',
                                                              'studentDetails': {'age': 29},
@@ -68,6 +69,7 @@ class DashboardParentTest(BaseTest):
                                                                         {'name': 'Teresa', 'age': 7}]
                                                            }],
                                                'requests': [{'id': 5, 'instrument': 'guitar', 'placeForLessons': 'home',
+                                                             'lessonDuration': '30 mins', 'skillLevel': 'beginner',
                                                              'requestTitle': 'Searching for a Guitar Instructor',
                                                              'requestMessage': "I'm looking for a guitar instructor for my children",
                                                              'studentDetails': [{'age': 9, 'name': 'Santiago'},
