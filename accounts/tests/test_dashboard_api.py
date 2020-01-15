@@ -30,7 +30,7 @@ class DashboardStudentTest(BaseTest):
                                                              'lessonDuration': '30 mins', 'skillLevel': 'beginner',
                                                              'requestTitle': 'Flute Instructor needed',
                                                              'requestMessage': 'Hello, I am looking for a flute instructor',
-                                                             'studentDetails': {'name': 'Luis', 'age': 29},
+                                                             'studentDetails': [{'name': 'Luis', 'age': 29}],
                                                              'applications': 0, 'createdAt': '2019-12-18 11:12:35'}
                                                             ]
                                                }
