@@ -534,7 +534,7 @@ class InstructorDashboardSerializer(serializers.ModelSerializer):
 
     backgroundCheckStatus = serializers.CharField(max_length=100, source='bg_status', read_only=True)
     missingFields = serializers.SerializerMethodField()
-    lessons = LessonBookingSerializer(source='lesson_bookings', many=True)
+    lessons = serializers.ListField(child=LessonBookingSerializer(), source='lesson_bookings')
 
     class Meta:
         model = Instructor

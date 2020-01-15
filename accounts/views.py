@@ -31,7 +31,7 @@ from core import constants as const
 from core.constants import *
 from core.models import UserToken
 from core.utils import generate_hash, get_date_a_month_later
-from lesson.models import Application, Instrument, LessonRequest
+from lesson.models import Application, Instrument, LessonBooking, LessonRequest
 from lesson.serializers import (LessonBookingParentDashboardSerializer, LessonBookingStudentDashboardSerializer,
                                 LessonRequestParentDashboardSerializer, LessonRequestStudentDashboardSerializer,
                                 InstructorDashboardSerializer, LessonRequestInstructorDashboardSerializer)
@@ -790,8 +790,10 @@ class DashboardView(views.APIView):
             ser_lr = LessonRequestInstructorDashboardSerializer(requests, many=True)
             data.update({'requests': ser_lr.data})
         elif request.user.is_parent():
-            serializer = LessonBookingParentDashboardSerializer(request.user.lesson_bookings.last())
-            data = {'booking': serializer.data}
+            serializer = LessonBookingParentDashboardSerializer(
+                request.user.lesson_bookings.filter(status=LessonBooking.PAID).order_by('id'), many=True
+            )
+            data = {'bookings': serializer.data}
             ser_lr = LessonRequestParentDashboardSerializer(
                 request.user.lesson_requests.filter(status=LESSON_REQUEST_ACTIVE).order_by('id'), many=True
             )
