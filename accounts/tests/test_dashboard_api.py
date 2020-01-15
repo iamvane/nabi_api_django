@@ -24,8 +24,8 @@ class DashboardStudentTest(BaseTest):
     def test_dashboard(self):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertDictEqual(response.json(), {'booking': {'age': 29, 'instrument': 'piano', 'skillLevel': 'beginner',
-                                                           'instructor': 'Luis I.', 'lessonsRemaining': 2},
+        self.assertDictEqual(response.json(), {'bookings': [{'age': 29, 'instrument': 'piano', 'skillLevel': 'beginner',
+                                                           'instructor': 'Luis I.', 'lessonsRemaining': 2}],
                                                'requests': [{'id': 3, 'instrument': 'flute', 'placeForLessons': 'online',
                                                              'lessonDuration': '30 mins', 'skillLevel': 'beginner',
                                                              'requestTitle': 'Flute Instructor needed',
@@ -41,7 +41,7 @@ class DashboardStudentTest(BaseTest):
         super().setUp()
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertDictEqual(response.json(), {'booking': {}, 'requests': []})
+        self.assertDictEqual(response.json(), {'bookings': [], 'requests': []})
 
 
 class DashboardParentTest(BaseTest):

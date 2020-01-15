@@ -799,8 +799,10 @@ class DashboardView(views.APIView):
             )
             data.update({'requests': ser_lr.data})
         else:
-            serializer = LessonBookingStudentDashboardSerializer(request.user.lesson_bookings.last())
-            data = {'booking': serializer.data}
+            serializer = LessonBookingStudentDashboardSerializer(
+                request.user.lesson_bookings.filter(status=LessonBooking.PAID).order_by('id'), many=True
+            )
+            data = {'bookings': serializer.data}
             ser_rl = LessonRequestStudentDashboardSerializer(
                 request.user.lesson_requests.filter(status=LESSON_REQUEST_ACTIVE).order_by('id'), many=True
             )
