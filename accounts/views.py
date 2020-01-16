@@ -807,4 +807,22 @@ class DashboardView(views.APIView):
                 request.user.lesson_requests.filter(status=LESSON_REQUEST_ACTIVE).order_by('id'), many=True
             )
             data.update({'requests': ser_rl.data})
+
+
+class ReferralInfoView(views.APIView):
+    """Get some user data from referral_token"""
+    permission_classes = (AllowAny, )
+
+    def get(self, request, token):
+        try:
+            user = User.objects.get(referral_token=token)
+        except ObjectDoesNotExist:
+            return Response({'message': 'There is no user for provided token'}, status=status.HTTP_400_BAD_REQUEST)
+        data = {'displayName': '', 'avatar': ''}
+        account = get_account(user)
+        if account:
+            if account.display_name:
+                data['displayName'] = account.display_name
+            if account.avatar:
+                data['avatar'] = account.avatar.path
         return Response(data, status=status.HTTP_200_OK)
