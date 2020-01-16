@@ -532,3 +532,9 @@ GET localhost:8000/v1/application-data/1/
 GET localhost:8000/v1/dashboard/
 
 ###
+
+GET localhost:8000/v1/referral-info/WVG3Kw4HaDhEpyag/
+
+# Note: WVG3Kw4HaDhEpyag is the referral_token of an existing user
+
+###
