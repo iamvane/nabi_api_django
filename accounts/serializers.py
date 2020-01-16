@@ -18,7 +18,7 @@ from .models import (
     InstructorPlaceForLessons, InstructorLessonRate, InstructorLessonSize, Parent,
     Student, StudentDetails, TiedStudent, get_account,
 )
-from .utils import init_kwargs
+from .utils import add_to_email_list, init_kwargs
 
 User = get_user_model()
 
@@ -161,6 +161,7 @@ class ParentCreateAccountSerializer(BaseCreateAccountSerializer):
         user = super().create(validated_data)
         parent = Parent.objects.create(user=user, **init_kwargs(Parent(), validated_data))
         parent.set_display_name()
+        add_to_email_list(user, 'parents')   # add to list in Sendgrid
         return parent
 
 
@@ -170,6 +171,7 @@ class StudentCreateAccountSerializer(BaseCreateAccountSerializer):
         user = super().create(validated_data)
         student = Student.objects.create(user=user, **init_kwargs(Student(), validated_data))
         student.set_display_name()
+        add_to_email_list(user, 'students')   # add to list in Sendgrid
         return student
 
 
@@ -179,6 +181,7 @@ class InstructorCreateAccountSerializer(BaseCreateAccountSerializer):
         user = super().create(validated_data)
         instructor = Instructor.objects.create(user=user, **init_kwargs(Instructor(), validated_data))
         instructor.set_display_name()
+        add_to_email_list(user, 'instructors')  # add to list in Sendgrid
         return instructor
 
 
