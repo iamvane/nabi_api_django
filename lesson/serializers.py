@@ -446,15 +446,18 @@ class ApplicationDataSerializer(serializers.ModelSerializer):
 
 class LessonBookingStudentDashboardSerializer(serializers.ModelSerializer):
     """Serializer to get data of lesson booking created by a student"""
-    age = serializers.IntegerField(source='user.student.age', read_only=True)
     instrument = serializers.CharField(max_length=250, source='application.request.instrument.name', read_only=True)
     skillLevel = serializers.CharField(max_length=100, source='application.request.skill_level', read_only=True)
     instructor = serializers.CharField(max_length=100, source='application.instructor.display_name', read_only=True)
     lessonsRemaining = serializers.IntegerField(source='remaining_lessons', read_only=True)
+    students = serializers.SerializerMethodField()
 
     class Meta:
         model = LessonBooking
-        fields = ('age', 'instrument', 'skillLevel', 'instructor', 'lessonsRemaining')
+        fields = ('instrument', 'skillLevel', 'instructor', 'lessonsRemaining', 'students')
+
+    def get_students(self, instance):
+        return [{'name': instance.user.first_name, 'age': instance.user.student.age}]
 
 
 class LessonBookingParentDashboardSerializer(serializers.ModelSerializer):
