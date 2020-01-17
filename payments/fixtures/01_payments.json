@@ -1,0 +1,26 @@
+[
+{
+   "model": "payments.payment",
+   "pk": 1,
+   "fields": {
+      "user": 1,
+      "amount": "70.0000",
+      "description": "Booking Lesson",
+      "charge_id": "ch_1FwAI7KKgfFa5BBCyA3lLo4s",
+      "status": "processed",
+      "payment_date": "2020-01-02T16:35:01.316Z"
+   }
+},
+{
+   "model": "payments.payment",
+   "pk": 2,
+   "fields": {
+      "user": 3,
+      "amount": "60.0000",
+      "description": "Booking Lesson",
+      "charge_id": "ch_1FwAI7KKgfFa5BBCyA3lLo4s",
+      "status": "processed",
+      "payment_date": "2020-01-05T14:28:16.519Z"
+   }
+}
+]

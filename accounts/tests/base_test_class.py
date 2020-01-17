@@ -25,6 +25,7 @@ class BaseTest(APITestCase):
         """Set token authorization in client"""
         token = self.get_token(**self.login_data)
         self.client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(token))
+        self.maxDiff = None
 
     def assertDictContained(self, sub_dic, super_dic):
         """Check whether sub_dic is contained in super_dic"""

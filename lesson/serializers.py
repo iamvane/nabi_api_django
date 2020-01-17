@@ -1,4 +1,7 @@
+from dateutil import relativedelta
+
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
 from rest_framework import serializers
 
@@ -130,24 +133,21 @@ class LessonRequestSerializer(serializers.ModelSerializer):
 class LessonRequestDetailSerializer(serializers.ModelSerializer):
     """Serializer for fetching only. Call made by parent or student."""
     instrument = serializers.CharField(read_only=True, source='instrument.name')
+    lessonDuration = serializers.CharField(max_length=100, source='lessons_duration', read_only=True)
+    placeForLessons = serializers.CharField(max_length=100, source='place_for_lessons', read_only=True)
+    requestMessage = serializers.CharField(max_length=100000, source='message', read_only=True)
+    requestTitle = serializers.CharField(max_length=100, source='title', read_only=True)
+    skillLevel = serializers.CharField(max_length=100, source='skill_level', read_only=True)
+    travelDistance = serializers.IntegerField(source='travel_distance', read_only=True)
     students = LessonRequestStudentSerializer(many=True, read_only=True)
 
     class Meta:
         model = LessonRequest
-        fields = ('id', 'instrument', 'message', 'title', 'lessons_duration', 'travel_distance',
-                  'place_for_lessons', 'skill_level', 'students')
+        fields = ('id', 'instrument', 'requestMessage', 'requestTitle', 'lessonDuration', 'travelDistance',
+                  'placeForLessons', 'skillLevel', 'students')
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        data['lessonDuration'] = data.pop('lessons_duration')
-        if data.get('travel_distance') is not None:
-            data['travelDistance'] = data.pop('travel_distance')
-        else:
-            data.pop('travel_distance')
-        data['placeForLessons'] = data.pop('place_for_lessons')
-        data['skillLevel'] = data.pop('skill_level')
-        data['requestTitle'] = data.pop('title')
-        data['requestMessage'] = data.pop('message')
         if instance.students.count() == 0:
             data.pop('students')
             data['studentDetails'] = [{'name': instance.user.first_name, 'age': instance.user.student.age}]
@@ -442,3 +442,190 @@ class ApplicationDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = Application
         fields = ('lessonRate', )
+
+
+class LessonBookingStudentDashboardSerializer(serializers.ModelSerializer):
+    """Serializer to get data of lesson booking created by a student"""
+    instrument = serializers.CharField(max_length=250, source='application.request.instrument.name', read_only=True)
+    skillLevel = serializers.CharField(max_length=100, source='application.request.skill_level', read_only=True)
+    instructor = serializers.CharField(max_length=100, source='application.instructor.display_name', read_only=True)
+    lessonsRemaining = serializers.IntegerField(source='remaining_lessons', read_only=True)
+    students = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LessonBooking
+        fields = ('instrument', 'skillLevel', 'instructor', 'lessonsRemaining', 'students')
+
+    def get_students(self, instance):
+        return [{'name': instance.user.first_name, 'age': instance.user.student.age}]
+
+
+class LessonBookingParentDashboardSerializer(serializers.ModelSerializer):
+    """Serializer to get data of lesson booking created by a parent"""
+    instrument = serializers.CharField(max_length=250, source='application.request.instrument.name', read_only=True)
+    skillLevel = serializers.CharField(max_length=100, source='application.request.skill_level', read_only=True)
+    instructor = serializers.CharField(max_length=100, source='application.instructor.display_name', read_only=True)
+    lessonsRemaining = serializers.IntegerField(source='remaining_lessons', read_only=True)
+    students = LessonRequestStudentSerializer(source='application.request.students', many=True, read_only=True)
+
+    class Meta:
+        model = LessonBooking
+        fields = ('instrument', 'skillLevel', 'instructor', 'lessonsRemaining', 'students')
+
+
+class LessonRequestStudentDashboardSerializer(serializers.ModelSerializer):
+    instrument = serializers.CharField(read_only=True, source='instrument.name')
+    lessonDuration = serializers.CharField(max_length=100, source='lessons_duration', read_only=True)
+    placeForLessons = serializers.CharField(max_length=100, source='place_for_lessons', read_only=True)
+    requestMessage = serializers.CharField(max_length=100000, source='message', read_only=True)
+    requestTitle = serializers.CharField(max_length=100, source='title', read_only=True)
+    skillLevel = serializers.CharField(max_length=100, source='skill_level', read_only=True)
+    studentDetails = serializers.SerializerMethodField()
+    applications = serializers.IntegerField(source='applications.count', read_only=True)
+    createdAt = serializers.DateTimeField(source='created_at', read_only=True)
+
+    class Meta:
+        model = LessonRequest
+        fields = ('id', 'instrument', 'lessonDuration', 'placeForLessons', 'requestMessage', 'requestTitle',
+                  'studentDetails', 'skillLevel', 'applications', 'createdAt')
+
+    def get_studentDetails(self, instance):
+        return [{'name': instance.user.first_name, 'age': instance.user.student.age}]
+
+
+class LessonRequestParentDashboardSerializer(serializers.ModelSerializer):
+    instrument = serializers.CharField(read_only=True, source='instrument.name')
+    lessonDuration = serializers.CharField(max_length=100, source='lessons_duration', read_only=True)
+    placeForLessons = serializers.CharField(max_length=100, source='place_for_lessons', read_only=True)
+    requestMessage = serializers.CharField(max_length=100000, source='message', read_only=True)
+    requestTitle = serializers.CharField(max_length=100, source='title', read_only=True)
+    skillLevel = serializers.CharField(max_length=100, source='skill_level', read_only=True)
+    studentDetails = LessonRequestStudentSerializer(source='students', many=True, read_only=True)
+    applications = serializers.IntegerField(source='applications.count', read_only=True)
+    createdAt = serializers.DateTimeField(source='created_at', read_only=True)
+
+    class Meta:
+        model = LessonRequest
+        fields = ('id', 'instrument', 'lessonDuration', 'placeForLessons', 'requestMessage', 'requestTitle',
+                  'studentDetails', 'skillLevel', 'applications', 'createdAt')
+
+
+class InstructorDashboardSerializer(serializers.ModelSerializer):
+    """Serializer to get data about instructor, for display in dashboard"""
+    class LessonBookingSerializer(serializers.ModelSerializer):
+        bookingId = serializers.IntegerField(source='id', read_only=True)
+        instrument = serializers.CharField(max_length=250, source='application.request.instrument.name', read_only=True)
+        lessonsBooked = serializers.IntegerField(source='quantity', read_only=True)
+        lessonsRemaining = serializers.IntegerField(source='remaining_lessons', read_only=True)
+        skillLevel = serializers.CharField(max_length=100, source='application.request.skill_level', read_only=True)
+        studentName = serializers.CharField(max_length=30, required=False, read_only=True)
+        age = serializers.IntegerField(required=False, read_only=True)
+        parent = serializers.CharField(max_length=30, required=False, read_only=True)
+        students = serializers.ListField(required=False, read_only=True)
+
+        class Meta:
+            model = LessonBooking
+            fields = ('bookingId', 'instrument', 'lessonsBooked', 'lessonsRemaining', 'skillLevel',
+                      'studentName', 'age', 'parent', 'students')
+
+        def to_representation(self, instance):
+            data = super().to_representation(instance)
+            if instance.user.is_parent():
+                data['parent'] = instance.user.parent.display_name
+                data['students'] = [{'name': student.name, 'age': student.age}
+                                    for student in instance.application.request.students.all()]
+            else:
+                data['studentName'] = instance.user.student.display_name
+                data['age'] = instance.user.student.age
+            return data
+
+    backgroundCheckStatus = serializers.CharField(max_length=100, source='bg_status', read_only=True)
+    missingFields = serializers.SerializerMethodField()
+    lessons = serializers.ListField(child=LessonBookingSerializer(), source='lesson_bookings')
+
+    class Meta:
+        model = Instructor
+        fields = ('backgroundCheckStatus', 'complete', 'missingFields', 'lessons')
+
+    def get_missingFields(self, instance):
+        list_fields = instance.missing_fields_camelcase()
+        if not instance.qualifications:
+            list_fields.append('qualification')
+        if not instance.music:
+            list_fields.append('music')
+        return list_fields
+
+
+class LessonRequestInstructorDashboardSerializer(serializers.ModelSerializer):
+    """Serializer to get data of lesson requests available to apply by an instructor"""
+    requestTitle = serializers.CharField(max_length=100, source='title', read_only=True)
+    displayName = serializers.SerializerMethodField()
+    distance = serializers.FloatField(source='distance.mi', read_only=True)
+    instrument = serializers.CharField(max_length=250, source='instrument.name', read_only=True)
+    lessonDuration = serializers.ChoiceField(LESSON_DURATION_CHOICES, source='lessons_duration', read_only=True)
+    placeForLessons = serializers.ChoiceField(PLACE_FOR_LESSONS_CHOICES, source='place_for_lessons', read_only=True)
+    skillLevel = serializers.CharField(max_length=100, source='skill_level', read_only=True)
+    elapsedTime = serializers.SerializerMethodField()
+    role = serializers.CharField(max_length=100, source='user.get_role', read_only=True)
+    applicationsReceived = serializers.IntegerField(source='applications.count', read_only=True)
+    studentDetails = serializers.SerializerMethodField()
+    avatar = serializers.SerializerMethodField()
+    location = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LessonRequest
+        fields = ('id', 'requestTitle', 'displayName', 'distance', 'instrument', 'lessonDuration',
+                  'placeForLessons', 'skillLevel', 'elapsedTime', 'role', 'applicationsReceived', 'studentDetails',
+                  'avatar', 'location')
+
+    def get_displayName(self, instance):
+        if instance.user.is_parent():
+            return instance.user.parent.display_name
+        else:
+            return instance.user.student.display_name
+
+    def get_studentDetails(self, instance):
+        if instance.user.is_parent():
+            return [{'name': item.name, 'age': item.age} for item in instance.students.all()]
+        else:
+            return {'age': instance.user.student.age}
+
+    def get_avatar(self, instance):
+        if instance.user.is_parent():
+            if instance.user.parent.avatar:
+                return instance.user.parent.avatar.path
+            else:
+                return ''
+        else:
+            if instance.user.student.avatar:
+                return instance.user.student.avatar.path
+            else:
+                return ''
+
+    def get_location(self, instance):
+        if instance.user.is_parent():
+            return instance.user.parent.get_location()
+        else:
+            return instance.user.student.get_location()
+
+    def get_elapsedTime(self, instance):
+        elapsed_time = relativedelta.relativedelta(timezone.now(), instance.created_at)
+        if elapsed_time.years > 0:
+            elapsed_str = '{} years'.format(elapsed_time.years)
+        elif elapsed_time.months > 0:
+            elapsed_str = '{} months'.format(elapsed_time.months)
+        elif elapsed_time.days > 0:
+            elapsed_str = '{} days'.format(elapsed_time.days)
+        elif elapsed_time.hours > 0:
+            elapsed_str = '{} hours'.format(elapsed_time.hours)
+        elif elapsed_time.minutes > 0:
+            elapsed_str = '{} minutes'.format(elapsed_time.minutes)
+        else:
+            elapsed_str = '{} seconds'.format(elapsed_time.seconds)
+        return elapsed_str
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if data['distance'] is not None:
+            data['distance'] = format(data['distance'], '.2f')
+        return data

@@ -34,9 +34,9 @@ class ListApplicationLessonRequestTest(BaseTest):
         )
         self.assertEqual(len(resp_data['applications']), 2)
         for application in resp_data['applications']:
-            if application['instructorId'] == 1:
+            if application['applicationId'] == 1:
                 self.assertDictEqual(application, {
-                    'instructorId': 1, 'applicationMessage': "Hello I'm available for teaching lessons",
+                    'instructorId': 1, 'applicationId': 1, 'applicationMessage': "Hello I'm available for teaching lessons",
                     'applicationRate': '35.0000', 'age': 44, 'avatar': '', 'backgroundCheckStatus': 'NOT_VERIFIED',
                     'displayName': 'Luis I.', 'reviews': 0, 'yearsOfExperience': 6,
                     'availability': {'mon8to10': True, 'mon10to12': False, 'mon12to3': True, 'mon3to6': False,
@@ -51,7 +51,7 @@ class ListApplicationLessonRequestTest(BaseTest):
                 })
             else:
                 self.assertDictEqual(application, {
-                    'instructorId': 2, 'applicationMessage': "Hello I'm available",
+                    'instructorId': 2, 'applicationId': 3, 'applicationMessage': "Hello I'm available",
                     'applicationRate': '45.0000', 'age': 44, 'avatar': '', 'backgroundCheckStatus': 'NOT_VERIFIED',
                     'displayName': 'Luis I.', 'reviews': 0, 'yearsOfExperience': 3,
                     'availability': {'mon8to10': False, 'mon10to12': False, 'mon12to3': False, 'mon3to6': False,

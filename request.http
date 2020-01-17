@@ -528,3 +528,7 @@ POST localhost:8000/v1/booking-lessons/
 GET localhost:8000/v1/application-data/1/
 
 ###
+
+GET localhost:8000/v1/dashboard/
+
+###

@@ -143,7 +143,7 @@ class Instructor(IUserAccount):
     instruments = models.ManyToManyField('lesson.Instrument', through='accounts.InstructorInstruments')
     languages = ArrayField(base_field=models.CharField(max_length=100, blank=True), blank=True, null=True)
     music = ArrayField(base_field=models.CharField(max_length=100, blank=True), blank=True, null=True)
-    completed = models.BooleanField(default=False, verbose_name='profile completed')
+    complete = models.BooleanField(default=False, verbose_name='profile completed')
 
     bg_status = models.CharField(max_length=100, choices=BG_STATUSES, blank=True, default=BG_STATUS_NOT_VERIFIED)
     interviewed = models.BooleanField(blank=True, default=False)
@@ -189,10 +189,13 @@ class Instructor(IUserAccount):
         elapsed_time.re_format()
         return elapsed_time.years
 
-    def is_completed(self):
-        """Return True if instructor has provided values of location, verified phone, bio_title, bio_description,
-        instruments, rates, availability, employment, education"""
-        if not self.coordinates:
+    def is_complete(self):
+        """Return True if instructor has provided required values for classified his profile as complete"""
+        if not (self.user.first_name and self.user.last_name and self.display_name):
+            return False
+        if not self.birthday or not self.coordinates or not self.avatar:
+            return False
+        if self.user.reference_requests.count() == 0:   # ToDo: to improve verifying that people fill the reference/form
             return False
         try:
             self.user.phonenumber
@@ -202,17 +205,119 @@ class Instructor(IUserAccount):
             return False
         if not self.bio_title or not self.bio_description:
             return False
-        if self.instruments.count() == 0 or self.instructorlessonrate_set.count() == 0 \
+        if self.instruments.count() == 0 or self.instructorlessonsize_set.count() == 0 \
+                or self.instructoragegroup_set.count() == 0 or self.instructorlessonrate_set.count() == 0 \
                 or self.availability.count() == 0 or self.employment.count() == 0 or self.education.count() == 0:
             return False
         return True
 
-    def update_completed(self):
-        """Update value of completed property, if appropriate"""
-        curr_value = bool(self.user.first_name and self.user.last_name and self.is_completed())
-        if curr_value != self.completed:
-            self.completed = curr_value
+    def update_complete(self):
+        """Update value of complete field, if appropriate"""
+        curr_value = self.is_complete()
+        if curr_value != self.complete:
+            self.complete = curr_value
             self.save()
+
+    def missing_fields(self):
+        """Return a list of fields with absence of values set 'complete' field to False"""
+        list_fields = []
+        if self.complete:
+            return list_fields
+        else:
+            if not self.user.first_name:
+                list_fields.append('first_name')
+            if not self.user.last_name:
+                list_fields.append('last_name')
+            if not self.display_name:
+                list_fields.append('display_name')
+            if not self.birthday:
+                list_fields.append('birthday')
+            if not self.coordinates:
+                list_fields.append('location')
+            if not self.avatar:
+                list_fields.append('avatar')
+            if self.user.reference_requests.count() == 0:
+                list_fields.append('references')
+            try:
+                self.user.phonenumber
+            except models.ObjectDoesNotExist:
+                list_fields.append('phone_number')
+            else:
+                if not self.user.phonenumber.verified_at:
+                    list_fields.append('phone_number')
+            if not self.bio_title:
+                list_fields.append('bio_title')
+            if not self.bio_description:
+                list_fields.append('bio_description')
+            if self.instruments.count() == 0:
+                list_fields.append('instruments')
+            if self.instructorlessonsize_set.count() == 0:
+                list_fields.append('lesson_size')
+            if self.instructoragegroup_set.count() == 0:
+                list_fields.append('age_group')
+            if self.instructorlessonrate_set.count() == 0:
+                list_fields.append('lesson_rate')
+            if self.availability.count() == 0:
+                list_fields.append('availability')
+            if self.employment.count() == 0:
+                list_fields.append('employment')
+            if self.education.count() == 0:
+                list_fields.append('education')
+            return list_fields
+
+    def missing_fields_camelcase(self):
+        """Same as missing_fields method, but returning strings in camelCase format, and names to use in UI.
+        The option of add this method was chosen, in order to avoid usage of many 'if' statements."""
+        list_fields = []
+        if self.complete:
+            return list_fields
+        else:
+            if not self.user.first_name:
+                list_fields.append('firstName')
+            if not self.user.last_name:
+                list_fields.append('lastName')
+            if not self.display_name:
+                list_fields.append('displayName')
+            if not self.birthday:
+                list_fields.append('birthday')
+            if not self.coordinates:
+                list_fields.append('location')
+            if not self.avatar:
+                list_fields.append('avatar')
+            if self.user.reference_requests.count() == 0:
+                list_fields.append('references')
+            try:
+                self.user.phonenumber
+            except models.ObjectDoesNotExist:
+                list_fields.append('isPhoneVerified')
+            else:
+                if not self.user.phonenumber.verified_at:
+                    list_fields.append('isPhoneVerified')
+            if not self.bio_title:
+                list_fields.append('bioTitle')
+            if not self.bio_description:
+                list_fields.append('bioDescription')
+            if self.instruments.count() == 0:
+                list_fields.append('instruments')
+            if self.instructorlessonsize_set.count() == 0:
+                list_fields.append('lessonSize')
+            if self.instructoragegroup_set.count() == 0:
+                list_fields.append('ageGroup')
+            if self.instructorlessonrate_set.count() == 0:
+                list_fields.append('rates')
+            if self.availability.count() == 0:
+                list_fields.append('availability')
+            if self.employment.count() == 0:
+                list_fields.append('employment')
+            if self.education.count() == 0:
+                list_fields.append('education')
+            return list_fields
+
+    def lesson_bookings(self):
+        """Return a list of lesson bookings related to application of this instructor"""
+        from lesson.models import LessonBooking
+        return [item for item in LessonBooking.objects.filter(application__instructor=self, status=LessonBooking.PAID)
+            .order_by('id')]
 
 
 class Education(models.Model):
@@ -362,6 +467,11 @@ class StudentDetails(models.Model):
     lesson_duration = models.CharField(max_length=50, choices=LESSON_DURATION_CHOICES)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'tied_student'], name='unique_student')
+        ]
 
 
 class Affiliate(models.Model):
