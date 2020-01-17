@@ -807,6 +807,7 @@ class DashboardView(views.APIView):
                 request.user.lesson_requests.filter(status=LESSON_REQUEST_ACTIVE).order_by('id'), many=True
             )
             data.update({'requests': ser_rl.data})
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class ReferralInfoView(views.APIView):

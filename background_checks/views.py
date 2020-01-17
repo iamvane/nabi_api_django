@@ -58,8 +58,14 @@ class BackgroundCheckRequestView(views.APIView):
                 description='BackgroundCheck request for instructor {dname} ({inst_id}), requestor: {email}'.format(
                     dname=instructor.display_name, inst_id=instructor.id, email=request.user.email)
             )
+        except stripe.error.InvalidRequestError as error:
+            return Response({'stripeToken': [error.user_message, ]}, status=status.HTTP_400_BAD_REQUEST)
         except stripe.error.CardError as ce:
-            return Response(ce, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'message': ce.user_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except stripe.error.StripeError as error:
+            return Response({'message': error.user_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as ex:
+            return Response({'message': str(ex)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         # register the charge done and service request
         payment = Payment.objects.create(
             user=request.user,
