@@ -6,7 +6,7 @@ from django.contrib.admin.templatetags.admin_list import search_form
 register = Library()
 
 
-def search_form(location, cl):
+def search_form(location, places, cl):
     """
     Display a search form for searching the list.
     """
@@ -14,7 +14,8 @@ def search_form(location, cl):
         'cl': cl,
         'show_result_count': cl.result_count != cl.full_result_count,
         'search_var': SEARCH_VAR,
-        'location_values': location
+        'location_values': location,
+        'places_values': places
     }
 
 

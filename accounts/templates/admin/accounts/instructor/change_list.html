@@ -53,7 +53,7 @@
         {{ cl.formset.non_form_errors }}
     {% endif %}
     <div class="module{% if cl.has_filters %} filtered{% endif %}" id="changelist">
-      {% block search %}{% search_form location_values cl %}{% endblock %}
+      {% block search %}{% search_form location_values places_values cl %}{% endblock %}
       {% block date_hierarchy %}{% if cl.date_hierarchy %}{% date_hierarchy cl %}{% endif %}{% endblock %}
 
       {% block filters %}

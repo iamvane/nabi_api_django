@@ -7,6 +7,10 @@
 <input type="submit" value="{% trans 'Search' %}" style="margin-bottom: 10px">
 <br/><strong>Address: </strong><input type="text" size="30" name="address" id="address" value="{% if location_values %}{{ location_values.address }}{% endif %}"> &nbsp;&nbsp;
 <strong>Distance: </strong><input type="number" name="distance" id="distance" style="width: 7em" value="{% if location_values %}{{ location_values.distance }}{% endif %}"> in miles<br/>
+<strong>Place for lessons: </strong>
+   <input type="checkbox" name="home" style="margin-left: 10px" {% if places_values and places_values.home %} checked {% endif %}> Home
+   <input type="checkbox" name="online" style="margin-left: 10px" {% if places_values and places_values.online %} checked {% endif %}> Online
+   <input type="checkbox" name="studio" style="margin-left: 10px" {% if places_values and places_values.studio %} checked {% endif %}> Studio<br/>
 {% if show_result_count %}
     <span class="small quiet">{% blocktrans count counter=cl.result_count %}{{ counter }} result{% plural %}{{ counter }} results{% endblocktrans %} (<a href="?{% if cl.is_popup %}_popup=1{% endif %}">{% if cl.show_full_result_count %}{% blocktrans with full_result_count=cl.full_result_count %}{{ full_result_count }} total{% endblocktrans %}{% else %}{% trans "Show all" %}{% endif %}</a>)</span>
 {% endif %}

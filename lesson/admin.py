@@ -11,6 +11,8 @@ class ApplicationAdmin(admin.ModelAdmin):
 
     def get_instructor_email(self, obj):
         return obj.instructor.user.email
+    get_instructor_email.short_description = 'user email'
+    get_instructor_email.admin_order_field = 'instructor__user__email'
 
     def view_request(self, obj):
         return 'id: {} ({})'.format(obj.request.id, obj.request.user.email)
@@ -42,7 +44,7 @@ class LessonRequestAdmin(admin.ModelAdmin):
     ordering = ('pk',)
 
     def get_user_email(self, obj):
-        return '{email} (id: {id})'.format(email=obj.user.email, id=obj.user_id)
+        return '{email} (user_id: {id})'.format(email=obj.user.email, id=obj.user_id)
     get_user_email.short_description = 'user email'
     get_user_email.admin_order_field = 'user__email'
 
