@@ -15,6 +15,8 @@ class CreateInstructorTest(APITestCase):
 
     def setUp(self):
         self.url = '{}/v1/register/'.format(settings.HOSTNAME_PROTOCOL)
+        self.qty = Instructor.objects.count()
+        self.qty_users = User.objects.count()
         self.payload = {
             "email": "instructor1@yopmail.com",
             "password": "123456",
@@ -27,6 +29,10 @@ class CreateInstructorTest(APITestCase):
             "role": "instructor",
             "birthday": "1990-09-17",
             "gender": "female",
+            "firstName": "Sara",
+            "lastName": "Connor",
+            "reference": "facebook",
+            "termsAccepted": True,
         }
         self.payload_repeated = {
             "email": "instructor3@yopmail.com",
@@ -51,6 +57,7 @@ class CreateInstructorTest(APITestCase):
         """Test instructor creation with minimal data (email, password, role, birthday)"""
         response = self.client.post(self.url, data=json.dumps(self.payload), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
+        self.assertEqual(Instructor.objects.count(), self.qty + 1)
         self.assertTrue(User.objects.filter(email=self.payload['email']).exists())
         self.assertTrue(User.objects.filter(username=self.payload['email']).exists())
         user_id = User.objects.get(username=self.payload['email']).id
@@ -60,6 +67,7 @@ class CreateInstructorTest(APITestCase):
         """Test instructor creation with complete data (email, password, role, birthday, gender)"""
         response = self.client.post(self.url, data=json.dumps(self.payload_all), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
+        self.assertEqual(Instructor.objects.count(), self.qty + 1)
         self.assertTrue(User.objects.filter(email=self.payload_all['email']).exists())
         self.assertTrue(User.objects.filter(username=self.payload_all['email']).exists())
         user_id = User.objects.get(username=self.payload_all['email']).id
@@ -69,26 +77,34 @@ class CreateInstructorTest(APITestCase):
         """Test instructor creation twice (same data)"""
         response = self.client.post(self.url, data=json.dumps(self.payload_repeated), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
+        self.assertEqual(Instructor.objects.count(), self.qty + 1)
+        self.assertEqual(User.objects.count(), self.qty_users + 1)
         response = self.client.post(self.url, data=json.dumps(self.payload_repeated), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, msg=response.content.decode())
+        self.assertEqual(Instructor.objects.count(), self.qty + 1)
+        self.assertEqual(User.objects.count(), self.qty_users + 1)
 
     def test_create_instructor_missing_birthday(self):
         """Test instructor creation with missing birthday info"""
         response = self.client.post(self.url, data=json.dumps(self.payload_missing_birthday),
                                     content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, msg=response.content.decode())
+        self.assertEqual(Instructor.objects.count(), self.qty)
 
     def test_create_instructor_missing_role(self):
         """Test instructor creation with missing role info"""
         response = self.client.post(self.url, data=json.dumps(self.payload_missing_role),
                                     content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, msg=response.content.decode())
+        self.assertEqual(Instructor.objects.count(), self.qty)
 
 
 class CreateParentTest(APITestCase):
 
     def setUp(self):
         self.url = '{}/v1/register/'.format(settings.HOSTNAME_PROTOCOL)
+        self.qty = Parent.objects.count()
+        self.qty_users = User.objects.count()
         self.payload = {
             "email": "parent1@yopmail.com",
             "password": "123456",
@@ -101,6 +117,10 @@ class CreateParentTest(APITestCase):
             "role": "parent",
             "birthday": "1990-09-17",
             "gender": "male",
+            "firstName": "John",
+            "lastName": "Connor",
+            "reference": "foro",
+            "termsAccepted": True,
         }
         self.payload_repeated = {
             "email": "parent3@yopmail.com",
@@ -126,6 +146,7 @@ class CreateParentTest(APITestCase):
         """Test parent creation with minimal data (email, password, role, birthday)"""
         response = self.client.post(self.url, data=json.dumps(self.payload), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
+        self.assertEqual(Parent.objects.count(), self.qty + 1)
         self.assertTrue(User.objects.filter(email=self.payload['email']).exists())
         self.assertTrue(User.objects.filter(username=self.payload['email']).exists())
         user_id = User.objects.get(username=self.payload['email']).id
@@ -135,6 +156,7 @@ class CreateParentTest(APITestCase):
         """Test parent creation with complete data (email, password, role, birthday, gender)"""
         response = self.client.post(self.url, data=json.dumps(self.payload_all), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
+        self.assertEqual(Parent.objects.count(), self.qty + 1)
         self.assertTrue(User.objects.filter(email=self.payload_all['email']).exists())
         self.assertTrue(User.objects.filter(username=self.payload_all['email']).exists())
         user_id = User.objects.get(username=self.payload_all['email']).id
@@ -144,26 +166,34 @@ class CreateParentTest(APITestCase):
         """Test parent creation twice (same data)"""
         response = self.client.post(self.url, data=json.dumps(self.payload_repeated), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
+        self.assertEqual(Parent.objects.count(), self.qty + 1)
+        self.assertEqual(User.objects.count(), self.qty_users + 1)
         response = self.client.post(self.url, data=json.dumps(self.payload_repeated), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, msg=response.content.decode())
+        self.assertEqual(Parent.objects.count(), self.qty + 1)
+        self.assertEqual(User.objects.count(), self.qty_users + 1)
 
     def test_create_parent_missing_birthday(self):
         """Test parent creation with missing birthday info"""
         response = self.client.post(self.url, data=json.dumps(self.payload_missing_birthday),
                                     content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, msg=response.content.decode())
+        self.assertEqual(Parent.objects.count(), self.qty)
 
     def test_create_parent_missing_role(self):
         """Test parent creation with missing role info"""
         response = self.client.post(self.url, data=json.dumps(self.payload_missing_role),
                                     content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, msg=response.content.decode())
+        self.assertEqual(Parent.objects.count(), self.qty)
 
 
 class CreateStudentTest(APITestCase):
 
     def setUp(self):
         self.url = '{}/v1/register/'.format(settings.HOSTNAME_PROTOCOL)
+        self.qty = Student.objects.count()
+        self.qty_users = User.objects.count()
         self.payload = {
             "email": "student1@yopmail.com",
             "password": "123456",
@@ -176,6 +206,10 @@ class CreateStudentTest(APITestCase):
             "role": "student",
             "birthday": "1990-09-17",
             "gender": "male",
+            "firstName": "Tom",
+            "lastName": "Connor",
+            "reference": "friend",
+            "termsAccepted": False,
         }
         self.payload_repeated = {
             "email": "student3@yopmail.com",
@@ -201,6 +235,7 @@ class CreateStudentTest(APITestCase):
         """Test student creation with minimal data (email, password, role, birthday)"""
         response = self.client.post(self.url, data=json.dumps(self.payload), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
+        self.assertEqual(Student.objects.count(), self.qty + 1)
         self.assertTrue(User.objects.filter(email=self.payload['email']).exists())
         self.assertTrue(User.objects.filter(username=self.payload['email']).exists())
         user_id = User.objects.get(username=self.payload['email']).id
@@ -210,6 +245,7 @@ class CreateStudentTest(APITestCase):
         """Test student creation with complete data (email, password, role, birthday, gender)"""
         response = self.client.post(self.url, data=json.dumps(self.payload_all), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
+        self.assertEqual(Student.objects.count(), self.qty + 1)
         self.assertTrue(User.objects.filter(email=self.payload_all['email']).exists())
         self.assertTrue(User.objects.filter(username=self.payload_all['email']).exists())
         user_id = User.objects.get(username=self.payload_all['email']).id
@@ -219,23 +255,30 @@ class CreateStudentTest(APITestCase):
         """Test student creation twice (same data)"""
         response = self.client.post(self.url, data=json.dumps(self.payload_repeated), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
+        self.assertEqual(Student.objects.count(), self.qty + 1)
+        self.assertEqual(User.objects.count(), self.qty_users + 1)
         response = self.client.post(self.url, data=json.dumps(self.payload_repeated), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, msg=response.content.decode())
+        self.assertEqual(Student.objects.count(), self.qty + 1)
+        self.assertEqual(User.objects.count(), self.qty_users + 1)
 
     def test_create_student_missing_birthday(self):
         """Test student creation with missing birthday info"""
         response = self.client.post(self.url, data=json.dumps(self.payload_missing_birthday),
                                     content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, msg=response.content.decode())
+        self.assertEqual(Student.objects.count(), self.qty)
 
     def test_create_student_missing_role(self):
         """Test student creation with missing role info"""
         response = self.client.post(self.url, data=json.dumps(self.payload_missing_role),
                                     content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, msg=response.content.decode())
+        self.assertEqual(Student.objects.count(), self.qty)
 
 
 class CreateUserWithReferringCodeTest(APITestCase):
+    """Test creation of benefits due to registration of user with referringCode"""
 
     def setUp(self):
         self.url = '{}/v1/register/'.format(settings.HOSTNAME_PROTOCOL)

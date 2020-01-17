@@ -1,10 +1,13 @@
+import requests
+
 from django.conf import settings
 from django.template import loader
 from django.core.mail import EmailMultiAlternatives
 from django.utils import timezone
 
-from core.utils import get_date_a_month_later, send_email
+from core.utils import get_date_a_month_later, send_email, send_admin_email
 from core.constants import ROLE_INSTRUCTOR, HOSTNAME_PROTOCOL
+
 
 def init_kwargs(model, arg_dict):
     return {
@@ -86,3 +89,27 @@ def send_referral_invitation_email(user, email):
         params['anonymous_message']: anonymous_message
 
     send_email(from_email, [to_email], subject, template, plain_template, params)
+
+
+def add_to_email_list(user, list_name):
+    """Add email of user to Sendgrid's email list, including first_name and last_name if are non-empty"""
+    header = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_USER), 'Content-type': 'application/json'}
+    contact = {'email': user.email}
+    if user.first_name:
+        contact['first_name'] = user.first_name
+    if user.last_name:
+        contact['last_name'] = user.last_name
+    response = requests.put('{}marketing/contacts'.format(settings.SENDGRID_API_BASE_URL),
+                            json={'list_ids': [settings.SENDGRID_CONTACT_LIST_IDS.get(list_name)],
+                                  'contacts': [contact]},
+                            headers=header
+                            )
+    if response == 202:
+        send_admin_email("[INFO] Contact couldn't be added to {} list".format(list_name),
+                         """The contact {} could not be added to {} list in Sendgrid.
+
+                         The status_code for API's response was {} and content: {}""".format(list_name,
+                                                                                             contact,
+                                                                                             response.status_code,
+                                                                                             response.content.decode())
+                         )

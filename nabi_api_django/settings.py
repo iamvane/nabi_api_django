@@ -126,6 +126,8 @@ MEDIA_URL = '/dj-media/'
 
 GOOGLE_FORM_REFERENCES_URL = 'https://forms.gle/MuGhfwUARTW9uzrU9'
 
+SENDGRID_API_BASE_URL = 'https://api.sendgrid.com/v3/'
+
 
 REST_PAGE_SIZE = 20
 

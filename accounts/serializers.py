@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Point
@@ -18,18 +19,22 @@ from .models import (
     InstructorPlaceForLessons, InstructorLessonRate, InstructorLessonSize, Parent,
     Student, StudentDetails, TiedStudent, get_account,
 )
-from .utils import init_kwargs
+from .utils import add_to_email_list, init_kwargs
 
 User = get_user_model()
 
 
 class BaseCreateAccountSerializer(serializers.Serializer):
+    first_name = serializers.CharField(max_length=30, required=False)
+    last_name = serializers.CharField(max_length=150, required=False)
+    reference = serializers.CharField(max_length=200, required=False)
     email = serializers.EmailField()
     password = serializers.CharField()
     display_name = serializers.CharField(max_length=100, read_only=True)
     gender = serializers.CharField(max_length=100, allow_blank=True, allow_null=True, required=False, )
     birthday = serializers.DateField(allow_null=True, required=True, )   # LLL: check this
     referringCode = serializers.CharField(max_length=20, allow_blank=True, allow_null=True, required=False)
+    terms_accepted = serializers.BooleanField(required=False)
 
     def validate(self, attrs):
         if User.objects.filter(email=attrs.get('email')).count() > 0:
@@ -61,7 +66,24 @@ class BaseCreateAccountSerializer(serializers.Serializer):
         data = super().to_representation(instance)
         if 'display_name' in data.keys():
             data['displayName'] = data.pop('display_name')
+        if 'first_name' in data.keys():
+            data['firstName'] = data.pop('first_name')
+        if 'last_name' in data.keys():
+            data['lastName'] = data.pop('last_name')
         return data
+
+    def to_internal_value(self, data):
+        new_data = data.copy()
+        keys = dict.fromkeys(data, 1)
+        if keys.get('firstName'):
+            new_data['first_name'] = new_data.pop('firstName')
+        if keys.get('lastName'):
+            new_data['last_name'] = new_data.pop('lastName')
+        if keys.get('displayName'):
+            new_data['display_name'] = new_data.pop('displayName')
+        if keys.get('termsAccepted'):
+            new_data['terms_accepted'] = new_data.pop('termsAccepted')
+        return super().to_internal_value(new_data)
 
 
 class UserInfoUpdateSerializer(serializers.ModelSerializer):
@@ -140,6 +162,8 @@ class ParentCreateAccountSerializer(BaseCreateAccountSerializer):
         user = super().create(validated_data)
         parent = Parent.objects.create(user=user, **init_kwargs(Parent(), validated_data))
         parent.set_display_name()
+        if not settings.DEBUG:
+            add_to_email_list(user, 'parents')   # add to list in Sendgrid
         return parent
 
 
@@ -149,6 +173,8 @@ class StudentCreateAccountSerializer(BaseCreateAccountSerializer):
         user = super().create(validated_data)
         student = Student.objects.create(user=user, **init_kwargs(Student(), validated_data))
         student.set_display_name()
+        if not settings.DEBUG:
+            add_to_email_list(user, 'students')   # add to list in Sendgrid
         return student
 
 
@@ -158,6 +184,8 @@ class InstructorCreateAccountSerializer(BaseCreateAccountSerializer):
         user = super().create(validated_data)
         instructor = Instructor.objects.create(user=user, **init_kwargs(Instructor(), validated_data))
         instructor.set_display_name()
+        if not settings.DEBUG:
+            add_to_email_list(user, 'instructors')  # add to list in Sendgrid
         return instructor
 
 
