@@ -222,7 +222,7 @@ class LessonBookingRegisterView(views.APIView):
                                                    quantity=serializer.validated_data['quantity'],
                                                    total_amount=serializer.validated_data['total_amount'],
                                                    application_id=serializer.validated_data['application']['id'],
-                                                   status=LessonBooking.REQUESTED)
+                                                   status=LessonBooking.REQUESTED).last()
             if not booking:
                 booking = LessonBooking.objects.create(user_id=serializer.validated_data['user']['id'],
                                                        quantity=serializer.validated_data['quantity'],
