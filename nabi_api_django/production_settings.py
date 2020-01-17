@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'lesson.apps.LessonConfig',
     'notices',
     'references',
+    'background_checks.apps.BackgroundChecksConfig',
 
     'drf_yasg',
     'storages',
@@ -184,3 +185,7 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=30),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
 }
+
+SENDGRID_API_BASE_URL = 'https://api.sendgrid.com/v3/'
+STRIPE_PUBLIC_KEY = 'foo'
+STRIPE_SECRET_KEY = 'foo'
