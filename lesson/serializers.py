@@ -391,10 +391,10 @@ class LessonRequestListItemSerializer(serializers.ModelSerializer):
     def get_location(self, instance):
         account = get_account(instance.user)
         if account:
-            _, state, city = account.get_location(result_type='tuple')
-            return '{}, {}'.format(city, state)
-        else:
-            return ''
+            location_tuple = account.get_location(result_type='tuple')
+            if location_tuple:
+                return '{}, {}'.format(location_tuple[2], location_tuple[1])
+        return ''
 
     def get_studentDetails(self, instance):
         if instance.user.is_parent():
