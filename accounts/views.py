@@ -644,7 +644,7 @@ class InstructorListView(views.APIView):
     permission_classes = (AllowAny, )
 
     def get(self, request):
-        qs = Instructor.objects.filter(completed=True)
+        qs = Instructor.objects.filter(complete=True)
         # adjust qs for each received param
         query_serializer = sers.InstructorQueryParamsSerializer(data=request.query_params.dict())
         if query_serializer.is_valid():
