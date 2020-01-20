@@ -55,5 +55,5 @@ class LessonRequestsListTest(BaseTest):
                                          })
 
     def test_request_not_exist(self):
-        response = self.client.get(self.url + '5/')
+        response = self.client.get(self.url + '6/')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, msg=response.content.decode())
