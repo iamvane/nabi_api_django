@@ -237,5 +237,5 @@ DEFAULT_FILE_STORAGE = 'core.storage_backends.MediaStorage'
 SENDGRID_CONTACT_LIST_IDS = {
     'instructors': os.environ['SENDGRID_CONTACT_LIST_INSTRUCTORS'],
     'parents': os.environ['SENDGRID_CONTACT_LIST_PARENTS'],
-    'students': os.environ['SENDGRID_CONTACT_LIST_STUDENTS]
+    'students': os.environ['SENDGRID_CONTACT_LIST_STUDENTS']
 }
