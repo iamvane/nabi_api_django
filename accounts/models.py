@@ -88,6 +88,11 @@ class IUserAccount(models.Model):
                     return country, state, city
                 else:
                     return ()
+        else:
+            if result_type == 'string':
+                return ''
+            else:
+                return ()
 
     def set_display_name(self):
         if self.user.last_name:
