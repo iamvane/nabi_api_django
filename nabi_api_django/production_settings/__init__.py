@@ -144,12 +144,13 @@ AUTH_USER_MODEL = 'core.User'
 
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
+from sentry_sdk.integrations.logging import ignore_logger
 
 sentry_sdk.init(
     dsn="https://e7aee34ab87d4e62ac4570f9c384436c@sentry.io/1774495",
     integrations=[DjangoIntegration()]
 )
-
+ignore_logger('django.security.DisallowedHost')
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
