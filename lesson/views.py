@@ -105,7 +105,7 @@ class LessonRequestListView(views.APIView):
             account = None
         else:
             account = get_account(request.user)
-        qs = LessonRequest.objects.annotate(coords=Case(
+        qs = LessonRequest.objects.exclude(status=LESSON_REQUEST_CLOSED).annotate(coords=Case(
             When(user__parent__isnull=False, then=F('user__parent__coordinates')),
             When(user__student__isnull=False, then=F('user__student__coordinates')),
             default=None,
