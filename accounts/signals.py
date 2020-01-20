@@ -50,5 +50,7 @@ def change_completed_profile(sender, instance, **kwargs):
     if isinstance(instance, InstructorInstruments) or isinstance(instance, InstructorAgeGroup) \
             or isinstance(instance, InstructorLessonRate) or isinstance(instance, InstructorLessonSize) \
             or isinstance(instance, Availability) or isinstance(instance, Education) \
-            or isinstance(instance, Employment) or isinstance(instance, ReferenceRequest):
+            or isinstance(instance, Employment):
         instance.instructor.update_complete()
+    if isinstance(instance, ReferenceRequest):
+        instance.user.instructor.update_complete()
