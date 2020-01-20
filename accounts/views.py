@@ -825,5 +825,5 @@ class ReferralInfoView(views.APIView):
             if account.display_name:
                 data['displayName'] = account.display_name
             if account.avatar:
-                data['avatar'] = account.avatar.path
+                data['avatar'] = account.avatar.url
         return Response(data, status=status.HTTP_200_OK)

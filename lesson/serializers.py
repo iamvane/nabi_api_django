@@ -204,7 +204,7 @@ class ApplicationItemSerializer(serializers.ModelSerializer):
     applicationMessage = serializers.CharField(source='message', read_only=True)
     applicationRate = serializers.DecimalField(max_digits=9, decimal_places=4, source='rate', read_only=True)
     availability = AvailavilitySerializer(source='instructor.availability.all', many=True, read_only=True)
-    avatar = serializers.CharField(source='instructor.avatar', read_only=True)
+    avatar = serializers.CharField(source='instructor.avatar.url', read_only=True)
     backgroundCheckStatus = serializers.CharField(max_length=100, source='instructor.bg_status', read_only=True)
     displayName = serializers.CharField(max_length=100, source='instructor.display_name', read_only=True)
     instructorId = serializers.IntegerField(source='instructor.id', read_only=True)
@@ -289,14 +289,14 @@ class LessonRequestItemSerializer(serializers.ModelSerializer):
         if data.get('role') == ROLE_STUDENT:
             new_data['studentDetails'] = [{'name': instance.user.first_name, 'age': instance.user.student.age}]
             try:
-                new_data['avatar'] = instance.user.student.avatar.path
+                new_data['avatar'] = instance.user.student.avatar.url
             except ValueError:
                 new_data['avatar'] = ''
             new_data['location'] = instance.user.student.location
         else:
             new_data['studentDetails'] = data.get('students')
             try:
-                new_data['avatar'] = instance.user.parent.avatar.path
+                new_data['avatar'] = instance.user.parent.avatar.url
             except ValueError:
                 new_data['avatar'] = ''
             new_data['location'] = instance.user.parent.location
@@ -363,7 +363,7 @@ class LessonRequestListItemSerializer(serializers.ModelSerializer):
     def get_avatar(self, instance):
         account = get_account(instance.user)
         if account and account.avatar:
-            return account.avatar.path
+            return account.avatar.url
         else:
             return ''
 
@@ -593,12 +593,12 @@ class LessonRequestInstructorDashboardSerializer(serializers.ModelSerializer):
     def get_avatar(self, instance):
         if instance.user.is_parent():
             if instance.user.parent.avatar:
-                return instance.user.parent.avatar.path
+                return instance.user.parent.avatar.url
             else:
                 return ''
         else:
             if instance.user.student.avatar:
-                return instance.user.student.avatar.path
+                return instance.user.student.avatar.url
             else:
                 return ''
 
