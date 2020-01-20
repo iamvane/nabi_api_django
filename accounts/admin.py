@@ -53,7 +53,7 @@ class LessonSizeAdmin(admin.TabularInline):
 
 
 class InstructorAdmin(admin.ModelAdmin):
-    fields = ('user', 'display_name', 'age', 'avatar', 'bio_title', 'bio_description', 'distance',
+    fields = ('user', 'display_name', 'age', 'avatar', 'bio_title', 'bio_description', 'distance', 'location',
               'music', 'interviewed', 'languages', 'studio_address', 'travel_distance', 'experience_years', )
     list_display = ('pk', 'user', 'display_name', 'distance', )
     list_filter = ('interviewed', 'complete', )
@@ -140,6 +140,16 @@ class InstructorAdmin(admin.ModelAdmin):
             return instance.distance.mi
         else:
             return None
+
+    def save_model(self, request, obj, form, change):
+        if 'location' in form.changed_data:
+            geocoder = Geocoder(api_key=settings.GOOGLE_MAPS_API_KEY)
+            try:
+                results = geocoder.geocode(obj.location)
+            except GeocoderError as e:
+                raise Exception(e.status, e.response)
+            obj.coordinates = Point(results[0].coordinates[1], results[0].coordinates[0])
+        super().save_model(request, obj, form, change)
 
 
 admin.site.register(User, UserAdmin)
