@@ -93,7 +93,7 @@ def send_referral_invitation_email(user, email):
 
 def add_to_email_list(user, list_name):
     """Add email of user to Sendgrid's email list, including first_name and last_name if are non-empty"""
-    header = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_USER), 'Content-type': 'application/json'}
+    header = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-type': 'application/json'}
     contact = {'email': user.email}
     if user.first_name:
         contact['first_name'] = user.first_name
