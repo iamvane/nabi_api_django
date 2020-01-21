@@ -48,7 +48,8 @@ class LessonRequestView(views.APIView):
 
     def get(self, request):
         """Get a list of lesson requests, registered by current user"""
-        ser = sers.LessonRequestDetailSerializer(request.user.lesson_requests.all(), many=True)
+        ser = sers.LessonRequestDetailSerializer(request.user.lesson_requests.exclude(status=LESSON_REQUEST_CLOSED),
+                                                 many=True)
         return Response(ser.data, status=status.HTTP_200_OK)
 
 
