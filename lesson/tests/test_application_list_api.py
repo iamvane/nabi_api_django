@@ -25,7 +25,7 @@ class ListApplicationLessonRequestTest(BaseTest):
 
     def test_success(self):
         """Get data of lesson request's applications successfully"""
-        response = self.client.get(self.url + '1/',)
+        response = self.client.get(self.url + '1/')
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
         resp_data = response.json()
         self.assertDictContained(
@@ -35,9 +35,10 @@ class ListApplicationLessonRequestTest(BaseTest):
         self.assertEqual(len(resp_data['applications']), 2)
         for application in resp_data['applications']:
             if application['applicationId'] == 1:
+                application.pop('avatar')
                 self.assertDictEqual(application, {
                     'instructorId': 1, 'applicationId': 1, 'applicationMessage': "Hello I'm available for teaching lessons",
-                    'applicationRate': '35.0000', 'age': 44, 'avatar': '', 'backgroundCheckStatus': 'NOT_VERIFIED',
+                    'applicationRate': '35.0000', 'age': 44, 'backgroundCheckStatus': 'NOT_VERIFIED',
                     'displayName': 'Luis I.', 'reviews': 0, 'yearsOfExperience': 6,
                     'availability': {'mon8to10': True, 'mon10to12': False, 'mon12to3': True, 'mon3to6': False,
                                      'mon6to9': False, 'tue8to10': False, 'tue10to12': False, 'tue12to3': False,
@@ -50,9 +51,10 @@ class ListApplicationLessonRequestTest(BaseTest):
                                      'sun12to3': False, 'sun3to6': False, 'sun6to9': False}
                 })
             else:
+                application.pop('avatar')
                 self.assertDictEqual(application, {
                     'instructorId': 2, 'applicationId': 3, 'applicationMessage': "Hello I'm available",
-                    'applicationRate': '45.0000', 'age': 44, 'avatar': '', 'backgroundCheckStatus': 'NOT_VERIFIED',
+                    'applicationRate': '45.0000', 'age': 44, 'backgroundCheckStatus': 'NOT_VERIFIED',
                     'displayName': 'Luis I.', 'reviews': 0, 'yearsOfExperience': 3,
                     'availability': {'mon8to10': False, 'mon10to12': False, 'mon12to3': False, 'mon3to6': False,
                                      'mon6to9': False, 'tue8to10': False, 'tue10to12': False, 'tue12to3': False,

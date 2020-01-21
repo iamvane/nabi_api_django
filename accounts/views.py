@@ -778,7 +778,7 @@ class DashboardView(views.APIView):
             if request.user.instructor.coordinates:
                 requests = LessonRequest.objects.exclude(applications__in=Application.objects.filter(
                     instructor=request.user.instructor)
-                ).annotate(coords=Case(
+                ).exclude(status=LESSON_REQUEST_CLOSED).annotate(coords=Case(
                     When(user__parent__isnull=False, then=F('user__parent__coordinates')),
                     When(user__student__isnull=False, then=F('user__student__coordinates')),
                     default=None,

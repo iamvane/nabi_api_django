@@ -22,7 +22,7 @@ class LessonRequestsListTest(BaseTest):
     def test_success(self):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
-        self.assertEqual(len(response.json().get('results')), 4)
+        self.assertEqual(len(response.json().get('results')), 3)
 
     def test_success_filter_by_age(self):
         # filter by age
@@ -42,7 +42,7 @@ class LessonRequestsListTest(BaseTest):
         response = self.client.get(self.url + '?instrument=piano')
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
         resp_data = response.json()
-        self.assertEqual(len(resp_data.get('results')), 2)
+        self.assertEqual(len(resp_data.get('results')), 1)
         for item in resp_data.get('results'):
             self.assertIn(item.get('instrument'), 'piano')
 
@@ -53,14 +53,14 @@ class LessonRequestsListTest(BaseTest):
         resp_data = response.json()
         self.assertEqual(len(resp_data.get('results')), 2)
         for item in resp_data.get('results'):
-            self.assertIn(item.get('id'), [2, 4])
+            self.assertIn(item.get('id'), [4, 5])
 
     def test_success_placeforlessons(self):
         # filter by placeForlessons
         response = self.client.get(self.url + '?placeForLessons=home')
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
         result_data = response.json().get('results')
-        self.assertEqual(len(result_data), 2)
+        self.assertEqual(len(result_data), 1)
         # verify that all requests have placeForLessons = home
         for item in result_data:
             self.assertEqual(item['placeForLessons'], 'home')
@@ -70,7 +70,7 @@ class LessonRequestsListTest(BaseTest):
         response = self.client.get(self.url + '?placeForLessons=home,online')
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
         result_data = response.json().get('results')
-        self.assertEqual(len(response.json().get('results')), 4)
+        self.assertEqual(len(response.json().get('results')), 3)
         # verify that all requests have placeForLessons = home or placeForLessons = online
         for item in result_data:
             self.assertIn(item['placeForLessons'], ['home', 'online'])

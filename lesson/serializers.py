@@ -144,7 +144,7 @@ class LessonRequestDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = LessonRequest
         fields = ('id', 'instrument', 'requestMessage', 'requestTitle', 'lessonDuration', 'travelDistance',
-                  'placeForLessons', 'skillLevel', 'students')
+                  'placeForLessons', 'skillLevel', 'status', 'students')
 
     def to_representation(self, instance):
         data = super().to_representation(instance)

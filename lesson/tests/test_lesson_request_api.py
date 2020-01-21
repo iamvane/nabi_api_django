@@ -157,7 +157,7 @@ class LessonRequestListTest(BaseTest):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(LessonRequest.objects.count(), self.qty)
-        self.assertEqual(len(response.json()), 2)
+        self.assertEqual(len(response.json()), 1)
 
     def test_student_empty_data(self):
         """Get an empty list, by student"""

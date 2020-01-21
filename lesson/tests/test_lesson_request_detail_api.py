@@ -224,7 +224,8 @@ class LessonRequestFetchTest(BaseTest):
             "placeForLessons": "home",
             "lessonDuration": "45 mins",
             "studentDetails": [{"name": "Luis"}, ],
-            "travelDistance": 100
+            "travelDistance": 100,
+            "status": "CLOSED"
         },
         {
             "id": 2,
@@ -235,7 +236,8 @@ class LessonRequestFetchTest(BaseTest):
             "placeForLessons": "home",
             "lessonDuration": "60 mins",
             "studentDetails": [{"name": "Santiago", "age": 9}, {"name": "Teresa", "age": 7}],
-            "travelDistance": 100
+            "travelDistance": 100,
+            "status": "CLOSED"
         },
     ]
 
