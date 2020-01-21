@@ -162,11 +162,13 @@ if not DEBUG:
 
     import sentry_sdk
     from sentry_sdk.integrations.django import DjangoIntegration
+    from sentry_sdk.integrations.logging import ignore_logger
 
     sentry_sdk.init(
         dsn="https://e7aee34ab87d4e62ac4570f9c384436c@sentry.io/1774495",
         integrations=[DjangoIntegration()]
     )
+    ignore_logger('django.security.DisallowedHost')
 
 POSTGIS_TEMPLATE = 'nabidb'
 
