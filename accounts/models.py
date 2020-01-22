@@ -151,7 +151,8 @@ class Instructor(IUserAccount):
     music = ArrayField(base_field=models.CharField(max_length=100, blank=True), blank=True, null=True)
     complete = models.BooleanField(default=False, verbose_name='profile completed')
 
-    bg_status = models.CharField(max_length=100, choices=BG_STATUSES, blank=True, default=BG_STATUS_NOT_VERIFIED)
+    bg_status = models.CharField(max_length=100, choices=BG_STATUSES, blank=True, default=BG_STATUS_NOT_VERIFIED,
+                                 verbose_name='Background check status')
     interviewed = models.BooleanField(blank=True, default=False)
     job_preferences = ArrayField(blank=True, null=True, base_field=models.CharField(max_length=100))
     qualifications = ArrayField(blank=True, null=True, base_field=models.CharField(max_length=100))
