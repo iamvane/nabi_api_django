@@ -18,11 +18,13 @@ from rest_framework.response import Response
 
 from accounts.models import get_account
 from core.constants import *
+from core.models import TaskLog
 from core.permissions import AccessForInstructor, AccessForParentOrStudent
 from payments.models import Payment
 
 from . import serializers as sers
 from .models import Application, LessonBooking, LessonRequest
+from .tasks import send_request_alert_instructors
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -41,6 +43,9 @@ class LessonRequestView(views.APIView):
             ser = sers.LessonRequestSerializer(data=data, context={'is_parent': False})
         if ser.is_valid():
             obj = ser.save()
+            task_log = TaskLog.objects.create(task_name='send_request_alert_instructors',
+                                              args={'request_id': obj.id})
+            send_request_alert_instructors.delay(obj.id, task_log.id)
             ser = sers.LessonRequestDetailSerializer(obj)
             return Response(ser.data, status=status.HTTP_200_OK)
         else:
