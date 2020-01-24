@@ -58,7 +58,8 @@ def send_referral_invitation_email(user, email):
     from_email = 'Nabi Music <' + settings.DEFAULT_FROM_EMAIL + '>'
     template = 'referral_email.html'
     plain_template = 'referral_email_plain.html'
-    user_full_name =  '{} {}'.format(first_name, last_name)
+    user_full_name = '{} {}'.format(first_name, last_name)
+    referral_url = '{}/referral/{}'.format(settings.HOSTNAME_PROTOCOL, referral_token)
     anonymous_message = ''
 
     if not user_full_name.strip():
@@ -72,18 +73,14 @@ def send_referral_invitation_email(user, email):
         subject = user_full_name + ' invited you to Nabi Music'
 
     if role == ROLE_INSTRUCTOR:
-        referral_url = '{}/registration-instructor?token={}'.format(settings.HOSTNAME_PROTOCOL,
-            referral_token)
         heading = 'sent you a lesson FREE of fees!'
         description = 'to keep 100% of your earnings.'
     else:
-        referral_url =  '{}/registration-student?token={}'.format(settings.HOSTNAME_PROTOCOL,
-            referral_token)
         heading = 'sent you a FREE music lesson!'
         description = 'to get your FREE lesson.'
 
     params = {'first_name': first_name, 'last_name': last_name, 'date_limit': date_limit,
-        'referral_url': referral_url, 'heading': heading, 'description': description}
+              'referral_url': referral_url, 'heading': heading, 'description': description}
 
     if anonymous_message:
         params['anonymous_message']: anonymous_message
