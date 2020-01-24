@@ -131,3 +131,10 @@ class ProviderRequest(models.Model):
     response_content_text = models.TextField(blank=True, default='')   # when json format is not accepted
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+
+class TaskLog(models.Model):
+    """Register called asynchronous tasks, which will be deleted when processing"""
+    task_name = models.CharField(max_length=200)
+    args = JSONField()
+    registered_at = models.DateTimeField(auto_now_add=True)
