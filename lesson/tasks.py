@@ -15,6 +15,5 @@ def send_request_alert_instructors(request_id, task_log_id):
     account = get_account(request.user)
     if account and account.coordinates:
         for instructor in Instructor.objects.filter(coordinates__distance_lte=(account.coordinates, D(mi=50))):
-            print(instructor.id, instructor.user.email)
             send_alert_request_instructor(instructor, request, account)
     TaskLog.objects.filter(id=task_log_id).delete()
