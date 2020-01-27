@@ -196,3 +196,6 @@ SIMPLE_JWT = {
 SENDGRID_API_BASE_URL = 'https://api.sendgrid.com/v3/'
 STRIPE_PUBLIC_KEY = 'foo'
 STRIPE_SECRET_KEY = 'foo'
+
+CELERY_BROKER_URL = 'foo'
+BROKER_POOL_LIMIT = 1
