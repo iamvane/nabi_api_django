@@ -245,3 +245,6 @@ SENDGRID_CONTACT_LIST_IDS = {
     'parents': os.environ['SENDGRID_CONTACT_LIST_PARENTS'],
     'students': os.environ['SENDGRID_CONTACT_LIST_STUDENTS']
 }
+
+CELERY_BROKER_URL = os.environ['BROKER_URL']
+BROKER_POOL_LIMIT = 1
