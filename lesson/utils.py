@@ -1,5 +1,6 @@
+import re
+
 from django.conf import settings
-from django.urls import reverse_lazy
 
 from core.utils import send_email
 
@@ -31,3 +32,22 @@ def send_alert_application(application, instructor, request_creator_account):
         'reference_url': '{}/application-list/{}'.format(settings.HOSTNAME_PROTOCOL, application.request.id)
     }
     send_email(from_email, [request_creator_account.user.email], subject, template, plain_template, params)
+
+
+def send_invoice_booking(booking, payment):
+    """Send email with invoice data for a lesson booking"""
+    from_email = 'Nabi Music <' + settings.DEFAULT_FROM_EMAIL + '>'
+    template = 'booking_invoice_email.html'
+    plain_template = 'booking_invoice_email_plain.html'
+    subject = 'Payment invoice for music lessons'
+    package_name = 'Unknown'
+    res = re.match('Package (.+)', booking.description)
+    if res and res.groups():
+        package_name = res.groups()[0]
+    params = {
+        'transaction_id': payment.charge_id,
+        'package_name': package_name,
+        'amount': payment.amount,
+        'payment_date': payment.payment_date.strftime('%m/%d/%Y')
+    }
+    send_email(from_email, [booking.user.email], subject, template, plain_template, params)

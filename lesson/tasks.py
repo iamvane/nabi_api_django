@@ -4,8 +4,8 @@ from accounts.models import get_account, Instructor
 from core.models import TaskLog
 from nabi_api_django.celery_config import app
 
-from .models import Application, LessonRequest
-from .utils import send_alert_application, send_alert_request_instructor
+from .models import Application, LessonBooking, LessonRequest
+from .utils import send_alert_application, send_alert_request_instructor, send_invoice_booking
 
 
 @app.task
@@ -25,4 +25,11 @@ def send_application_alert(application_id, task_log_id):
     application = Application.objects.get(id=application_id)
     account = get_account(application.request.user)
     send_alert_application(application, application.instructor, account)
+    TaskLog.objects.filter(id=task_log_id).delete()
+
+
+def send_booking_invoice(booking_id, task_log_id):
+    """Send an email to student or parent (lesson request creator) containing an invoice of booking lesson"""
+    booking = LessonBooking.objects.get(id=booking_id)
+    send_invoice_booking(booking, booking.payment)
     TaskLog.objects.filter(id=task_log_id).delete()
