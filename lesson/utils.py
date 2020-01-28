@@ -17,3 +17,17 @@ def send_alert_request_instructor(instructor, lesson_request, requestor_account)
         'reference_url': '{}/request/{}'.format(settings.HOSTNAME_PROTOCOL, lesson_request.id)
     }
     send_email(from_email, [instructor.user.email], subject, template, plain_template, params)
+
+
+def send_alert_application(application, instructor, request_creator_account):
+    """Send advice of new application for a created lesson request"""
+    from_email = 'Nabi Music <' + settings.DEFAULT_FROM_EMAIL + '>'
+    template = 'application_advice_email.html'
+    plain_template = 'application_advice_email_plain.html'
+    subject = 'You have a new applicant'
+    params = {
+        'instructor_name': instructor.display_name,
+        'request_title': application.request.title,
+        'reference_url': '{}/application-list/{}'.format(settings.HOSTNAME_PROTOCOL, application.id)
+    }
+    send_email(from_email, [request_creator_account.user.email], subject, template, plain_template, params)
