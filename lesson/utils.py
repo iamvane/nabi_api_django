@@ -28,6 +28,6 @@ def send_alert_application(application, instructor, request_creator_account):
     params = {
         'instructor_name': instructor.display_name,
         'request_title': application.request.title,
-        'reference_url': '{}/application-list/{}'.format(settings.HOSTNAME_PROTOCOL, application.id)
+        'reference_url': '{}/application-list/{}'.format(settings.HOSTNAME_PROTOCOL, application.request.id)
     }
     send_email(from_email, [request_creator_account.user.email], subject, template, plain_template, params)
