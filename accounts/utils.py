@@ -101,7 +101,7 @@ def add_to_email_list(user, list_name):
                                   'contacts': [contact]},
                             headers=header
                             )
-    if response == 202:
+    if response.status_code != 202:
         send_admin_email("[INFO] Contact couldn't be added to {} list".format(list_name),
                          """The contact {} could not be added to {} list in Sendgrid.
 
