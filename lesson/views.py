@@ -24,7 +24,7 @@ from payments.models import Payment
 
 from . import serializers as sers
 from .models import Application, LessonBooking, LessonRequest
-from .tasks import send_application_alert, send_booking_invoice, send_request_alert_instructors
+from .tasks import send_application_alert, send_booking_alert, send_booking_invoice, send_request_alert_instructors
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -264,9 +264,11 @@ class LessonBookingRegisterView(views.APIView):
                 booking.application.request.save()
                 payment.status = PY_PROCESSED
                 payment.save()
+
             task_log = TaskLog.objects.create(task_name='send_booking_invoice', args={'booking_id': booking.id})
             send_booking_invoice.delay(booking.id, task_log.id)
-
+            task_log = TaskLog.objects.create(task_name='', args={})
+            send_booking_alert.delay(booking.id, task_log.id)
             return Response({'message': 'success'}, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

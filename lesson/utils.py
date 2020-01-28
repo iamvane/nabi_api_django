@@ -2,7 +2,7 @@ import re
 
 from django.conf import settings
 
-from core.utils import send_email
+from core.utils import send_admin_email, send_email
 
 
 def send_alert_request_instructor(instructor, lesson_request, requestor_account):
@@ -51,3 +51,27 @@ def send_invoice_booking(booking, payment):
         'payment_date': payment.payment_date.strftime('%m/%d/%Y')
     }
     send_email(from_email, [booking.user.email], subject, template, plain_template, params)
+
+
+def send_alert_booking(booking, instructor, buyer_account):
+    """Send advice of new lesson booking to instructor and administrator"""
+    from_email = 'Nabi Music <' + settings.DEFAULT_FROM_EMAIL + '>'
+    template = 'booking_advice_email.html'
+    plain_template = 'booking_advice_email_plain.html'
+    subject = '{} booked lessons with you'.format(buyer_account.display_name)
+    package_name = 'Unknown'
+    res = re.match('Package (.+)', booking.description)
+    if res and res.groups():
+        package_name = res.groups()[0]
+    params = {
+        'buyer_name': buyer_account.display_name,
+        'package_name': package_name,
+        'lesson_qty': booking.quantity,
+    }
+    send_email(from_email, [instructor.user.email], subject, template, plain_template, params)
+    send_admin_email('New lessons booking',
+                     '{buyer_name} booked {package_name} package with {instructor_name} '
+                     'Go to the admin dashboard to manage booking.'.format(buyer_name=buyer_account.display_name,
+                                                                           package_name=package_name,
+                                                                           instructor_name=instructor.display_name)
+                     )
