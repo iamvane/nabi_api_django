@@ -1,7 +1,9 @@
+from django.conf import settings
 from django.contrib.gis.measure import D
 
 from accounts.models import get_account, Instructor
-from core.models import TaskLog
+from core.models import TaskLog, User
+from core.utils import send_email
 from nabi_api_django.celery_config import app
 
 from .models import Application, LessonBooking, LessonRequest
@@ -43,3 +45,29 @@ def send_booking_alert(booking_id, task_log_id):
     account = get_account(booking.user)
     send_alert_booking(booking, booking.application.instructor, account)
     TaskLog.objects.filter(id=task_log_id).delete()
+
+
+@app.task
+def send_email_invitation_create_request():
+    """Send an email to invite parent/student to create a lesson request"""
+    url_reference = '{}/build-request/request'.format(settings.HOSTNAME_PROTOCOL)
+    email_list = list(User.objects.filter(parent__isnull=False, lesson_requests__isnull=True).distinct('email')
+                      .values_list('email', flat=True)
+                      )
+    send_email('Nabi Music <' + settings.DEFAULT_FROM_EMAIL + '>',
+               email_list,
+               'Request a music instructor for your children!',
+               'request_invitation_parent_email.html',
+               'request_invitation_parent_email_plain.html',
+               {'reference_url': url_reference}
+               )
+    email_list = list(User.objects.filter(student__isnull=False, lesson_requests__isnull=True).distinct('email')
+                      .values_list('email', flat=True)
+                      )
+    send_email('Nabi Music <' + settings.DEFAULT_FROM_EMAIL + '>',
+               email_list,
+               'Request your music instructor today!',
+               'request_invitation_parent_email.html',
+               'request_invitation_parent_email_plain.html',
+               {'reference_url': url_reference}
+               )

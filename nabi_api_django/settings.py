@@ -1,4 +1,5 @@
 import os
+from celery.schedules import crontab
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -112,6 +113,12 @@ ADMIN_EMAIL = DEFAULT_FROM_EMAIL
 
 CELERY_BROKER_URL = os.environ.get('BROKER_URL', '')
 BROKER_POOL_LIMIT = 1
+CELERY_BEAT_SCHEDULE = {
+    'send-invitation-request': {
+        'task': 'lesson.tasks.send_email_invitation_create_request',
+        'schedule': crontab(hour='*/48'),
+    }
+}
 
 
 # Internationalization

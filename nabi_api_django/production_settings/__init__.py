@@ -1,5 +1,6 @@
 import os
 import dj_database_url
+from celery.schedules import crontab
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -249,3 +250,9 @@ SENDGRID_CONTACT_LIST_IDS = {
 
 CELERY_BROKER_URL = os.environ['BROKER_URL']
 BROKER_POOL_LIMIT = 1
+CELERY_BEAT_SCHEDULE = {
+    'send-invitation-request': {
+        'task': 'send_email_invitation_create_request',
+        'schedule': crontab(hour='*/48'),
+    }
+}
