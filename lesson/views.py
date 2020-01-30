@@ -24,7 +24,7 @@ from payments.models import Payment
 
 from . import serializers as sers
 from .models import Application, LessonBooking, LessonRequest
-from .tasks import send_application_alert, send_request_alert_instructors
+from .tasks import send_application_alert, send_booking_alert, send_booking_invoice, send_request_alert_instructors
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -241,7 +241,9 @@ class LessonBookingRegisterView(views.APIView):
                 charge = stripe.Charge.create(amount='{:.0f}'.format(serializer.validated_data['total_amount'] * 100),
                                               currency='usd',
                                               source=stripe_token,
-                                              description='Lesson Booking ({})'.format(request.user.email))
+                                              description='Lesson Booking by {} with package {}'.format(
+                                                  request.user.email, serializer.data['charge_description'])
+                                              )
             except stripe.error.InvalidRequestError as error:
                 return Response({'stripeToken': [error.user_message, ]}, status=status.HTTP_400_BAD_REQUEST)
             except stripe.error.StripeError as error:
@@ -250,16 +252,23 @@ class LessonBookingRegisterView(views.APIView):
                 return Response({'message': str(ex)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             # register the charge made
             payment = Payment.objects.create(user=request.user, amount=serializer.validated_data['total_amount'],
-                                             description=serializer.validated_data['charge_description'],
+                                             description='Lesson booking with package {}'.format(
+                                                 serializer.validated_data['charge_description']),
                                              charge_id=charge.id)
             with transaction.atomic():
                 booking.payment = payment
+                booking.description = 'Package {}'.format(serializer.validated_data['charge_description'])
                 booking.status = LessonBooking.PAID
                 booking.save()
                 booking.application.request.status = LESSON_REQUEST_CLOSED
                 booking.application.request.save()
                 payment.status = PY_PROCESSED
                 payment.save()
+
+            task_log = TaskLog.objects.create(task_name='send_booking_invoice', args={'booking_id': booking.id})
+            send_booking_invoice.delay(booking.id, task_log.id)
+            task_log = TaskLog.objects.create(task_name='', args={})
+            send_booking_alert.delay(booking.id, task_log.id)
             return Response({'message': 'success'}, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

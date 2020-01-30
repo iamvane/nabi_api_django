@@ -73,6 +73,7 @@ class LessonBooking(models.Model):
     quantity = models.IntegerField()
     total_amount = models.DecimalField(max_digits=9, decimal_places=4)
     application = models.OneToOneField(Application, on_delete=models.CASCADE, related_name='booking')
+    description = models.CharField(max_length=200, blank=True)
     status = models.CharField(max_length=50, choices=STATUSES, default=REQUESTED)
     payment = models.OneToOneField(Payment, blank=True, null=True, on_delete=models.SET_NULL,
                                    related_name='lesson_bookings')
