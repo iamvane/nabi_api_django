@@ -65,10 +65,6 @@ def send_invoice_booking(booking, payment):
 
 def send_alert_booking(booking, instructor, buyer_account):
     """Send advice of new lesson booking to instructor and administrator"""
-    from_email = 'Nabi Music <' + settings.DEFAULT_FROM_EMAIL + '>'
-    template = 'booking_advice_email.html'
-    plain_template = 'booking_advice_email_plain.html'
-    subject = '{} booked lessons with you'.format(buyer_account.display_name)
     package_name = 'Unknown'
     res = re.match('Package (.+)', booking.description)
     if res and res.groups():
@@ -79,7 +75,6 @@ def send_alert_booking(booking, instructor, buyer_account):
         'lesson_quantity': booking.quantity,
         'date': booking.updated_at.strftime('%m/%d/%Y'),
     }
-    send_email(from_email, [instructor.user.email], subject, template, plain_template, params)
     headers = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-Type': 'application/json'}
     response = requests.post(settings.SENDGRID_API_BASE_URL + 'mail/send', headers=headers,
                              data=json.dumps({"from": {"email": settings.DEFAULT_FROM_EMAIL, "name": 'Nabi Music'},
