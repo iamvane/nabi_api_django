@@ -1,13 +1,15 @@
 from django.conf import settings
 from django.contrib.gis.measure import D
+from django.utils.timezone import now
 
 from accounts.models import get_account, Instructor
 from core.models import TaskLog, User
-from core.utils import send_email
+from core.utils import send_email, send_admin_email
 from nabi_api_django.celery_config import app
 
 from .models import Application, LessonBooking, LessonRequest
-from .utils import send_alert_application, send_alert_booking, send_alert_request_instructor, send_invoice_booking
+from .utils import (send_alert_application, send_alert_booking, send_alert_request_instructor,
+                    send_invoice_booking, send_request_reminder)
 
 
 @app.task
@@ -48,26 +50,19 @@ def send_booking_alert(booking_id, task_log_id):
 
 
 @app.task
-def send_email_invitation_create_request():
-    """Send an email to invite parent/student to create a lesson request"""
-    url_reference = '{}/build-request/request'.format(settings.HOSTNAME_PROTOCOL)
-    email_list = list(User.objects.filter(parent__isnull=False, lesson_requests__isnull=True).distinct('email')
-                      .values_list('email', flat=True)
-                      )
-    send_email('Nabi Music <' + settings.DEFAULT_FROM_EMAIL + '>',
-               email_list,
-               'Request a music instructor for your children!',
-               'request_invitation_parent_email.html',
-               'request_invitation_parent_email_plain.html',
-               {'reference_url': url_reference}
-               )
-    email_list = list(User.objects.filter(student__isnull=False, lesson_requests__isnull=True).distinct('email')
-                      .values_list('email', flat=True)
-                      )
-    send_email('Nabi Music <' + settings.DEFAULT_FROM_EMAIL + '>',
-               email_list,
-               'Request your music instructor today!',
-               'request_invitation_parent_email.html',
-               'request_invitation_parent_email_plain.html',
-               {'reference_url': url_reference}
-               )
+def send_email_reminder_create_request():
+    """Send an email to reminder parent/student to create a lesson request"""
+    today = now().date()
+    weekday = now().weekday()
+    for user in User.objects.filter(parent__isnull=False, lesson_requests__isnull=True).distinct('email'):
+        num_days = today - user.date_joined.date()
+        if num_days == 28 or (num_days == 29 and weekday != 0):
+            send_admin_email("[INFO] There is a Parent/Student which has not create a lesson request",
+                             "The {rol_name} {display_name} (email {email}) has not create a lesson request "
+                             "and there is more than 28 days from his registration.".format(
+                                 rol_name=user.get_role(),
+                                 display_name=get_account(user).display_name if get_account(user) else '',
+                                 email=user.email)
+                             )
+        elif num_days < 28:
+            send_request_reminder(user, num_days, weekday)

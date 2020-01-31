@@ -94,3 +94,52 @@ def send_alert_booking(booking, instructor, buyer_account):
                                                                            package_name=package_name,
                                                                            instructor_name=instructor.display_name)
                      )
+
+
+def map_elapsed_days_weekday_to_template_index(num_days, weekday):
+    """Return template index value corresponding to received elapsed number of days (and register weekday)"""
+    vec_mapping = [
+        {'1': 1, '3': 2, '5': 3, '8': 4, '10': 5, '12': 6},
+        {'0': 1, '2': 2, '4': 3, '7': 4, '9': 5, '11': 6},
+        {'1': 1, '3': 2, '6': 3, '8': 4, '10': 5, '13': 6},
+        {'0': 1, '2': 2, '5': 3, '7': 4, '9': 5, '12': 6},
+        {'1': 1, '4': 2, '6': 3, '8': 4, '11': 5, '13': 6},
+        {'0': 1, '3': 2, '5': 3, '7': 4, '10': 5, '12': 6},
+        {'2': 1, '4': 2, '6': 3, '9': 4, '11': 5, '13': 6},
+    ]
+    return vec_mapping[weekday].get(str(num_days))
+
+
+def send_request_reminder(user, num_days, today_weekday):
+    """Send email using Sendgrid template"""
+    params = {}
+    num_seq = None
+    if num_days < 15:
+        if today_weekday in [1, 3, 5]:
+            num_seq = map_elapsed_days_weekday_to_template_index(num_days, user.date_joined.weekday())
+    elif today_weekday == 0:
+        if num_days < 22:
+            num_seq = 7
+        else:
+            num_seq = 8
+    if num_seq is None:   # no mail should be send
+        return num_seq
+    if user.is_parent():
+        template_id = 'request_invitation_parent_{}'.format(num_seq)
+        if num_seq == 2:
+            params = {'first_name': user.first_name if user.first_name else 'there'}
+    else:
+        template_id = 'request_invitation_student_{}'.format(num_seq)
+    headers = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-Type': 'application/json'}
+    response = requests.post(settings.SENDGRID_API_BASE_URL + 'mail/send', headers=headers,
+                             data=json.dumps({"from": {"email": settings.DEFAULT_FROM_EMAIL, "name": 'Nabi Music'},
+                                              "template_id": template_id,
+                                              "personalizations": [{"to": [{"email": user.email}],
+                                                                    "dynamic_template_data": params}]
+                                              })
+                             )
+    if response.status_code != 202:
+        send_admin_email("[INFO] Error sending email to Parent/Student, with booking invoice",
+                         "The error code is {} and response content: {}.".format(response.status_code,
+                                                                                 response.content.decode())
+                         )

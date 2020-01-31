@@ -114,10 +114,10 @@ ADMIN_EMAIL = DEFAULT_FROM_EMAIL
 CELERY_BROKER_URL = os.environ.get('BROKER_URL', '')
 BROKER_POOL_LIMIT = 1
 CELERY_BEAT_SCHEDULE = {
-    'send-invitation-request': {
-        'task': 'lesson.tasks.send_email_invitation_create_request',
-        'schedule': crontab(hour='*/48'),
-    }
+    'send-reminder-request': {
+        'task': 'lesson.tasks.send_email_reminder_create_request',
+        'schedule': crontab(hour='6', minute='10', day_of_week='mon,tue,thu,sat'),
+    },
 }
 
 
@@ -139,6 +139,31 @@ MEDIA_URL = '/dj-media/'
 GOOGLE_FORM_REFERENCES_URL = 'https://forms.gle/MuGhfwUARTW9uzrU9'
 
 SENDGRID_API_BASE_URL = 'https://api.sendgrid.com/v3/'
+SENDGRID_CONTACT_LIST_IDS = {
+    'instructors': 'foo',
+    'parents': 'foo',
+    'students': 'foo',
+}
+SENDGRID_EMAIL_TEMPLATES = {
+    'booking_invoice': 'foo',
+    'booking_advice': 'foo',
+    'request_invitation_parent_1': 'foo',
+    'request_invitation_parent_2': 'foo',
+    'request_invitation_parent_3': 'foo',
+    'request_invitation_parent_4': 'foo',
+    'request_invitation_parent_5': 'foo',
+    'request_invitation_parent_6': 'foo',
+    'request_invitation_parent_7': 'foo',
+    'request_invitation_parent_8': 'foo',
+    'request_invitation_student_1': 'foo',
+    'request_invitation_student_2': 'foo',
+    'request_invitation_student_3': 'foo',
+    'request_invitation_student_4': 'foo',
+    'request_invitation_student_5': 'foo',
+    'request_invitation_student_6': 'foo',
+    'request_invitation_student_7': 'foo',
+    'request_invitation_student_8': 'foo',
+}
 
 ACCURATE_PLAN_PARAMETER = 'PKG_STANDARD'
 ACCURATE_PLAN_ADDITIONALS = ['SON', ]
