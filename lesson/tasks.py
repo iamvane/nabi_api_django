@@ -1,10 +1,10 @@
-from django.conf import settings
 from django.contrib.gis.measure import D
+from django.db.models import Q
 from django.utils.timezone import now
 
 from accounts.models import get_account, Instructor
 from core.models import TaskLog, User
-from core.utils import send_email, send_admin_email
+from core.utils import send_admin_email
 from nabi_api_django.celery_config import app
 
 from .models import Application, LessonBooking, LessonRequest
@@ -54,8 +54,10 @@ def send_email_reminder_create_request():
     """Send an email to reminder parent/student to create a lesson request"""
     today = now().date()
     weekday = now().weekday()
-    for user in User.objects.filter(parent__isnull=False, lesson_requests__isnull=True).distinct('email'):
+    for user in User.objects.filter(Q(parent__isnull=False) | Q(student__isnull=False), lesson_requests__isnull=True)\
+            .distinct('email'):
         num_days = today - user.date_joined.date()
+        num_days = num_days.days
         if num_days == 28 or (num_days == 29 and weekday != 0):
             send_admin_email("[INFO] There is a Parent/Student which has not create a lesson request",
                              "The {rol_name} {display_name} (email {email}) has not create a lesson request "

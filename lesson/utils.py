@@ -133,7 +133,7 @@ def send_request_reminder(user, num_days, today_weekday):
     headers = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-Type': 'application/json'}
     response = requests.post(settings.SENDGRID_API_BASE_URL + 'mail/send', headers=headers,
                              data=json.dumps({"from": {"email": settings.DEFAULT_FROM_EMAIL, "name": 'Nabi Music'},
-                                              "template_id": template_id,
+                                              "template_id": settings.SENDGRID_EMAIL_TEMPLATES[template_id],
                                               "personalizations": [{"to": [{"email": user.email}],
                                                                     "dynamic_template_data": params}]
                                               })
