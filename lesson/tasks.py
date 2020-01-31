@@ -58,7 +58,7 @@ def send_email_reminder_create_request():
             .distinct('email'):
         num_days = today - user.date_joined.date()
         num_days = num_days.days
-        if num_days == 28 or (num_days == 29 and weekday != 0):
+        if num_days == 28 or (num_days == 29 and user.date_joined.weekday() != 0):
             send_admin_email("[INFO] There is a Parent/Student which has not create a lesson request",
                              "The {rol_name} {display_name} (email {email}) has not create a lesson request "
                              "and there is more than 28 days from his registration.".format(
