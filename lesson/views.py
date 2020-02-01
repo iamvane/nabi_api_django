@@ -23,7 +23,7 @@ from core.permissions import AccessForInstructor, AccessForParentOrStudent
 from payments.models import Payment
 
 from . import serializers as sers
-from .models import Application, LessonBooking, LessonRequest
+from .models import Application, GradedLesson, LessonBooking, LessonRequest
 from .tasks import send_application_alert, send_booking_alert, send_booking_invoice, send_request_alert_instructors
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -285,3 +285,20 @@ class ApplicationDataView(views.APIView):
                             status=status.HTTP_400_BAD_REQUEST)
         serializer = sers.ApplicationDataSerializer(application)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class GradeLessonView(views.APIView):
+
+    def post(self, request, booking_id):
+        booking = LessonBooking.objects.filter(id=booking_id).last()
+        if not booking:
+            return Response({'message': 'There is no Lesson Booking with provided id'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        data = request.data.copy()
+        data['booking_id'] = booking.id
+        ser_data = sers.DataGradeLessonSerializer(data=data)
+        if ser_data.is_valid():
+            ser_data.save()
+            return Response({'message': 'success'}, status=status.HTTP_200_OK)
+        else:
+            return Response(ser_data.errors, status=status.HTTP_400_BAD_REQUEST)
