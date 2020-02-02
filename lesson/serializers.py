@@ -646,3 +646,18 @@ class DataGradeLessonSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Date value not valid')
         else:
             return value
+
+    def validate(self, data):
+        booking = LessonBooking.objects.get(id=data['booking_id'])
+        if booking.application.request.user.is_student():
+            if data['student_name'].find(booking.application.request.user.first_name) == -1:
+                raise serializers.ValidationError('Wrong studentName value')
+        else:
+            found = False
+            for student in booking.application.request.students.all():
+                if data['student_name'].find(student.name) != -1:
+                    found = True
+                    break
+            if not found:
+                raise serializers.ValidationError('Wrong studentName value')
+        return data
