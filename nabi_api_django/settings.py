@@ -116,7 +116,7 @@ BROKER_POOL_LIMIT = 1
 CELERY_BEAT_SCHEDULE = {
     'send-reminder-request': {
         'task': 'lesson.tasks.send_email_reminder_create_request',
-        'schedule': crontab(hour='6', minute='10', day_of_week='mon,tue,thu,sat'),
+        'schedule': crontab(hour='7', minute='0', day_of_week='mon,tue,thu,sat'),
     },
 }
 
