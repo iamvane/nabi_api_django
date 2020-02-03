@@ -130,6 +130,8 @@ def send_request_reminder(user, num_days, today_weekday):
             params = {'first_name': user.first_name if user.first_name else 'there'}
     else:
         template_id = 'request_invitation_student_{}'.format(num_seq)
+        if num_seq == 2:
+            params = {'first_name': user.first_name if user.first_name else 'there'}
     headers = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-Type': 'application/json'}
     response = requests.post(settings.SENDGRID_API_BASE_URL + 'mail/send', headers=headers,
                              data=json.dumps({"from": {"email": settings.DEFAULT_FROM_EMAIL, "name": 'Nabi Music'},
