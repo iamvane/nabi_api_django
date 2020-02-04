@@ -635,29 +635,13 @@ class DataGradeLessonSerializer(serializers.ModelSerializer):
     booking_id = serializers.IntegerField()
     date = serializers.DateField(source='lesson_date')
     grade = serializers.IntegerField(min_value=1, max_value=3)
-    studentName = serializers.CharField(max_length=100, source='student_name')
 
     class Meta:
         model = GradedLesson
-        fields = ('booking_id', 'date', 'grade', 'comment', 'studentName')
+        fields = ('booking_id', 'date', 'grade', 'comment', )
 
     def validate_date(self, value):
         if value > timezone.now().date():
             raise serializers.ValidationError('Date value not valid')
         else:
             return value
-
-    def validate(self, data):
-        booking = LessonBooking.objects.get(id=data['booking_id'])
-        if booking.application.request.user.is_student():
-            if data['student_name'].find(booking.application.request.user.first_name) == -1:
-                raise serializers.ValidationError('Wrong studentName value')
-        else:
-            found = False
-            for student in booking.application.request.students.all():
-                if data['student_name'].find(student.name) != -1:
-                    found = True
-                    break
-            if not found:
-                raise serializers.ValidationError('Wrong studentName value')
-        return data
