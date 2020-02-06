@@ -14,8 +14,8 @@ class AvailableOfferListView(views.APIView):
 
     def get(self, request):
         today = timezone.now()
-        qs = Offer.objects.filter(show_at__lte=today).exclude(hide_at__lte=today).order_by('name')
-        serializer = OfferDetailSerializer(qs, many=True)
+        qs = Offer.objects.filter(show_at__lte=today).exclude(hide_at__lte=today).last()
+        serializer = OfferDetailSerializer(qs)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
