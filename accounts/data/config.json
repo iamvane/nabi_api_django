@@ -1,0 +1,35 @@
+{
+  "all": {
+    "comment": "Entry point",
+    "type": "nested",
+    "lists": ["aa", "ao"],
+    "ensure_unique": true,
+    "ensure_unique_prefix": 4,
+    "max_slug_length": 10
+  },
+  "aa": {
+    "comment": "adjective-animal",
+    "type": "cartesian",
+    "lists": ["adj_any", "anim"]
+  },
+  "ao": {
+    "comment": "adjective-object",
+    "type": "cartesian",
+    "lists": ["adj_any", "other"]
+  },
+  "adj_any": {
+    "comment": "The only adjective (includes everything)",
+    "type": "nested",
+    "lists": ["adjective", "color", "noun_adjective", "prefix", "size"]
+  },
+  "anim": {
+    "comment": "The animal (subject)",
+    "type": "nested",
+    "lists": ["animal", "other_animals"]
+  },
+  "other": {
+    "comment": "The object (subject)",
+    "type": "nested",
+    "lists": ["fruits", "house_related","objects"]
+  }
+}

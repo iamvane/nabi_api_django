@@ -162,6 +162,7 @@ class ParentCreateAccountSerializer(BaseCreateAccountSerializer):
         user = super().create(validated_data)
         parent = Parent.objects.create(user=user, **init_kwargs(Parent(), validated_data))
         parent.set_display_name()
+        parent.set_referral_token()
         if not settings.DEBUG:
             add_to_email_list(user, 'parents')   # add to list in Sendgrid
         return parent
@@ -173,6 +174,7 @@ class StudentCreateAccountSerializer(BaseCreateAccountSerializer):
         user = super().create(validated_data)
         student = Student.objects.create(user=user, **init_kwargs(Student(), validated_data))
         student.set_display_name()
+        student.set_referral_token()
         if not settings.DEBUG:
             add_to_email_list(user, 'students')   # add to list in Sendgrid
         return student
@@ -184,6 +186,7 @@ class InstructorCreateAccountSerializer(BaseCreateAccountSerializer):
         user = super().create(validated_data)
         instructor = Instructor.objects.create(user=user, **init_kwargs(Instructor(), validated_data))
         instructor.set_display_name()
+        instructor.set_referral_token()
         if not settings.DEBUG:
             add_to_email_list(user, 'instructors')  # add to list in Sendgrid
         return instructor

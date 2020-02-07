@@ -1,4 +1,7 @@
 import datetime
+from coolname import RandomGenerator
+from coolname.loader import load_config
+from os import path
 from pygeocoder import Geocoder, GeocoderError
 
 from django.conf import settings
@@ -12,6 +15,8 @@ from core.constants import *
 from core.utils import ElapsedTime, get_date_a_month_later, get_month_integer
 
 User = get_user_model()
+coolname_config = load_config(path.join(settings.BASE_DIR, 'accounts', 'data'))
+generator = RandomGenerator(coolname_config)
 
 
 def avatar_directory_path(instance, filename):
@@ -106,6 +111,34 @@ class IUserAccount(models.Model):
             display_name = self.user.first_name
         self.display_name = display_name
         self.save()
+
+    def set_referral_token(self):
+        """Set referral token to related user.
+        By placing here (account model), the existence of account is assured"""
+        if not self.user.referral_token:   # assure to change only when is necessary
+            if not self.display_name.strip():
+                self.set_display_name()
+            if self.display_name.strip():
+                token = self.display_name.replace(' ', '').replace('.', '').lower()
+                existing_token = User.objects.filter(referral_token__startswith=token)\
+                    .values_list('referral_token', flat=True).last()
+                if existing_token:
+                    num_str = existing_token[len(token):]
+                    if not num_str:
+                        num_str = '1'
+                    token += str(int(num_str) + 1)
+            else:
+                for ind in range(20):
+                    token = ''.join(generator.generate())
+                    existing_token = User.objects.filter(referral_token__startswith=token)\
+                        .values_list('referral_token', flat=True).last()
+                    if existing_token is None:
+                        break
+                if existing_token:
+                    num = int(existing_token[len(token):]) + 1
+                    token += str(num)
+            self.user.referral_token = token
+            self.user.save()
 
 
 class PhoneNumber(models.Model):

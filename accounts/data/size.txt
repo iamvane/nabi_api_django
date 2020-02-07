@@ -1,0 +1,13 @@
+# ===================================
+# Adjectives related to physical size
+# ===================================
+
+max_length = 13
+
+big
+great
+huge
+large
+little
+small
+tiny
