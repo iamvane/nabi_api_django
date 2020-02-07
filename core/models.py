@@ -1,5 +1,3 @@
-import secrets
-
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.contrib.postgres.fields import JSONField
 from django.db import models
@@ -41,14 +39,10 @@ class UserManager(BaseUserManager):
         return self._create_user(email, password, **extra_fields)
 
 
-def generate_token():
-    return secrets.token_urlsafe(12)
-
-
 class User(AbstractUser):
     email = models.EmailField('email address', unique=True)
     username = models.CharField(blank=True, default='', max_length=120)
-    referral_token = models.CharField(max_length=20, default=generate_token, blank=True, unique=True)
+    referral_token = models.CharField(max_length=20, blank=True, unique=True)
     referred_by = models.ForeignKey('self', blank=True, null=True, related_name='referrals', on_delete=models.SET_NULL)
 
     USERNAME_FIELD = 'email'

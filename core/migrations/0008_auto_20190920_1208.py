@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='user',
             name='referral_token',
-            field=models.CharField(blank=True, default=core.models.generate_token, max_length=20, null=True),
+            field=models.CharField(blank=True, max_length=20, null=True),
         ),
         migrations.AddField(
             model_name='user',
