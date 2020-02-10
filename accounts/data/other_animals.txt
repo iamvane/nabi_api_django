@@ -1,0 +1,31 @@
+# =======================
+# Other animals
+# =======================
+
+max_length = 13
+
+# Cattle
+longhorn
+
+# Dogs
+beagle
+bloodhound
+bulldog
+corgi
+husky
+malamute
+mongrel
+terrier
+
+# Horses & Hybrids
+mustang
+pony
+
+# Rabbits
+angora
+
+# legendaries
+dragon
+griffin
+pegasus
+unicorn
