@@ -63,7 +63,10 @@ class AccurateApiClient:
     def create_candidate(self, bg_request_id, instructor):
         """Request to create candidate API provider.
         bg_request_id allows to update info about this process in DB
-        If response of Accurate API is successful, a registry in BackgroundCheckStep is created"""
+        If response of Accurate API is successful, a registry in BackgroundCheckStep is created.
+        Returned result:
+           {'provider_id': jj, 'error_code': 0, 'bg_step_id': nn} on success
+           {'provider_id': jj, 'error_code': kk, 'msg': 'details'}"""
         data = {'firstName': instructor.user.first_name, 'lastName': instructor.user.last_name,
                 'email': instructor.user.email, 'middleName': '', 'suffix': ''}
         resp = self.send_request('candidate', method='POST', headers={'Content-Type': 'application/json'}, data=data)
@@ -79,17 +82,20 @@ class AccurateApiClient:
                                 'lastName': resp['content']['lastName'], 'middleName': resp['content']['middleName'],
                                 'suffix': resp['content']['suffix'], 'email': resp['content']['email']}
                 bg_step.save()
-                result = {'error_code': 0, 'bg_step_id': bg_step.id}
+                result = {'provider_id': resp['pr_id'], 'error_code': 0, 'bg_step_id': bg_step.id}
             else:
-                result = {'error_code': 500, 'msg': 'Bad format response'}
+                result = {'provider_id': resp['pr_id'], 'error_code': 500, 'msg': 'Bad format response'}
         else:
-            result = {'error_code': resp['code'], 'msg': resp['content']}
+            result = {'provider_id': resp['pr_id'], 'error_code': resp['code'], 'msg': resp['content']}
         return result
 
     def update_candidate(self, bg_request_id, instructor, old_data):
         """Request to update candidate API provider.
         bg_request_id allows to update info about this process in DB
-        If response of Accurate API is successful, a registry in BackgroundCheckStep is created"""
+        If response of Accurate API is successful, a registry in BackgroundCheckStep is created.
+        Returned result:
+           {'provider_id': jj, 'error_code': 0, 'bg_step_id': nn}   on success
+           {'provider_id': jj, 'error_code': kk, 'msg': 'details'}   on failure"""
         data = {}
         if old_data['firstName'] != instructor.user.first_name:
             data['firstName'] = instructor.user.first_name
@@ -98,7 +104,7 @@ class AccurateApiClient:
         if old_data['email'] != instructor.user.first_name:
             data['email'] = instructor.user.email
         if not data:
-            result = {'error_code': 500, 'msg': 'No data for update'}
+            result = {'provider_id': 0, 'error_code': 500, 'msg': 'No data for update'}
         else:
             resp = self.send_request('candidate', method='PUT', data=data,
                                      headers={'Content-Type': 'application/x-www-form-urlencoded'})
@@ -114,11 +120,11 @@ class AccurateApiClient:
                                     'lastName': resp['content']['lastName'], 'middleName': resp['content']['middleName'],
                                     'suffix': resp['content']['suffix'], 'email': resp['content']['email']}
                     bg_step.save()
-                    result = {'error_code': 0, 'bg_step_id': bg_step.id}
+                    result = {'provider_id': resp['pr_id'], 'error_code': 0, 'bg_step_id': bg_step.id}
                 else:
-                    result = {'error_code': 500, 'msg': 'Bad format response'}
+                    result = {'provider_id': resp['pr_id'], 'error_code': 500, 'msg': 'Bad format response'}
             else:
-                result = {'error_code': resp['code'], 'msg': resp['content']}
+                result = {'provider_id': resp['pr_id'], 'error_code': resp['code'], 'msg': resp['content']}
         return result
 
     def place_order(self, bg_request_id, user, candidate_id, previous_step=None):
@@ -126,10 +132,13 @@ class AccurateApiClient:
         If response of Accurate API is successful, a registry in BackgroundCheckStep is created
         Side effects:
           - Background Check Request is marked as requested.
-          - Instructor's bg_status is set to PENDING."""
+          - Instructor's bg_status is set to PENDING.
+        Returned result:
+           {'provider_id': jj, 'error_code': 0, 'bg_step_id': nn}   on success
+           {'provider_id': jj, 'error_code': kk, 'msg': 'details'}   on failure"""
         location = user.instructor.get_location(result_type='tuple')
         if not location:
-            return {'error_code': 500, 'msg': 'User location is missing'}
+            return {'provider_id': 0, 'error_code': 500, 'msg': 'User location is missing'}
         data = {'candidateId': candidate_id,
                 'jobLocation': {'country': location[0], 'region': location[1], 'city': location[2]},
                 'packageType': settings.ACCURATE_PLAN_PARAMETER, 'workflow': 'INTERACTIVE'}
@@ -170,11 +179,11 @@ class AccurateApiClient:
                                 'result': resp['content']['result'],
                                 }
                 bg_step.save()
-                result = {'error_code': 0, 'bg_step_id': bg_step.id}
+                result = {'provider_id': resp['pr_id'], 'error_code': 0, 'bg_step_id': bg_step.id}
             else:
-                result = {'error_code': 500, 'msg': 'Bad format response'}
+                result = {'provider_id': resp['pr_id'], 'error_code': 500, 'msg': 'Bad format response'}
         else:
-            result = {'error_code': resp['code'], 'msg': resp['content']}
+            result = {'provider_id': resp['pr_id'], 'error_code': resp['code'], 'msg': resp['content']}
         return result
 
     def check_order(self, user):
@@ -183,9 +192,9 @@ class AccurateApiClient:
             bg_request = BackgroundCheckRequest.objects.filter(user=user).last()
             bg_step = BackgroundCheckStep.objects.filter(request=bg_request).last()
         except ObjectDoesNotExist:
-            return {'error_code': 500, 'msg': 'There is no order to this user'}
+            return {'provider_id': 0, 'error_code': 500, 'msg': 'There is no order to this user'}
         if bg_request.status != BackgroundCheckRequest.REQUESTED:
-            return {'error_code': 500, 'msg': 'No pending order'}
+            return {'provider_id': 0, 'error_code': 500, 'msg': 'No pending order'}
         self.target_url += '/' + bg_step.resource_id
         resp = self.send_request('order', method='GET')
         if resp['code'] == 200:
@@ -288,11 +297,11 @@ class AccurateApiClient:
                                              )
                     bg_request.provider_results = {'status': data_result['status'], 'result': data_result['result']}
                     bg_request.save()
-                    result = {'error_code': 0, 'msg': data_result}
+                    result = {'provider_id': resp['pr_id'], 'error_code': 0, 'msg': data_result}
                 else:
-                    result = {'error_code': 0, 'msg': data_result}
+                    result = {'provider_id': resp['pr_id'], 'error_code': 0, 'msg': data_result}
             else:
-                result = {'error_code': 500, 'msg': 'Bad format response'}
+                result = {'provider_id': resp['pr_id'], 'error_code': 500, 'msg': 'Bad format response'}
         else:
-            result = {'error_code': resp['code'], 'msg': resp['content']}
+            result = {'provider_id': resp['pr_id'], 'error_code': resp['code'], 'msg': resp['content']}
         return result

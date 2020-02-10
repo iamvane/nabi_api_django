@@ -52,8 +52,12 @@ class BackgroundCheckRequestView(views.APIView):
                 instructor = request.user.instructor
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        resource_id = None
+        # then, check if instructor has location
+        res_location = instructor.get_location(result_type='tuple')
+        if not res_location:
+            return Response({'message': 'Instructor must be a location value'}, status=status.HTTP_400_BAD_REQUEST)
 
+        resource_id = None
         # check if pending background check exists
         last_bg_request = BackgroundCheckRequest.objects.filter(instructor=instructor).last()
         if last_bg_request and (last_bg_request.status == BackgroundCheckRequest.REQUESTED

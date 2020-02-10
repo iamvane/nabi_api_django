@@ -68,11 +68,14 @@ class Command(BaseCommand):
                                                         bg_check_step.resource_id, bg_check_step)
                 error = resp_dict.pop('error_code')
                 if error:
+                    provider_id = resp_dict.pop('provider_id')
                     self.stdout.write('Error in place order. bg_request_id: {} , bg_request_last_step_id: {}\n'
-                                      'response_error_code={} , response_error_info='.format(pending_bg_check.id,
-                                                                                             bg_check_step.id,
-                                                                                             error,
-                                                                                             json.dumps(resp_dict))
+                                      'provider_id: {} , response_error_code={}\n'
+                                      'response_error_info={}'.format(pending_bg_check.id,
+                                                                    bg_check_step.id,
+                                                                    provider_id,
+                                                                    error,
+                                                                    json.dumps(resp_dict))
                                       )
                     self.stdout.flush()
                 else:
@@ -82,7 +85,9 @@ class Command(BaseCommand):
                     self.stdout.write('Order place successfully to Accurate provider')
                     self.stdout.flush()
             else:
-                self.stdout.write('Unexpected last step in BG request: {}'.format(bg_check_step.step))
+                self.stdout.write('Unexpected last step in BG request: {}  (id: {})'.format(bg_check_step.step,
+                                                                                            bg_check_step.id)
+                                  )
                 self.stdout.write('Any action will be taken')
                 self.stdout.flush()
         else:
@@ -90,10 +95,13 @@ class Command(BaseCommand):
             resp_dict = provider_client.create_candidate(pending_bg_check.id, instructor)
             error = resp_dict.pop('error_code')
             if error:
+                provider_id = resp_dict.pop('provider_id')
                 self.stdout.write('Error creating candidate. bg_request_id: {}\n'
-                                  'response_error_code={} , response_error_info='.format(pending_bg_check.id,
-                                                                                         error,
-                                                                                         json.dumps(resp_dict))
+                                  'provider_id: {} , response_error_code={}\n'
+                                  'response_error_info={}'.format(pending_bg_check.id,
+                                                                provider_id,
+                                                                error,
+                                                                json.dumps(resp_dict))
                                   )
                 self.stdout.flush()
             else:
@@ -102,11 +110,14 @@ class Command(BaseCommand):
                 resp_dict = provider_client.place_order(pending_bg_check.id, user, bg_step.resource_id, bg_step)
                 error = resp_dict.pop('error_code')
                 if error:
+                    provider_id = resp_dict.pop('provider_id')
                     self.stdout.write('Error in place order. bg_request_id: {} , bg_request_last_step_id: {}\n'
-                                      'response_error_code={} , response_error_info='.format(pending_bg_check.id,
-                                                                                             bg_check_step.id,
-                                                                                             error,
-                                                                                             json.dumps(resp_dict))
+                                      'provider_id: {} , response_error_code={}\n'
+                                      'response_error_info={}'.format(pending_bg_check.id,
+                                                                    bg_check_step.id,
+                                                                    provider_id,
+                                                                    error,
+                                                                    json.dumps(resp_dict))
                                       )
                     self.stdout.flush()
                 else:
