@@ -1,4 +1,5 @@
 import datetime
+import re
 from coolname import RandomGenerator
 from coolname.loader import load_config
 from os import path
@@ -120,23 +121,31 @@ class IUserAccount(models.Model):
                 self.set_display_name()
             if self.display_name.strip():
                 token = self.display_name.replace(' ', '').replace('.', '').lower()
-                existing_token = User.objects.filter(referral_token__startswith=token)\
+                regex = '^' + token + '\d*$'
+                regex2 = '^' + token + '(\d*)$'
+                existing_token = User.objects.filter(referral_token__iregex=regex)\
                     .values_list('referral_token', flat=True).last()
                 if existing_token:
-                    num_str = existing_token[len(token):]
+                    res = re.match(regex2, existing_token)
+                    num_str = res.groups()[0]
                     if not num_str:
                         num_str = '1'
                     token += str(int(num_str) + 1)
             else:
                 for ind in range(20):
                     token = ''.join(generator.generate())
-                    existing_token = User.objects.filter(referral_token__startswith=token)\
+                    regex = '^' + token + '\d*$'
+                    regex2 = '^' + token + '(\d*)$'
+                    existing_token = User.objects.filter(referral_token__iregex=regex)\
                         .values_list('referral_token', flat=True).last()
                     if existing_token is None:
                         break
                 if existing_token:
-                    num = int(existing_token[len(token):]) + 1
-                    token += str(num)
+                    res = re.match(regex2, existing_token)
+                    num_str = res.groups()[0]
+                    if not num_str:
+                        num_str = '1'
+                    token += str(int(num_str) + 1)
             self.user.referral_token = token
             self.user.save()
 
