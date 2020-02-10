@@ -31,7 +31,18 @@ class BackgroundCheckRequestView(views.APIView):
     """Create or retrieve a background check request"""
 
     def post(self, request):
-        """Create a request for instructor's check background"""
+        """Create a request for instructor's check background.
+        Behaviour:
+        - If a background check is requested already (with status PRELIMINARY at minimum), response error is returned.
+        - First, charge with Stripe is made, then, register Background Check Request with PRELIMINARY status.
+        - Second, call method of AccurateApiClient to create the candidate or update him if required.
+        - Finally, call method of AccurateApiClient to create order in Accurate for background request.
+          Then, Background Check Request is marked as requested and Payment as processed.
+
+        Inside methods of AccurateApiClient, a registry in ProviderRequest is created in order to have a record
+        related to Accurate API's request; and a registry in BackgroundCheckStep is created if response of Accurate API
+        is successful.
+        """
         # first, get instructor instance
         serializer = sers.BGCheckRequestSerializer(data=request.data)
         if serializer.is_valid():

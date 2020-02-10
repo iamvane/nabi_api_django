@@ -28,6 +28,7 @@ class AccurateApiClient:
         return {'Authorization': 'Basic {}'.format(credentials_base64.decode())}
 
     def send_request(self, api_name, method='GET', headers=None, params=None, data=None):
+        """A registry in ProviderRequest is created, in order to have a record about communication to Accurate API"""
         if params is None:
             params = {}
         if data is None:
@@ -61,7 +62,8 @@ class AccurateApiClient:
 
     def create_candidate(self, bg_request_id, instructor):
         """Request to create candidate API provider.
-        bg_request_id allows to update info about this process in DB"""
+        bg_request_id allows to update info about this process in DB
+        If response of Accurate API is successful, a registry in BackgroundCheckStep is created"""
         data = {'firstName': instructor.user.first_name, 'lastName': instructor.user.last_name,
                 'email': instructor.user.email, 'middleName': '', 'suffix': ''}
         resp = self.send_request('candidate', method='POST', headers={'Content-Type': 'application/json'}, data=data)
@@ -86,7 +88,8 @@ class AccurateApiClient:
 
     def update_candidate(self, bg_request_id, instructor, old_data):
         """Request to update candidate API provider.
-        bg_request_id allows to update info about this process in DB"""
+        bg_request_id allows to update info about this process in DB
+        If response of Accurate API is successful, a registry in BackgroundCheckStep is created"""
         data = {}
         if old_data['firstName'] != instructor.user.first_name:
             data['firstName'] = instructor.user.first_name
@@ -119,7 +122,11 @@ class AccurateApiClient:
         return result
 
     def place_order(self, bg_request_id, user, candidate_id, previous_step=None):
-        """Request to place order API provider"""
+        """Request to place order API provider
+        If response of Accurate API is successful, a registry in BackgroundCheckStep is created
+        Side effects:
+          - Background Check Request is marked as requested.
+          - Instructor's bg_status is set to PENDING."""
         location = user.instructor.get_location(result_type='tuple')
         if not location:
             return {'error_code': 500, 'msg': 'User location is missing'}
