@@ -29,8 +29,9 @@ class GradeLessonTest(BaseTest):
 
     def test_success(self):
         """Grade a lesson successfully"""
-        response = self.client.post(self.url + '1/',
-                                    data=json.dumps({'date': '2020-01-03', 'grade': 2, 'comment': 'Something'}),
+        response = self.client.post(self.url,
+                                    data=json.dumps({'bookingId': 1, 'date': '2020-01-03', 'grade': 2,
+                                                     'comment': 'Something'}),
                                     content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
         self.assertDictEqual(response.json(), {"message": "success"})
@@ -38,17 +39,18 @@ class GradeLessonTest(BaseTest):
 
     def test_error_booking_not_exist(self):
         """Error providing booking_id from not existent booking"""
-        response = self.client.post(self.url + '5/',
-                                    data=json.dumps({'date': '2020-01-03', 'grade': 2, 'comment': 'Something'}),
+        response = self.client.post(self.url,
+                                    data=json.dumps({'bookingId': 5, 'date': '2020-01-03', 'grade': 2,
+                                                     'comment': 'Something'}),
                                     content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, msg=response.content.decode())
-        self.assertDictEqual(response.json(), {"message": "There is no Lesson Booking with provided id"})
+        self.assertDictEqual(response.json(), {"bookingId": ["There is no Lesson Booking with provided id"]})
 
     def test_error_date(self):
         """Wrong value for date parameter"""
         today = now().date() + timedelta(days=5)
-        response = self.client.post(self.url + '1/',
-                                    data=json.dumps({'date': today.strftime('%Y-%m-%d'), 'grade': 2,
+        response = self.client.post(self.url,
+                                    data=json.dumps({'bookingId': 1, 'date': today.strftime('%Y-%m-%d'), 'grade': 2,
                                                      'comment': 'Something'}),
                                     content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, msg=response.content.decode())
@@ -56,8 +58,8 @@ class GradeLessonTest(BaseTest):
 
     def test_error_missing_grade(self):
         """Error missing grade value parameter"""
-        response = self.client.post(self.url + '1/',
-                                    data=json.dumps({'date': '2020-01-03', 'comment': 'Something'}),
+        response = self.client.post(self.url,
+                                    data=json.dumps({'bookingId': 1, 'date': '2020-01-03', 'comment': 'Something'}),
                                     content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, msg=response.content.decode())
         self.assertIsNotNone(response.json().get('grade'))

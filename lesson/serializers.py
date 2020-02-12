@@ -632,16 +632,24 @@ class LessonRequestInstructorDashboardSerializer(serializers.ModelSerializer):
 
 class DataGradeLessonSerializer(serializers.ModelSerializer):
     """To create a GradedLesson registry"""
-    booking_id = serializers.IntegerField()
+    bookingId = serializers.IntegerField(source='booking_id')
     date = serializers.DateField(source='lesson_date')
     grade = serializers.IntegerField(min_value=1, max_value=3)
 
     class Meta:
         model = GradedLesson
-        fields = ('booking_id', 'date', 'grade', 'comment', )
+        fields = ('bookingId', 'date', 'grade', 'comment', )
 
     def validate_date(self, value):
         if value > timezone.now().date():
             raise serializers.ValidationError('Date value not valid')
+        else:
+            return value
+
+    def validate_bookingId(self, value):
+        try:
+            LessonBooking.objects.get(id=value)
+        except LessonBooking.DoesNotExist:
+            raise serializers.ValidationError('There is no Lesson Booking with provided id')
         else:
             return value

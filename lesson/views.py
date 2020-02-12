@@ -289,14 +289,8 @@ class ApplicationDataView(views.APIView):
 
 class GradeLessonView(views.APIView):
 
-    def post(self, request, booking_id):
-        booking = LessonBooking.objects.filter(id=booking_id).last()
-        if not booking:
-            return Response({'message': 'There is no Lesson Booking with provided id'},
-                            status=status.HTTP_400_BAD_REQUEST)
-        data = request.data.copy()
-        data['booking_id'] = booking.id
-        ser_data = sers.DataGradeLessonSerializer(data=data)
+    def post(self, request):
+        ser_data = sers.DataGradeLessonSerializer(data=request.data)
         if ser_data.is_valid():
             ser_data.save()
             return Response({'message': 'success'}, status=status.HTTP_200_OK)
