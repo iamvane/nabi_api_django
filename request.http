@@ -543,9 +543,10 @@ GET localhost:8000/v1/referral-info/WVG3Kw4HaDhEpyag/
 
 ###
 
-POST localhost:8000/v1/lesson-grade/1/
+POST localhost:8000/v1/lesson-grade/
 
 {
+"bookingId": 1,
 "date": "2020-01-05",
 "grade": 3,
 "comment": "Good work! More practice to reach out the excellence"
