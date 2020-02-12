@@ -293,6 +293,6 @@ class GradeLessonView(views.APIView):
         ser_data = sers.DataGradeLessonSerializer(data=request.data)
         if ser_data.is_valid():
             ser_data.save()
-            return Response({'message': 'success'}, status=status.HTTP_200_OK)
+            return Response({'message': 'Your grade was submitted successfully'}, status=status.HTTP_200_OK)
         else:
             return Response(ser_data.errors, status=status.HTTP_400_BAD_REQUEST)

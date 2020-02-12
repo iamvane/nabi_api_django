@@ -34,7 +34,7 @@ class GradeLessonTest(BaseTest):
                                                      'comment': 'Something'}),
                                     content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
-        self.assertDictEqual(response.json(), {"message": "success"})
+        self.assertDictEqual(response.json(), {"message": "Your grade was submitted successfully"})
         self.assertEqual(GradedLesson.objects.count(), self.qty + 1)
 
     def test_error_booking_not_exist(self):
