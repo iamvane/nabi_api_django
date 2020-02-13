@@ -21,12 +21,14 @@ class CreateAffiliateTest(APITestCase):
             "firstName": "Afiliado",
             "lastName": "Veinte",
             "birthDate": "1992-05-24",
+            "companyName": "Enterprise Inc",
         }
         self.payload_missing_birthdate = {
             "email": "affiliate021@yopmail.com",
             "password": "123456",
             "firstName": "Afiliado",
             "lastName": "Veinteyuno",
+            "companyName": "Enterprise Inc",
         }
         self.payload_repeated = {
             "email": "affiliate020@yopmail.com",
@@ -34,6 +36,7 @@ class CreateAffiliateTest(APITestCase):
             "firstName": "Afiliado",
             "lastName": "OtroVeinte",
             "birthDate": "1990-07-19",
+            "companyName": "Enterprise Inc",
         }
 
     def test_create_affiliate(self):
@@ -43,7 +46,7 @@ class CreateAffiliateTest(APITestCase):
         self.assertTrue(User.objects.filter(email=self.payload['email']).exists())
         self.assertTrue(User.objects.filter(username=self.payload['email']).exists())
         user_id = User.objects.get(username=self.payload['email']).id
-        self.assertTrue(Affiliate.objects.filter(user_id=user_id).exists())
+        self.assertTrue(Affiliate.objects.filter(user_id=user_id, company_name=self.payload['companyName']).exists())
 
     def test_create_affiliate_missing_birthdate(self):
         """Test affiliate creation"""
