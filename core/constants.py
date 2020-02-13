@@ -2,6 +2,7 @@
 ROLE_STUDENT = 'student'
 ROLE_PARENT = 'parent'
 ROLE_INSTRUCTOR = 'instructor'
+ROLE_AFFILIATE = 'affiliate'
 
 # --- Skill level ---
 SKILL_LEVEL_BEGINNER = 'beginner'
