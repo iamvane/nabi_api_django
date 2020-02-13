@@ -24,7 +24,7 @@ class GradeLessonTest(BaseTest):
 
     def setUp(self):
         super().setUp()
-        self.url = '{}/v1/lesson-grade/'.format(settings.HOSTNAME_PROTOCOL)
+        self.url = '{}/v1/grade-lesson/'.format(settings.HOSTNAME_PROTOCOL)
         self.qty = GradedLesson.objects.count()
 
     def test_success(self):

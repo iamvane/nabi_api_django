@@ -543,7 +543,7 @@ GET localhost:8000/v1/referral-info/WVG3Kw4HaDhEpyag/
 
 ###
 
-POST localhost:8000/v1/lesson-grade/
+POST localhost:8000/v1/grade-lesson/
 
 {
 "bookingId": 1,
@@ -551,7 +551,5 @@ POST localhost:8000/v1/lesson-grade/
 "grade": 3,
 "comment": "Good work! More practice to reach out the excellence"
 }
-
-Note: in URL booking_id should be provided
 
 ###
