@@ -23,7 +23,7 @@ from core.permissions import AccessForInstructor, AccessForParentOrStudent
 from payments.models import Payment
 
 from . import serializers as sers
-from .models import Application, GradedLesson, LessonBooking, LessonRequest
+from .models import Application, LessonBooking, LessonRequest
 from .tasks import send_application_alert, send_booking_alert, send_booking_invoice, send_request_alert_instructors
 
 stripe.api_key = settings.STRIPE_SECRET_KEY

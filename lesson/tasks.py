@@ -2,13 +2,10 @@ import requests
 
 from django.conf import settings
 from django.contrib.gis.measure import D
-from django.db.models import Q
-from django.utils.timezone import now
 
 from accounts.models import get_account, Instructor
 from accounts.utils import add_to_email_list, remove_contact_from_email_list
 from core.models import TaskLog, User
-from core.utils import send_admin_email
 from nabi_api_django.celery_config import app
 
 from .models import Application, LessonBooking, LessonRequest
