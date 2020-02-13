@@ -1,15 +1,18 @@
+import requests
+
+from django.conf import settings
 from django.contrib.gis.measure import D
 from django.db.models import Q
 from django.utils.timezone import now
 
 from accounts.models import get_account, Instructor
+from accounts.utils import add_to_email_list, remove_contact_from_email_list
 from core.models import TaskLog, User
 from core.utils import send_admin_email
 from nabi_api_django.celery_config import app
 
 from .models import Application, LessonBooking, LessonRequest
-from .utils import (send_alert_application, send_alert_booking, send_alert_request_instructor,
-                    send_invoice_booking, send_request_reminder)
+from .utils import send_alert_application, send_alert_booking, send_alert_request_instructor, send_invoice_booking
 
 
 @app.task
@@ -50,21 +53,48 @@ def send_booking_alert(booking_id, task_log_id):
 
 
 @app.task
-def send_email_reminder_create_request():
-    """Send an email to reminder parent/student to create a lesson request"""
-    today = now().date()
-    weekday = now().weekday()
-    for user in User.objects.filter(Q(parent__isnull=False) | Q(student__isnull=False), lesson_requests__isnull=True)\
-            .distinct('email'):
-        num_days = today - user.date_joined.date()
-        num_days = num_days.days
-        if num_days == 28 or (num_days == 29 and user.date_joined.weekday() != 0):
-            send_admin_email("[INFO] There is a Parent/Student which has not create a lesson request",
-                             "The {rol_name} {display_name} (email {email}) has not create a lesson request "
-                             "and there is more than 28 days from his registration.".format(
-                                 rol_name=user.get_role(),
-                                 display_name=get_account(user).display_name if get_account(user) else '',
-                                 email=user.email)
-                             )
-        elif num_days < 28:
-            send_request_reminder(user, num_days, weekday)
+def update_list_users_without_request():
+    """Update Sendgrid list of parent/student without lesson request"""
+    # first, check parents
+    email_set = {email for email in User.objects.filter(parent__isnull=False, lesson_requests__isnull=True)
+        .distinct('email').values_list('email', flat=True)}
+    header = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD)}
+    resp = requests.get('{}marketing/lists/{}?contact_sample=true'.format(
+        settings.SENDGRID_API_BASE_URL, settings.SENDGRID_CONTACT_LIST_IDS['parents_without_request']),
+        headers=header
+    )
+    resp_json = resp.json()
+    for contact in resp_json.get('contact_sample'):
+        email = contact.get('email')
+        if email in email_set:
+            email_set.remove(email)
+        else:
+            remove_contact_from_email_list(contact.get('id'), email, 'parents_without_request')
+    for email in email_set:
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            pass
+        else:
+            add_to_email_list(user, 'parents_without_request')
+    # now, check students
+    email_set = {email for email in User.objects.filter(student__isnull=False, lesson_requests__isnull=True)
+        .distinct('email').values_list('email', flat=True)}
+    resp = requests.get('{}marketing/lists/{}?contact_sample=true'.format(
+        settings.SENDGRID_API_BASE_URL, settings.SENDGRID_CONTACT_LIST_IDS['students_without_request']),
+        headers=header
+    )
+    resp_json = resp.json()
+    for contact in resp_json.get('contact_sample'):
+        email = contact.get('email')
+        if email in email_set:
+            email_set.remove(email)
+        else:
+            remove_contact_from_email_list(contact.get('id'), email, 'students_without_request')
+    for email in email_set:
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            pass
+        else:
+            add_to_email_list(user, 'students_without_request')

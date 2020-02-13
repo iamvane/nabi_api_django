@@ -245,7 +245,9 @@ DEFAULT_FILE_STORAGE = 'core.storage_backends.MediaStorage'
 SENDGRID_CONTACT_LIST_IDS = {
     'instructors': os.environ['SENDGRID_CONTACT_LIST_INSTRUCTORS'],
     'parents': os.environ['SENDGRID_CONTACT_LIST_PARENTS'],
-    'students': os.environ['SENDGRID_CONTACT_LIST_STUDENTS']
+    'students': os.environ['SENDGRID_CONTACT_LIST_STUDENTS'],
+    'parents_without_request': 'a5bc806b-ce29-4900-ad3b-5e66eaa6e405',
+    'students_without_request': 'a7f64112-cf7b-4a26-8f2d-9cb251f3ed00',
 }
 SENDGRID_EMAIL_TEMPLATES = {
     'booking_invoice': 'd-16bb70c5d4d549ea99d73e2d57cdba84',
