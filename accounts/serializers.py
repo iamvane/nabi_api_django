@@ -1012,24 +1012,25 @@ class InstructorDetailSerializer(serializers.ModelSerializer):
 
 class AffiliateRegisterSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
-    birth_date = serializers.DateField(source='affiliate.birth_date')
+    birthDate = serializers.DateField(source='affiliate.birth_date')
 
     class Meta:
         model = User
-        fields = ('id', 'first_name', 'last_name', 'email', 'password', 'birth_date')
+        fields = ('id', 'first_name', 'last_name', 'email', 'password', 'birthDate')
 
     def to_internal_value(self, data):
+        keys = dict.fromkeys(data)
         new_data = {}
-        if 'firstName' in data.keys():
+        if 'firstName' in keys:
             new_data['first_name'] = data.get('firstName')
-        if 'lastName' in data.keys():
+        if 'lastName' in keys:
             new_data['last_name'] = data.get('lastName')
-        if 'email' in data.keys():
+        if 'email' in keys:
             new_data['email'] = data.get('email')
-        if 'password' in data.keys():
+        if 'password' in keys:
             new_data['password'] = data.get('password')
-        if 'birthDate' in data.keys():
-            new_data['birth_date'] = data.get('birthDate')
+        if 'birthDate' in keys:
+            new_data['birthDate'] = data.get('birthDate')
         return super().to_internal_value(new_data)
 
     def to_representation(self, instance):
