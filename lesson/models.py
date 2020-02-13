@@ -82,4 +82,12 @@ class LessonBooking(models.Model):
 
     def remaining_lessons(self):
         """How many lessons remain from booking"""
-        return self.quantity - 0   # ToDo: update when Grade Lesson is available
+        return self.quantity - self.graded_lessons.count()
+
+
+class GradedLesson(models.Model):
+    booking = models.ForeignKey(LessonBooking, on_delete=models.CASCADE, related_name='graded_lessons')
+    grade = models.PositiveSmallIntegerField()
+    lesson_date = models.DateField()
+    comment = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)

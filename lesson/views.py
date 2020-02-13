@@ -23,7 +23,7 @@ from core.permissions import AccessForInstructor, AccessForParentOrStudent
 from payments.models import Payment
 
 from . import serializers as sers
-from .models import Application, LessonBooking, LessonRequest
+from .models import Application, GradedLesson, LessonBooking, LessonRequest
 from .tasks import send_application_alert, send_booking_alert, send_booking_invoice, send_request_alert_instructors
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -285,3 +285,14 @@ class ApplicationDataView(views.APIView):
                             status=status.HTTP_400_BAD_REQUEST)
         serializer = sers.ApplicationDataSerializer(application)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class GradeLessonView(views.APIView):
+
+    def post(self, request):
+        ser_data = sers.DataGradeLessonSerializer(data=request.data)
+        if ser_data.is_valid():
+            ser_data.save()
+            return Response({'message': 'Your grade was submitted successfully'}, status=status.HTTP_200_OK)
+        else:
+            return Response(ser_data.errors, status=status.HTTP_400_BAD_REQUEST)

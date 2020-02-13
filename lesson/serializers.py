@@ -8,9 +8,8 @@ from rest_framework import serializers
 from accounts.models import Instructor, TiedStudent, get_account
 from accounts.serializers import AvailavilitySerializer
 from core.constants import *
-from lesson.models import Instrument
 
-from .models import Application, LessonBooking, LessonRequest
+from .models import Application, GradedLesson, Instrument, LessonBooking, LessonRequest
 
 User = get_user_model()
 
@@ -629,3 +628,28 @@ class LessonRequestInstructorDashboardSerializer(serializers.ModelSerializer):
         if data['distance'] is not None:
             data['distance'] = format(data['distance'], '.2f')
         return data
+
+
+class DataGradeLessonSerializer(serializers.ModelSerializer):
+    """To create a GradedLesson registry"""
+    bookingId = serializers.IntegerField(source='booking_id')
+    date = serializers.DateField(source='lesson_date')
+    grade = serializers.IntegerField(min_value=1, max_value=3)
+
+    class Meta:
+        model = GradedLesson
+        fields = ('bookingId', 'date', 'grade', 'comment', )
+
+    def validate_date(self, value):
+        if value > timezone.now().date():
+            raise serializers.ValidationError('Date value not valid')
+        else:
+            return value
+
+    def validate_bookingId(self, value):
+        try:
+            LessonBooking.objects.get(id=value)
+        except LessonBooking.DoesNotExist:
+            raise serializers.ValidationError('There is no Lesson Booking with provided id')
+        else:
+            return value

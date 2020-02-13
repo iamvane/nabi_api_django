@@ -12,4 +12,5 @@ urlpatterns = [
     path('application-list/<int:lesson_req_id>/', views.ApplicationListView.as_view()),
     path('booking-lessons/', views.LessonBookingRegisterView.as_view()),
     path('application-data/<int:app_id>/', views.ApplicationDataView.as_view()),
+    path('grade-lesson/', views.GradeLessonView.as_view()),
 ]
