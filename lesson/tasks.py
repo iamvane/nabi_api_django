@@ -6,6 +6,7 @@ from django.contrib.gis.measure import D
 from accounts.models import get_account, Instructor
 from accounts.utils import add_to_email_list, remove_contact_from_email_list
 from core.models import TaskLog, User
+from core.utils import send_admin_email
 from nabi_api_django.celery_config import app
 
 from .models import Application, LessonBooking, LessonRequest
@@ -60,7 +61,16 @@ def update_list_users_without_request():
         settings.SENDGRID_API_BASE_URL, settings.SENDGRID_CONTACT_LIST_IDS['parents_without_request']),
         headers=header
     )
-    resp_json = resp.json()
+    if not resp.content.decode():
+        resp_json = {'contact_sample': []}
+    else:
+        try:
+            resp_json = resp.json()
+        except Exception as e:
+            send_admin_email('ERROR: Data returned by Sendgrid is not json',
+                             'Error message: {}\nReturned content: {}'.format(str(e), resp.content.decode())
+                             )
+            return None
     for contact in resp_json.get('contact_sample'):
         email = contact.get('email')
         if email in email_set:
@@ -81,7 +91,16 @@ def update_list_users_without_request():
         settings.SENDGRID_API_BASE_URL, settings.SENDGRID_CONTACT_LIST_IDS['students_without_request']),
         headers=header
     )
-    resp_json = resp.json()
+    if not resp.content.decode():
+        resp_json = {'contact_sample': []}
+    else:
+        try:
+            resp_json = resp.json()
+        except Exception as e:
+            send_admin_email('ERROR: Data returned by Sendgrid is not json',
+                             'Error message: {}\nReturned content: {}'.format(str(e), resp.content.decode())
+                             )
+            return None
     for contact in resp_json.get('contact_sample'):
         email = contact.get('email')
         if email in email_set:
