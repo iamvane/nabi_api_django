@@ -1,5 +1,6 @@
 import os
 import dj_database_url
+from celery.schedules import crontab
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -244,8 +245,20 @@ DEFAULT_FILE_STORAGE = 'core.storage_backends.MediaStorage'
 SENDGRID_CONTACT_LIST_IDS = {
     'instructors': os.environ['SENDGRID_CONTACT_LIST_INSTRUCTORS'],
     'parents': os.environ['SENDGRID_CONTACT_LIST_PARENTS'],
-    'students': os.environ['SENDGRID_CONTACT_LIST_STUDENTS']
+    'students': os.environ['SENDGRID_CONTACT_LIST_STUDENTS'],
+    'parents_without_request': 'a5bc806b-ce29-4900-ad3b-5e66eaa6e405',
+    'students_without_request': 'a7f64112-cf7b-4a26-8f2d-9cb251f3ed00',
+}
+SENDGRID_EMAIL_TEMPLATES = {
+    'booking_invoice': 'd-16bb70c5d4d549ea99d73e2d57cdba84',
+    'booking_advice': 'd-b2a6ea08ab8d48cfa180985c966b0061',
 }
 
 CELERY_BROKER_URL = os.environ['BROKER_URL']
 BROKER_POOL_LIMIT = 1
+CELERY_BEAT_SCHEDULE = {
+    'send-reminder-request': {
+        'task': 'lesson.tasks.update_list_users_without_request',
+        'schedule': crontab(hour='9'),
+    },
+}

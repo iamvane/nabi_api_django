@@ -1,4 +1,5 @@
 import os
+from celery.schedules import crontab
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -112,6 +113,12 @@ ADMIN_EMAIL = DEFAULT_FROM_EMAIL
 
 CELERY_BROKER_URL = os.environ.get('BROKER_URL', '')
 BROKER_POOL_LIMIT = 1
+CELERY_BEAT_SCHEDULE = {
+    'send-reminder-request': {
+        'task': 'lesson.tasks.update_list_users_without_request',
+        'schedule': crontab(hour='9', minute='0'),
+    },
+}
 
 
 # Internationalization
@@ -132,6 +139,17 @@ MEDIA_URL = '/dj-media/'
 GOOGLE_FORM_REFERENCES_URL = 'https://forms.gle/MuGhfwUARTW9uzrU9'
 
 SENDGRID_API_BASE_URL = 'https://api.sendgrid.com/v3/'
+SENDGRID_CONTACT_LIST_IDS = {
+    'instructors': 'foo',
+    'parents': 'foo',
+    'students': 'foo',
+    'parents_without_request': 'foo',
+    'students_without_request': 'foo',
+}
+SENDGRID_EMAIL_TEMPLATES = {
+    'booking_invoice': 'foo',
+    'booking_advice': 'foo',
+}
 
 ACCURATE_PLAN_PARAMETER = 'PKG_STANDARD'
 ACCURATE_PLAN_ADDITIONALS = ['SON', ]
