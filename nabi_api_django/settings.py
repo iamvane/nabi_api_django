@@ -116,7 +116,7 @@ BROKER_POOL_LIMIT = 1
 CELERY_BEAT_SCHEDULE = {
     'send-reminder-request': {
         'task': 'lesson.tasks.update_list_users_without_request',
-        'schedule': crontab(hour='9'),
+        'schedule': crontab(hour='9', minute='0'),
     },
 }
 
