@@ -252,22 +252,6 @@ SENDGRID_CONTACT_LIST_IDS = {
 SENDGRID_EMAIL_TEMPLATES = {
     'booking_invoice': 'd-16bb70c5d4d549ea99d73e2d57cdba84',
     'booking_advice': 'd-b2a6ea08ab8d48cfa180985c966b0061',
-    'request_invitation_parent_1': 'd-87f73d4c5b264411bf162fd5ce4963ae',
-    'request_invitation_parent_2': 'd-df238a25a8084b42a05780537cea520d',
-    'request_invitation_parent_3': 'd-be2cb5207a794c61a888c8704d2a20c8',
-    'request_invitation_parent_4': 'd-fd57b03d36c14a79a70b8a924cf39759',
-    'request_invitation_parent_5': 'd-e9bc3286999b41cea485f4f1949c6f86',
-    'request_invitation_parent_6': 'd-cd609448af1f43d0bcacb99e1cd21adb',
-    'request_invitation_parent_7': 'd-e86732b121b14b02bbde490ef79e5653',
-    'request_invitation_parent_8': 'd-6b52e023763e48bfb42094ab0c26a957',
-    'request_invitation_student_1': 'd-3bd1d480516f433d9f44f3ac99052d49',
-    'request_invitation_student_2': 'd-9b35b970c1064e0abbb30ea600e135bc',
-    'request_invitation_student_3': 'd-9d49ab63c35947b6a29b7f050bc2fde',
-    'request_invitation_student_4': 'd-2a3e29f9e8bb494db7f1b9a9e66cb7a3',
-    'request_invitation_student_5': 'd-4d1273e72aea4da6ab94b828f3f32dee',
-    'request_invitation_student_6': 'd-f874843923ec4f4f9063376af0e7a484',
-    'request_invitation_student_7': 'd-918b6ab813ee43d7a921dfc956542f17',
-    'request_invitation_student_8': 'd-0d8739f32c634a828539816714438bce',
 }
 
 CELERY_BROKER_URL = os.environ['BROKER_URL']

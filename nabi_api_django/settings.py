@@ -149,22 +149,6 @@ SENDGRID_CONTACT_LIST_IDS = {
 SENDGRID_EMAIL_TEMPLATES = {
     'booking_invoice': 'foo',
     'booking_advice': 'foo',
-    'request_invitation_parent_1': 'foo',
-    'request_invitation_parent_2': 'foo',
-    'request_invitation_parent_3': 'foo',
-    'request_invitation_parent_4': 'foo',
-    'request_invitation_parent_5': 'foo',
-    'request_invitation_parent_6': 'foo',
-    'request_invitation_parent_7': 'foo',
-    'request_invitation_parent_8': 'foo',
-    'request_invitation_student_1': 'foo',
-    'request_invitation_student_2': 'foo',
-    'request_invitation_student_3': 'foo',
-    'request_invitation_student_4': 'foo',
-    'request_invitation_student_5': 'foo',
-    'request_invitation_student_6': 'foo',
-    'request_invitation_student_7': 'foo',
-    'request_invitation_student_8': 'foo',
 }
 
 ACCURATE_PLAN_PARAMETER = 'PKG_STANDARD'
