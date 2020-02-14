@@ -258,7 +258,7 @@ CELERY_BROKER_URL = os.environ['BROKER_URL']
 BROKER_POOL_LIMIT = 1
 CELERY_BEAT_SCHEDULE = {
     'send-reminder-request': {
-        'task': 'lesson.tasks.send_email_reminder_create_request',
-        'schedule': crontab(hour='7', minute='0', day_of_week='mon,tue,thu,sat'),
+        'task': 'lesson.tasks.update_list_users_without_request',
+        'schedule': crontab(hour='9'),
     },
 }
