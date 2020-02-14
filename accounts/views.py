@@ -1,3 +1,5 @@
+import json
+import requests
 from datetime import timedelta
 from functools import reduce
 from logging import getLogger
@@ -30,7 +32,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from core import constants as const
 from core.constants import *
 from core.models import UserToken
-from core.utils import generate_hash, get_date_a_month_later
+from core.utils import generate_hash, send_admin_email
 from lesson.models import Application, Instrument, LessonBooking, LessonRequest
 from lesson.serializers import (LessonBookingParentDashboardSerializer, LessonBookingStudentDashboardSerializer,
                                 LessonRequestParentDashboardSerializer, LessonRequestStudentDashboardSerializer,
@@ -162,6 +164,26 @@ class ResetPasswordView(views.APIView):
                 else:
                     repeated_token = False
             target_url = '{}/forgot-password?token={}'.format(HOSTNAME_PROTOCOL, token)
+
+            # ToDo: update data to send in request to Sendgrid
+            params = {'url_reset_pass': target_url}
+            headers = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD),
+                       'Content-Type': 'application/json'}
+            response = requests.post(settings.SENDGRID_API_BASE_URL + 'mail/send', headers=headers,
+                                     data=json.dumps(
+                                         {"from": {"email": settings.DEFAULT_FROM_EMAIL, "name": 'Nabi Music'},
+                                          "template_id": settings.SENDGRID_EMAIL_TEMPLATES['reset_password'],
+                                          "personalizations": [{"to": [{"email": email}],
+                                                                "dynamic_template_data": params}]
+                                          })
+                                     )
+            if response.status_code != 202:
+                send_admin_email("[INFO] Error sending email for reset password",
+                                 "The error code is {} and response content: {}.".format(response.status_code,
+                                                                                         response.content.decode())
+                                 )
+
+            # PREVIOUS
             context = {'url_reset_pass': target_url}
             text_content = loader.render_to_string('reset_password_plain.html', context)
             html_content = loader.render_to_string('reset_password.html', context)

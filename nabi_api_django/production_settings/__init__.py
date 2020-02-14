@@ -253,6 +253,15 @@ SENDGRID_EMAIL_TEMPLATES = {
     'booking_invoice': 'd-16bb70c5d4d549ea99d73e2d57cdba84',
     'booking_advice': 'd-b2a6ea08ab8d48cfa180985c966b0061',
 }
+SENDGRID_EMAIL_TEMPLATES = {
+    'advice_application': '',
+    'advice_request': '',
+    'booking_advice': 'd-b2a6ea08ab8d48cfa180985c966b0061',
+    'booking_invoice': 'd-16bb70c5d4d549ea99d73e2d57cdba84',
+    'referral_invitation': '',
+    'reset_password': '',
+    'welcome_email': '',
+}
 
 CELERY_BROKER_URL = os.environ['BROKER_URL']
 BROKER_POOL_LIMIT = 1

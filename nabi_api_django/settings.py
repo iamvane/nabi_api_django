@@ -147,8 +147,13 @@ SENDGRID_CONTACT_LIST_IDS = {
     'students_without_request': 'foo',
 }
 SENDGRID_EMAIL_TEMPLATES = {
-    'booking_invoice': 'foo',
+    'advice_application': 'foo',
+    'advice_request': 'foo',
     'booking_advice': 'foo',
+    'booking_invoice': 'foo',
+    'referral_invitation': 'foo',
+    'reset_password': 'foo',
+    'welcome_email': 'foo',
 }
 
 ACCURATE_PLAN_PARAMETER = 'PKG_STANDARD'

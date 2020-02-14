@@ -1,3 +1,4 @@
+import json
 import requests
 
 from django.conf import settings
@@ -18,6 +19,25 @@ def init_kwargs(model, arg_dict):
 
 
 def send_welcome_email(user_cc):
+    # ToDo: update data to send in request to Sendgrid
+    user = user_cc.user
+    referral_link = '{}/registration?token={}'.format(HOSTNAME_PROTOCOL, user.referral_token)
+    params = {'referral_link': referral_link}
+    headers = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-Type': 'application/json'}
+    response = requests.post(settings.SENDGRID_API_BASE_URL + 'mail/send', headers=headers,
+                             data=json.dumps({"from": {"email": settings.DEFAULT_FROM_EMAIL, "name": 'Nabi Music'},
+                                              "template_id": settings.SENDGRID_EMAIL_TEMPLATES['welcome_email'],
+                                              "personalizations": [{"to": [{"email": user.email}],
+                                                                    "dynamic_template_data": params}]
+                                              })
+                             )
+    if response.status_code != 202:
+        send_admin_email("[INFO] Error sending welcome email",
+                         "The error code is {} and response content: {}.".format(response.status_code,
+                                                                                 response.content.decode())
+                         )
+
+    # PREVIOUS
     user = user_cc.user
     role = user.get_role()
     referral_token = user.referral_token
@@ -49,6 +69,55 @@ def send_welcome_email(user_cc):
 
 
 def send_referral_invitation_email(user, email):
+    """Send email for invite to registration, including referral_token"""
+    # ToDo: update data to send in request to Sendgrid
+    role = user.get_role()
+    referral_token = user.referral_token
+    first_name = user.first_name
+    last_name = user.last_name
+    date_limit = get_date_a_month_later(timezone.now())
+    user_full_name = '{} {}'.format(first_name, last_name)
+    referral_url = '{}/referral/{}'.format(settings.HOSTNAME_PROTOCOL, referral_token)
+    anonymous_message = ''
+    if not user_full_name.strip():
+        if role == ROLE_INSTRUCTOR:
+            subject = 'Teach a lesson FREE of fees'
+            anonymous_message = 'You can teach a music lesson FREE of fees!'
+        else:
+            subject = 'You got a FREE music lesson'
+            anonymous_message = 'You received a FREE music lesson!'
+    else:
+        subject = user_full_name + ' invited you to Nabi Music'
+
+    if role == ROLE_INSTRUCTOR:
+        heading = 'sent you a lesson FREE of fees!'
+        description = 'to keep 100% of your earnings.'
+    else:
+        heading = 'sent you a FREE music lesson!'
+        description = 'to get your FREE lesson.'
+
+    params = {'first_name': first_name, 'last_name': last_name, 'date_limit': date_limit,
+              'referral_url': referral_url, 'heading': heading, 'description': description}
+
+    if anonymous_message:
+        params['anonymous_message']: anonymous_message
+
+    headers = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-Type': 'application/json'}
+    response = requests.post(settings.SENDGRID_API_BASE_URL + 'mail/send', headers=headers,
+                             data=json.dumps({"from": {"email": settings.DEFAULT_FROM_EMAIL, "name": 'Nabi Music'},
+                                              "template_id": settings.SENDGRID_EMAIL_TEMPLATES['referral_invitation'],
+                                              "personalizations": [{"to": [{"email": email}],
+                                                                    "dynamic_template_data": params}]
+                                              })
+                             )
+    if response.status_code != 202:
+        send_admin_email("[INFO] Error sending referral invitation email",
+                         "The error code is {} and response content: {}.".format(response.status_code,
+                                                                                 response.content.decode())
+                         )
+
+
+    # PREVIOUS
     role = user.get_role()
     referral_token = user.referral_token
     first_name = user.first_name

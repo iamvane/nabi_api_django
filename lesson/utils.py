@@ -9,6 +9,29 @@ from core.utils import send_admin_email, send_email
 
 def send_alert_request_instructor(instructor, lesson_request, requestor_account):
     """Send advice of new request via email for instructors"""
+    # ToDo: update data to send in request to Sendgrid
+    location_tuple = requestor_account.get_location(result_type='tuple')
+    params = {
+        'request_title': lesson_request.title,
+        'location': '{}, {}'.format(location_tuple[2], location_tuple[1]),
+        'reference_url': '{}/request/{}'.format(settings.HOSTNAME_PROTOCOL, lesson_request.id)
+    }
+    headers = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-Type': 'application/json'}
+    response = requests.post(settings.SENDGRID_API_BASE_URL + 'mail/send', headers=headers,
+                             data=json.dumps({"from": {"email": settings.DEFAULT_FROM_EMAIL, "name": 'Nabi Music'},
+                                              "template_id": settings.SENDGRID_EMAIL_TEMPLATES['advice_request'],
+                                              "personalizations": [{"to": [{"email": instructor.user.email}],
+                                                                    "dynamic_template_data": params}]
+                                              })
+                             )
+    if response.status_code != 202:
+        send_admin_email("[INFO] Error sending email xxx",
+                         "The error code is {} and response content: {}.".format(response.status_code,
+                                                                                 response.content.decode())
+                         )
+
+
+    # PREVIOUS
     from_email = 'Nabi Music <' + settings.DEFAULT_FROM_EMAIL + '>'
     template = 'request_advice_email.html'
     plain_template = 'request_advice_email_plain.html'
@@ -24,6 +47,27 @@ def send_alert_request_instructor(instructor, lesson_request, requestor_account)
 
 def send_alert_application(application, instructor, request_creator_account):
     """Send advice of new application for a created lesson request"""
+    # ToDo: update data to send in request to Sendgrid
+    params = {
+        'instructor_name': instructor.display_name,
+        'request_title': application.request.title,
+        'reference_url': '{}/application-list/{}'.format(settings.HOSTNAME_PROTOCOL, application.request.id)
+    }
+    headers = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-Type': 'application/json'}
+    response = requests.post(settings.SENDGRID_API_BASE_URL + 'mail/send', headers=headers,
+                             data=json.dumps({"from": {"email": settings.DEFAULT_FROM_EMAIL, "name": 'Nabi Music'},
+                                              "template_id": settings.SENDGRID_EMAIL_TEMPLATES['advice_application'],
+                                              "personalizations": [{"to": [{"email": request_creator_account.user.email}],
+                                                                    "dynamic_template_data": params}]
+                                              })
+                             )
+    if response.status_code != 202:
+        send_admin_email("[INFO] Error sending email for advice parent/student about a new application",
+                         "The error code is {} and response content: {}.".format(response.status_code,
+                                                                                 response.content.decode())
+                         )
+
+    # PREVIOUS
     from_email = 'Nabi Music <' + settings.DEFAULT_FROM_EMAIL + '>'
     template = 'application_advice_email.html'
     plain_template = 'application_advice_email_plain.html'
