@@ -34,4 +34,5 @@ urlpatterns = [
     path('registration-affiliate/', views.AffiliateRegisterView.as_view()),
     path('dashboard/', views.DashboardView.as_view()),
     path('referral-info/<str:token>/', views.ReferralInfoView.as_view()),
+    path('referral-dashboard/', views.ReferralDashboardView.as_view()),
 ]

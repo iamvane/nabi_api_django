@@ -13,7 +13,7 @@ from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import D
 from django.core.mail import EmailMultiAlternatives
 from django.db import transaction, IntegrityError
-from django.db.models import Case, F, Min, ObjectDoesNotExist, Prefetch, Q, When
+from django.db.models import Case, F, Min, ObjectDoesNotExist, Prefetch, Q, Sum, When
 from django.db.models.functions import Cast
 from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404
@@ -29,7 +29,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from core import constants as const
 from core.constants import *
-from core.models import UserToken
+from core.models import UserBenefits, UserToken
 from core.utils import generate_hash, get_date_a_month_later
 from lesson.models import Application, Instrument, LessonBooking, LessonRequest
 from lesson.serializers import (LessonBookingParentDashboardSerializer, LessonBookingStudentDashboardSerializer,
@@ -827,3 +827,13 @@ class ReferralInfoView(views.APIView):
             if account.avatar:
                 data['avatar'] = account.avatar.url
         return Response(data, status=status.HTTP_200_OK)
+
+
+class ReferralDashboardView(views.APIView):
+
+    def get(self, request):
+        qs = UserBenefits.objects.filter(beneficiary=request.user, status=BENEFIT_READY, benefit_type=BENEFIT_AMOUNT)
+        ser = sers.ReferralDashboardSerializer(qs, many=True)
+        response_data = ser.data.copy()
+        total = qs.aggregate(total=Sum('benefit_qty'))
+        return Response({'totalAmount': total['total'], 'provider_list': response_data}, status=status.HTTP_200_OK)
