@@ -1035,13 +1035,14 @@ class AffiliateRegisterSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-        user = User.objects.create(first_name=validated_data.get('first_name'),
-                                   last_name=validated_data['last_name'],
+        user = User.objects.create(first_name=validated_data.get('first_name', ''),
+                                   last_name=validated_data.get('last_name', ''),
                                    email=validated_data['email'])
         user.set_password(validated_data['password'])
         user.save()
-        Affiliate.objects.create(user=user,
-                                 birth_date=validated_data.get('affiliate', {}).get('birth_date'),
-                                 company_name=validated_data.get('affiliate', {}).get('company_name'))
+        affiliate = Affiliate.objects.create(user=user,
+                                             birth_date=validated_data.get('affiliate', {}).get('birth_date'),
+                                             company_name=validated_data.get('affiliate', {}).get('company_name', ''))
+        affiliate.set_referrral_token()
         user.refresh_from_db()
         return user
