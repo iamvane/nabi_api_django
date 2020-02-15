@@ -23,6 +23,11 @@ class CreateAffiliateTest(APITestCase):
             "birthDate": "1992-05-24",
             "companyName": "Enterprise Inc",
         }
+        self.payload_minimum = {
+            "email": "affiliate020@yopmail.com",
+            "password": "123456",
+            "birthDate": "1992-05-24",
+        }
         self.payload_missing_birthdate = {
             "email": "affiliate021@yopmail.com",
             "password": "123456",
@@ -44,9 +49,18 @@ class CreateAffiliateTest(APITestCase):
         response = self.client.post(self.url, data=json.dumps(self.payload), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
         self.assertTrue(User.objects.filter(email=self.payload['email']).exists())
-        self.assertTrue(User.objects.filter(username=self.payload['email']).exists())
+        self.assertTrue(User.objects.filter(username=self.payload['email']).exclude(referral_token='').exists())
         user_id = User.objects.get(username=self.payload['email']).id
         self.assertTrue(Affiliate.objects.filter(user_id=user_id, company_name=self.payload['companyName']).exists())
+
+    def test_create_affiliate_minimum_data(self):
+        """Test affiliate creation with minimun data"""
+        response = self.client.post(self.url, data=json.dumps(self.payload_minimum), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.content.decode())
+        self.assertTrue(User.objects.filter(email=self.payload['email']).exists())
+        self.assertTrue(User.objects.filter(username=self.payload['email']).exclude(referral_token='').exists())
+        user_id = User.objects.get(username=self.payload['email']).id
+        self.assertTrue(Affiliate.objects.filter(user_id=user_id).exists())
 
     def test_create_affiliate_missing_birthdate(self):
         """Test affiliate creation"""
