@@ -258,17 +258,21 @@ BG_STATUSES = (
 
 # --- benefit types ---
 BENEFIT_LESSON = 'lesson'
+BENEFIT_AMOUNT = 'amount'
+BENEFIT_DISCOUNT = 'discount'
 BENEFIT_TYPES = (
     (BENEFIT_LESSON, BENEFIT_LESSON),
+    (BENEFIT_AMOUNT, BENEFIT_AMOUNT),
+    (BENEFIT_DISCOUNT, BENEFIT_DISCOUNT),
 )
 
 # --- benefit statuses ---
-BENEFIT_ENABLED = 'enable'
-BENEFIT_DISABLED = 'disable'
+BENEFIT_READY = 'ready'   # ready to be used
+BENEFIT_PENDING = 'pending'   # requires to meet a condition to become ready
 BENEFIT_USED = 'used'
 BENEFIT_STATUSES = (
-    (BENEFIT_ENABLED, BENEFIT_ENABLED),
-    (BENEFIT_DISABLED, BENEFIT_DISABLED),
+    (BENEFIT_READY, BENEFIT_READY),
+    (BENEFIT_PENDING, BENEFIT_PENDING),
     (BENEFIT_USED, BENEFIT_USED),
 )
 
