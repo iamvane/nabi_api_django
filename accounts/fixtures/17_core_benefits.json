@@ -3,10 +3,12 @@
    "model": "core.userbenefits",
    "pk": 1,
    "fields": {
-      "user": 6,
-      "benefit_type": "lesson",
-      "user_origin": 1,
-      "status": "enable",
+      "beneficiary": 6,
+      "provider": 1,
+      "benefit_qty": 20,
+      "benefit_type": "discount",
+      "source": "User registration with referral token",
+      "status": "ready",
       "created_at": "2019-10-30T20:36:25.868Z",
       "modified_at": "2019-10-30T20:36:25.868Z"
    }
@@ -15,10 +17,12 @@
    "model": "core.userbenefits",
    "pk": 2,
    "fields": {
-      "user": 1,
-      "benefit_type": "lesson",
-      "user_origin": 6,
-      "status": "disable",
+      "beneficiary": 1,
+      "provider": 6,
+      "benefit_qty": 5,
+      "benefit_type": "amount",
+      "source": "Registration of referrer user",
+      "status": "pending",
       "created_at": "2019-10-30T20:36:25.869Z",
       "modified_at": "2019-10-30T20:36:25.869Z"
    }
@@ -27,9 +31,11 @@
    "model": "core.userbenefits",
    "pk": 5,
    "fields": {
-      "user": 7,
-      "benefit_type": "lesson",
-      "user_origin": 5,
+      "beneficiary": 7,
+      "provider": 5,
+      "benefit_qty": 20,
+      "benefit_type": "discount",
+      "source": "User registration with referral token",
       "status": "enable",
       "created_at": "2019-10-30T22:21:04.757Z",
       "modified_at": "2019-10-30T22:21:04.757Z"
@@ -39,10 +45,12 @@
    "model": "core.userbenefits",
    "pk": 6,
    "fields": {
-      "user": 5,
-      "benefit_type": "lesson",
-      "user_origin": 7,
-      "status": "disable",
+      "beneficiary": 5,
+      "provider": 7,
+      "benefit_qty": 5,
+      "benefit_type": "amount",
+      "source": "Registration of referrer user",
+      "status": "pending",
       "created_at": "2019-10-30T22:21:04.758Z",
       "modified_at": "2019-10-30T22:21:04.758Z"
    }
@@ -51,9 +59,11 @@
    "model": "core.userbenefits",
    "pk": 7,
    "fields": {
-      "user": 8,
-      "benefit_type": "lesson",
-      "user_origin": 5,
+      "beneficiary": 8,
+      "provider": 5,
+      "benefit_qty": 20,
+      "benefit_type": "discount",
+      "source": "User registration with referral token",
       "status": "enable",
       "created_at": "2019-10-30T22:21:49.899Z",
       "modified_at": "2019-10-30T22:21:49.899Z"
@@ -63,10 +73,12 @@
    "model": "core.userbenefits",
    "pk": 8,
    "fields": {
-      "user": 5,
-      "benefit_type": "lesson",
-      "user_origin": 8,
-      "status": "disable",
+      "beneficiary": 5,
+      "provider": 8,
+      "benefit_qty": 5,
+      "benefit_type": "amount",
+      "source": "Registration of referrer user",
+      "status": "pending",
       "created_at": "2019-10-30T22:21:49.900Z",
       "modified_at": "2019-10-30T22:21:49.900Z"
    }
