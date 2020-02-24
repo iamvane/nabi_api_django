@@ -1018,6 +1018,7 @@ class AffiliateRegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('id', 'first_name', 'last_name', 'email', 'password', 'birthday', 'companyName')
+        extra_kwargs = {'password': {'write_only': True}}
 
     def to_internal_value(self, data):
         keys = dict.fromkeys(data)
