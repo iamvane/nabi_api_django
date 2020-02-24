@@ -836,4 +836,6 @@ class ReferralDashboardView(views.APIView):
         ser = sers.ReferralDashboardSerializer(qs, many=True)
         response_data = ser.data.copy()
         total = qs.aggregate(total=Sum('benefit_qty'))
+        if total['total'] is None:
+            total['total'] = 0
         return Response({'totalAmount': total['total'], 'provider_list': response_data}, status=status.HTTP_200_OK)

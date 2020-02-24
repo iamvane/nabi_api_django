@@ -1053,10 +1053,11 @@ class AffiliateRegisterSerializer(serializers.ModelSerializer):
 class ReferralDashboardSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     amount = serializers.DecimalField(max_digits=9, decimal_places=4, source='benefit_qty')
+    date = serializers.DateTimeField(source='modified_at', format='%Y-%m-%d')
 
     class Meta:
         model = UserBenefits
-        fields = ('name', 'amount')
+        fields = ('name', 'amount', 'date', 'source', )
 
     def get_name(self, instance):
         account = get_account(instance.provider)
