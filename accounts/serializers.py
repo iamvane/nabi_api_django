@@ -1012,12 +1012,12 @@ class InstructorDetailSerializer(serializers.ModelSerializer):
 
 class AffiliateRegisterSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
-    birthDate = serializers.DateField(source='affiliate.birth_date')
+    birthday = serializers.DateField(source='affiliate.birth_date')
     companyName = serializers.CharField(max_length=200, source='affiliate.company_name', required=False)
 
     class Meta:
         model = User
-        fields = ('id', 'first_name', 'last_name', 'email', 'password', 'birthDate', 'companyName')
+        fields = ('id', 'first_name', 'last_name', 'email', 'password', 'birthday', 'companyName')
 
     def to_internal_value(self, data):
         keys = dict.fromkeys(data)

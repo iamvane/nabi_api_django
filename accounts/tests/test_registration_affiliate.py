@@ -20,13 +20,13 @@ class CreateAffiliateTest(APITestCase):
             "password": "123456",
             "firstName": "Afiliado",
             "lastName": "Veinte",
-            "birthDate": "1992-05-24",
+            "birthday": "1992-05-24",
             "companyName": "Enterprise Inc",
         }
         self.payload_minimum = {
             "email": "affiliate020@yopmail.com",
             "password": "123456",
-            "birthDate": "1992-05-24",
+            "birthday": "1992-05-24",
         }
         self.payload_missing_birthdate = {
             "email": "affiliate021@yopmail.com",
@@ -40,7 +40,7 @@ class CreateAffiliateTest(APITestCase):
             "password": "123456",
             "firstName": "Afiliado",
             "lastName": "OtroVeinte",
-            "birthDate": "1990-07-19",
+            "birthday": "1990-07-19",
             "companyName": "Enterprise Inc",
         }
 
