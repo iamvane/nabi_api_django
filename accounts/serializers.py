@@ -1012,37 +1012,38 @@ class InstructorDetailSerializer(serializers.ModelSerializer):
 
 class AffiliateRegisterSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
-    birth_date = serializers.DateField(source='affiliate.birth_date')
+    birthday = serializers.DateField(source='affiliate.birth_date')
+    companyName = serializers.CharField(max_length=200, source='affiliate.company_name', required=False)
 
     class Meta:
         model = User
-        fields = ('id', 'first_name', 'last_name', 'email', 'password', 'birth_date')
+        fields = ('id', 'first_name', 'last_name', 'email', 'password', 'birthday', 'companyName')
+        extra_kwargs = {'password': {'write_only': True}}
 
     def to_internal_value(self, data):
-        new_data = {}
-        if 'firstName' in data.keys():
-            new_data['first_name'] = data.get('firstName')
-        if 'lastName' in data.keys():
-            new_data['last_name'] = data.get('lastName')
-        if 'email' in data.keys():
-            new_data['email'] = data.get('email')
-        if 'password' in data.keys():
-            new_data['password'] = data.get('password')
-        if 'birthDate' in data.keys():
-            new_data['birth_date'] = data.get('birthDate')
-        return super().to_internal_value(new_data)
+        keys = dict.fromkeys(data)
+        if 'firstName' in keys:
+            data['first_name'] = data.pop('firstName')
+        if 'lastName' in keys:
+            data['last_name'] = data.pop('lastName')
+        return super().to_internal_value(data)
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        new_data = {'id': data.get('id'), 'firstName': data.get('first_name'), 'lastName': data.get('last_name'),
-                    'email': data.get('email'), 'birthDate': data.get('birth_date')}
-        return new_data
+        data['id'] = data.get('id')
+        data['firstName'] = data.get('first_name')
+        data['lastName'] = data.get('last_name')
+        return data
 
     def create(self, validated_data):
-        user = User.objects.create(first_name=validated_data.get('first_name'), last_name=validated_data['last_name'],
+        user = User.objects.create(first_name=validated_data.get('first_name', ''),
+                                   last_name=validated_data.get('last_name', ''),
                                    email=validated_data['email'])
         user.set_password(validated_data['password'])
         user.save()
-        Affiliate.objects.create(user=user, birth_date=validated_data.get('affiliate', {}).get('birth_date'))
+        affiliate = Affiliate.objects.create(user=user,
+                                             birth_date=validated_data.get('affiliate', {}).get('birth_date'),
+                                             company_name=validated_data.get('affiliate', {}).get('company_name', ''))
+        affiliate.set_referrral_token()
         user.refresh_from_db()
         return user

@@ -4,7 +4,7 @@ from django.db import models
 
 from .constants import (
     BENEFIT_DISABLED, BENEFIT_ENABLED, BENEFIT_LESSON, BENEFIT_STATUSES, BENEFIT_TYPES,
-    ROLE_INSTRUCTOR, ROLE_PARENT, ROLE_STUDENT,
+    ROLE_AFFILIATE, ROLE_INSTRUCTOR, ROLE_PARENT, ROLE_STUDENT,
 )
 
 
@@ -55,8 +55,12 @@ class User(AbstractUser):
             return ROLE_INSTRUCTOR
         elif hasattr(self, 'parent'):
             return ROLE_PARENT
-        else:
+        elif hasattr(self, 'student'):
             return ROLE_STUDENT
+        elif hasattr(self, 'affiliate'):
+            return ROLE_AFFILIATE
+        else:
+            return 'unknown'
 
     @classmethod
     def get_user_from_refer_code(cls, ref_code):

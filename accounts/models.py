@@ -529,8 +529,47 @@ class StudentDetails(models.Model):
 class Affiliate(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     birth_date = models.DateField()
+    company_name = models.CharField(max_length=200, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def set_referrral_token(self):
+        if not self.user.referral_token:   # assure to change only when is necessary
+            token = ''
+            if self.user.first_name or self.user.last_name:
+                if self.user.first_name:
+                    token = self.user.first_name.lower()
+                if token:
+                    if self.user.last_name:
+                        token += self.user.last_name[0].lower()
+            if token:
+                regex = '^' + token + '\d*$'
+                regex2 = '^' + token + '(\d*)$'
+                existing_token = User.objects.filter(referral_token__iregex=regex) \
+                    .values_list('referral_token', flat=True).last()
+                if existing_token:
+                    res = re.match(regex2, existing_token)
+                    num_str = res.groups()[0]
+                    if not num_str:
+                        num_str = '1'
+                    token += str(int(num_str) + 1)
+            else:
+                for ind in range(20):
+                    token = ''.join(generator.generate())
+                    regex = '^' + token + '\d*$'
+                    regex2 = '^' + token + '(\d*)$'
+                    existing_token = User.objects.filter(referral_token__iregex=regex)\
+                        .values_list('referral_token', flat=True).last()
+                    if existing_token is None:
+                        break
+                if existing_token:
+                    res = re.match(regex2, existing_token)
+                    num_str = res.groups()[0]
+                    if not num_str:
+                        num_str = '1'
+                    token += str(int(num_str) + 1)
+            self.user.referral_token = token
+            self.user.save()
 
 
 def get_account(user):
