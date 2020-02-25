@@ -838,4 +838,4 @@ class ReferralDashboardView(views.APIView):
         total = qs.aggregate(total=Sum('benefit_qty'))
         if total['total'] is None:
             total['total'] = 0
-        return Response({'totalAmount': total['total'], 'provider_list': response_data}, status=status.HTTP_200_OK)
+        return Response({'totalAmount': total['total'], 'providerList': response_data}, status=status.HTTP_200_OK)
