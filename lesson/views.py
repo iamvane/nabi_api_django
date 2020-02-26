@@ -25,6 +25,7 @@ from payments.models import Payment
 from . import serializers as sers
 from .models import Application, LessonBooking, LessonRequest
 from .tasks import send_application_alert, send_booking_alert, send_booking_invoice, send_request_alert_instructors
+from .utils import get_benefit_to_redeem
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -264,7 +265,33 @@ class LessonBookingRegisterView(views.APIView):
                 booking.application.request.save()
                 payment.status = PY_PROCESSED
                 payment.save()
-
+                # get used benefit type: offer or user_benefit
+                benefit_data = get_benefit_to_redeem(request.user)
+                if benefit_data.get('source') == 'benefit':
+                    if benefit_data.get('free_lesson'):
+                        user_benefit = request.user.benefits.filter(status=BENEFIT_READY,
+                                                                    benefit_type=BENEFIT_LESSON).first()
+                    elif benefit_data.get('discount') > 0:
+                        user_benefit = request.user.benefits.filter(status=BENEFIT_READY,
+                                                                    benefit_type=BENEFIT_DISCOUNT).first()
+                    elif benefit_data.get('amount') > 0:
+                        user_benefit = request.user.benefits.filter(status=BENEFIT_READY,
+                                                                    benefit_type=BENEFIT_AMOUNT).first()
+                    else:
+                        user_benefit = None
+                    if user_benefit:
+                        user_benefit.status = BENEFIT_USED
+                        user_benefit.save()
+                        request.user.provided_benefits.filter(depends_on=user_benefit.id, status=BENEFIT_PENDING)\
+                            .update(status=BENEFIT_READY)
+                elif benefit_data.get('source') == 'offer':
+                    user_benefit = request.user.benefits.filter(status=BENEFIT_READY,
+                                                                benefit_type=BENEFIT_DISCOUNT).first()
+                    if user_benefit:   # offer was used, then user_benefit should be cancelled
+                        user_benefit.status = BENEFIT_CANCELLED
+                        user_benefit.save()
+                        request.user.provided_benefits.filter(depends_on=user_benefit.id, status=BENEFIT_PENDING) \
+                            .update(status=BENEFIT_READY)
             task_log = TaskLog.objects.create(task_name='send_booking_invoice', args={'booking_id': booking.id})
             send_booking_invoice.delay(booking.id, task_log.id)
             task_log = TaskLog.objects.create(task_name='', args={})
