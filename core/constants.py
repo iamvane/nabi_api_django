@@ -268,10 +268,12 @@ BENEFIT_TYPES = (
 
 # --- benefit statuses ---
 BENEFIT_READY = 'ready'   # ready to be used
+BENEFIT_CANCELLED = 'cancelled'
 BENEFIT_PENDING = 'pending'   # requires to meet a condition to become ready
 BENEFIT_USED = 'used'
 BENEFIT_STATUSES = (
     (BENEFIT_READY, BENEFIT_READY),
+    (BENEFIT_CANCELLED, BENEFIT_CANCELLED),
     (BENEFIT_PENDING, BENEFIT_PENDING),
     (BENEFIT_USED, BENEFIT_USED),
 )
