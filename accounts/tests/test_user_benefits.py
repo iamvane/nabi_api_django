@@ -23,9 +23,9 @@ class ReferralDashboardTest(BaseTest):
         response_json = response.json()
         self.assertIsInstance(response_json, dict, response_json)
         self.assertEqual(response_json.get('totalAmount'), Decimal('10.0'), response_json)
-        self.assertIsInstance(response_json.get('provider_list'), list, response_json)
-        self.assertEqual(len(response_json.get('provider_list')), 2, response_json)
-        for provider in response_json.get('provider_list'):
+        self.assertIsInstance(response_json.get('providerList'), list, response_json)
+        self.assertEqual(len(response_json.get('providerList')), 2, response_json)
+        for provider in response_json.get('providerList'):
             self.assertIsNotNone(provider.get('name'), response_json)
             self.assertIsNotNone(provider.get('date'), response_json)
             self.assertIsNotNone(provider.get('source'), response_json)
@@ -39,8 +39,8 @@ class ReferralDashboardTest(BaseTest):
         response_json = response.json()
         self.assertIsInstance(response_json, dict, response_json)
         self.assertEqual(response_json.get('totalAmount'), Decimal('0.0'), response_json)
-        self.assertIsInstance(response_json.get('provider_list'), list, response_json)
-        self.assertEqual(len(response_json.get('provider_list')), 0, response_json)
+        self.assertIsInstance(response_json.get('providerList'), list, response_json)
+        self.assertEqual(len(response_json.get('providerList')), 0, response_json)
 
     def test_empty_no_benefits(self):
         """Test for user without any benefit"""
@@ -51,5 +51,5 @@ class ReferralDashboardTest(BaseTest):
         response_json = response.json()
         self.assertIsInstance(response_json, dict, response_json)
         self.assertEqual(response_json.get('totalAmount'), Decimal('0.0'), response_json)
-        self.assertIsInstance(response_json.get('provider_list'), list, response_json)
-        self.assertEqual(len(response_json.get('provider_list')), 0, response_json)
+        self.assertIsInstance(response_json.get('providerList'), list, response_json)
+        self.assertEqual(len(response_json.get('providerList')), 0, response_json)
