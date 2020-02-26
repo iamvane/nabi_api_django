@@ -16,7 +16,7 @@ class Command(BaseCommand):
             user_benefit.status = BENEFIT_PENDING
             user_benefit.benefit_type = BENEFIT_AMOUNT
             user_benefit.benefit_qty = 5
-            user_benefit.source = 'Registration of referrer user'
+            user_benefit.source = 'Registration of referred user'
             user_benefit.depends_on = UserBenefits.objects.filter(beneficiary_id=user_benefit.provider_id,
                                                                   provider_id=user_benefit.beneficiary_id,
                                                                   benefit_type=BENEFIT_LESSON,

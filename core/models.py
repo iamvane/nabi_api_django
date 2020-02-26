@@ -3,7 +3,7 @@ from django.contrib.postgres.fields import JSONField
 from django.db import models
 
 from .constants import (
-    BENEFIT_READY, BENEFIT_PENDING, BENEFIT_LESSON, BENEFIT_STATUSES, BENEFIT_TYPES,
+    BENEFIT_READY, BENEFIT_PENDING, BENEFIT_AMOUNT, BENEFIT_DISCOUNT, BENEFIT_STATUSES, BENEFIT_TYPES,
     ROLE_AFFILIATE, ROLE_INSTRUCTOR, ROLE_PARENT, ROLE_STUDENT,
 )
 
@@ -74,14 +74,16 @@ class User(AbstractUser):
 
     def set_user_benefits(self):
         """Create benefits to user whether have been referred by another user."""
-        # ToDo: Review and update
         if self.referred_by:
             # add benefit to this user
-            UserBenefits.objects.create(beneficiary=self, provider=self.referred_by,
-                                        benefit_type=BENEFIT_LESSON, status=BENEFIT_READY)
+            user_benefit = UserBenefits.objects.create(beneficiary=self, provider=self.referred_by,
+                                                       benefit_type=BENEFIT_DISCOUNT, benefit_qty=20,
+                                                       status=BENEFIT_READY,
+                                                       source='User registration with referral token')
             # add benefit to referring user
             UserBenefits.objects.create(beneficiary=self.referred_by, provider=self,
-                                        benefit_type=BENEFIT_LESSON, status=BENEFIT_PENDING)
+                                        benefit_type=BENEFIT_AMOUNT, benefit_qty=5,
+                                        status=BENEFIT_PENDING, source='Registration of referred user')
 
     def is_instructor(self):
         return hasattr(self, 'instructor')
