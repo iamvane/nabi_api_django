@@ -3,7 +3,7 @@ from django.contrib.postgres.fields import JSONField
 from django.db import models
 
 from .constants import (
-    BENEFIT_DISABLED, BENEFIT_ENABLED, BENEFIT_LESSON, BENEFIT_STATUSES, BENEFIT_TYPES,
+    BENEFIT_READY, BENEFIT_PENDING, BENEFIT_AMOUNT, BENEFIT_DISCOUNT, BENEFIT_STATUSES, BENEFIT_TYPES,
     ROLE_AFFILIATE, ROLE_INSTRUCTOR, ROLE_PARENT, ROLE_STUDENT,
 )
 
@@ -76,11 +76,14 @@ class User(AbstractUser):
         """Create benefits to user whether have been referred by another user."""
         if self.referred_by:
             # add benefit to this user
-            UserBenefits.objects.create(user=self, user_origin=self.referred_by,
-                                        benefit_type=BENEFIT_LESSON, status=BENEFIT_ENABLED)
+            user_benefit = UserBenefits.objects.create(beneficiary=self, provider=self.referred_by,
+                                                       benefit_type=BENEFIT_DISCOUNT, benefit_qty=20,
+                                                       status=BENEFIT_READY,
+                                                       source='User registration with referral token')
             # add benefit to referring user
-            UserBenefits.objects.create(user=self.referred_by, user_origin=self,
-                                        benefit_type=BENEFIT_LESSON, status=BENEFIT_DISABLED)
+            UserBenefits.objects.create(beneficiary=self.referred_by, provider=self,
+                                        benefit_type=BENEFIT_AMOUNT, benefit_qty=5,
+                                        status=BENEFIT_PENDING, source='Registration of referred user')
 
     def is_instructor(self):
         return hasattr(self, 'instructor')
@@ -100,9 +103,12 @@ class UserToken(models.Model):
 
 
 class UserBenefits(models.Model):
-    user = models.ForeignKey(User, related_name='benefits', on_delete=models.CASCADE)
+    beneficiary = models.ForeignKey(User, related_name='benefits', on_delete=models.CASCADE)
+    provider = models.ForeignKey(User, related_name='provided_benefits', on_delete=models.SET_NULL, null=True)
+    benefit_qty = models.DecimalField(max_digits=9, decimal_places=4)
     benefit_type = models.CharField(max_length=50, choices=BENEFIT_TYPES)
-    user_origin = models.ForeignKey(User, related_name='provided_benefits', on_delete=models.SET_NULL, null=True)
+    source = models.CharField(max_length=300, blank=True)   # method/process used to obtain the benefit
+    depends_on = models.ForeignKey('UserBenefits', on_delete=models.SET_NULL, null=True, related_name='dependants')
     status = models.CharField(max_length=50, choices=BENEFIT_STATUSES)
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)

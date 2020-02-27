@@ -10,6 +10,7 @@ from core.constants import (
     DAY_TUPLE, DEGREE_TYPE_CHOICES, GENDER_CHOICES, LESSON_DURATION_CHOICES, MONTH_CHOICES,
     PLACE_FOR_LESSONS_CHOICES, SKILL_LEVEL_CHOICES,
 )
+from core.models import UserBenefits
 from core.utils import update_model
 from lesson.models import Instrument
 
@@ -1047,3 +1048,17 @@ class AffiliateRegisterSerializer(serializers.ModelSerializer):
         affiliate.set_referrral_token()
         user.refresh_from_db()
         return user
+
+
+class ReferralDashboardSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+    amount = serializers.DecimalField(max_digits=9, decimal_places=4, source='benefit_qty')
+    date = serializers.DateTimeField(source='modified_at', format='%Y-%m-%d')
+
+    class Meta:
+        model = UserBenefits
+        fields = ('name', 'amount', 'date', 'source', )
+
+    def get_name(self, instance):
+        account = get_account(instance.provider)
+        return account.display_name
