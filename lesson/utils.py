@@ -156,3 +156,19 @@ def get_additional_items_booking(user):
     elif benefits.get('amount'):
         data['credits'] = benefits.get('amount')
     return data
+
+
+def get_booking_data(user, package_name, application):
+    """Get data related to booking: total amount, fees, discounts, etc"""
+    data = get_additional_items_booking(user)
+    data['lessonRate'] = application.rate
+    data['lessonsPrice'] = application.rate * PACKAGES[package_name].get('lesson_qty')
+    data['processingFee'] = Decimal('2.9000')
+    data['subTotal'] = data['lessonsPrice'] + data.get('placementFee', 0)
+    total = data['subTotal'] - round(data['subTotal'] * data.get('discounts', Decimal('0.0')) / Decimal('100.0'), 4)
+    total = total - data.get('credits', 0)
+    if package_name == 'virtuoso':
+        data['virtuosoDiscount'] = PACKAGES[package_name].get('discount')
+        total = round(total * (Decimal('100.0000') - data['virtuosoDiscount']) / 100, 4)
+    data['total'] = round(total * (100 + data.get('processingFee')) / 100, 4)
+    return data

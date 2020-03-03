@@ -1,5 +1,4 @@
 import stripe
-from decimal import Decimal
 from functools import reduce
 
 from django.conf import settings
@@ -26,7 +25,7 @@ from payments.models import Payment
 from . import serializers as sers
 from .models import Application, LessonBooking, LessonRequest
 from .tasks import send_application_alert, send_booking_alert, send_booking_invoice, send_request_alert_instructors
-from .utils import get_benefit_to_redeem, get_additional_items_booking, PACKAGES
+from .utils import get_benefit_to_redeem, get_booking_data, PACKAGES
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -227,24 +226,30 @@ class LessonBookingRegisterView(views.APIView):
         request.data['user_id'] = request.user.id
         serializer = sers.LessonBookingRegisterSerializer(data=request.data)
         if serializer.is_valid():
+            package_name = serializer.validated_data['package']
+            booking_values_data = get_booking_data(request.user, package_name,
+                                                   Application.objects.get(id=serializer.validated_data['application_id'])
+                                                   )
             stripe_token = serializer.validated_data.pop('stripe_token')
-            booking = LessonBooking.objects.filter(user_id=serializer.validated_data['user']['id'],
-                                                   quantity=serializer.validated_data['quantity'],
-                                                   total_amount=serializer.validated_data['total_amount'],
-                                                   application_id=serializer.validated_data['application']['id'],
+            lesson_qty = PACKAGES[package_name].get('lesson_qty') + 1 if booking_values_data.get('freeLesson') else 0
+            booking = LessonBooking.objects.filter(user_id=serializer.validated_data['user_id'],
+                                                   quantity=lesson_qty,
+                                                   total_amount=booking_values_data['total'],
+                                                   application_id=serializer.validated_data['application_id'],
                                                    status=LessonBooking.REQUESTED).last()
             if not booking:
-                booking = LessonBooking.objects.create(user_id=serializer.validated_data['user']['id'],
-                                                       quantity=serializer.validated_data['quantity'],
-                                                       total_amount=serializer.validated_data['total_amount'],
-                                                       application_id=serializer.validated_data['application']['id'])
+                booking = LessonBooking.objects.create(user_id=serializer.validated_data['user_id'],
+                                                       quantity=lesson_qty,
+                                                       total_amount=booking_values_data['total'],
+                                                       application_id=serializer.validated_data['application_id'],
+                                                       )
             # make payment using stripe
             try:
-                charge = stripe.Charge.create(amount='{:.0f}'.format(serializer.validated_data['total_amount'] * 100),
+                charge = stripe.Charge.create(amount='{:.0f}'.format(booking.total_amount * 100),
                                               currency='usd',
                                               source=stripe_token,
                                               description='Lesson Booking by {} with package {}'.format(
-                                                  request.user.email, serializer.data['charge_description'])
+                                                  request.user.email, package_name.capitalize())
                                               )
             except stripe.error.InvalidRequestError as error:
                 return Response({'stripeToken': [error.user_message, ]}, status=status.HTTP_400_BAD_REQUEST)
@@ -253,13 +258,15 @@ class LessonBookingRegisterView(views.APIView):
             except Exception as ex:
                 return Response({'message': str(ex)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             # register the charge made
-            payment = Payment.objects.create(user=request.user, amount=serializer.validated_data['total_amount'],
-                                             description='Lesson booking with package {}'.format(
-                                                 serializer.validated_data['charge_description']),
+            payment = Payment.objects.create(user=request.user, amount=booking.total_amount,
+                                             description='Lesson booking with package {}'.format(package_name.capitalize()),
                                              charge_id=charge.id)
             with transaction.atomic():
+                for k, v in booking_values_data.items():
+                    booking_values_data[k] = str(v)
+                booking.details = booking_values_data
                 booking.payment = payment
-                booking.description = 'Package {}'.format(serializer.validated_data['charge_description'])
+                booking.description = 'Package {}'.format(package_name.capitalize())
                 booking.status = LessonBooking.PAID
                 booking.save()
                 booking.application.request.status = LESSON_REQUEST_CLOSED
@@ -312,14 +319,7 @@ class ApplicationBookingView(views.APIView):
         except ObjectDoesNotExist:
             return Response({'message': 'There is not an application with provided id'},
                             status=status.HTTP_400_BAD_REQUEST)
-        data = get_additional_items_booking(request.user)
-        data['lessonRate'] = application.rate
-        data['lessonsPrice'] = application.rate * PACKAGES['artist'].get('lesson_qty')
-        data['processingFee'] = Decimal('2.9000')
-        data['subTotal'] = data['lessonsPrice'] + data.get('placementFee', 0)
-        total = data['subTotal'] - round(data['subTotal'] * data.get('discounts', Decimal('0.0')) / Decimal('100.0'), 4)
-        data['total'] = round((total - data.get('credits', 0)) * (100 + data.get('processingFee')) / 100, 4)
-        return Response(data, status=status.HTTP_200_OK)
+        return Response(get_booking_data(request.user, 'artist', application), status=status.HTTP_200_OK)
 
     def post(self, request, app_id):
         """Receiving package name"""
@@ -334,18 +334,7 @@ class ApplicationBookingView(views.APIView):
         except ObjectDoesNotExist:
             return Response({'message': 'There is not an application with provided id'},
                             status=status.HTTP_400_BAD_REQUEST)
-        data = get_additional_items_booking(request.user)
-        data['lessonRate'] = application.rate
-        data['lessonsPrice'] = application.rate * PACKAGES[package].get('lesson_qty')
-        data['processingFee'] = Decimal('2.9000')
-        data['subTotal'] = data['lessonsPrice'] + data.get('placementFee', 0)
-        total = data['subTotal'] - round(data['subTotal'] * data.get('discounts', Decimal('0.0')) / Decimal('100.0'), 4)
-        total = total - data.get('credits', 0)
-        if request.data.get('package') == 'virtuoso':
-            data['virtuosoDiscount'] = PACKAGES[package].get('discount')
-            total = round(total * (Decimal('100.0000') - data['virtuosoDiscount']) / 100, 4)
-        data['total'] = round(total * (100 + data.get('processingFee')) / 100, 4)
-        return Response(data, status=status.HTTP_200_OK)
+        return Response(get_booking_data(request.user, package, application), status=status.HTTP_200_OK)
 
 
 class GradeLessonView(views.APIView):
