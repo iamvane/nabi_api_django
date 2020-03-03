@@ -8,6 +8,12 @@ from django.conf import settings
 from core.constants import BENEFIT_AMOUNT, BENEFIT_DISCOUNT, BENEFIT_LESSON, BENEFIT_READY
 from core.utils import send_admin_email, send_email
 
+PACKAGES = {
+    'artist': {'lesson_qty': 4, 'discount': 0},
+    'maestro': {'lesson_qty': 8, 'discount': 0},
+    'virtuoso': {'lesson_qty': 12, 'discount': 5},
+}
+
 
 def send_alert_request_instructor(instructor, lesson_request, requestor_account):
     """Send advice of new request via email for instructors"""
@@ -135,4 +141,18 @@ def get_benefit_to_redeem(user):
                 data['discount'] = benefit.benefit_qty
             else:
                 data['amount'] = benefit.benefit_qty
+    return data
+
+
+def get_additional_items_booking(user):
+    """Return additional items to add in a lesson booking"""
+    if user.lesson_bookings.count() == 0:
+        data = {'freeTrial': True, 'placementFee': Decimal('12.0000')}
+    else:
+        data = {}
+    benefits = get_benefit_to_redeem(user)
+    if benefits.get('discount'):
+        data['discounts'] = benefits.get('discount')
+    elif benefits.get('amount'):
+        data['credits'] = benefits.get('amount')
     return data

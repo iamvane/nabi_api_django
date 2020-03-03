@@ -1,4 +1,5 @@
 import stripe
+from decimal import Decimal
 from functools import reduce
 
 from django.conf import settings
@@ -25,7 +26,7 @@ from payments.models import Payment
 from . import serializers as sers
 from .models import Application, LessonBooking, LessonRequest
 from .tasks import send_application_alert, send_booking_alert, send_booking_invoice, send_request_alert_instructors
-from .utils import get_benefit_to_redeem
+from .utils import get_benefit_to_redeem, get_additional_items_booking, PACKAGES
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -301,17 +302,50 @@ class LessonBookingRegisterView(views.APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class ApplicationDataView(views.APIView):
-    """To return data of an application"""
+class ApplicationBookingView(views.APIView):
+    """To return data for booking an application"""
 
     def get(self, request, app_id):
+        """Default, with artist package"""
         try:
             application = Application.objects.get(id=app_id)
         except ObjectDoesNotExist:
             return Response({'message': 'There is not an application with provided id'},
                             status=status.HTTP_400_BAD_REQUEST)
-        serializer = sers.ApplicationDataSerializer(application)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        data = get_additional_items_booking(request.user)
+        data['lessonRate'] = application.rate
+        data['lessonsPrice'] = application.rate * PACKAGES['artist'].get('lesson_qty')
+        data['processingFee'] = Decimal('2.9000')
+        data['subTotal'] = data['lessonsPrice'] + data.get('placementFee', 0)
+        total = data['subTotal'] - round(data['subTotal'] * data.get('discounts', Decimal('0.0')) / Decimal('100.0'), 4)
+        data['total'] = round((total - data.get('credits', 0)) * (100 + data.get('processingFee')) / 100, 4)
+        return Response(data, status=status.HTTP_200_OK)
+
+    def post(self, request, app_id):
+        """Receiving package name"""
+        if not request.data.get('package'):
+            return Response({'message': 'Package value is required'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            package = request.data.get('package')
+        if not PACKAGES.get(package):
+            return Response({'message': 'Package value is invalid'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            application = Application.objects.get(id=app_id)
+        except ObjectDoesNotExist:
+            return Response({'message': 'There is not an application with provided id'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        data = get_additional_items_booking(request.user)
+        data['lessonRate'] = application.rate
+        data['lessonsPrice'] = application.rate * PACKAGES[package].get('lesson_qty')
+        data['processingFee'] = Decimal('2.9000')
+        data['subTotal'] = data['lessonsPrice'] + data.get('placementFee', 0)
+        total = data['subTotal'] - round(data['subTotal'] * data.get('discounts', Decimal('0.0')) / Decimal('100.0'), 4)
+        total = total - data.get('credits', 0)
+        if request.data.get('package') == 'virtuoso':
+            data['virtuosoDiscount'] = PACKAGES[package].get('discount')
+            total = round(total * (Decimal('100.0000') - data['virtuosoDiscount']) / 100, 4)
+        data['total'] = round(total * (100 + data.get('processingFee')) / 100, 4)
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class GradeLessonView(views.APIView):

@@ -434,15 +434,6 @@ class LessonBookingRegisterSerializer(serializers.ModelSerializer):
         return super().to_internal_value(new_data)
 
 
-class ApplicationDataSerializer(serializers.ModelSerializer):
-    """Serializer to get data of an application"""
-    lessonRate = serializers.DecimalField(max_digits=9, decimal_places=4, source='rate', read_only=True)
-
-    class Meta:
-        model = Application
-        fields = ('lessonRate', )
-
-
 class LessonBookingStudentDashboardSerializer(serializers.ModelSerializer):
     """Serializer to get data of lesson booking created by a student"""
     instrument = serializers.CharField(max_length=250, source='application.request.instrument.name', read_only=True)
