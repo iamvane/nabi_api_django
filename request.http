@@ -520,6 +520,18 @@ GET localhost:8000/v1/application-list/1/
 
 GET localhost:8000/v1/booking-data/1/
 
+# Note: the id value is application_id
+
+###
+
+POST localhost:8000/v1/booking-data/1/
+
+{
+"package": "maestro"
+}
+
+# Note: the id value is application_id
+
 ###
 
 POST localhost:8000/v1/confirm-booking/
