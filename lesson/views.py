@@ -232,6 +232,7 @@ class LessonBookingRegisterView(views.APIView):
                                                    )
             stripe_token = serializer.validated_data.pop('stripe_token')
             lesson_qty = PACKAGES[package_name].get('lesson_qty') + 1 if booking_values_data.get('freeLesson') else 0
+            lesson_qty += 1 if booking_values_data.get('freeTrial') else 0
             booking = LessonBooking.objects.filter(user_id=serializer.validated_data['user_id'],
                                                    quantity=lesson_qty,
                                                    total_amount=booking_values_data['total'],
@@ -275,24 +276,24 @@ class LessonBookingRegisterView(views.APIView):
                 payment.save()
                 # get used benefit type: offer or user_benefit
                 benefit_data = get_benefit_to_redeem(request.user)
-                if benefit_data.get('source') == 'benefit':
+                if benefit_data.get('source') == 'benefit' or benefit_data.get('amount') > 0:
+                    user_benefit = None
                     if benefit_data.get('free_lesson'):
                         user_benefit = request.user.benefits.filter(status=BENEFIT_READY,
                                                                     benefit_type=BENEFIT_LESSON).first()
-                    elif benefit_data.get('discount') > 0:
-                        user_benefit = request.user.benefits.filter(status=BENEFIT_READY,
-                                                                    benefit_type=BENEFIT_DISCOUNT).first()
-                    elif benefit_data.get('amount') > 0:
-                        user_benefit = request.user.benefits.filter(status=BENEFIT_READY,
-                                                                    benefit_type=BENEFIT_AMOUNT).first()
                     else:
-                        user_benefit = None
+                        if benefit_data.get('discount') > 0 and benefit_data['source'] == 'benefit':
+                            user_benefit = request.user.benefits.filter(status=BENEFIT_READY,
+                                                                        benefit_type=BENEFIT_DISCOUNT).first()
+                        if benefit_data.get('amount') > 0:
+                            user_benefit = request.user.benefits.filter(status=BENEFIT_READY,
+                                                                        benefit_type=BENEFIT_AMOUNT).first()
                     if user_benefit:
                         user_benefit.status = BENEFIT_USED
                         user_benefit.save()
                         request.user.provided_benefits.filter(depends_on=user_benefit.id, status=BENEFIT_PENDING)\
                             .update(status=BENEFIT_READY)
-                elif benefit_data.get('source') == 'offer':
+                if benefit_data.get('source') == 'offer':
                     user_benefit = request.user.benefits.filter(status=BENEFIT_READY,
                                                                 benefit_type=BENEFIT_DISCOUNT).first()
                     if user_benefit:   # offer was used, then user_benefit should be cancelled
