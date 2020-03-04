@@ -166,7 +166,10 @@ def get_booking_data(user, package_name, application):
     """Get data related to booking: total amount, fees, discounts, etc"""
     data = get_additional_items_booking(user)
     data['lessonRate'] = application.rate
-    data['lessonsPrice'] = application.rate * PACKAGES[package_name].get('lesson_qty')
+    if data.get('freeLesson'):
+        data['lessonsPrice'] = application.rate * (PACKAGES[package_name].get('lesson_qty') - 1)
+    else:
+        data['lessonsPrice'] = application.rate * PACKAGES[package_name].get('lesson_qty')
     data['processingFee'] = Decimal('2.9000')
     sub_total = data['lessonsPrice'] + data.get('placementFee', 0)
     data['subTotal'] = round(sub_total * (Decimal('100.0000') + data.get('processingFee')) / 100, 4)
