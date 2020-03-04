@@ -81,7 +81,7 @@ class User(AbstractUser):
                                                        status=BENEFIT_READY,
                                                        source='User registration with referral token')
             # add benefit to referring user
-            UserBenefits.objects.create(beneficiary=self.referred_by, provider=self,
+            UserBenefits.objects.create(beneficiary=self.referred_by, provider=self, depends_on=user_benefit.id,
                                         benefit_type=BENEFIT_AMOUNT, benefit_qty=5,
                                         status=BENEFIT_PENDING, source='Registration of referred user')
 
