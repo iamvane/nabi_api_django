@@ -104,11 +104,13 @@ class UserToken(models.Model):
 
 class UserBenefits(models.Model):
     beneficiary = models.ForeignKey(User, related_name='benefits', on_delete=models.CASCADE)
-    provider = models.ForeignKey(User, related_name='provided_benefits', on_delete=models.SET_NULL, null=True)
+    provider = models.ForeignKey(User, related_name='provided_benefits', on_delete=models.SET_NULL,
+                                 blank=True, null=True)
     benefit_qty = models.DecimalField(max_digits=9, decimal_places=4)
     benefit_type = models.CharField(max_length=50, choices=BENEFIT_TYPES)
     source = models.CharField(max_length=300, blank=True)   # method/process used to obtain the benefit
-    depends_on = models.ForeignKey('UserBenefits', on_delete=models.SET_NULL, null=True, related_name='dependants')
+    depends_on = models.ForeignKey('UserBenefits', on_delete=models.SET_NULL, blank=True, null=True,
+                                   related_name='dependants')
     status = models.CharField(max_length=50, choices=BENEFIT_STATUSES)
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
