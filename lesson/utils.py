@@ -172,7 +172,7 @@ def get_booking_data(user, package_name, application):
         data['lessonsPrice'] = application.rate * PACKAGES[package_name].get('lesson_qty')
     data['processingFee'] = Decimal('2.9000')
     sub_total = data['lessonsPrice'] + data.get('placementFee', 0)
-    data['subTotal'] = round(sub_total * (Decimal('100.0000') + data.get('processingFee')) / 100, 4)
+    data['subTotal'] = round(sub_total * (Decimal('100.0000') + data.get('processingFee')) / 100, 2)
     if data.get('discounts'):
         total = round(sub_total * (Decimal('100.0000') - data.get('discounts')) / Decimal('100.0'), 4)
     else:
@@ -181,5 +181,5 @@ def get_booking_data(user, package_name, application):
     if package_name == 'virtuoso':
         data['virtuosoDiscount'] = PACKAGES[package_name].get('discount')
         total = round(total * (Decimal('100.0000') - data['virtuosoDiscount']) / 100, 4)
-    data['total'] = round(total * (100 + data.get('processingFee')) / 100, 4)
+    data['total'] = round(total * (100 + data.get('processingFee')) / 100, 2)
     return data
