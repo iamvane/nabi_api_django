@@ -8,6 +8,12 @@ from django.conf import settings
 from core.constants import BENEFIT_AMOUNT, BENEFIT_DISCOUNT, BENEFIT_LESSON, BENEFIT_READY
 from core.utils import send_admin_email, send_email
 
+PACKAGES = {
+    'artist': {'lesson_qty': 4, 'discount': 0},
+    'maestro': {'lesson_qty': 8, 'discount': 0},
+    'virtuoso': {'lesson_qty': 12, 'discount': 5},
+}
+
 
 def send_alert_request_instructor(instructor, lesson_request, requestor_account):
     """Send advice of new request via email for instructors"""
@@ -101,22 +107,24 @@ def send_alert_booking(booking, instructor, buyer_account):
 def get_benefit_to_redeem(user):
     """Return a dict for existing benefit that can be used in lesson booking"""
     data = {'free_lesson': False, 'discount': 0, 'amount': 0, 'source': ''}
-    benefit = user.benefits.filter(status=BENEFIT_READY).first()
+    benefits = user.benefits.filter(status=BENEFIT_READY)
     response = requests.get('{}/v1/offers-active/'.format(settings.HOSTNAME_PROTOCOL))
     offer_json = response.json()
+
     if offer_json.get('freeLesson'):
-        if benefit:
-            data['source'] = 'benefit'
-            if benefit.benefit_type == BENEFIT_LESSON:
-                data['free_lesson'] = True
-            else:
-                data['discount'] = benefit.benefit_qty
-        else:
-            data['source'] = 'offer'
-            data['free_lesson'] = True
-    elif offer_json.get('percentDiscount'):
+        data['source'] = 'offer'
+        data['free_lesson'] = True
+    elif benefits.count() and benefits.filter(benefit_type=BENEFIT_LESSON).exists():
+        data['source'] = 'benefit'
+        data['free_lesson'] = True
+    if data.get('free_lesson'):
+        return data
+
+    benefit_discount = benefits.filter(benefit_type=BENEFIT_DISCOUNT)
+    if offer_json.get('percentDiscount'):
         offer_discount = offer_json.get('percentDiscount')
-        if benefit.benefit_type == BENEFIT_DISCOUNT:
+        if benefit_discount.exists():
+            benefit = benefit_discount.last()
             if benefit.benefit_qty > offer_discount:
                 data['source'] = 'benefit'
                 data['discount'] = benefit.benefit_qty
@@ -126,13 +134,52 @@ def get_benefit_to_redeem(user):
         else:
             data['source'] = 'offer'
             data['discount'] = Decimal(offer_discount)
+    elif benefit_discount.exists():
+        benefit = benefit_discount.last()
+        data['source'] = 'benefit'
+        data['discount'] = benefit.benefit_qty
+
+    benefit_amount = benefits.filter(benefit_type=BENEFIT_AMOUNT)
+    if benefit_amount.exists():
+        benefit = benefit_amount.last()
+        data['amount'] = benefit.benefit_qty
+    return data
+
+
+def get_additional_items_booking(user):
+    """Return additional items to add in a lesson booking"""
+    if user.lesson_bookings.count() == 0:
+        data = {'freeTrial': True, 'placementFee': Decimal('12.0000')}
     else:
-        if benefit:
-            data['source'] = 'benefit'
-            if benefit.benefit_type == BENEFIT_LESSON:
-                data['free_lesson'] = True
-            elif benefit.benefit_type == BENEFIT_DISCOUNT:
-                data['discount'] = benefit.benefit_qty
-            else:
-                data['amount'] = benefit.benefit_qty
+        data = {}
+    benefits = get_benefit_to_redeem(user)
+    if benefits.get('discount'):
+        data['discounts'] = benefits.get('discount')
+    if benefits.get('amount'):
+        data['credits'] = benefits.get('amount')
+    if benefits.get('free_lesson'):
+        data['freeLesson'] = benefits.get('free_lesson')
+    return data
+
+
+def get_booking_data(user, package_name, application):
+    """Get data related to booking: total amount, fees, discounts, etc"""
+    data = get_additional_items_booking(user)
+    data['lessonRate'] = application.rate
+    if data.get('freeLesson'):
+        data['lessonsPrice'] = application.rate * (PACKAGES[package_name].get('lesson_qty') - 1)
+    else:
+        data['lessonsPrice'] = application.rate * PACKAGES[package_name].get('lesson_qty')
+    data['processingFee'] = Decimal('2.9000')
+    sub_total = data['lessonsPrice'] + data.get('placementFee', 0)
+    data['subTotal'] = round(sub_total * (Decimal('100.0000') + data.get('processingFee')) / 100, 2)
+    if data.get('discounts'):
+        total = round(sub_total * (Decimal('100.0000') - data.get('discounts')) / Decimal('100.0'), 4)
+    else:
+        total = sub_total
+    total = total - data.get('credits', 0)
+    if package_name == 'virtuoso':
+        data['virtuosoDiscount'] = PACKAGES[package_name].get('discount')
+        total = round(total * (Decimal('100.0000') - data['virtuosoDiscount']) / 100, 4)
+    data['total'] = round(total * (100 + data.get('processingFee')) / 100, 2)
     return data

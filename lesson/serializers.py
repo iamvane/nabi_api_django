@@ -10,6 +10,7 @@ from accounts.serializers import AvailavilitySerializer
 from core.constants import *
 
 from .models import Application, GradedLesson, Instrument, LessonBooking, LessonRequest
+from .utils import PACKAGES
 
 User = get_user_model()
 
@@ -405,42 +406,37 @@ class LessonRequestListItemSerializer(serializers.ModelSerializer):
             return [{'name': instance.user.first_name, 'age': instance.user.student.age}]
 
 
-class LessonBookingRegisterSerializer(serializers.ModelSerializer):
+class LessonBookingRegisterSerializer(serializers.Serializer):
     """Serializer for registration of a lesson booking"""
-    application_id = serializers.IntegerField(source='application.id')
-    user_id = serializers.IntegerField(source='user.id', write_only=True)
-    stripe_token = serializers.CharField(max_length=500, write_only=True)
-    charge_description = serializers.CharField(max_length=300)
-
-    class Meta:
-        model = LessonBooking
-        fields = ('application_id', 'quantity', 'total_amount', 'user_id', 'stripe_token', 'charge_description')
+    application_id = serializers.IntegerField()
+    user_id = serializers.IntegerField()
+    package = serializers.ChoiceField(choices=list(PACKAGES.keys()))
+    stripe_token = serializers.CharField(max_length=500)
 
     def to_internal_value(self, data):
         new_data = {}
         keys = data.keys()
-        if 'lessonQty' in keys:
-            new_data['quantity'] = data.get('lessonQty')
-        if 'totalAmount' in keys:
-            new_data['total_amount'] = data.get('totalAmount')
         if 'applicationId' in keys:
             new_data['application_id'] = data.get('applicationId')
         if 'user_id' in keys:
             new_data['user_id'] = data.get('user_id')
+        if 'package' in keys:
+            new_data['package'] = data.get('package')
         if 'stripeToken' in keys:
             new_data['stripe_token'] = data.get('stripeToken')
-        if 'chargeDescription' in keys:
-            new_data['charge_description'] = data.get('chargeDescription')
         return super().to_internal_value(new_data)
 
+    def validate_user_id(self, value):
+        if not User.objects.filter(id=value).exists():
+            raise serializers.ValidationError('There is not User with provided id')
+        else:
+            return value
 
-class ApplicationDataSerializer(serializers.ModelSerializer):
-    """Serializer to get data of an application"""
-    lessonRate = serializers.DecimalField(max_digits=9, decimal_places=4, source='rate', read_only=True)
-
-    class Meta:
-        model = Application
-        fields = ('lessonRate', )
+    def validate_application_id(self, value):
+        if not Application.objects.filter(id=value).exists():
+            raise serializers.ValidationError('There is not Application with provided id')
+        else:
+            return value
 
 
 class LessonBookingStudentDashboardSerializer(serializers.ModelSerializer):

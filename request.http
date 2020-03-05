@@ -518,19 +518,29 @@ GET localhost:8000/v1/application-list/1/
 
 ###
 
-POST localhost:8000/v1/booking-lessons/
+GET localhost:8000/v1/booking-data/1/
 
-{
-	"lessonQty": 2,
-	"totalAmount": 42.50,
-	"applicationId": 1,
-	"charge_description": "Booking lessons using Basic package",
-	"stripeToken": "tok_1FmQTxKKgfFa5BBCvtUJE1iU"
-}
+# Note: the id value is application_id
 
 ###
 
-GET localhost:8000/v1/application-data/1/
+POST localhost:8000/v1/booking-data/1/
+
+{
+"package": "maestro"
+}
+
+# Note: the id value is application_id
+
+###
+
+POST localhost:8000/v1/confirm-booking/
+
+{
+	"applicationId": 1,
+	"package": "maestro",
+	"stripeToken": "tok_1FmQTxKKgfFa5BBCvtUJE1iU"
+}
 
 ###
 

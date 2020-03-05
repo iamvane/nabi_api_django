@@ -25,7 +25,7 @@ from payments.models import Payment
 from . import serializers as sers
 from .models import Application, LessonBooking, LessonRequest
 from .tasks import send_application_alert, send_booking_alert, send_booking_invoice, send_request_alert_instructors
-from .utils import get_benefit_to_redeem
+from .utils import get_benefit_to_redeem, get_booking_data, PACKAGES
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -226,24 +226,30 @@ class LessonBookingRegisterView(views.APIView):
         request.data['user_id'] = request.user.id
         serializer = sers.LessonBookingRegisterSerializer(data=request.data)
         if serializer.is_valid():
+            package_name = serializer.validated_data['package']
+            booking_values_data = get_booking_data(request.user, package_name,
+                                                   Application.objects.get(id=serializer.validated_data['application_id'])
+                                                   )
             stripe_token = serializer.validated_data.pop('stripe_token')
-            booking = LessonBooking.objects.filter(user_id=serializer.validated_data['user']['id'],
-                                                   quantity=serializer.validated_data['quantity'],
-                                                   total_amount=serializer.validated_data['total_amount'],
-                                                   application_id=serializer.validated_data['application']['id'],
+            lesson_qty = PACKAGES[package_name].get('lesson_qty') + 1 if booking_values_data.get('freeTrial') else 0
+            booking = LessonBooking.objects.filter(user_id=serializer.validated_data['user_id'],
+                                                   quantity=lesson_qty,
+                                                   total_amount=booking_values_data['total'],
+                                                   application_id=serializer.validated_data['application_id'],
                                                    status=LessonBooking.REQUESTED).last()
             if not booking:
-                booking = LessonBooking.objects.create(user_id=serializer.validated_data['user']['id'],
-                                                       quantity=serializer.validated_data['quantity'],
-                                                       total_amount=serializer.validated_data['total_amount'],
-                                                       application_id=serializer.validated_data['application']['id'])
+                booking = LessonBooking.objects.create(user_id=serializer.validated_data['user_id'],
+                                                       quantity=lesson_qty,
+                                                       total_amount=booking_values_data['total'],
+                                                       application_id=serializer.validated_data['application_id'],
+                                                       )
             # make payment using stripe
             try:
-                charge = stripe.Charge.create(amount='{:.0f}'.format(serializer.validated_data['total_amount'] * 100),
+                charge = stripe.Charge.create(amount='{:.0f}'.format(booking.total_amount * 100),
                                               currency='usd',
                                               source=stripe_token,
                                               description='Lesson Booking by {} with package {}'.format(
-                                                  request.user.email, serializer.data['charge_description'])
+                                                  request.user.email, package_name.capitalize())
                                               )
             except stripe.error.InvalidRequestError as error:
                 return Response({'stripeToken': [error.user_message, ]}, status=status.HTTP_400_BAD_REQUEST)
@@ -252,46 +258,60 @@ class LessonBookingRegisterView(views.APIView):
             except Exception as ex:
                 return Response({'message': str(ex)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             # register the charge made
-            payment = Payment.objects.create(user=request.user, amount=serializer.validated_data['total_amount'],
-                                             description='Lesson booking with package {}'.format(
-                                                 serializer.validated_data['charge_description']),
+            payment = Payment.objects.create(user=request.user, amount=booking.total_amount,
+                                             description='Lesson booking with package {}'.format(package_name.capitalize()),
                                              charge_id=charge.id)
             with transaction.atomic():
+                for k, v in booking_values_data.items():
+                    booking_values_data[k] = str(v)
+                booking.details = booking_values_data
                 booking.payment = payment
-                booking.description = 'Package {}'.format(serializer.validated_data['charge_description'])
+                booking.description = 'Package {}'.format(package_name.capitalize())
                 booking.status = LessonBooking.PAID
                 booking.save()
                 booking.application.request.status = LESSON_REQUEST_CLOSED
                 booking.application.request.save()
                 payment.status = PY_PROCESSED
                 payment.save()
-                # get used benefit type: offer or user_benefit
+
+                # get info about benefits, to change status for user_benefits
                 benefit_data = get_benefit_to_redeem(request.user)
-                if benefit_data.get('source') == 'benefit':
-                    if benefit_data.get('free_lesson'):
+                user_benefit_ids = []
+                if benefit_data.get('free_lesson'):
+                    if benefit_data.get('source') == 'benefit':
                         user_benefit = request.user.benefits.filter(status=BENEFIT_READY,
                                                                     benefit_type=BENEFIT_LESSON).first()
-                    elif benefit_data.get('discount') > 0:
-                        user_benefit = request.user.benefits.filter(status=BENEFIT_READY,
-                                                                    benefit_type=BENEFIT_DISCOUNT).first()
-                    elif benefit_data.get('amount') > 0:
+                        user_benefit.benefit_qty -= 1
+                        if user_benefit.benefit_qty == 0:
+                            user_benefit.status = BENEFIT_USED
+                            user_benefit_ids.append(user_benefit.id)
+                        user_benefit.save()
+                else:
+                    if benefit_data.get('amount'):
                         user_benefit = request.user.benefits.filter(status=BENEFIT_READY,
                                                                     benefit_type=BENEFIT_AMOUNT).first()
-                    else:
-                        user_benefit = None
-                    if user_benefit:
                         user_benefit.status = BENEFIT_USED
                         user_benefit.save()
-                        request.user.provided_benefits.filter(depends_on=user_benefit.id, status=BENEFIT_PENDING)\
-                            .update(status=BENEFIT_READY)
-                elif benefit_data.get('source') == 'offer':
-                    user_benefit = request.user.benefits.filter(status=BENEFIT_READY,
-                                                                benefit_type=BENEFIT_DISCOUNT).first()
-                    if user_benefit:   # offer was used, then user_benefit should be cancelled
-                        user_benefit.status = BENEFIT_CANCELLED
+                        user_benefit_ids.append(user_benefit.id)
+                    if benefit_data.get('discount'):
+                        user_benefit = request.user.benefits.filter(status=BENEFIT_READY,
+                                                                    benefit_type=BENEFIT_DISCOUNT).first()
+                        user_benefit.status = BENEFIT_USED
                         user_benefit.save()
-                        request.user.provided_benefits.filter(depends_on=user_benefit.id, status=BENEFIT_PENDING) \
-                            .update(status=BENEFIT_READY)
+                        user_benefit_ids.append(user_benefit.id)
+
+                first_book_benefit = request.user.benefits.filter(status=BENEFIT_READY,
+                                                                  benefit_type=BENEFIT_DISCOUNT,
+                                                                  source='User registration with referral token'
+                                                                  ).first()
+                if first_book_benefit:
+                    first_book_benefit.status = BENEFIT_CANCELLED
+                    first_book_benefit.save()
+                    user_benefit_ids.append(first_book_benefit.id)
+                if user_benefit_ids:
+                    request.user.provided_benefits.filter(depends_on__in=user_benefit_ids, status=BENEFIT_PENDING) \
+                        .update(status=BENEFIT_READY)
+
             task_log = TaskLog.objects.create(task_name='send_booking_invoice', args={'booking_id': booking.id})
             send_booking_invoice.delay(booking.id, task_log.id)
             task_log = TaskLog.objects.create(task_name='', args={})
@@ -301,17 +321,32 @@ class LessonBookingRegisterView(views.APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class ApplicationDataView(views.APIView):
-    """To return data of an application"""
+class ApplicationBookingView(views.APIView):
+    """To return data for booking an application"""
 
     def get(self, request, app_id):
+        """Default, with artist package"""
         try:
             application = Application.objects.get(id=app_id)
         except ObjectDoesNotExist:
             return Response({'message': 'There is not an application with provided id'},
                             status=status.HTTP_400_BAD_REQUEST)
-        serializer = sers.ApplicationDataSerializer(application)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(get_booking_data(request.user, 'artist', application), status=status.HTTP_200_OK)
+
+    def post(self, request, app_id):
+        """Receiving package name"""
+        if not request.data.get('package'):
+            return Response({'message': 'Package value is required'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            package = request.data.get('package')
+        if not PACKAGES.get(package):
+            return Response({'message': 'Package value is invalid'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            application = Application.objects.get(id=app_id)
+        except ObjectDoesNotExist:
+            return Response({'message': 'There is not an application with provided id'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        return Response(get_booking_data(request.user, package, application), status=status.HTTP_200_OK)
 
 
 class GradeLessonView(views.APIView):

@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.contrib.postgres.fields import JSONField
 from django.db import models
 
 from accounts.models import Instructor, Parent, Student, TiedStudent
@@ -75,6 +76,7 @@ class LessonBooking(models.Model):
     application = models.OneToOneField(Application, on_delete=models.CASCADE, related_name='booking')
     description = models.CharField(max_length=200, blank=True)
     status = models.CharField(max_length=50, choices=STATUSES, default=REQUESTED)
+    details = JSONField(blank=True, default=dict)
     payment = models.OneToOneField(Payment, blank=True, null=True, on_delete=models.SET_NULL,
                                    related_name='lesson_bookings')
     created_at = models.DateTimeField(auto_now_add=True)
