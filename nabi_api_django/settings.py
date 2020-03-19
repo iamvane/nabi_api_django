@@ -151,6 +151,15 @@ SENDGRID_EMAIL_TEMPLATES = {
     'booking_advice': 'foo',
 }
 
+HUBSPOT_API_KEY = os.environ.get('HUBSPOT_API_KEY', 'foo')
+HUBSPOT_CONTACT_LIST_IDS = {
+    'instructors': 'foo',
+    'parents': 'foo',
+    'students': 'foo',
+    'parents_without_request': 'foo',
+    'students_without_request': 'foo',
+}
+
 ACCURATE_PLAN_PARAMETER = 'PKG_STANDARD'
 ACCURATE_PLAN_ADDITIONALS = ['SON', ]
 
