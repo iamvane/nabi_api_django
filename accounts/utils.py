@@ -89,6 +89,29 @@ def send_referral_invitation_email(user, email):
 
 
 def add_to_email_list(user, list_name):
+    """Add email of user to Sendgrid's email list, including first_name and last_name if are non-empty"""
+    header = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-type': 'application/json'}
+    contact = {'email': user.email}
+    if user.first_name:
+        contact['first_name'] = user.first_name
+    if user.last_name:
+        contact['last_name'] = user.last_name
+    response = requests.put('{}marketing/contacts'.format(settings.SENDGRID_API_BASE_URL),
+                            json={'list_ids': [settings.SENDGRID_CONTACT_LIST_IDS.get(list_name)],
+                                  'contacts': [contact]},
+                            headers=header
+                            )
+    if response.status_code != 202:
+        send_admin_email("[INFO] Contact couldn't be added to {} list".format(list_name),
+                         """The contact {} could not be added to {} list in Sendgrid.
+                         The status_code for API's response was {} and content: {}""".format(list_name,
+                                                                                             contact,
+                                                                                             response.status_code,
+                                                                                             response.content.decode())
+                         )
+
+
+def add_to_email_list_v2(user, list_name):
     """Add user's email and referral token to HubSpot's list, including first_name and last_name if are non-empty"""
     # first, create contact
     target_url = 'https://api.hubapi.com/contacts/v1/contact?hapikey={}'.format(settings.HUBSPOT_API_KEY)
