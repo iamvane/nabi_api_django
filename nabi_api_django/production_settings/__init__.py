@@ -254,6 +254,15 @@ SENDGRID_EMAIL_TEMPLATES = {
     'booking_advice': 'd-b2a6ea08ab8d48cfa180985c966b0061',
 }
 
+HUBSPOT_API_KEY = os.environ.get('HUBSPOT_API_KEY', 'foo')
+HUBSPOT_CONTACT_LIST_IDS = {
+    'instructors': '3',
+    'parents': '5',
+    'students': '10',
+    'parents_without_request': 'foo',
+    'students_without_request': 'foo',
+}
+
 CELERY_BROKER_URL = os.environ['BROKER_URL']
 BROKER_POOL_LIMIT = 1
 CELERY_BEAT_SCHEDULE = {

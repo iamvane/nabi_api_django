@@ -20,7 +20,7 @@ from .models import (
     InstructorPlaceForLessons, InstructorLessonRate, InstructorLessonSize, Parent,
     Student, StudentDetails, TiedStudent, get_account,
 )
-from .utils import add_to_email_list, init_kwargs
+from .utils import add_to_email_list, add_to_email_list_v2, init_kwargs
 
 User = get_user_model()
 
@@ -165,7 +165,7 @@ class ParentCreateAccountSerializer(BaseCreateAccountSerializer):
         parent.set_display_name()
         parent.set_referral_token()
         if not settings.DEBUG:
-            add_to_email_list(user, 'parents')   # add to list in Sendgrid
+            add_to_email_list_v2(user, 'parents')   # add to list in HubSpot
         return parent
 
 
@@ -177,7 +177,7 @@ class StudentCreateAccountSerializer(BaseCreateAccountSerializer):
         student.set_display_name()
         student.set_referral_token()
         if not settings.DEBUG:
-            add_to_email_list(user, 'students')   # add to list in Sendgrid
+            add_to_email_list_v2(user, 'students')   # add to list in HubSpot
         return student
 
 
@@ -189,7 +189,7 @@ class InstructorCreateAccountSerializer(BaseCreateAccountSerializer):
         instructor.set_display_name()
         instructor.set_referral_token()
         if not settings.DEBUG:
-            add_to_email_list(user, 'instructors')  # add to list in Sendgrid
+            add_to_email_list_v2(user, 'instructors')  # add to list in HubSpot
         return instructor
 
 
