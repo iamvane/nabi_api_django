@@ -5,6 +5,7 @@ from django.contrib.gis.measure import D
 
 from accounts.models import get_account, Instructor
 from accounts.utils import add_to_email_list, remove_contact_from_email_list
+from core.constants import PLACE_FOR_LESSONS_ONLINE
 from core.models import TaskLog, User
 from core.utils import send_admin_email
 from nabi_api_django.celery_config import app
@@ -18,9 +19,13 @@ def send_request_alert_instructors(request_id, task_log_id):
     """Send an email to instructors in a place near to 50 miles from lesson request location"""
     request = LessonRequest.objects.get(id=request_id)
     account = get_account(request.user)
-    if account and account.coordinates:
-        for instructor in Instructor.objects.filter(coordinates__distance_lte=(account.coordinates, D(mi=50))):
+    if request.place_for_lessons == PLACE_FOR_LESSONS_ONLINE:
+        for instructor in Instructor.objects.all():
             send_alert_request_instructor(instructor, request, account)
+    else:
+        if account and account.coordinates:
+            for instructor in Instructor.objects.filter(coordinates__distance_lte=(account.coordinates, D(mi=50))):
+                send_alert_request_instructor(instructor, request, account)
     TaskLog.objects.filter(id=task_log_id).delete()
 
 
