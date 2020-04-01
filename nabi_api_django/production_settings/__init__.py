@@ -263,6 +263,7 @@ HUBSPOT_CONTACT_LIST_IDS = {
     'parents_without_request': 'foo',
     'students_without_request': 'foo',
 }
+HUBSPOT_ALERT_REQUEST_TEMPLATE_ID = '27862630310'
 
 CELERY_BROKER_URL = os.environ['BROKER_URL']
 BROKER_POOL_LIMIT = 1

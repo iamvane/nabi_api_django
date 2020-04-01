@@ -159,6 +159,7 @@ HUBSPOT_CONTACT_LIST_IDS = {
     'parents_without_request': 'foo',
     'students_without_request': 'foo',
 }
+HUBSPOT_ALERT_REQUEST_TEMPLATE_ID = '27862630310'
 
 ACCURATE_PLAN_PARAMETER = 'PKG_STANDARD'
 ACCURATE_PLAN_ADDITIONALS = ['SON', ]
