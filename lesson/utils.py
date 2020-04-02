@@ -43,6 +43,7 @@ def send_alert_request_instructor(instructor, lesson_request, requestor_account)
                 {"name": "first_name", "value": instructor.user.first_name},
                 {"name": "request_title", "value": lesson_request.title},
                 {"name": "instrument", "value": lesson_request.instrument.name},
+                {"name": "display_name", "value": requestor_account.display_name},
                 {"name": "student_details", "value": details[2:]},
                 {"name": "lesson_location", "value": lesson_request.place_for_lessons},
                 {"name": "location", "value": f'{location_tuple[2]} {location_tuple[1]}'},
