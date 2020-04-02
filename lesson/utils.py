@@ -15,7 +15,8 @@ PACKAGES = {
 }
 
 
-def send_alert_request_instructor(instructor, lesson_request, requestor_account):
+def send_alert_request_instructor_ant(instructor, lesson_request, requestor_account):
+    # ToDo: delete this
     """Send advice of new request via email for instructors"""
     from_email = 'Nabi Music <' + settings.DEFAULT_FROM_EMAIL + '>'
     template = 'request_advice_email.html'
@@ -28,6 +29,39 @@ def send_alert_request_instructor(instructor, lesson_request, requestor_account)
         'reference_url': '{}/request/{}'.format(settings.HOSTNAME_PROTOCOL, lesson_request.id)
     }
     send_email(from_email, [instructor.user.email], subject, template, plain_template, params)
+
+
+def send_alert_request_instructor(instructor, lesson_request, requestor_account):
+    target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
+    location_tuple = requestor_account.get_location(result_type='tuple')
+    details = ''
+    for tied_student in lesson_request.students.all():
+        details = ', '.join([details, f'{tied_student.name}, {tied_student.age} year old ({lesson_request.skill_level})'])
+    data = {"emailId": settings.HUBSPOT_ALERT_REQUEST_TEMPLATE_ID,
+            "message": {"from": f'Yo <{settings.DEFAULT_FROM_EMAIL}>', "to": instructor.user.email},
+            "customProperties": [
+                {"name": "first_name", "value": instructor.user.first_name},
+                {"name": "request_title", "value": lesson_request.title},
+                {"name": "instrument", "value": lesson_request.instrument.name},
+                {"name": "display_name", "value": requestor_account.display_name},
+                {"name": "student_details", "value": details[2:]},
+                {"name": "lesson_location", "value": lesson_request.place_for_lessons},
+                {"name": "location", "value": f'{location_tuple[2]} {location_tuple[1]}'},
+                {"name": "request_message", "value": lesson_request.message},
+                {"name": "reference_url", "value": f'{settings.HOSTNAME_PROTOCOL}/request/{lesson_request.id}'}
+            ]
+            }
+    resp = requests.post(target_url, json=data)
+    if resp.status_code != 200:
+        send_admin_email("[INFO] Alert request email coud not be send",
+                         """An email to alert about a new lesson request could not be send to email {}, lesson request id {}.
+
+                         The status_code for API's response was {} and content: {}""".format(instructor.user.email,
+                                                                                             lesson_request.id,
+                                                                                             resp.status_code,
+                                                                                             resp.content.decode())
+                         )
+        return None
 
 
 def send_alert_application(application, instructor, request_creator_account):
