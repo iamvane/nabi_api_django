@@ -38,7 +38,7 @@ def send_alert_request_instructor(instructor, lesson_request, requestor_account)
     for tied_student in lesson_request.students.all():
         details = ', '.join([details, f'{tied_student.name}, {tied_student.age} year old ({lesson_request.skill_level})'])
     data = {"emailId": settings.HUBSPOT_ALERT_REQUEST_TEMPLATE_ID,
-            "message": {"from": f'Yo <{settings.DEFAULT_FROM_EMAIL}>', "to": instructor.user.email},
+            "message": {"from": f'Nabimusic <{settings.DEFAULT_FROM_EMAIL}>', "to": instructor.user.email},
             "customProperties": [
                 {"name": "first_name", "value": instructor.user.first_name},
                 {"name": "request_title", "value": lesson_request.title},
@@ -53,7 +53,7 @@ def send_alert_request_instructor(instructor, lesson_request, requestor_account)
             }
     resp = requests.post(target_url, json=data)
     if resp.status_code != 200:
-        send_admin_email("[INFO] Alert request email coud not be send",
+        send_admin_email("[INFO] Alert request email could not be send",
                          """An email to alert about a new lesson request could not be send to email {}, lesson request id {}.
 
                          The status_code for API's response was {} and content: {}""".format(instructor.user.email,
