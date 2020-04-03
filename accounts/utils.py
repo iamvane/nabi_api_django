@@ -49,43 +49,33 @@ def send_welcome_email(user_cc):
 
 
 def send_referral_invitation_email(user, email):
-    role = user.get_role()
     referral_token = user.referral_token
-    first_name = user.first_name
-    last_name = user.last_name
     date_limit = get_date_a_month_later(timezone.now())
-    to_email = email
-    from_email = 'Nabi Music <' + settings.DEFAULT_FROM_EMAIL + '>'
-    template = 'referral_email.html'
-    plain_template = 'referral_email_plain.html'
-    user_full_name = '{} {}'.format(first_name, last_name)
     referral_url = '{}/referral/{}'.format(settings.HOSTNAME_PROTOCOL, referral_token)
-    anonymous_message = ''
 
-    if not user_full_name.strip():
-        if role == ROLE_INSTRUCTOR:
-            subject = 'Teach a lesson FREE of fees'
-            anonymous_message = 'You can teach a music lesson FREE of fees!'
-        else:
-            subject = 'You got a FREE music lesson'
-            anonymous_message = 'You received a FREE music lesson!'
-    else:
-        subject = user_full_name + ' invited you to Nabi Music'
+    target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
+    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['referral_email'],
+            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": email},
+            "customProperties": [
+                {"name": "first_name", "value": user.first_name},
+                {"name": "last_name", "value": user.last_name},
+                {"name": "date_limit", "value": date_limit.strftime('%m/%d/%Y')},
+                {"name": "referral_url", "value": referral_url},
+            ]
+            }
+    resp = requests.post(target_url, json=data)
+    if resp.status_code != 200:
+        send_admin_email("[INFO] Referral email could not be send",
+                         """Email referring another person could not be send, with data {}.
 
-    if role == ROLE_INSTRUCTOR:
-        heading = 'sent you a lesson FREE of fees!'
-        description = 'to keep 100% of your earnings.'
-    else:
-        heading = 'sent you a FREE music lesson!'
-        description = 'to get your FREE lesson.'
-
-    params = {'first_name': first_name, 'last_name': last_name, 'date_limit': date_limit,
-              'referral_url': referral_url, 'heading': heading, 'description': description}
-
-    if anonymous_message:
-        params['anonymous_message']: anonymous_message
-
-    send_email(from_email, [to_email], subject, template, plain_template, params)
+                         The status_code for API's response was {} and content: {}""".format(
+                             data,
+                             resp.status_code,
+                             resp.content.decode()
+                             )
+                         )
+        return False
+    return True
 
 
 def add_to_email_list(user, list_name):
@@ -165,3 +155,27 @@ def remove_contact_from_email_list(contact_id, email, list_name):
                                                                                              response.status_code,
                                                                                              response.content.decode())
                          )
+
+
+def send_reset_password_email(email, token):
+    """Use HubSpot'a API to send email. Return True if response is successful, return False otherwise"""
+    target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
+    passw_reset_link = '{}/forgot-password?token={}'.format(HOSTNAME_PROTOCOL, token)
+    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['password_reset'],
+            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": email},
+            "customProperties": [
+                {"name": "password_reset_link", "value": passw_reset_link},
+            ]
+            }
+    resp = requests.post(target_url, json=data)
+    if resp.status_code != 200:
+        send_admin_email("[INFO] Reset password email could not be send",
+                         """An email for reset password could not be send to email {}.
+
+                         The status_code for API's response was {} and content: {}""".format(email,
+                                                                                             resp.status_code,
+                                                                                             resp.content.decode()
+                                                                                             )
+                         )
+        return False
+    return True
