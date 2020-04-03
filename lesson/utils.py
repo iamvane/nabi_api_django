@@ -37,8 +37,8 @@ def send_alert_request_instructor(instructor, lesson_request, requestor_account)
     details = ''
     for tied_student in lesson_request.students.all():
         details = ', '.join([details, f'{tied_student.name}, {tied_student.age} year old ({lesson_request.skill_level})'])
-    data = {"emailId": settings.HUBSPOT_ALERT_REQUEST_TEMPLATE_ID,
-            "message": {"from": f'Yo <{settings.DEFAULT_FROM_EMAIL}>', "to": instructor.user.email},
+    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['alert_request'],
+            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": instructor.user.email},
             "customProperties": [
                 {"name": "first_name", "value": instructor.user.first_name},
                 {"name": "request_title", "value": lesson_request.title},
@@ -53,7 +53,7 @@ def send_alert_request_instructor(instructor, lesson_request, requestor_account)
             }
     resp = requests.post(target_url, json=data)
     if resp.status_code != 200:
-        send_admin_email("[INFO] Alert request email coud not be send",
+        send_admin_email("[INFO] Alert request email could not be send",
                          """An email to alert about a new lesson request could not be send to email {}, lesson request id {}.
 
                          The status_code for API's response was {} and content: {}""".format(instructor.user.email,
@@ -66,16 +66,30 @@ def send_alert_request_instructor(instructor, lesson_request, requestor_account)
 
 def send_alert_application(application, instructor, request_creator_account):
     """Send advice of new application for a created lesson request"""
-    from_email = 'Nabi Music <' + settings.DEFAULT_FROM_EMAIL + '>'
-    template = 'application_advice_email.html'
-    plain_template = 'application_advice_email_plain.html'
-    subject = 'You have a new applicant'
-    params = {
-        'instructor_name': instructor.display_name,
-        'request_title': application.request.title,
-        'reference_url': '{}/application-list/{}'.format(settings.HOSTNAME_PROTOCOL, application.request.id)
-    }
-    send_email(from_email, [request_creator_account.user.email], subject, template, plain_template, params)
+    target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
+    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['alert_application'],
+            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": request_creator_account.user.email},
+            "customProperties": [
+                {"name": "request_title", "value": application.request.title},
+                {"name": "instructor_name", "value": instructor.display_name},
+                {"name": "first_name", "value": instructor.user.first_name},
+                {"name": "reference_url",
+                 "value": f'{settings.HOSTNAME_PROTOCOL}/application-list/{application.request.id}'},
+            ]
+            }
+    resp = requests.post(target_url, json=data)
+    if resp.status_code != 200:
+        send_admin_email("[INFO] Alert new application email could not be send",
+                         """An email for alert about a new application could not be send to email {}, lesson_request id {}.
+
+                         The status_code for API's response was {} and content: {}""".format(request_creator_account.user.email,
+                                                                                             application.request.id,
+                                                                                             resp.status_code,
+                                                                                             resp.content.decode()
+                                                                                             )
+                         )
+        return False
+    return True
 
 
 def send_invoice_booking(booking, payment):

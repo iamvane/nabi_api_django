@@ -100,8 +100,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-HOSTNAME = "www.nabimusic.com"
-HOSTNAME_PROTOCOL = "http://" + HOSTNAME
+HOSTNAME_PROTOCOL = os.environ.get('HOSTNAME_PROTOCOL', '')
 
 EMAIL_USE_TLS = True
 EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.sendgrid.net')
@@ -159,7 +158,12 @@ HUBSPOT_CONTACT_LIST_IDS = {
     'parents_without_request': 'foo',
     'students_without_request': 'foo',
 }
-HUBSPOT_ALERT_REQUEST_TEMPLATE_ID = '27862630310'
+HUBSPOT_TEMPLATE_IDS = {
+    'alert_application': '27908927674',
+    'alert_request': '27862630310',
+    'password_reset': '27908644852',
+    'referral_email': '27965493956',
+}
 
 ACCURATE_PLAN_PARAMETER = 'PKG_STANDARD'
 ACCURATE_PLAN_ADDITIONALS = ['SON', ]

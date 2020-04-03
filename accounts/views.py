@@ -40,7 +40,7 @@ from . import serializers as sers
 from .models import (Availability, Education, Employment, Instructor, InstructorAgeGroup, InstructorInstruments,
                      InstructorLessonRate, InstructorPlaceForLessons, InstructorAdditionalQualifications,
                      PhoneNumber, StudentDetails, TiedStudent, get_account, get_user_phone)
-from .utils import send_welcome_email, send_referral_invitation_email
+from .utils import send_referral_invitation_email, send_reset_password_email
 
 User = get_user_model()
 logger = getLogger('api_errors')
@@ -143,7 +143,6 @@ class ResetPasswordView(views.APIView):
         if serializer.is_valid():
             email = serializer.data['email']
             user = User.objects.get(email=email)
-            subject = "Reset Your Password"
             repeated_token = True
             while repeated_token:
                 token = generate_hash(email)
@@ -154,17 +153,8 @@ class ResetPasswordView(views.APIView):
                     pass
                 else:
                     repeated_token = False
-            target_url = '{}/forgot-password?token={}'.format(HOSTNAME_PROTOCOL, token)
-            context = {'url_reset_pass': target_url}
-            text_content = loader.render_to_string('reset_password_plain.html', context)
-            html_content = loader.render_to_string('reset_password.html', context)
-            from_email = 'Nabi Music <' + settings.DEFAULT_FROM_EMAIL + '>'
-            email_message = EmailMultiAlternatives(subject, text_content, from_email, [email, ])
-            email_message.attach_alternative(html_content, 'text/html')
-            try:
-                email_message.send()
-            except Exception as e:
-                logger.error(e)
+            if not send_reset_password_email(email, token):
+                return Response({'message': "Error sending email"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         return Response({'message': 'Check your email to set a new password.'}, status=status.HTTP_200_OK)
 
     def put(self, request):
@@ -516,13 +506,10 @@ class ReferralInvitation(views.APIView):
         if serializer.is_valid():
             user = request.user
             email = request.data['email']
-            try:
-                send_referral_invitation_email(user, email)
-            except Exception as e:
-                return Response({
-                    "error": str(e)
-                }, status=status.HTTP_400_BAD_REQUEST)
-            return Response({"message": 'Invitation sent successfully.'}, status=status.HTTP_200_OK)
+            if send_referral_invitation_email(user, email):
+                return Response({"message": 'Invitation sent successfully.'}, status=status.HTTP_200_OK)
+            else:
+                return Response({"message": 'Email could not be send.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         else:
             return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
