@@ -6,7 +6,7 @@ from django.core.mail import EmailMultiAlternatives
 from django.utils import timezone
 
 from core.utils import get_date_a_month_later, send_email, send_admin_email
-from core.constants import ROLE_INSTRUCTOR, HOSTNAME_PROTOCOL
+from core.constants import ROLE_INSTRUCTOR
 
 
 def init_kwargs(model, arg_dict):
@@ -22,7 +22,7 @@ def send_welcome_email(user_cc):
     role = user.get_role()
     referral_token = user.referral_token
     to_email = user.email
-    referral_link = '{}/registration?token={}'.format(HOSTNAME_PROTOCOL,
+    referral_link = '{}/registration?token={}'.format(settings.HOSTNAME_PROTOCOL,
         referral_token)
 
     if role == 'instructor':
@@ -160,7 +160,7 @@ def remove_contact_from_email_list(contact_id, email, list_name):
 def send_reset_password_email(email, token):
     """Use HubSpot'a API to send email. Return True if response is successful, return False otherwise"""
     target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
-    passw_reset_link = '{}/forgot-password?token={}'.format(HOSTNAME_PROTOCOL, token)
+    passw_reset_link = '{}/forgot-password?token={}'.format(settings.HOSTNAME_PROTOCOL, token)
     data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['password_reset'],
             "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": email},
             "customProperties": [
