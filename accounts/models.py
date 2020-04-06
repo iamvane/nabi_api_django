@@ -13,7 +13,7 @@ from django.db import models
 from django.utils import timezone
 
 from core.constants import *
-from core.utils import ElapsedTime, get_date_a_month_later, get_month_integer
+from core.utils import ElapsedTime, get_date_a_month_later, get_month_integer, send_admin_email
 
 User = get_user_model()
 coolname_config = load_config(path.join(settings.BASE_DIR, 'accounts', 'data'))
@@ -58,12 +58,17 @@ class IUserAccount(models.Model):
 
     def get_location(self, result_type='string'):
         """ :param result_type: indicates how data should be returned
-            :type result_type: 'string' (to return 'city, state' string), 'tuple' (to return country, state, city)"""
+            :type result_type: 'string' (to return 'city, state' string), 'tuple' (to return country, state, city)
+            If no result is obtained, return '' or ()."""
         if self.coordinates:
             try:
                 lat = self.coordinates.coords[1]
                 lng = self.coordinates.coords[0]
-            except Exception:
+            except Exception as e:
+                send_admin_email('[ALERT] Error getting coordinates',
+                                 f"""Error with coordinates for user id {self.user.id}, email {self.user.email}. 
+                                 Exception: {str(e)}"""
+                                 )
                 if result_type == 'string':
                     return ''
                 else:
@@ -71,8 +76,13 @@ class IUserAccount(models.Model):
             try:
                 geocoder = Geocoder(api_key=settings.GOOGLE_MAPS_API_KEY)
                 locations = geocoder.reverse_geocode(lat, lng)
-            except GeocoderError:
+            except GeocoderError as e:
                 locations = []
+                send_admin_email('[ALERT] Empty location info',
+                                 f"""When get location info from Google, an error occurs.
+                                 User id {self.user.id}, email {self.user.email}, lat {lat}, long {lng}.
+                                 Google API error: {str(e)}"""
+                                 )
             city = state = ''
             if len(locations):
                 country = locations[0].country__short_name
