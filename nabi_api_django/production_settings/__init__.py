@@ -291,4 +291,8 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'lesson.tasks.update_list_users_without_request',
         'schedule': crontab(hour='9'),
     },
+    'alert-user-without-coordinates-location': {
+        'task': 'accounts.tasks.alert_user_without_location_coordinates',
+        'schedule': crontab(hour='7', minute='0'),
+    },
 }
