@@ -46,7 +46,7 @@ def send_alert_request_instructor(instructor, lesson_request, requestor_account)
                 {"name": "display_name", "value": requestor_account.display_name},
                 {"name": "student_details", "value": details[2:]},
                 {"name": "lesson_location", "value": lesson_request.place_for_lessons},
-                {"name": "location", "value": f'{location_tuple[2]} {location_tuple[1]}'},
+                {"name": "location", "value": f'{location_tuple[2]} {location_tuple[1]}'} if location_tuple else '',
                 {"name": "request_message", "value": lesson_request.message},
                 {"name": "reference_url", "value": f'{settings.HOSTNAME_PROTOCOL}/request/{lesson_request.id}'}
             ]
