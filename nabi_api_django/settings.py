@@ -100,6 +100,21 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+LOGGING = {
+    'version': 1,
+    'handlers': {
+        'null': {
+            'class': 'logging.NullHandler',
+        },
+    },
+    'loggers': {
+        'django.security.DisallowedHost': {
+            'handlers': ['null'],
+            'propagate': False,
+        },
+    },
+}
+
 HOSTNAME_PROTOCOL = os.environ.get('HOSTNAME_PROTOCOL', '')
 
 EMAIL_USE_TLS = True
