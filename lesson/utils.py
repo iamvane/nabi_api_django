@@ -34,9 +34,14 @@ def send_alert_request_instructor_ant(instructor, lesson_request, requestor_acco
 def send_alert_request_instructor(instructor, lesson_request, requestor_account):
     target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
     location_tuple = requestor_account.get_location(result_type='tuple')
-    details = ''
-    for tied_student in lesson_request.students.all():
-        details = ', '.join([details, f'{tied_student.name}, {tied_student.age} year old ({lesson_request.skill_level})'])
+    student_details = ''
+    if requestor_account.user.is_parent():
+        for tied_student in lesson_request.students.all():
+            student_details = ', '.join([student_details, f'{tied_student.name}, {tied_student.age} years old ({lesson_request.skill_level})'])
+        if student_details:
+            student_details = student_details[2:]
+    else:
+        student_details = f'{requestor_account.display_name}, {requestor_account.age} years old ({lesson_request.skill_level})'
     data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['alert_request'],
             "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": instructor.user.email},
             "customProperties": [
@@ -44,9 +49,9 @@ def send_alert_request_instructor(instructor, lesson_request, requestor_account)
                 {"name": "request_title", "value": lesson_request.title},
                 {"name": "instrument", "value": lesson_request.instrument.name},
                 {"name": "display_name", "value": requestor_account.display_name},
-                {"name": "student_details", "value": details[2:]},
+                {"name": "student_details", "value": student_details},
                 {"name": "lesson_location", "value": lesson_request.place_for_lessons},
-                {"name": "location", "value": f'{location_tuple[2]} {location_tuple[1]}'} if location_tuple else '',
+                {"name": "location", "value": f'{location_tuple[2]} {location_tuple[1]}' if location_tuple else 'N/A'},
                 {"name": "request_message", "value": lesson_request.message},
                 {"name": "reference_url", "value": f'{settings.HOSTNAME_PROTOCOL}/request/{lesson_request.id}'}
             ]
