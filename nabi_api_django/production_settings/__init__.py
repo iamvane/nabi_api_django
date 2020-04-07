@@ -103,6 +103,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LOGGING = {
     'version': 1,
+    'disable_existing_loggers': False,
     'handlers': {
         'null': {
             'class': 'logging.NullHandler',
@@ -290,5 +291,9 @@ CELERY_BEAT_SCHEDULE = {
     'send-reminder-request': {
         'task': 'lesson.tasks.update_list_users_without_request',
         'schedule': crontab(hour='9'),
+    },
+    'alert-user-without-coordinates-location': {
+        'task': 'accounts.tasks.alert_user_without_location_coordinates',
+        'schedule': crontab(hour='7', minute='0'),
     },
 }
