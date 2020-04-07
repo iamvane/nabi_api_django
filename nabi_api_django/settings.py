@@ -175,6 +175,7 @@ HUBSPOT_CONTACT_LIST_IDS = {
     'instructors': 'foo',
     'parents': 'foo',
     'students': 'foo',
+    'FacebookLead': 'foo',
     'parents_without_request': 'foo',
     'students_without_request': 'foo',
 }
