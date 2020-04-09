@@ -101,41 +101,61 @@ def add_to_email_list(user, list_name):
                          )
 
 
-def add_to_email_list_v2(user, list_name):
+def add_to_email_list_v2(user, list_name, remove_list_name=None):
     """Add user's email and referral token to HubSpot's list, including first_name and last_name if are non-empty"""
-    # first, create contact
-    target_url = 'https://api.hubapi.com/contacts/v1/contact?hapikey={}'.format(settings.HUBSPOT_API_KEY)
-    property_list = [{'property': 'email', 'value': user.email},
-                     {'property': 'referral_token', 'value': user.referral_token}]
-    if user.first_name:
-        property_list.append({'property': 'firstname', 'value': user.first_name})
-    if user.last_name:
-        property_list.append({'property': 'lastname', 'value': user.last_name})
-    resp = requests.post(target_url, json={'properties': property_list})
-    if resp.status_code != 200:
-        send_admin_email("[INFO] Contact couldn't be created",
-                         """The contact {} could not be created in HubSpot.
-
-                         The status_code for API's response was {} and content: {}""".format(property_list,
-                                                                                             resp.status_code,
-                                                                                             resp.content.decode())
+    # first, check if contact exists already in HubSpot
+    target_url = f'https://api.hubapi.com/contacts/v1/contact/email/{user.email}/profile?hapikey={settings.HUBSPOT_API_KEY}'
+    resp = requests.get(target_url)
+    if resp.status_code == 200:
+        contact_id = resp.json().get('vid')
+    elif resp.status_code == 404:
+        # then, create contact
+        target_url = f'https://api.hubapi.com/contacts/v1/contact?hapikey={settings.HUBSPOT_API_KEY}'
+        property_list = [{'property': 'email', 'value': user.email},
+                         {'property': 'referral_token', 'value': user.referral_token}]
+        if user.first_name:
+            property_list.append({'property': 'firstname', 'value': user.first_name})
+        if user.last_name:
+            property_list.append({'property': 'lastname', 'value': user.last_name})
+        resp = requests.post(target_url, json={'properties': property_list})
+        if resp.status_code == 200:
+            contact_id = resp.json().get('vid')
+        else:
+            send_admin_email("[INFO] Contact couldn't be created",
+                             f"""The contact {property_list} could not be created in HubSpot.
+    
+                             The status_code for API's response was {resp.status_code} and content: {resp.content.decode()}"""
+                             )
+            return None
+    else:
+        send_admin_email("[INFO] Contact couldn't be searched",
+                         f"""The contact {user.email} could not be searched in HubSpot.
+    
+                         The status_code for API's response was {resp.status_code} and content: {resp.content.decode()}"""
                          )
         return None
 
-    # now, add created contact to corresponding list
+    # now, add contact to required list
     list_id = settings.HUBSPOT_CONTACT_LIST_IDS[list_name]
-    target_url = 'https://api.hubapi.com/contacts/v1/lists/{}/add?hapikey={}'.format(
-        list_id, settings.HUBSPOT_API_KEY)
+    target_url = f'https://api.hubapi.com/contacts/v1/lists/{list_id}/add?hapikey={settings.HUBSPOT_API_KEY}'
     resp = requests.post(target_url, json={'emails': [user.email]})
     if resp.status_code != 200:
-        send_admin_email("[INFO] Contact couldn't be added to list {}".format(list_name),
-                         """The contact {} could not be added to list {} in HubSpot.
+        send_admin_email(f"[INFO] Contact couldn't be added to list {list_name}",
+                         f"""The contact {user.email} could not be added to list {list_name} in HubSpot.
 
-                         The status_code for API's response was {} and content: {}""".format(list_name,
-                                                                                             user.email,
-                                                                                             resp.status_code,
-                                                                                             resp.content.decode())
+                         The status_code for API's response was {resp.status_code} and content: {resp.content.decode()}"""
                          )
+    elif remove_list_name:
+        # finally, delete contact from specified list
+        list_id = settings.HUBSPOT_CONTACT_LIST_IDS[remove_list_name]
+        target_url = f'https://api.hubapi.com/contacts/v1/lists/{list_id}/remove?hapikey={settings.HUBSPOT_API_KEY}'
+        resp = requests.post(target_url, json={'vids': [contact_id]})
+        if resp.status_code != 200:
+            send_admin_email(f"[INFO] Contact couldn't be deleted from list {remove_list_name}",
+                             f"""The contact {user.email} could not be added to list {remove_list_name} in HubSpot.
+
+                             The status_code for API's response was {resp.status_code} and content: {resp.content.decode()}"""
+                             )
 
 
 def remove_contact_from_email_list(contact_id, email, list_name):
