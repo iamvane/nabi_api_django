@@ -69,18 +69,21 @@ class UserAdmin(admin.ModelAdmin):
         return super().get_form(request, obj, **defaults)
 
     def save_model(self, request, obj, form, change):
-        role = form.cleaned_data.pop('role')
-        form.cleaned_data['password'] = generate_random_password(10)
-        if role == ROLE_INSTRUCTOR:
-            ser = InstructorCreateAccountSerializer(data=form.cleaned_data)
-        if role == ROLE_PARENT:
-            ser = ParentCreateAccountSerializer(data=form.cleaned_data)
-        if role == ROLE_STUDENT:
-            ser = StudentCreateAccountSerializer(data=form.cleaned_data)
-        if ser.is_valid():
-            ser.save()
+        if not change:
+            role = form.cleaned_data.pop('role')
+            form.cleaned_data['password'] = generate_random_password(10)
+            if role == ROLE_INSTRUCTOR:
+                ser = InstructorCreateAccountSerializer(data=form.cleaned_data)
+            if role == ROLE_PARENT:
+                ser = ParentCreateAccountSerializer(data=form.cleaned_data)
+            if role == ROLE_STUDENT:
+                ser = StudentCreateAccountSerializer(data=form.cleaned_data)
+            if ser.is_valid():
+                ser.save()
+            else:
+                raise Exception(f'{ser.errors}')
         else:
-            raise Exception(f'{ser.errors}')
+            super().save_model(request, obj, form, change)
 
 
 class BuggedDependentBenefitFilter(admin.SimpleListFilter):
