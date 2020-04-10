@@ -3,7 +3,6 @@ from pygeocoder import Geocoder, GeocoderError
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin
 from django.contrib.gis.db.models import PointField
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Point
@@ -152,5 +151,4 @@ class InstructorAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-admin.site.register(User, UserAdmin)
 admin.site.register(Instructor, InstructorAdmin)
