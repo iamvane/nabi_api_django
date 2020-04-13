@@ -1,3 +1,6 @@
+import random
+import string
+
 from datetime import datetime, timedelta
 from dateutil import relativedelta
 from hashlib import sha1
@@ -107,3 +110,9 @@ def get_month_integer(month):
         return 11
     elif month == MONTH_CHOICES[11][0]:
         return 12
+
+
+def generate_random_password(length):
+    """Generate a random password with specified length"""
+    characters = string.ascii_letters + string.digits
+    return ''.join(random.choice(characters) for i in range(length))
