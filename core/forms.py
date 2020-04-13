@@ -12,7 +12,7 @@ class CreateUserForm(forms.ModelForm):
         (ROLE_PARENT, 'Parent'),
         (ROLE_STUDENT, 'Student'),
     )
-    birthday = forms.DateField()
+    birthday = forms.DateField(label='Birthday (YYYY-MM-DD)')
     referringCode = forms.CharField(max_length=20, required=False, label='Referring Code')
     role = forms.ChoiceField(choices=ROLES)
 
