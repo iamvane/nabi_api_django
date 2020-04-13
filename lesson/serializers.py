@@ -204,7 +204,7 @@ class ApplicationItemSerializer(serializers.ModelSerializer):
     applicationMessage = serializers.CharField(source='message', read_only=True)
     applicationRate = serializers.DecimalField(max_digits=9, decimal_places=4, source='rate', read_only=True)
     availability = AvailavilitySerializer(source='instructor.availability.all', many=True, read_only=True)
-    avatar = serializers.CharField(source='instructor.avatar.url', read_only=True)
+    avatar = serializers.SerializerMethodField()
     backgroundCheckStatus = serializers.CharField(max_length=100, source='instructor.bg_status', read_only=True)
     displayName = serializers.CharField(max_length=100, source='instructor.display_name', read_only=True)
     instructorId = serializers.IntegerField(source='instructor.id', read_only=True)
@@ -215,6 +215,12 @@ class ApplicationItemSerializer(serializers.ModelSerializer):
         model = Application
         fields = ('instructorId', 'applicationId', 'applicationMessage', 'applicationRate', 'age', 'availability',
                   'avatar', 'backgroundCheckStatus', 'displayName', 'reviews', 'yearsOfExperience')
+
+    def get_avatar(self, instance):
+        if instance.instructor.avatar:
+            return instance.instructor.avatar.url
+        else:
+            return ''
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
