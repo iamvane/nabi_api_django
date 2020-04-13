@@ -228,10 +228,17 @@ class LessonRequestApplicationsSerializer(serializers.ModelSerializer):
     requestTitle = serializers.CharField(max_length=100, source='title', read_only=True)
     dateCreated = serializers.DateTimeField(source='created_at', format='%Y-%m-%d %H:%M:%S', read_only=True)
     applications = ApplicationItemSerializer(many=True, read_only=True)
+    freeTrial = serializers.SerializerMethodField()
 
     class Meta:
         model = LessonRequest
-        fields = ('id', 'requestTitle', 'dateCreated', 'applications')
+        fields = ('id', 'requestTitle', 'dateCreated', 'applications', 'freeTrial')
+
+    def get_freeTrial(self, instance):
+        if instance.user.lesson_bookings.count() == 0:
+            return True
+        else:
+            return False
 
 
 class LessonRequestItemSerializer(serializers.ModelSerializer):
