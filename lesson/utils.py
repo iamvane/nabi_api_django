@@ -202,7 +202,13 @@ def get_benefit_to_redeem(user):
 def get_additional_items_booking(user):
     """Return additional items to add in a lesson booking"""
     if user.lesson_bookings.count() == 0:
-        data = {'freeTrial': True, 'placementFee': Decimal('12.0000')}
+        data = {'freeTrial': True}
+        return data
+    elif user.lesson_bookings.count() == 1:
+        if user.lesson_bookings.all()[0].quantity == 1:
+            data = {'placementFee': Decimal('12.0000')}
+        else:
+            data = {}
     else:
         data = {}
     benefits = get_benefit_to_redeem(user)
@@ -218,6 +224,8 @@ def get_additional_items_booking(user):
 def get_booking_data(user, package_name, application):
     """Get data related to booking: total amount, fees, discounts, etc"""
     data = get_additional_items_booking(user)
+    if data.get('freeTrial'):
+        return data
     data['lessonRate'] = application.rate
     if data.get('freeLesson'):
         data['lessonsPrice'] = application.rate * (PACKAGES[package_name].get('lesson_qty') - 1)
