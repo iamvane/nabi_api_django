@@ -38,6 +38,7 @@ class IUserAccount(models.Model):
     email_verified_at = models.DateTimeField(blank=True, null=True)
     reference = models.CharField(max_length=200, blank=True)
     terms_accepted = models.BooleanField(default=False)
+    stripe_customer_id = models.CharField(max_length=200, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
 
@@ -185,7 +186,6 @@ def get_user_phone(user_acc):
 
 
 class Parent(IUserAccount):
-    stripe_customer_id = models.CharField(max_length=200, blank=True)
     # --- notifications ---
     application_received = models.BooleanField(default=False)
     lesson_taught_confirmed = models.BooleanField(default=False)
@@ -508,7 +508,6 @@ class InstructorAdditionalQualifications(models.Model):
 
 class Student(IUserAccount):
     parent = models.ForeignKey(Parent, on_delete=models.SET_NULL, blank=True, null=True, related_name='students')
-    stripe_customer_id = models.CharField(max_length=200, blank=True)
 
     @property
     def role(self):
