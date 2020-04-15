@@ -325,20 +325,45 @@ class LessonBookingRegisterView(views.APIView):
 class ApplicationBookingView(views.APIView):
     """To return data for booking an application"""
 
-    def get(self, request, app_id):
-        """Default, with artist package"""
+    def common(self, request, app_id, package='artist'):
+        """Execute common operations.
+        Return instance of Response or data (dict)"""
         try:
             application = Application.objects.get(id=app_id)
         except ObjectDoesNotExist:
             return Response({'message': 'There is not an application with provided id'},
                             status=status.HTTP_400_BAD_REQUEST)
-        data = get_booking_data(request.user, 'artist', application)
-        if request.user.payment_methods:
+        data = get_booking_data(request.user, package, application)
+        if request.user.payment_methods.count():
             pm_ser = GetPaymentMethodSerializer(request.user.payment_methods, many=True)
             data['payment_methods'] = pm_ser.data
+            data['client_secret'] = ''
         else:
+            account = get_account(request.user)
+            if not account.stripe_customer_id:
+                try:
+                    stripe_customer = stripe.Customer.create(email=request.user.email, name=account.display_name)
+                except Exception as e:
+                    return Response({'message': f'Error creating Customer in Stripe:\n {str(e)}'},
+                                    status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                account.stripe_customer_id = stripe_customer.get('id')
+                account.save()
+            try:
+                intent = stripe.SetupIntent.create(customer=account.stripe_customer_id)
+            except Exception as e:
+                return Response({'message': f'Error creating Intent in Stripe:\n {str(e)}'},
+                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            data['client_secret'] = intent.client_secret
             data['payment_methods'] = []
-        return Response(data, status=status.HTTP_200_OK)
+        return data
+
+    def get(self, request, app_id):
+        """Default, with artist package"""
+        resp = self.common(request, app_id)
+        if isinstance(resp, Response):
+            return resp
+        else:   # then, its data, not Response
+            return Response(resp, status=status.HTTP_200_OK)
 
     def post(self, request, app_id):
         """Receiving package name"""
@@ -348,18 +373,11 @@ class ApplicationBookingView(views.APIView):
             package = request.data.get('package')
         if not PACKAGES.get(package):
             return Response({'message': 'Package value is invalid'}, status=status.HTTP_400_BAD_REQUEST)
-        try:
-            application = Application.objects.get(id=app_id)
-        except ObjectDoesNotExist:
-            return Response({'message': 'There is not an application with provided id'},
-                            status=status.HTTP_400_BAD_REQUEST)
-        data = get_booking_data(request.user, package, application)
-        if request.user.payment_methods:
-            pm_ser = GetPaymentMethodSerializer(request.user.payment_methods, many=True)
-            data['payment_methods'] = pm_ser.data
-        else:
-            data['payment_methods'] = []
-        return Response(data, status=status.HTTP_200_OK)
+        resp = self.common(request, app_id, package)
+        if isinstance(resp, Response):
+            return resp
+        else:   # then, its data, not Response
+            return Response(resp, status=status.HTTP_200_OK)
 
 
 class GradeLessonView(views.APIView):
