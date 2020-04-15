@@ -64,6 +64,7 @@ class Application(models.Model):
 class LessonBooking(models.Model):
     REQUESTED = 'requested'
     PAID = 'paid'
+    TRIAL = 'trial'
     CANCELLED = 'cancelled'
     STATUSES = (
         (REQUESTED, REQUESTED),
@@ -93,3 +94,12 @@ class GradedLesson(models.Model):
     lesson_date = models.DateField()
     comment = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class TrialLessonSchedule(models.Model):
+    lesson = models.OneToOneField(LessonBooking, on_delete=models.CASCADE, related_name='schedule')
+    date = models.DateField()
+    time = models.TimeField()
+    timezone = models.CharField(max_length=20)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)

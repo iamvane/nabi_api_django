@@ -185,6 +185,7 @@ def get_user_phone(user_acc):
 
 
 class Parent(IUserAccount):
+    stripe_customer_id = models.CharField(max_length=200, blank=True)
     # --- notifications ---
     application_received = models.BooleanField(default=False)
     lesson_taught_confirmed = models.BooleanField(default=False)
@@ -507,6 +508,7 @@ class InstructorAdditionalQualifications(models.Model):
 
 class Student(IUserAccount):
     parent = models.ForeignKey(Parent, on_delete=models.SET_NULL, blank=True, null=True, related_name='students')
+    stripe_customer_id = models.CharField(max_length=200, blank=True)
 
     @property
     def role(self):

@@ -288,11 +288,13 @@ SERVICES_CHOICES = (
 
 # --- statuses for payment ---
 PY_REGISTERED = 'registered'
-PY_PROCESSED = 'processed'
+PY_PROCESSED = 'processed'   # ToDo: to delete it
+PY_APPLIED = 'applied'
 PY_CANCELLED = 'cancelled'
 PY_STATUSES = (
     (PY_REGISTERED, PY_REGISTERED),
     (PY_PROCESSED, PY_PROCESSED),
+    (PY_APPLIED, PY_APPLIED),
     (PY_CANCELLED, PY_CANCELLED),
 )
 
