@@ -8,6 +8,7 @@ from rest_framework import serializers
 from accounts.models import Instructor, TiedStudent, get_account
 from accounts.serializers import AvailavilitySerializer
 from core.constants import *
+from payments.models import UserPaymentMethod
 
 from .models import Application, GradedLesson, Instrument, LessonBooking, LessonRequest
 from .utils import PACKAGES
@@ -424,7 +425,8 @@ class LessonBookingRegisterSerializer(serializers.Serializer):
     application_id = serializers.IntegerField()
     user_id = serializers.IntegerField()
     package = serializers.ChoiceField(choices=list(PACKAGES.keys()))
-    stripe_token = serializers.CharField(max_length=500)
+    payment_method_code = serializers.CharField(max_length=500, required=False)
+    payment_method_id = serializers.IntegerField(required=False)
 
     def to_internal_value(self, data):
         new_data = {}
@@ -450,6 +452,24 @@ class LessonBookingRegisterSerializer(serializers.Serializer):
             raise serializers.ValidationError('There is not Application with provided id')
         else:
             return value
+
+    def validate_payment_method_id(self, value):
+        print(self.data)   # ToDo: delete it
+        if value and not UserPaymentMethod.objects.filter(user_id=self.data.get('user_id'), id=value).exists():
+            raise serializers.ValidationError('There is not payment method with provided id')
+        return value
+
+    def validate(self, attrs):
+        cleaned_data = super().validate(attrs)
+        keys = dict.fromkeys(cleaned_data, 1)
+        if not keys.get('payment_method_code') and not keys.get('payment_method_id'):
+            raise serializers.ValidationError('payment_method info should be provided')
+        elif keys.get('payment_method_id'):
+            try:
+                pass
+            except Exception as e:
+                raise serializers.ValidationError('There is not payment with provided id')
+        return cleaned_data
 
 
 class LessonBookingStudentDashboardSerializer(serializers.ModelSerializer):

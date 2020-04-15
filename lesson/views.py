@@ -21,6 +21,7 @@ from core.constants import *
 from core.models import TaskLog
 from core.permissions import AccessForInstructor, AccessForParentOrStudent
 from payments.models import Payment
+from payments.serializers import GetPaymentMethodSerializer
 
 from . import serializers as sers
 from .models import Application, LessonBooking, LessonRequest
@@ -219,7 +220,7 @@ class ApplicationListView(views.APIView):
 
 
 class LessonBookingRegisterView(views.APIView):
-    """Register a booking for a lesson (o group of lessons) with an instructor"""
+    """Register a booking for a lesson (or group of lessons) with an instructor"""
     permission_classes = (IsAuthenticated, AccessForParentOrStudent)
 
     def post(self, request):
@@ -331,7 +332,13 @@ class ApplicationBookingView(views.APIView):
         except ObjectDoesNotExist:
             return Response({'message': 'There is not an application with provided id'},
                             status=status.HTTP_400_BAD_REQUEST)
-        return Response(get_booking_data(request.user, 'artist', application), status=status.HTTP_200_OK)
+        data = get_booking_data(request.user, 'artist', application)
+        if request.user.payment_methods:
+            pm_ser = GetPaymentMethodSerializer(request.user.payment_methods, many=True)
+            data['payment_methods'] = pm_ser.data
+        else:
+            data['payment_methods'] = []
+        return Response(data, status=status.HTTP_200_OK)
 
     def post(self, request, app_id):
         """Receiving package name"""
@@ -346,7 +353,13 @@ class ApplicationBookingView(views.APIView):
         except ObjectDoesNotExist:
             return Response({'message': 'There is not an application with provided id'},
                             status=status.HTTP_400_BAD_REQUEST)
-        return Response(get_booking_data(request.user, package, application), status=status.HTTP_200_OK)
+        data = get_booking_data(request.user, package, application)
+        if request.user.payment_methods:
+            pm_ser = GetPaymentMethodSerializer(request.user.payment_methods, many=True)
+            data['payment_methods'] = pm_ser.data
+        else:
+            data['payment_methods'] = []
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class GradeLessonView(views.APIView):
