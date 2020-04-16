@@ -427,6 +427,9 @@ class LessonBookingRegisterSerializer(serializers.Serializer):
     package = serializers.ChoiceField(choices=list(PACKAGES.keys()))
     payment_method_code = serializers.CharField(max_length=500, required=False)
     payment_method_id = serializers.IntegerField(required=False)
+    date = serializers.DateField(required=False)
+    time = serializers.TimeField(required=False)
+    timezone = serializers.CharField(max_length=20, required=False)
 
     def to_internal_value(self, data):
         new_data = {}

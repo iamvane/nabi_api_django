@@ -25,7 +25,7 @@ from payments.models import Payment, UserPaymentMethod
 from payments.serializers import GetPaymentMethodSerializer
 
 from . import serializers as sers
-from .models import Application, LessonBooking, LessonRequest
+from .models import Application, LessonBooking, LessonRequest, TrialLessonSchedule
 from .tasks import send_application_alert, send_booking_alert, send_booking_invoice, send_request_alert_instructors
 from .utils import get_benefit_to_redeem, get_booking_data, PACKAGES
 
@@ -258,9 +258,15 @@ class LessonBookingRegisterView(views.APIView):
                                                           application_id=serializer.validated_data['application_id'],
                                                           status=LessonBooking.REQUESTED)
             if booking_values_data.get('freeTrial'):
+                # register trial lesson data
+                TrialLessonSchedule.objects.create(booking_lesson=booking,
+                                                   date=serializer.validated_data['date'],
+                                                   time=serializer.validated_data['time'],
+                                                   timezone=serializer.validated_data['timezone'])
+                payment = None
                 new_status_booking = LessonBooking.TRIAL
             else:
-                new_status_booking = LessonBooking.PAID
+                # make payment and register it
                 try:
                     st_payment = stripe.PaymentIntent.create(amount=(amount * 100),
                                                              currency='usd',
@@ -274,10 +280,11 @@ class LessonBookingRegisterView(views.APIView):
                     return Response({'message': error.user_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                 except Exception as ex:
                     return Response({'message': str(ex)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            # register the charge made
-            payment = Payment.objects.create(user=request.user, amount=booking.total_amount,
-                                             description='Lesson booking with package {}'.format(package_name.capitalize()),
-                                             operation_id=st_payment.get('id'))
+                # register the charge made
+                payment = Payment.objects.create(user=request.user, amount=booking.total_amount,
+                                                 description='Lesson booking with package {}'.format(package_name.capitalize()),
+                                                 operation_id=st_payment.get('id'))
+                new_status_booking = LessonBooking.PAID
             with transaction.atomic():
                 for k, v in booking_values_data.items():
                     booking_values_data[k] = str(v)
