@@ -13,6 +13,7 @@ PACKAGES = {
     'artist': {'lesson_qty': 4, 'discount': 0},
     'maestro': {'lesson_qty': 8, 'discount': 0},
     'virtuoso': {'lesson_qty': 12, 'discount': 5},
+    'trial': {'lesson_qty': 1, 'discount': 0},
 }
 
 

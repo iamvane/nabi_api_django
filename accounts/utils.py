@@ -201,3 +201,13 @@ def send_reset_password_email(email, token):
                          )
         return False
     return True
+
+
+def get_stripe_customer_id(user):
+    """This function allow to obtain the stripe_customer_id from provided user"""
+    if user.is_parent():
+        return user.parent.stripe_customer_id
+    elif user.is_student():
+        return user.student.stripe_customer_id
+    else:
+        return None
