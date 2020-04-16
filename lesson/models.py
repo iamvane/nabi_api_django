@@ -97,7 +97,7 @@ class GradedLesson(models.Model):
 
 
 class TrialLessonSchedule(models.Model):
-    lesson = models.OneToOneField(LessonBooking, on_delete=models.CASCADE, related_name='schedule')
+    booking_lesson = models.OneToOneField(LessonBooking, on_delete=models.CASCADE, related_name='schedule')
     date = models.DateField()
     time = models.TimeField()
     timezone = models.CharField(max_length=20)
