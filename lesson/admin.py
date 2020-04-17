@@ -1,6 +1,9 @@
 from django.contrib import admin
 
+from core.models import TaskLog
+
 from .models import Application, LessonBooking, LessonRequest
+from .tasks import send_request_alert_instructors
 
 
 class ApplicationAdmin(admin.ModelAdmin):
@@ -52,6 +55,11 @@ class LessonRequestAdmin(admin.ModelAdmin):
         return obj.instrument.name
     get_instrument.short_description = 'instrument'
     get_instrument.admin_order_field = 'instrument__name'
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        task_log = TaskLog.objects.create(task_name='send_request_alert_instructors', args={'request_id': obj.id})
+        send_request_alert_instructors.delay(obj.id, task_log.id)
 
 
 admin.site.register(Application, ApplicationAdmin)
