@@ -539,7 +539,26 @@ POST localhost:8000/v1/confirm-booking/
 {
 	"applicationId": 1,
 	"package": "maestro",
-	"stripeToken": "tok_1FmQTxKKgfFa5BBCvtUJE1iU"
+	"paymentMethodCode": "pm_1GZ1RNKKgfFa5BBCGeLVyC0r"
+}
+
+or
+
+{
+	"applicationId": 1,
+	"package": "maestro",
+	"paymentMethodId": 8
+}
+
+or
+
+{
+	"applicationId": 1,
+	"package": "maestro",
+	"paymentMethodId": 8,
+	"date": "2020-05-12",
+	"time": "17:30",
+	"timezone": "US/Pacific"
 }
 
 ###
