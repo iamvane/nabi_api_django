@@ -458,8 +458,7 @@ class LessonBookingRegisterSerializer(serializers.Serializer):
             return value
 
     def validate_payment_method_id(self, value):
-        print(self.data)   # ToDo: delete it
-        if value and not UserPaymentMethod.objects.filter(user_id=self.data.get('user_id'), id=value).exists():
+        if value and not UserPaymentMethod.objects.filter(user_id=self.initial_data.get('user_id'), id=value).exists():
             raise serializers.ValidationError('There is not payment method with provided id')
         return value
 

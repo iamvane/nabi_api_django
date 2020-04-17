@@ -235,7 +235,8 @@ class LessonBookingRegisterView(views.APIView):
                                                    )
             if serializer.validated_data.get('payment_method_code'):
                 st_payment_method_id = serializer.validated_data['payment_method_code']
-                UserPaymentMethod.objects.create(user=request.user, stripe_payment_method_id=st_payment_method_id)
+                payment_method, _ = UserPaymentMethod.objects.get_or_create(user=request.user,
+                                                                            stripe_payment_method_id=st_payment_method_id)
             else:
                 payment_method = UserPaymentMethod.objects.get(id=serializer.validated_data.get('payment_method_id'))
                 st_payment_method_id = payment_method.stripe_payment_method_id
@@ -246,23 +247,24 @@ class LessonBookingRegisterView(views.APIView):
             else:
                 lesson_qty = PACKAGES[package_name].get('lesson_qty')
                 amount = booking_values_data['total']
-            booking, _ = LessonBooking.objects.get_or_create(user_id=serializer.validated_data['user_id'],
-                                                             quantity=lesson_qty,
-                                                             total_amount=amount,
-                                                             application_id=serializer.validated_data['application_id'],
-                                                             status=LessonBooking.REQUESTED)
+            booking = LessonBooking.objects.filter(user_id=serializer.validated_data['user_id'],
+                                                   quantity=lesson_qty,
+                                                   application_id=serializer.validated_data['application_id'],
+                                                   status=LessonBooking.REQUESTED).first()
+            if not booking:
+                booking = LessonBooking.objects.create(user_id=serializer.validated_data['user_id'],
+                                                       quantity=lesson_qty,
+                                                       total_amount=amount,
+                                                       application_id=serializer.validated_data['application_id'],
+                                                       status=LessonBooking.REQUESTED)
             if booking_values_data.get('freeTrial'):
-                # register trial lesson data
-                TrialLessonSchedule.objects.create(booking_lesson=booking,
-                                                   date=serializer.validated_data['date'],
-                                                   time=serializer.validated_data['time'],
-                                                   timezone=serializer.validated_data['timezone'])
+                # set values to future usage
                 payment = None
                 new_status_booking = LessonBooking.TRIAL
             else:
                 # make payment and register it
                 try:
-                    st_payment = stripe.PaymentIntent.create(amount=(amount * 100),
+                    st_payment = stripe.PaymentIntent.create(amount=int(round(booking.total_amount * 100, 0)),
                                                              currency='usd',
                                                              customer=st_customer_id,
                                                              payment_method=st_payment_method_id,
@@ -276,10 +278,17 @@ class LessonBookingRegisterView(views.APIView):
                     return Response({'message': str(ex)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                 # register the charge made
                 payment = Payment.objects.create(user=request.user, amount=booking.total_amount,
+                                                 payment_method_id=payment_method.id,
                                                  description='Lesson booking with package {}'.format(package_name.capitalize()),
                                                  operation_id=st_payment.get('id'))
                 new_status_booking = LessonBooking.PAID
             with transaction.atomic():
+                if booking_values_data.get('freeTrial'):
+                    # register trial lesson data here, to assure registration together with changes in booking
+                    TrialLessonSchedule.objects.create(booking_lesson=booking,
+                                                       date=serializer.validated_data['date'],
+                                                       time=serializer.validated_data['time'],
+                                                       timezone=serializer.validated_data['timezone'])
                 for k, v in booking_values_data.items():
                     booking_values_data[k] = str(v)
                 booking.details = booking_values_data
