@@ -367,8 +367,8 @@ class ApplicationBookingView(views.APIView):
         data = get_booking_data(request.user, package, application)
         if request.user.payment_methods.count():
             pm_ser = GetPaymentMethodSerializer(request.user.payment_methods, many=True)
-            data['payment_methods'] = pm_ser.data
-            data['client_secret'] = ''
+            data['paymentMethods'] = pm_ser.data
+            data['clientSecret'] = ''
         else:
             account = get_account(request.user)
             if not account.stripe_customer_id:
@@ -384,8 +384,8 @@ class ApplicationBookingView(views.APIView):
             except Exception as e:
                 return Response({'message': f'Error creating Intent in Stripe:\n {str(e)}'},
                                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            data['client_secret'] = intent.client_secret
-            data['payment_methods'] = []
+            data['clientSecret'] = intent.client_secret
+            data['paymentMethods'] = []
         return data
 
     def get(self, request, app_id):
