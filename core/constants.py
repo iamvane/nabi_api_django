@@ -298,5 +298,11 @@ PY_STATUSES = (
     (PY_CANCELLED, PY_CANCELLED),
 )
 
+# --- PACKAGES FOR LESSONS ---
+PACKAGE_ARTIST = 'artist'
+PACKAGE_MAESTRO = 'maestro'
+PACKAGE_VIRTUOSO = 'virtuoso'
+PACKAGE_TRIAL = 'trial'
+
 HOSTNAME = "www.nabimusic.com"
 HOSTNAME_PROTOCOL = "http://" + HOSTNAME

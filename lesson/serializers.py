@@ -432,16 +432,17 @@ class LessonBookingRegisterSerializer(serializers.Serializer):
     timezone = serializers.CharField(max_length=20, required=False)
 
     def to_internal_value(self, data):
-        new_data = {}
+        new_data = data.copy()
         keys = data.keys()
         if 'applicationId' in keys:
-            new_data['application_id'] = data.get('applicationId')
-        if 'user_id' in keys:
-            new_data['user_id'] = data.get('user_id')
-        if 'package' in keys:
-            new_data['package'] = data.get('package')
-        if 'stripeToken' in keys:
-            new_data['stripe_token'] = data.get('stripeToken')
+            new_data['application_id'] = new_data.pop('applicationId')
+        if 'paymentMethodCode' in keys:
+            new_data['payment_method_code'] = new_data.pop('paymentMethodCode')
+        if 'paymentMethodId' in keys:
+            new_data['payment_method_id'] = new_data.pop('paymentMethodId')
+        user = User.objects.get(id=new_data['user_id'])
+        if user.payment_methods.count() == 0:
+            new_data['package'] = PACKAGE_TRIAL
         return super().to_internal_value(new_data)
 
     def validate_user_id(self, value):
@@ -465,13 +466,11 @@ class LessonBookingRegisterSerializer(serializers.Serializer):
     def validate(self, attrs):
         cleaned_data = super().validate(attrs)
         keys = dict.fromkeys(cleaned_data, 1)
-        if not keys.get('payment_method_code') and not keys.get('payment_method_id'):
+        if not (keys.get('payment_method_code', 0) ^ keys.get('payment_method_id', 0)):
             raise serializers.ValidationError('payment_method info should be provided')
-        elif keys.get('payment_method_id'):
-            try:
-                pass
-            except Exception as e:
-                raise serializers.ValidationError('There is not payment with provided id')
+        if cleaned_data['package'] == PACKAGE_TRIAL:
+            if not (keys.get('date') and keys.get('time') and keys.get('timezone')):
+                raise serializers.ValidationError('Schedule for trial lesson was not provided')
         return cleaned_data
 
 

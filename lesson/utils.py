@@ -5,15 +5,16 @@ from decimal import Decimal
 
 from django.conf import settings
 
-from core.constants import BENEFIT_AMOUNT, BENEFIT_DISCOUNT, BENEFIT_LESSON, BENEFIT_READY
+from core.constants import (BENEFIT_AMOUNT, BENEFIT_DISCOUNT, BENEFIT_LESSON, BENEFIT_READY,
+                            PACKAGE_ARTIST, PACKAGE_MAESTRO, PACKAGE_TRIAL, PACKAGE_VIRTUOSO)
 from core.utils import send_admin_email, send_email
 from notices.models import Offer
 
 PACKAGES = {
-    'artist': {'lesson_qty': 4, 'discount': 0},
-    'maestro': {'lesson_qty': 8, 'discount': 0},
-    'virtuoso': {'lesson_qty': 12, 'discount': 5},
-    'trial': {'lesson_qty': 1, 'discount': 0},
+    PACKAGE_ARTIST: {'lesson_qty': 4, 'discount': 0},
+    PACKAGE_MAESTRO: {'lesson_qty': 8, 'discount': 0},
+    PACKAGE_VIRTUOSO: {'lesson_qty': 12, 'discount': 5},
+    PACKAGE_TRIAL: {'lesson_qty': 1, 'discount': 0},
 }
 
 

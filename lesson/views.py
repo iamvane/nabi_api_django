@@ -235,13 +235,7 @@ class LessonBookingRegisterView(views.APIView):
                                                    )
             if serializer.validated_data.get('payment_method_code'):
                 st_payment_method_id = serializer.validated_data['payment_method_code']
-                try:
-                    stripe.PaymentMethod.attach(st_payment_method_id, customer=st_customer_id)
-                except Exception as e:
-                    return Response({'message': f'Error creating Customer in Stripe:\n {str(e)}'},
-                                    status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                request.user.stripe_payment_method_id = st_payment_method_id
-                request.user.save()
+                UserPaymentMethod.objects.create(user=request.user, stripe_payment_method_id=st_payment_method_id)
             else:
                 payment_method = UserPaymentMethod.objects.get(id=serializer.validated_data.get('payment_method_id'))
                 st_payment_method_id = payment_method.stripe_payment_method_id
@@ -252,11 +246,11 @@ class LessonBookingRegisterView(views.APIView):
             else:
                 lesson_qty = PACKAGES[package_name].get('lesson_qty')
                 amount = booking_values_data['total']
-            booking = LessonBooking.objects.get_or_create(user_id=serializer.validated_data['user_id'],
-                                                          quantity=lesson_qty,
-                                                          total_amount=amount,
-                                                          application_id=serializer.validated_data['application_id'],
-                                                          status=LessonBooking.REQUESTED)
+            booking, _ = LessonBooking.objects.get_or_create(user_id=serializer.validated_data['user_id'],
+                                                             quantity=lesson_qty,
+                                                             total_amount=amount,
+                                                             application_id=serializer.validated_data['application_id'],
+                                                             status=LessonBooking.REQUESTED)
             if booking_values_data.get('freeTrial'):
                 # register trial lesson data
                 TrialLessonSchedule.objects.create(booking_lesson=booking,
@@ -295,8 +289,9 @@ class LessonBookingRegisterView(views.APIView):
                 booking.save()
                 booking.application.request.status = LESSON_REQUEST_CLOSED
                 booking.application.request.save()
-                payment.status = PY_APPLIED
-                payment.save()
+                if payment:
+                    payment.status = PY_APPLIED
+                    payment.save()
 
                 # get info about benefits, to change status for user_benefits
                 benefit_data = get_benefit_to_redeem(request.user)
