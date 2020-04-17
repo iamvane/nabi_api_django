@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='payment',
             name='status',
-            field=models.CharField(choices=[('registered', 'registered'), ('processed', 'processed'), ('applied', 'applied'), ('cancelled', 'cancelled')], default='applied', max_length=100),
+            field=models.CharField(choices=[('registered', 'registered'), ('processed', 'processed'), ('applied', 'applied'), ('cancelled', 'cancelled')], default='registered', max_length=100),
         ),
         migrations.CreateModel(
             name='UserPaymentMethod',

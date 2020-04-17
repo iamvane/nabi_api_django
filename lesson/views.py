@@ -262,25 +262,29 @@ class LessonBookingRegisterView(views.APIView):
                 payment = None
                 new_status_booking = LessonBooking.TRIAL
             else:
-                # make payment and register it
-                try:
-                    st_payment = stripe.PaymentIntent.create(amount=int(round(booking.total_amount * 100, 0)),
-                                                             currency='usd',
-                                                             customer=st_customer_id,
-                                                             payment_method=st_payment_method_id,
-                                                             off_session=True,
-                                                             confirm=True)
-                except stripe.error.InvalidRequestError as error:
-                    return Response({'message': [error.user_message, ]}, status=status.HTTP_400_BAD_REQUEST)
-                except stripe.error.StripeError as error:
-                    return Response({'message': error.user_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                except Exception as ex:
-                    return Response({'message': str(ex)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                # register the charge made
-                payment = Payment.objects.create(user=request.user, amount=booking.total_amount,
+                payment = Payment.objects.filter(user=request.user, amount=booking.total_amount,
                                                  payment_method_id=payment_method.id,
-                                                 description='Lesson booking with package {}'.format(package_name.capitalize()),
-                                                 operation_id=st_payment.get('id'))
+                                                 status=PY_REGISTERED).first()
+                if not payment:
+                    # make payment and register it
+                    try:
+                        st_payment = stripe.PaymentIntent.create(amount=int(round(booking.total_amount * 100, 0)),
+                                                                 currency='usd',
+                                                                 customer=st_customer_id,
+                                                                 payment_method=st_payment_method_id,
+                                                                 off_session=True,
+                                                                 confirm=True)
+                    except stripe.error.InvalidRequestError as error:
+                        return Response({'message': [error.user_message, ]}, status=status.HTTP_400_BAD_REQUEST)
+                    except stripe.error.StripeError as error:
+                        return Response({'message': error.user_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                    except Exception as ex:
+                        return Response({'message': str(ex)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                    # register the charge made
+                    payment = Payment.objects.create(user=request.user, amount=booking.total_amount,
+                                                     payment_method_id=payment_method.id,
+                                                     description='Lesson booking with package {}'.format(package_name.capitalize()),
+                                                     operation_id=st_payment.get('id'))
                 new_status_booking = LessonBooking.PAID
             with transaction.atomic():
                 if booking_values_data.get('freeTrial'):
