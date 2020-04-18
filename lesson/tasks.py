@@ -20,11 +20,12 @@ def send_request_alert_instructors(request_id, task_log_id):
     request = LessonRequest.objects.get(id=request_id)
     account = get_account(request.user)
     if request.place_for_lessons == PLACE_FOR_LESSONS_ONLINE:
-        for instructor in Instructor.objects.all():
+        for instructor in Instructor.objects.filter(instruments__name=request.instrument.name):
             send_alert_request_instructor(instructor, request, account)
     else:
         if account and account.coordinates:
-            for instructor in Instructor.objects.filter(coordinates__distance_lte=(account.coordinates, D(mi=50))):
+            for instructor in Instructor.objects.filter(coordinates__distance_lte=(account.coordinates, D(mi=50)),
+                                                        instruments__name=request.instrument.name):
                 send_alert_request_instructor(instructor, request, account)
     TaskLog.objects.filter(id=task_log_id).delete()
 
