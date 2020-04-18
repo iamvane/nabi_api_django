@@ -101,22 +101,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'null': {
-            'class': 'logging.NullHandler',
-        },
-    },
-    'loggers': {
-        'django.security.DisallowedHost': {
-            'handlers': ['null'],
-            'propagate': False,
-        },
-    },
-}
-
 HOSTNAME_PROTOCOL = os.environ.get('HOSTNAME_PROTOCOL', '')
 
 EMAIL_USE_TLS = True
@@ -161,13 +145,19 @@ AUTH_USER_MODEL = 'core.User'
 
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
-from sentry_sdk.integrations.logging import ignore_logger
+
+def omit_invalid_hostname(event, hint):
+    """Don't log django.DisallowedHost errors in Sentry"""
+    if 'log_record' in hint:
+        if hint['log_record'].name == 'django.security.DisallowedHost':
+            return None
+    return event
 
 sentry_sdk.init(
     dsn="https://e7aee34ab87d4e62ac4570f9c384436c@sentry.io/1774495",
-    integrations=[DjangoIntegration()]
+    integrations=[DjangoIntegration()],
+    before_send=omit_invalid_hostname,
 )
-ignore_logger('django.security.DisallowedHost')
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/

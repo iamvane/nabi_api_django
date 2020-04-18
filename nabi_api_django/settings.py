@@ -100,22 +100,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'null': {
-            'class': 'logging.NullHandler',
-        },
-    },
-    'loggers': {
-        'django.security.DisallowedHost': {
-            'handlers': ['null'],
-            'propagate': False,
-        },
-    },
-}
-
 HOSTNAME_PROTOCOL = os.environ.get('HOSTNAME_PROTOCOL', '')
 
 EMAIL_USE_TLS = True
@@ -224,9 +208,17 @@ if not DEBUG:
     import sentry_sdk
     from sentry_sdk.integrations.django import DjangoIntegration
 
+    def omit_invalid_hostname(event, hint):
+        """Don't log django.DisallowedHost errors in Sentry"""
+        if 'log_record' in hint:
+            if hint['log_record'].name == 'django.security.DisallowedHost':
+                return None
+        return event
+
     sentry_sdk.init(
         dsn="https://e7aee34ab87d4e62ac4570f9c384436c@sentry.io/1774495",
-        integrations=[DjangoIntegration()]
+        integrations=[DjangoIntegration()],
+        before_send=omit_invalid_hostname,
     )
 
 from datetime import timedelta
