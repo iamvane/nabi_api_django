@@ -126,7 +126,7 @@ class IUserAccount(models.Model):
     def set_referral_token(self):
         """Set referral token to related user.
         By placing here (account model), the existence of account is assured"""
-        if not self.user.referral_token:   # assure to change only when is necessary
+        if not self.user.referral_token or self.user.referral_token[-6:].isdigit():   # assure to change only when is necessary
             if not self.display_name.strip():
                 self.set_display_name()
             if self.display_name.strip():
