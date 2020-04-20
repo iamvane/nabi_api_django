@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.contrib.postgres.fields import JSONField
 from django.db import models
+from django.utils import timezone
 
 from .constants import (
     BENEFIT_READY, BENEFIT_PENDING, BENEFIT_AMOUNT, BENEFIT_DISCOUNT, BENEFIT_STATUSES, BENEFIT_TYPES,
@@ -18,8 +19,12 @@ class UserManager(BaseUserManager):
         if not email:
             raise ValueError('Email value is required.')
         email = self.normalize_email(email)
+        ind_at_sign = email.find('@')
+        if ind_at_sign > 8:
+            ind_at_sign = 8
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
+        user.referral_token = email[:ind_at_sign] + timezone.now().strftime('%H%M%S%f')
         user.save()
         user.set_user_benefits()
         return user

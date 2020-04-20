@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Point
 from django.db.models import ObjectDoesNotExist
+from django.utils import timezone
 
 from rest_framework import serializers, validators
 
@@ -54,8 +55,12 @@ class BaseCreateAccountSerializer(serializers.Serializer):
             validated_data['referred_by'] = User.get_user_from_refer_code(ref_code)
         else:
             validated_data['referred_by'] = None
+        ind_at_sign = validated_data['email'].find('@')
+        if ind_at_sign > 8:
+            ind_at_sign = 8
         user = update_model(User(), **validated_data)
         user.set_password(validated_data['password'])
+        user.referral_token = validated_data['email'][:ind_at_sign] + timezone.now().strftime('%H%M%S%f')
         user.save()
         user.set_user_benefits()
         return user
