@@ -162,12 +162,15 @@ class IUserAccount(models.Model):
 
 class PhoneNumber(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    number = models.CharField(max_length=50, unique=True)
+    number = models.CharField(max_length=50)
     type = models.CharField(max_length=100, choices=PHONE_TYPE_CHOICES)
     verified_at = models.DateTimeField(blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['user', 'number']
 
 
 def get_user_phone(user_acc):
