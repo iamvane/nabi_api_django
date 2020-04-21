@@ -384,7 +384,8 @@ class VerifyPhoneView(views.APIView):
             phone = PhoneNumber.objects.get(user=request.user, number=request.data['phoneNumber'])
         except ObjectDoesNotExist:
             if PhoneNumber.objects.filter(user=request.user).exists():
-                phone = PhoneNumber.objects.filter(user=request.user).update(number=request.data['phoneNumber'])
+                PhoneNumber.objects.filter(user=request.user).update(number=request.data['phoneNumber'], verified_at=None)
+                phone = PhoneNumber.objects.filter(user=request.user, number=request.data['phoneNumber']).last()
             else:
                 phone = PhoneNumber.objects.create(user=request.user, number=request.data['phoneNumber'],
                                                    type=PHONE_TYPE_MAIN)
@@ -407,8 +408,10 @@ class VerifyPhoneView(views.APIView):
         if approved:
             phone.verified_at = timezone.now()
             phone.save()
-        return Response({'status': verification_check.status, 'message': 'Phone validation was successful.'},
-                        status=status.HTTP_200_OK if approved else status.HTTP_400_BAD_REQUEST)
+        return Response({'status': verification_check.status,
+                         'message': 'Phone validation was successful.' if approved else 'Failed phone validation.'},
+                        status=status.HTTP_200_OK if approved else status.HTTP_400_BAD_REQUEST
+                        )
 
 
 class InstructorBuildJobPreferences(views.APIView):
