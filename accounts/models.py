@@ -210,7 +210,7 @@ class Instructor(IUserAccount):
                                  verbose_name='Background check status')
     interviewed = models.BooleanField(blank=True, default=False)
     job_preferences = ArrayField(blank=True, null=True, base_field=models.CharField(max_length=100))
-    qualifications = ArrayField(blank=True, null=True, base_field=models.CharField(max_length=100))
+    qualifications = ArrayField(blank=True, null=True, base_field=models.CharField(max_length=100))   # ToDo: Remove it
     place_lessons_preferences = ArrayField(blank=True, null=True, base_field=models.CharField(max_length=100))
     rates = HStoreField(blank=True, null=True)
     studio_address = models.CharField(max_length=250, blank=True, null=True)
