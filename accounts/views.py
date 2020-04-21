@@ -355,7 +355,7 @@ class FetchInstructor(views.APIView):
         if data:
             return Response(data)
         else:
-            return Response({'message': 'User must be authenticated and be an instructor'},
+            return Response({'message': 'You must be logged in, and be an instructor'},
                             status=status.HTTP_400_BAD_REQUEST)
 
 
