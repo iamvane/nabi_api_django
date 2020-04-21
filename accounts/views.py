@@ -82,12 +82,14 @@ def get_user_response(account):
 
 def get_instructor_profile(user_cc):
     if user_cc.user.get_role() == ROLE_INSTRUCTOR:
-        data = {
+        return {
             'bioTitle': user_cc.bio_title,
             'bioDescription': user_cc.bio_description,
             'music': user_cc.music,
+            'backgroundCheckStatus': user_cc.bg_status,
         }
-        return data
+    else:
+        return {}
 
 
 class CreateAccount(views.APIView):
@@ -347,14 +349,14 @@ class WhoAmIView(views.APIView):
 
 class FetchInstructor(views.APIView):
     def get(self, request):
-        data = {
-            'id': None,
-            'email': None,
-        }
+        data = {}
         if request.user.is_authenticated:
             data = get_instructor_profile(get_account(request.user))
-
-        return Response(data)
+        if data:
+            return Response(data)
+        else:
+            return Response({'message': 'User must be authenticated and be an instructor'},
+                            status=status.HTTP_400_BAD_REQUEST)
 
 
 class UpdateProfileView(views.APIView):
