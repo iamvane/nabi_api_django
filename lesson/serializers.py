@@ -559,7 +559,7 @@ class InstructorDashboardSerializer(serializers.ModelSerializer):
     def get_missingFields(self, instance):
         list_fields = instance.missing_fields_camelcase()
         if not instance.instructoradditionalqualifications_set.count():
-            list_fields.append('qualification')
+            list_fields.append('qualifications')
         if not instance.music:
             list_fields.append('music')
         return list_fields
