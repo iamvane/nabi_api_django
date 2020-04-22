@@ -550,11 +550,10 @@ class InstructorDashboardSerializer(serializers.ModelSerializer):
     backgroundCheckStatus = serializers.CharField(max_length=100, source='bg_status', read_only=True)
     missingFields = serializers.SerializerMethodField()
     lessons = serializers.ListField(child=LessonBookingSerializer(), source='lesson_bookings')
-    qualifications = serializers.SerializerMethodField()
 
     class Meta:
         model = Instructor
-        fields = ('backgroundCheckStatus', 'complete', 'missingFields', 'lessons', 'qualifications')
+        fields = ('backgroundCheckStatus', 'complete', 'missingFields', 'lessons')
 
     def get_missingFields(self, instance):
         list_fields = instance.missing_fields_camelcase()
@@ -563,23 +562,6 @@ class InstructorDashboardSerializer(serializers.ModelSerializer):
         if not instance.music:
             list_fields.append('music')
         return list_fields
-
-    def get_qualifications(self, instance):
-        qualifications = instance.instructoradditionalqualifications_set.last()
-        if qualifications:
-            return {'certifiedTeacher': qualifications.certified_teacher,
-                    'musicTherapy': qualifications.music_therapy,
-                    'musicProduction': qualifications.music_production,
-                    'earTraining': qualifications.ear_training,
-                    'conducting': qualifications.conducting,
-                    'virtuosoRecognition': qualifications.virtuoso_recognition,
-                    'performance': qualifications.performance,
-                    'musicTheory': qualifications.music_theory,
-                    'youngChildrenExperience': qualifications.young_children_experience,
-                    'repertoireSelection': qualifications.repertoire_selection,
-                    }
-        else:
-            return {}
 
 
 class LessonRequestInstructorDashboardSerializer(serializers.ModelSerializer):
