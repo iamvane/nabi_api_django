@@ -1,5 +1,3 @@
-from django.utils import timezone
-
 from rest_framework import status, views
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -13,9 +11,7 @@ class AvailableOfferListView(views.APIView):
     permission_classes = (AllowAny, )
 
     def get(self, request):
-        today = timezone.now()
-        qs = Offer.objects.filter(show_at__lte=today).exclude(hide_at__lte=today).last()
-        serializer = OfferDetailSerializer(qs)
+        serializer = OfferDetailSerializer(Offer.get_last_active_offer())
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 

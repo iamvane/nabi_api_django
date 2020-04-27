@@ -7,6 +7,7 @@ from django.conf import settings
 
 from core.constants import BENEFIT_AMOUNT, BENEFIT_DISCOUNT, BENEFIT_LESSON, BENEFIT_READY
 from core.utils import send_admin_email, send_email
+from notices.models import Offer
 
 PACKAGES = {
     'artist': {'lesson_qty': 4, 'discount': 0},
@@ -161,10 +162,9 @@ def get_benefit_to_redeem(user):
     """Return a dict for existing benefit that can be used in lesson booking"""
     data = {'free_lesson': False, 'discount': 0, 'amount': 0, 'source': ''}
     benefits = user.benefits.filter(status=BENEFIT_READY)
-    response = requests.get('{}/v1/offers-active/'.format(settings.HOSTNAME_PROTOCOL))
-    offer_json = response.json()
+    active_offer = Offer.get_last_active_offer()
 
-    if offer_json.get('freeLesson'):
+    if active_offer and active_offer.free_lesson:
         data['source'] = 'offer'
         data['free_lesson'] = True
     elif benefits.count() and benefits.filter(benefit_type=BENEFIT_LESSON).exists():
@@ -174,19 +174,18 @@ def get_benefit_to_redeem(user):
         return data
 
     benefit_discount = benefits.filter(benefit_type=BENEFIT_DISCOUNT)
-    if offer_json.get('percentDiscount'):
-        offer_discount = offer_json.get('percentDiscount')
+    if active_offer and active_offer.percent_discount:
         if benefit_discount.exists():
             benefit = benefit_discount.last()
-            if benefit.benefit_qty > offer_discount:
+            if benefit.benefit_qty > active_offer.percent_discount:
                 data['source'] = 'benefit'
                 data['discount'] = benefit.benefit_qty
             else:
                 data['source'] = 'offer'
-                data['discount'] = Decimal(offer_discount)
+                data['discount'] = Decimal(active_offer.percent_discount)
         else:
             data['source'] = 'offer'
-            data['discount'] = Decimal(offer_discount)
+            data['discount'] = Decimal(active_offer.percent_discount)
     elif benefit_discount.exists():
         benefit = benefit_discount.last()
         data['source'] = 'benefit'
