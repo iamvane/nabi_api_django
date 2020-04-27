@@ -103,6 +103,8 @@ def add_to_email_list(user, list_name):
 
 def add_to_email_list_v2(user, list_name, remove_list_name=None):
     """Add user's email and referral token to HubSpot's list, including first_name and last_name if are non-empty"""
+    if settings.ENVIRON_TYPE != 'production':   # only add account to list in production environment
+        return None
     # first, check if contact exists already in HubSpot
     target_url = f'https://api.hubapi.com/contacts/v1/contact/email/{user.email}/profile?hapikey={settings.HUBSPOT_API_KEY}'
     resp = requests.get(target_url)

@@ -1,13 +1,19 @@
+import dotenv
 import os
-from celery.schedules import crontab
+import warnings
 
+with warnings.catch_warnings():   # To avoid warning when .env file does not exists
+    warnings.simplefilter('ignore')
+    dotenv.read_dotenv()
+
+ENVIRON_TYPE = os.environ['ENVIRONMENT']
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', '')
+SECRET_KEY = os.environ['SECRET_KEY']
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = bool(os.environ['DEBUG'])
 
 ALLOWED_HOSTS = []
 
@@ -21,8 +27,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.postgres',
     'django.contrib.gis',
-
-    'debug_toolbar',
     'rest_framework',
 
     'core.apps.CoreConfig',
@@ -30,15 +34,15 @@ INSTALLED_APPS = [
     'payments.apps.PaymentsConfig',
     'lesson.apps.LessonConfig',
     'notices',
-    'references',
+    'references.apps.ReferencesConfig',
     'background_checks.apps.BackgroundChecksConfig',
 
     'drf_yasg',
+    'corsheaders',
     'storages',
 ]
 
 MIDDLEWARE = [
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -74,15 +78,17 @@ DATABASES = {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
         'NAME': os.environ.get('DB_NAME', 'nabidb'),
         'USER': os.environ.get('DB_USER', 'postgres'),
-        'PASSWORD': os.environ.get('DB_PASS', ''),
+        'PASSWORD': os.environ.get('DB_PASS'),
         'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': '5432',
+        'PORT': os.environ.get('DB_PORT', '5432'),
         'OPTIONS': {'sslmode': 'require'},
         'TEST': {
             'NAME': 'nabidb_test',
         },
     }
 }
+
+AUTH_USER_MODEL = 'core.User'
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -100,28 +106,12 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-HOSTNAME_PROTOCOL = os.environ.get('HOSTNAME_PROTOCOL', '')
+HOSTNAME_PROTOCOL = os.environ['HOSTNAME_PROTOCOL']
 
-EMAIL_USE_TLS = True
 EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.sendgrid.net')
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'apikey')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+EMAIL_HOST_PASSWORD = os.environ['EMAIL_HOST_PASSWORD']
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', '')
-ADMIN_EMAIL = DEFAULT_FROM_EMAIL
-
-CELERY_BROKER_URL = os.environ.get('BROKER_URL', '')
-BROKER_POOL_LIMIT = 1
-CELERY_BEAT_SCHEDULE = {
-    'send-reminder-request': {
-        'task': 'lesson.tasks.update_list_users_without_request',
-        'schedule': crontab(hour='9', minute='0'),
-    },
-    'alert-user-without-coordinates-location': {
-        'task': 'accounts.tasks.alert_user_without_location_coordinates',
-        'schedule': crontab(hour='7', minute='0'),
-    },
-}
 
 
 # Internationalization
@@ -134,48 +124,16 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/dj-static/'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
 
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/dj-media/'
 
-GOOGLE_FORM_REFERENCES_URL = 'https://forms.gle/MuGhfwUARTW9uzrU9'
 
-SENDGRID_API_BASE_URL = 'https://api.sendgrid.com/v3/'
-SENDGRID_CONTACT_LIST_IDS = {
-    'instructors': 'foo',
-    'parents': 'foo',
-    'students': 'foo',
-    'parents_without_request': 'foo',
-    'students_without_request': 'foo',
-}
-SENDGRID_EMAIL_TEMPLATES = {
-    'booking_invoice': 'foo',
-    'booking_advice': 'foo',
-}
-
-HUBSPOT_API_KEY = os.environ.get('HUBSPOT_API_KEY', 'foo')
-HUBSPOT_CONTACT_LIST_IDS = {
-    'instructors': 'foo',
-    'parents': 'foo',
-    'students': 'foo',
-    'FacebookLead': 'foo',
-    'parents_without_request': 'foo',
-    'students_without_request': 'foo',
-}
-HUBSPOT_TEMPLATE_IDS = {
-    'alert_application': '27908927674',
-    'alert_request': '27862630310',
-    'password_reset': '27908644852',
-    'referral_email': '27965493956',
-}
-
-ACCURATE_PLAN_PARAMETER = 'PKG_STANDARD'
-ACCURATE_PLAN_ADDITIONALS = ['SON', ]
-
-
-REST_PAGE_SIZE = 20
-
+# # # REST Framework # # #
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -184,50 +142,55 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+    ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': REST_PAGE_SIZE,
+    'PAGE_SIZE': int(os.environ.get('REST_PAGE_SIZE', 20)),
     'DATETIME_FORMAT': '%Y-%m-%d %H:%M:%S'
 }
 
-AUTH_USER_MODEL = 'core.User'
 
-DEFAULT_FROM_EMAIL = 'test@nabimusic.com'
-ADMIN_EMAIL = 'info@nabimusic.com'
-
-
-try:
-    from .local_settings import *
-except Exception as e:
-    print('Error importing local_settings.py: {}'.format(str(e)))
+# # # Celery configuration # # #
+CELERY_BROKER_URL = os.environ['BROKER_URL']
+BROKER_POOL_LIMIT = 1
 
 
-if not DEBUG:
-    REST_FRAMEWORK['DEFAULT_RENDERER_CLASSES'] = (
-        'rest_framework.renderers.JSONRenderer',
-    )
-    import sentry_sdk
-    from sentry_sdk.integrations.django import DjangoIntegration
+# # # Third-party services # # #
+GOOGLE_MAPS_API_KEY = os.environ['GOOGLE_MAPS_API_KEY']
 
-    def omit_invalid_hostname(event, hint):
-        """Don't log django.DisallowedHost errors in Sentry"""
-        if 'log_record' in hint:
-            if hint['log_record'].name == 'django.security.DisallowedHost':
-                return None
-        return event
+TWILIO_SERVICE_SID = os.environ['TWILIO_SERVICE_SID']
+TWILIO_ACCOUNT_SID = os.environ['TWILIO_ACCOUNT_SID']
+TWILIO_AUTH_TOKEN = os.environ['TWILIO_AUTH_TOKEN']
 
-    sentry_sdk.init(
-        dsn="https://e7aee34ab87d4e62ac4570f9c384436c@sentry.io/1774495",
-        integrations=[DjangoIntegration()],
-        before_send=omit_invalid_hostname,
-    )
+STRIPE_PUBLIC_KEY = os.environ['STRIPE_PUBLIC_KEY']
+STRIPE_SECRET_KEY = os.environ['STRIPE_SECRET_KEY']
 
-from datetime import timedelta
+ACCURATE_CLIENT_ID = os.environ['ACCURATE_CLIENT_ID']
+ACCURATE_CLIENT_SECRET = os.environ['ACCURATE_CLIENT_SECRET']
+ACCURATE_PLAN_PARAMETER = 'PKG_STANDARD'
+ACCURATE_PLAN_ADDITIONALS = ['SON', ]
 
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=30),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
-}
+GOOGLE_FORM_REFERENCES_URL = 'https://forms.gle/my-custom-form'
 
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),
-]
+SENDGRID_API_BASE_URL = 'https://api.sendgrid.com/v3/'
+
+HUBSPOT_API_KEY = os.environ['HUBSPOT_API_KEY']
+
+
+# # # Environment specific settings # # #
+if ENVIRON_TYPE == 'production':
+    try:
+        from .production_settings import *
+    except Exception as e:
+        print('Error importing production_settings.py: {}'.format(str(e)))
+elif ENVIRON_TYPE == 'staging':
+    try:
+        from .staging_settings import *
+    except Exception as e:
+        print('Error importing staging_settings.py: {}'.format(str(e)))
+else:
+    try:
+        from .local_settings import *
+    except Exception as e:
+        print('Error importing local_settings.py: {}'.format(str(e)))

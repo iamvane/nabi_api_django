@@ -1,16 +1,34 @@
+# python compiled files
+__pycache__/
+*.pyc
+
+# virtual environment
+venv
+.venv
+
+# IDE configuration directory
 .idea
 .code
-__pycache__/
-*.log
-*.pot
-*.pyc
+
+# project configuration
 local_settings.*
+.env
+
+# local db
 *.sqlite3
+
+# for project deployment
 media
 static
 private
-antenv
+
+# testing
 coverage.xml
 .coverage
 htmlcov
 TEST-*.xml
+
+# others files
+*.log
+*.pot
+antenv
