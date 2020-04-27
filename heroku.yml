@@ -19,5 +19,5 @@ build:
     - 'https://github.com/heroku/heroku-buildpack-apt'
 run:
   web: >-
-    gunicorn --pythonpath nabi_api_django nabi_api_django.settings --log-file
+    gunicorn --pythonpath nabi_api_django nabi_api_django.wsgi --log-file
     -
