@@ -470,6 +470,7 @@ class LessonBookingStudentDashboardSerializer(serializers.ModelSerializer):
 
 class LessonBookingParentDashboardSerializer(serializers.ModelSerializer):
     """Serializer to get data of lesson booking created by a parent"""
+    applicationId = serializers.IntegerField(source='application.id')
     instrument = serializers.CharField(max_length=250, source='application.request.instrument.name', read_only=True)
     skillLevel = serializers.CharField(max_length=100, source='application.request.skill_level', read_only=True)
     instructor = serializers.CharField(max_length=100, source='application.instructor.display_name', read_only=True)
@@ -478,7 +479,7 @@ class LessonBookingParentDashboardSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LessonBooking
-        fields = ('instrument', 'skillLevel', 'instructor', 'lessonsRemaining', 'students')
+        fields = ('applicationId', 'instrument', 'skillLevel', 'instructor', 'lessonsRemaining', 'students')
 
 
 class LessonRequestStudentDashboardSerializer(serializers.ModelSerializer):
