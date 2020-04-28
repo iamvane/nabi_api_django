@@ -1,5 +1,6 @@
 from django.contrib import admin
 
+from core.constants import LESSON_REQUEST_CLOSED
 from core.models import TaskLog
 
 from .models import Application, LessonBooking, LessonRequest
@@ -38,6 +39,11 @@ class LessonBookingAdmin(admin.ModelAdmin):
     view_application.short_description = 'application'
 
 
+def close_lesson_request(model_admin, request, queryset):
+    queryset.update(status=LESSON_REQUEST_CLOSED)
+close_lesson_request.short_description = 'Close selected lesson requests'
+
+
 class LessonRequestAdmin(admin.ModelAdmin):
     list_display = ('pk', 'get_user_email',  'title', 'get_instrument', 'status')
     list_filter = ('status', 'skill_level', 'place_for_lessons', 'lessons_duration', )
@@ -45,6 +51,7 @@ class LessonRequestAdmin(admin.ModelAdmin):
     filter_horizontal = ('students', )
     search_fields = ('user__email', 'instrument__name', )
     ordering = ('pk',)
+    actions = [close_lesson_request, ]
 
     def get_user_email(self, obj):
         return '{email} (user_id: {id})'.format(email=obj.user.email, id=obj.user_id)
