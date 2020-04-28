@@ -58,8 +58,9 @@ class LessonRequestAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
-        task_log = TaskLog.objects.create(task_name='send_request_alert_instructors', args={'request_id': obj.id})
-        send_request_alert_instructors.delay(obj.id, task_log.id)
+        if not change or 'instrument' in form.changed_data or 'place_for_lessons' in form.changed_data:
+            task_log = TaskLog.objects.create(task_name='send_request_alert_instructors', args={'request_id': obj.id})
+            send_request_alert_instructors.delay(obj.id, task_log.id)
 
 
 admin.site.register(Application, ApplicationAdmin)
