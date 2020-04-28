@@ -196,6 +196,9 @@ class Parent(IUserAccount):
     def role(self):
         return 'Parent'
 
+    def __str__(self):
+        return f'{self.display_name} ({self.user.email})'
+
 
 class Instructor(IUserAccount):
     bio_title = models.CharField(max_length=250, blank=True, null=True)

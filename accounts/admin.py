@@ -11,7 +11,8 @@ from django.db.models import Q
 from django.db.models.functions import Cast
 
 from accounts.models import (Education, Employment, Instructor, InstructorAdditionalQualifications,
-                             InstructorAgeGroup, InstructorInstruments, InstructorLessonRate, InstructorLessonSize)
+                             InstructorAgeGroup, InstructorInstruments, InstructorLessonRate, InstructorLessonSize,
+                             TiedStudent)
 
 User = get_user_model()
 
@@ -151,4 +152,9 @@ class InstructorAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
+class TiedStudentAdmin(admin.ModelAdmin):
+    list_display = ('__str__', 'parent')
+
+
 admin.site.register(Instructor, InstructorAdmin)
+admin.site.register(TiedStudent, TiedStudentAdmin)

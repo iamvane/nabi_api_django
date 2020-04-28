@@ -1,5 +1,6 @@
 from django.contrib import admin
 
+from accounts.models import TiedStudent
 from core.constants import LESSON_REQUEST_CLOSED
 from core.models import TaskLog
 
@@ -52,6 +53,7 @@ class LessonRequestAdmin(admin.ModelAdmin):
     search_fields = ('user__email', 'instrument__name', )
     ordering = ('pk',)
     actions = [close_lesson_request, ]
+    object_id = None
 
     def get_user_email(self, obj):
         return '{email} (user_id: {id})'.format(email=obj.user.email, id=obj.user_id)
@@ -62,6 +64,19 @@ class LessonRequestAdmin(admin.ModelAdmin):
         return obj.instrument.name
     get_instrument.short_description = 'instrument'
     get_instrument.admin_order_field = 'instrument__name'
+
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        self.object_id = object_id
+        return super().change_view(request, object_id, form_url, extra_context)
+
+    def formfield_for_manytomany(self, db_field, request, **kwargs):
+        if db_field.name == 'students':
+            requestor = LessonRequest.objects.get(id=self.object_id).user
+            if requestor.is_parent():
+                kwargs['queryset'] = TiedStudent.objects.filter(parent=requestor.parent)
+            else:
+                kwargs['queryset'] = TiedStudent.objects.none()
+        return super().formfield_for_manytomany(db_field, request, **kwargs)
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
