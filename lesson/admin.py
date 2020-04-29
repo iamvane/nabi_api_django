@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.contrib import admin
 
 from accounts.models import TiedStudent
@@ -6,6 +7,8 @@ from core.models import TaskLog
 
 from .models import Application, LessonBooking, LessonRequest
 from .tasks import send_request_alert_instructors
+
+User = get_user_model()
 
 
 class ApplicationAdmin(admin.ModelAdmin):
@@ -69,13 +72,25 @@ class LessonRequestAdmin(admin.ModelAdmin):
         self.object_id = object_id
         return super().change_view(request, object_id, form_url, extra_context)
 
+    def add_view(self, request, form_url='', extra_context=None):
+        self.object_id = None
+        return super().add_view(request, form_url, extra_context)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'user':
+            kwargs['queryset'] = User.objects.order_by('email')
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         if db_field.name == 'students':
-            requestor = LessonRequest.objects.get(id=self.object_id).user
-            if requestor.is_parent():
-                kwargs['queryset'] = TiedStudent.objects.filter(parent=requestor.parent)
+            if self.object_id:
+                requestor = LessonRequest.objects.get(id=self.object_id).user
+                if requestor.is_parent():
+                    kwargs['queryset'] = TiedStudent.objects.filter(parent=requestor.parent).order_by('name')
+                else:
+                    kwargs['queryset'] = TiedStudent.objects.none()
             else:
-                kwargs['queryset'] = TiedStudent.objects.none()
+                kwargs['queryset'] = TiedStudent.objects.order_by('name')
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
     def save_model(self, request, obj, form, change):
