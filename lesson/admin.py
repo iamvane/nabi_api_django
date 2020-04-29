@@ -78,7 +78,7 @@ class LessonRequestAdmin(admin.ModelAdmin):
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'user':
-            kwargs['queryset'] = User.objects.order_by('email')
+            kwargs['queryset'] = User.objects.exclude(instructor=None).order_by('email')
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
