@@ -12,7 +12,7 @@ from django.db.models.functions import Cast
 
 from accounts.models import (Education, Employment, Instructor, InstructorAdditionalQualifications,
                              InstructorAgeGroup, InstructorInstruments, InstructorLessonRate, InstructorLessonSize,
-                             TiedStudent)
+                             Parent, TiedStudent)
 
 User = get_user_model()
 
@@ -154,6 +154,11 @@ class InstructorAdmin(admin.ModelAdmin):
 
 class TiedStudentAdmin(admin.ModelAdmin):
     list_display = ('__str__', 'parent')
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'parent':
+            kwargs['queryset'] = Parent.objects.order_by('user__email')
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 admin.site.register(Instructor, InstructorAdmin)
