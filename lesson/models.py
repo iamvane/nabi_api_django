@@ -29,7 +29,7 @@ class LessonRequest(models.Model):
     lessons_duration = models.CharField(max_length=100, choices=LESSON_DURATION_CHOICES)
     travel_distance = models.IntegerField(blank=True, null=True)
 
-    students = models.ManyToManyField(TiedStudent)
+    students = models.ManyToManyField(TiedStudent, blank=True)
     status = models.CharField(max_length=100, choices=LESSON_REQUEST_STATUSES,
                               blank=True, default=LESSON_REQUEST_ACTIVE)
 

@@ -1,9 +1,14 @@
+from django.contrib.auth import get_user_model
 from django.contrib import admin
 
+from accounts.models import TiedStudent
+from core.constants import LESSON_REQUEST_CLOSED
 from core.models import TaskLog
 
 from .models import Application, LessonBooking, LessonRequest
 from .tasks import send_request_alert_instructors
+
+User = get_user_model()
 
 
 class ApplicationAdmin(admin.ModelAdmin):
@@ -38,6 +43,11 @@ class LessonBookingAdmin(admin.ModelAdmin):
     view_application.short_description = 'application'
 
 
+def close_lesson_request(model_admin, request, queryset):
+    queryset.update(status=LESSON_REQUEST_CLOSED)
+close_lesson_request.short_description = 'Close selected lesson requests'
+
+
 class LessonRequestAdmin(admin.ModelAdmin):
     list_display = ('pk', 'get_user_email',  'title', 'get_instrument', 'status')
     list_filter = ('status', 'skill_level', 'place_for_lessons', 'lessons_duration', )
@@ -45,6 +55,8 @@ class LessonRequestAdmin(admin.ModelAdmin):
     filter_horizontal = ('students', )
     search_fields = ('user__email', 'instrument__name', )
     ordering = ('pk',)
+    actions = [close_lesson_request, ]
+    object_id = None
 
     def get_user_email(self, obj):
         return '{email} (user_id: {id})'.format(email=obj.user.email, id=obj.user_id)
@@ -56,10 +68,36 @@ class LessonRequestAdmin(admin.ModelAdmin):
     get_instrument.short_description = 'instrument'
     get_instrument.admin_order_field = 'instrument__name'
 
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        self.object_id = object_id
+        return super().change_view(request, object_id, form_url, extra_context)
+
+    def add_view(self, request, form_url='', extra_context=None):
+        self.object_id = None
+        return super().add_view(request, form_url, extra_context)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'user':
+            kwargs['queryset'] = User.objects.exclude(instructor=None).order_by('email')
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    def formfield_for_manytomany(self, db_field, request, **kwargs):
+        if db_field.name == 'students':
+            if self.object_id:
+                requestor = LessonRequest.objects.get(id=self.object_id).user
+                if requestor.is_parent():
+                    kwargs['queryset'] = TiedStudent.objects.filter(parent=requestor.parent).order_by('name')
+                else:
+                    kwargs['queryset'] = TiedStudent.objects.none()
+            else:
+                kwargs['queryset'] = TiedStudent.objects.order_by('name')
+        return super().formfield_for_manytomany(db_field, request, **kwargs)
+
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
-        task_log = TaskLog.objects.create(task_name='send_request_alert_instructors', args={'request_id': obj.id})
-        send_request_alert_instructors.delay(obj.id, task_log.id)
+        if not change or 'instrument' in form.changed_data or 'place_for_lessons' in form.changed_data:
+            task_log = TaskLog.objects.create(task_name='send_request_alert_instructors', args={'request_id': obj.id})
+            send_request_alert_instructors.delay(obj.id, task_log.id)
 
 
 admin.site.register(Application, ApplicationAdmin)
