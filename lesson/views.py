@@ -25,7 +25,7 @@ from payments.models import Payment, UserPaymentMethod
 from payments.serializers import GetPaymentMethodSerializer
 
 from . import serializers as sers
-from .models import Application, LessonBooking, LessonRequest, TrialLessonSchedule
+from .models import Application, LessonBooking, LessonRequest, Lesson
 from .tasks import send_application_alert, send_booking_alert, send_booking_invoice, send_request_alert_instructors
 from .utils import get_benefit_to_redeem, get_booking_data, PACKAGES
 
@@ -289,10 +289,12 @@ class LessonBookingRegisterView(views.APIView):
             with transaction.atomic():
                 if booking_values_data.get('freeTrial'):
                     # register trial lesson data here, to assure registration together with changes in booking
-                    TrialLessonSchedule.objects.create(booking_lesson=booking,
-                                                       date=serializer.validated_data['date'],
-                                                       time=serializer.validated_data['time'],
-                                                       timezone=serializer.validated_data['timezone'])
+                    time_zone = serializer.validated_data.get('timezone')
+                    if time_zone[0] not in ('+', '-'):
+                        time_zone = '+' + time_zone
+                    Lesson.objects.create(booking=booking,
+                                          scheduled_datetime=f'{serializer.validated_data.get("date")} {serializer.validated_data.get("time")}{time_zone}'
+                                          )
                 for k, v in booking_values_data.items():
                     booking_values_data[k] = str(v)
                 booking.details = booking_values_data
@@ -413,8 +415,13 @@ class ApplicationBookingView(views.APIView):
 
 class GradeLessonView(views.APIView):
 
-    def post(self, request):
-        ser_data = sers.DataGradeLessonSerializer(data=request.data)
+    def post(self, request, lesson_id):
+        try:
+            lesson = Lesson.objects.get(id=lesson_id)
+        except Lesson.DoesNotExist:
+            return Response({'message': 'There is not Lesson with provided id'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        ser_data = sers.UpdateLessonSerializer(data=request.data, instance=lesson, partial=True)
         if ser_data.is_valid():
             ser_data.save()
             return Response({'message': 'Your grade was submitted successfully'}, status=status.HTTP_200_OK)

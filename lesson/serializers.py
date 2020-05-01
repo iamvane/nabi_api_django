@@ -1,3 +1,4 @@
+import re
 from dateutil import relativedelta
 
 from django.contrib.auth import get_user_model
@@ -10,10 +11,18 @@ from accounts.serializers import AvailavilitySerializer
 from core.constants import *
 from payments.models import UserPaymentMethod
 
-from .models import Application, GradedLesson, Instrument, LessonBooking, LessonRequest
+from .models import Application, Instrument, Lesson, LessonBooking, LessonRequest
 from .utils import PACKAGES
 
 User = get_user_model()
+
+
+def validate_timezone(value):
+    pattern = r'^[+,-]?[\d]{1,2}:[\d]{1,2}$'
+    if not re.match(pattern, value):
+        raise serializers.ValidationError('Provided timezone has invalid format')
+    else:
+        return value
 
 
 class LessonRequestStudentSerializer(serializers.Serializer):
@@ -427,9 +436,9 @@ class LessonBookingRegisterSerializer(serializers.Serializer):
     package = serializers.ChoiceField(choices=list(PACKAGES.keys()))
     payment_method_code = serializers.CharField(max_length=500, required=False)
     payment_method_id = serializers.IntegerField(required=False)
-    date = serializers.DateField(required=False)
-    time = serializers.TimeField(required=False)
-    timezone = serializers.CharField(max_length=20, required=False)
+    date = serializers.DateField(format='%Y-%m-%d', required=False)
+    time = serializers.TimeField(format='%H:%M', required=False)
+    timezone = serializers.CharField(max_length=10, validators=[validate_timezone], required=False)
 
     def to_internal_value(self, data):
         new_data = data.copy()
@@ -469,7 +478,7 @@ class LessonBookingRegisterSerializer(serializers.Serializer):
             raise serializers.ValidationError('payment_method info should be provided')
         if cleaned_data['package'] == PACKAGE_TRIAL:
             if not (keys.get('date') and keys.get('time') and keys.get('timezone')):
-                raise serializers.ValidationError('Schedule for trial lesson was not provided')
+                raise serializers.ValidationError('Schedule for lesson was not provided')
         return cleaned_data
 
 
@@ -662,26 +671,23 @@ class LessonRequestInstructorDashboardSerializer(serializers.ModelSerializer):
         return data
 
 
-class DataGradeLessonSerializer(serializers.ModelSerializer):
-    """To create a GradedLesson registry"""
-    bookingId = serializers.IntegerField(source='booking_id')
-    date = serializers.DateField(source='lesson_date')
+class UpdateLessonSerializer(serializers.ModelSerializer):
+    """To update a lesson"""
+    id = serializers.IntegerField(read_only=True)
     grade = serializers.IntegerField(min_value=1, max_value=3)
+    date = serializers.DateField(format='%Y-%m-%d')
+    time = serializers.TimeField(format='%H:%M')
+    timezone = serializers.CharField(max_length=10, validators=[validate_timezone])
 
     class Meta:
-        model = GradedLesson
-        fields = ('bookingId', 'date', 'grade', 'comment', )
+        model = Lesson
+        fields = ('id', 'grade', 'comment', 'date', 'time', 'timezone', 'scheduled_datetime')
 
-    def validate_date(self, value):
-        if value > timezone.now().date():
-            raise serializers.ValidationError('Date value not valid')
-        else:
-            return value
-
-    def validate_bookingId(self, value):
-        try:
-            LessonBooking.objects.get(id=value)
-        except LessonBooking.DoesNotExist:
-            raise serializers.ValidationError('There is no Lesson Booking with provided id')
-        else:
-            return value
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        time_zone = attrs.get('timezone')
+        if time_zone:
+            if time_zone[0] not in ('+', '-'):
+                time_zone = '+' + time_zone
+            attrs['scheduled_datetime'] = f'{attrs.pop("date")} {attrs.pop("time")}{attrs.pop(time_zone)}'
+        return attrs
