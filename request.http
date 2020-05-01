@@ -558,7 +558,7 @@ or
 	"paymentMethodId": 8,
 	"date": "2020-05-12",
 	"time": "17:30",
-	"timezone": "US/Pacific"
+	"timezone": "-04:00"
 }
 
 ###
@@ -573,11 +573,9 @@ GET localhost:8000/v1/referral-info/WVG3Kw4HaDhEpyag/
 
 ###
 
-POST localhost:8000/v1/grade-lesson/
+POST localhost:8000/v1/grade-lesson/<lesson_id>/
 
 {
-"bookingId": 1,
-"date": "2020-01-05",
 "grade": 3,
 "comment": "Good work! More practice to reach out the excellence"
 }
