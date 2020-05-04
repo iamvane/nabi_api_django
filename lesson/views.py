@@ -360,27 +360,23 @@ class ApplicationBookingView(views.APIView):
             return Response({'message': 'There is not an application with provided id'},
                             status=status.HTTP_400_BAD_REQUEST)
         data = get_booking_data(request.user, package, application)
-        if request.user.payment_methods.count():
-            pm_ser = GetPaymentMethodSerializer(request.user.payment_methods, many=True)
-            data['paymentMethods'] = pm_ser.data
-            data['clientSecret'] = ''
-        else:
-            account = get_account(request.user)
-            if not account.stripe_customer_id:
-                try:
-                    stripe_customer = stripe.Customer.create(email=request.user.email, name=account.display_name)
-                except Exception as e:
-                    return Response({'message': f'Error creating Customer in Stripe:\n {str(e)}'},
-                                    status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                account.stripe_customer_id = stripe_customer.get('id')
-                account.save()
+        pm_ser = GetPaymentMethodSerializer(request.user.payment_methods, many=True)
+        data['paymentMethods'] = pm_ser.data
+        account = get_account(request.user)
+        if not account.stripe_customer_id:
             try:
-                intent = stripe.SetupIntent.create(customer=account.stripe_customer_id)
+                stripe_customer = stripe.Customer.create(email=request.user.email, name=account.display_name)
             except Exception as e:
-                return Response({'message': f'Error creating Intent in Stripe:\n {str(e)}'},
+                return Response({'message': f'Error creating Customer in Stripe:\n {str(e)}'},
                                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            data['clientSecret'] = intent.client_secret
-            data['paymentMethods'] = []
+            account.stripe_customer_id = stripe_customer.get('id')
+            account.save()
+        try:
+            intent = stripe.SetupIntent.create(customer=account.stripe_customer_id)
+        except Exception as e:
+            return Response({'message': f'Error creating Intent in Stripe:\n {str(e)}'},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        data['clientSecret'] = intent.client_secret
         return data
 
     def get(self, request, app_id):
