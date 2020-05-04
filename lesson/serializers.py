@@ -436,9 +436,6 @@ class LessonBookingRegisterSerializer(serializers.Serializer):
     package = serializers.ChoiceField(choices=list(PACKAGES.keys()))
     payment_method_code = serializers.CharField(max_length=500, required=False)
     payment_method_id = serializers.IntegerField(required=False)
-    date = serializers.DateField(format='%Y-%m-%d', required=False)
-    time = serializers.TimeField(format='%H:%M', required=False)
-    timezone = serializers.CharField(max_length=10, validators=[validate_timezone], required=False)
 
     def to_internal_value(self, data):
         new_data = data.copy()
@@ -449,9 +446,6 @@ class LessonBookingRegisterSerializer(serializers.Serializer):
             new_data['payment_method_code'] = new_data.pop('paymentMethodCode')
         if 'paymentMethodId' in keys:
             new_data['payment_method_id'] = new_data.pop('paymentMethodId')
-        user = User.objects.get(id=new_data['user_id'])
-        if user.payment_methods.count() == 0:
-            new_data['package'] = PACKAGE_TRIAL
         return super().to_internal_value(new_data)
 
     def validate_user_id(self, value):
@@ -471,14 +465,19 @@ class LessonBookingRegisterSerializer(serializers.Serializer):
             raise serializers.ValidationError('There is not payment method with provided id')
         return value
 
+    def validate_package(self, value):
+        user = User.objects.get(id=self.initial_data['user_id'])
+        if user.lesson_bookings.count() == 0:
+            self.initial_data['package'] = PACKAGE_TRIAL
+        elif value == PACKAGE_TRIAL:
+            raise serializers.ValidationError('Trial is not valid package for this user')
+        return value
+
     def validate(self, attrs):
         cleaned_data = super().validate(attrs)
         keys = dict.fromkeys(cleaned_data, 1)
         if not (keys.get('payment_method_code', 0) ^ keys.get('payment_method_id', 0)):
             raise serializers.ValidationError('payment_method info should be provided')
-        if cleaned_data['package'] == PACKAGE_TRIAL:
-            if not (keys.get('date') and keys.get('time') and keys.get('timezone')):
-                raise serializers.ValidationError('Schedule for lesson was not provided')
         return cleaned_data
 
 

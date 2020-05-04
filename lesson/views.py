@@ -287,14 +287,6 @@ class LessonBookingRegisterView(views.APIView):
                                                      operation_id=st_payment.get('id'))
                 new_status_booking = LessonBooking.PAID
             with transaction.atomic():
-                if booking_values_data.get('freeTrial'):
-                    # register trial lesson data here, to assure registration together with changes in booking
-                    time_zone = serializer.validated_data.get('timezone')
-                    if time_zone[0] not in ('+', '-'):
-                        time_zone = '+' + time_zone
-                    Lesson.objects.create(booking=booking,
-                                          scheduled_datetime=f'{serializer.validated_data.get("date")} {serializer.validated_data.get("time")}{time_zone}'
-                                          )
                 for k, v in booking_values_data.items():
                     booking_values_data[k] = str(v)
                 booking.details = booking_values_data
@@ -321,13 +313,13 @@ class LessonBookingRegisterView(views.APIView):
                             user_benefit_ids.append(user_benefit.id)
                         user_benefit.save()
                 else:
-                    if benefit_data.get('amount'):
+                    if benefit_data.get('amount'):   # It's assumed that amount discount is benefit only, not offer
                         user_benefit = request.user.benefits.filter(status=BENEFIT_READY,
                                                                     benefit_type=BENEFIT_AMOUNT).first()
                         user_benefit.status = BENEFIT_USED
                         user_benefit.save()
                         user_benefit_ids.append(user_benefit.id)
-                    if benefit_data.get('discount'):
+                    if benefit_data.get('discount') and benefit_data.get('source') == 'benefit':
                         user_benefit = request.user.benefits.filter(status=BENEFIT_READY,
                                                                     benefit_type=BENEFIT_DISCOUNT).first()
                         user_benefit.status = BENEFIT_USED
@@ -352,6 +344,7 @@ class LessonBookingRegisterView(views.APIView):
             send_booking_alert.delay(booking.id, task_log.id)
             return Response({'message': 'success'}, status=status.HTTP_200_OK)
         else:
+            print(serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
