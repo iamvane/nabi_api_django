@@ -550,17 +550,6 @@ or
 	"paymentMethodId": 8
 }
 
-or
-
-{
-	"applicationId": 1,
-	"package": "maestro",
-	"paymentMethodId": 8,
-	"date": "2020-05-12",
-	"time": "17:30",
-	"timezone": "-04:00"
-}
-
 ###
 
 GET localhost:8000/v1/dashboard/
@@ -573,7 +562,7 @@ GET localhost:8000/v1/referral-info/WVG3Kw4HaDhEpyag/
 
 ###
 
-POST localhost:8000/v1/grade-lesson/<lesson_id>/
+PUT localhost:8000/v1/grade-lesson/<lesson_id>/
 
 {
 "grade": 3,

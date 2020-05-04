@@ -406,9 +406,9 @@ class ApplicationBookingView(views.APIView):
             return Response(resp, status=status.HTTP_200_OK)
 
 
-class GradeLessonView(views.APIView):
+class UpdateLessonView(views.APIView):
 
-    def post(self, request, lesson_id):
+    def put(self, request, lesson_id):
         try:
             lesson = Lesson.objects.get(id=lesson_id)
         except Lesson.DoesNotExist:
