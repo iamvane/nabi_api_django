@@ -107,7 +107,7 @@ def send_invoice_booking(booking, payment):
     if res and res.groups():
         package_name = res.groups()[0]
     params = {
-        'transaction_id': payment.charge_id,
+        'transaction_id': payment.operation_id,
         'package_name': package_name,
         'amount': str(payment.amount),
         'date': payment.payment_date.strftime('%m/%d/%Y')
