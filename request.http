@@ -542,14 +542,6 @@ POST localhost:8000/v1/confirm-booking/
 	"paymentMethodCode": "pm_1GZ1RNKKgfFa5BBCGeLVyC0r"
 }
 
-or
-
-{
-	"applicationId": 1,
-	"package": "maestro",
-	"paymentMethodId": 8
-}
-
 ###
 
 GET localhost:8000/v1/dashboard/
