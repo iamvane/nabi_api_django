@@ -248,10 +248,12 @@ class LessonBookingRegisterView(views.APIView):
                 lesson_qty = PACKAGES[package_name].get('lesson_qty')
                 amount = booking_values_data['total']
             booking = LessonBooking.objects.filter(user_id=serializer.validated_data['user_id'],
-                                                   quantity=lesson_qty,
                                                    application_id=serializer.validated_data['application_id'],
                                                    status=LessonBooking.REQUESTED).first()
-            if not booking:
+            if booking:
+                booking.quantity = lesson_qty
+                booking.save()
+            else:
                 booking = LessonBooking.objects.create(user_id=serializer.validated_data['user_id'],
                                                        quantity=lesson_qty,
                                                        total_amount=amount,
