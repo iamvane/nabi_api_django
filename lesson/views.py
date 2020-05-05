@@ -21,6 +21,7 @@ from accounts.utils import get_stripe_customer_id
 from core.constants import *
 from core.models import TaskLog
 from core.permissions import AccessForInstructor, AccessForParentOrStudent
+from core.utils import send_admin_email
 from payments.models import Payment
 from payments.serializers import GetPaymentMethodSerializer
 
@@ -355,12 +356,20 @@ class ApplicationBookingView(views.APIView):
         data = get_booking_data(request.user, package, application)
         account = get_account(request.user)
         if account.stripe_customer_id:
-            res_list = stripe.PaymentMethod.list(customer='cus_HCSlkXpaF8Sg5U', type='card')
-            pm_ser = GetPaymentMethodSerializer(data=res_list['data'], many=True)
+            try:
+                stripe_resp = stripe.PaymentMethod.list(customer=account.stripe_customer_id, type='card')
+            except Exception as e:
+                stripe_resp = {'data': []}
+                send_admin_email('Could not get payment methods',
+                                 f"Request to Stripe for payment methods of customer {account.stripe_customer_id} ({request.user.email})"
+                                 f" generates an error: {str(e)}")
+            pm_ser = GetPaymentMethodSerializer(data=stripe_resp['data'], many=True)
             if pm_ser.is_valid():
                 data['paymentMethods'] = pm_ser.data
             else:
-                # send email admin here
+                send_admin_email('Error parsing method payment data',
+                                 f"The following errors were obtained: {pm_ser.errors}"
+                                 f" when following data {stripe_resp['data']} was used in GetPaymentMethodSerializer")
                 data['paymentMethods'] = []
         else:
             try:
