@@ -355,6 +355,20 @@ class ApplicationBookingView(views.APIView):
                             status=status.HTTP_400_BAD_REQUEST)
         data = get_booking_data(request.user, package, application)
         account = get_account(request.user)
+        if not account.stripe_customer_id:
+            # try to get from Stripe
+            try:
+                resp_stripe = stripe.Customer.list()
+            except Exception:
+                resp_stripe = {'data': []}
+            cus_id = ''
+            for cus in resp_stripe['data']:
+                if cus.get('email', '') == account.user.email:
+                    cus_id = cus.get('id', '')
+                    break
+            if cus_id:
+                account.stripe_customer_id = cus_id
+                account.save()
         if account.stripe_customer_id:
             try:
                 stripe_resp = stripe.PaymentMethod.list(customer=account.stripe_customer_id, type='card')
