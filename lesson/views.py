@@ -21,7 +21,7 @@ from accounts.utils import get_stripe_customer_id
 from core.constants import *
 from core.models import TaskLog
 from core.permissions import AccessForInstructor, AccessForParentOrStudent
-from payments.models import Payment, UserPaymentMethod
+from payments.models import Payment
 from payments.serializers import GetPaymentMethodSerializer
 
 from . import serializers as sers
@@ -225,21 +225,14 @@ class LessonBookingRegisterView(views.APIView):
     permission_classes = (IsAuthenticated, AccessForParentOrStudent)
 
     def post(self, request):
-        request.data['user_id'] = request.user.id
+        request.data['userId'] = request.user.id
         st_customer_id = get_stripe_customer_id(request.user)
         serializer = sers.LessonBookingRegisterSerializer(data=request.data)
         if serializer.is_valid():
             package_name = serializer.validated_data['package']
             booking_values_data = get_booking_data(request.user, package_name,
-                                                   Application.objects.get(id=serializer.validated_data['application_id'])
+                                                   Application.objects.get(id=serializer.validated_data['applicationId'])
                                                    )
-            if serializer.validated_data.get('payment_method_code'):
-                st_payment_method_id = serializer.validated_data['payment_method_code']
-                payment_method, _ = UserPaymentMethod.objects.get_or_create(user=request.user,
-                                                                            stripe_payment_method_id=st_payment_method_id)
-            else:
-                payment_method = UserPaymentMethod.objects.get(id=serializer.validated_data.get('payment_method_id'))
-                st_payment_method_id = payment_method.stripe_payment_method_id
             # create/get booking and make the payment
             if booking_values_data.get('freeTrial'):
                 lesson_qty = 1
@@ -247,17 +240,17 @@ class LessonBookingRegisterView(views.APIView):
             else:
                 lesson_qty = PACKAGES[package_name].get('lesson_qty')
                 amount = booking_values_data['total']
-            booking = LessonBooking.objects.filter(user_id=serializer.validated_data['user_id'],
-                                                   application_id=serializer.validated_data['application_id'],
+            booking = LessonBooking.objects.filter(user_id=serializer.validated_data['userId'],
+                                                   application_id=serializer.validated_data['applicationId'],
                                                    status=LessonBooking.REQUESTED).first()
             if booking:
                 booking.quantity = lesson_qty
                 booking.save()
             else:
-                booking = LessonBooking.objects.create(user_id=serializer.validated_data['user_id'],
+                booking = LessonBooking.objects.create(user_id=serializer.validated_data['userId'],
                                                        quantity=lesson_qty,
                                                        total_amount=amount,
-                                                       application_id=serializer.validated_data['application_id'],
+                                                       application_id=serializer.validated_data['applicationId'],
                                                        status=LessonBooking.REQUESTED)
             if booking_values_data.get('freeTrial'):
                 # set values to future usage
@@ -265,7 +258,6 @@ class LessonBookingRegisterView(views.APIView):
                 new_status_booking = LessonBooking.TRIAL
             else:
                 payment = Payment.objects.filter(user=request.user, amount=booking.total_amount,
-                                                 payment_method_id=payment_method.id,
                                                  status=PY_REGISTERED).first()
                 if not payment:
                     # make payment and register it
@@ -273,7 +265,7 @@ class LessonBookingRegisterView(views.APIView):
                         st_payment = stripe.PaymentIntent.create(amount=int(round(booking.total_amount * 100, 0)),
                                                                  currency='usd',
                                                                  customer=st_customer_id,
-                                                                 payment_method=st_payment_method_id,
+                                                                 payment_method=serializer.validated_data['paymentMethodCode'],
                                                                  off_session=True,
                                                                  confirm=True)
                     except stripe.error.InvalidRequestError as error:
@@ -284,7 +276,7 @@ class LessonBookingRegisterView(views.APIView):
                         return Response({'message': str(ex)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                     # register the charge made
                     payment = Payment.objects.create(user=request.user, amount=booking.total_amount,
-                                                     payment_method_id=payment_method.id,
+                                                     stripe_payment_method=serializer.validated_data['paymentMethodCode'],
                                                      description='Lesson booking with package {}'.format(package_name.capitalize()),
                                                      operation_id=st_payment.get('id'))
                 new_status_booking = LessonBooking.PAID
@@ -346,7 +338,6 @@ class LessonBookingRegisterView(views.APIView):
             send_booking_alert.delay(booking.id, task_log.id)
             return Response({'message': 'success'}, status=status.HTTP_200_OK)
         else:
-            print(serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -362,10 +353,16 @@ class ApplicationBookingView(views.APIView):
             return Response({'message': 'There is not an application with provided id'},
                             status=status.HTTP_400_BAD_REQUEST)
         data = get_booking_data(request.user, package, application)
-        pm_ser = GetPaymentMethodSerializer(request.user.payment_methods, many=True)
-        data['paymentMethods'] = pm_ser.data
         account = get_account(request.user)
-        if not account.stripe_customer_id:
+        if account.stripe_customer_id:
+            res_list = stripe.PaymentMethod.list(customer='cus_HCSlkXpaF8Sg5U', type='card')
+            pm_ser = GetPaymentMethodSerializer(data=res_list['data'], many=True)
+            if pm_ser.is_valid():
+                data['paymentMethods'] = pm_ser.data
+            else:
+                # send email admin here
+                data['paymentMethods'] = []
+        else:
             try:
                 stripe_customer = stripe.Customer.create(email=request.user.email, name=account.display_name)
             except Exception as e:
@@ -373,6 +370,7 @@ class ApplicationBookingView(views.APIView):
                                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             account.stripe_customer_id = stripe_customer.get('id')
             account.save()
+            data['paymentMethods'] = []
         try:
             intent = stripe.SetupIntent.create(customer=account.stripe_customer_id)
         except Exception as e:

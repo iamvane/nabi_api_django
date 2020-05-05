@@ -1,6 +1,8 @@
 import re
+import stripe
 from dateutil import relativedelta
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
@@ -8,13 +10,14 @@ from rest_framework import serializers
 
 from accounts.models import Instructor, TiedStudent, get_account
 from accounts.serializers import AvailavilitySerializer
+from accounts.utils import get_stripe_customer_id
 from core.constants import *
-from payments.models import UserPaymentMethod
 
 from .models import Application, Instrument, Lesson, LessonBooking, LessonRequest
 from .utils import PACKAGES
 
 User = get_user_model()
+stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
 def validate_timezone(value):
@@ -431,42 +434,36 @@ class LessonRequestListItemSerializer(serializers.ModelSerializer):
 
 class LessonBookingRegisterSerializer(serializers.Serializer):
     """Serializer for registration of a lesson booking"""
-    application_id = serializers.IntegerField()
-    user_id = serializers.IntegerField()
+    applicationId = serializers.IntegerField()
+    userId = serializers.IntegerField()
     package = serializers.ChoiceField(choices=list(PACKAGES.keys()))
-    payment_method_code = serializers.CharField(max_length=500, required=False)
-    payment_method_id = serializers.IntegerField(required=False)
+    paymentMethodCode = serializers.CharField(max_length=500, required=False)
 
-    def to_internal_value(self, data):
-        new_data = data.copy()
-        keys = data.keys()
-        if 'applicationId' in keys:
-            new_data['application_id'] = new_data.pop('applicationId')
-        if 'paymentMethodCode' in keys:
-            new_data['payment_method_code'] = new_data.pop('paymentMethodCode')
-        if 'paymentMethodId' in keys:
-            new_data['payment_method_id'] = new_data.pop('paymentMethodId')
-        return super().to_internal_value(new_data)
-
-    def validate_user_id(self, value):
+    def validate_userId(self, value):
         if not User.objects.filter(id=value).exists():
             raise serializers.ValidationError('There is not User with provided id')
         else:
             return value
 
-    def validate_application_id(self, value):
+    def validate_applicationId(self, value):
         if not Application.objects.filter(id=value).exists():
             raise serializers.ValidationError('There is not Application with provided id')
         else:
             return value
 
-    def validate_payment_method_id(self, value):
-        if value and not UserPaymentMethod.objects.filter(user_id=self.initial_data.get('user_id'), id=value).exists():
-            raise serializers.ValidationError('There is not payment method with provided id')
+    def validate_paymentMethodCode(self, value):
+        user = User.objects.get(id=self.initial_data['userId'])
+        customer_id = get_stripe_customer_id(user)
+        try:
+            pm = stripe.PaymentMethod.retrieve(value)
+        except stripe.error.InvalidRequestError:
+            raise serializers.ValidationError('There is not payment method with provided code')
+        if not customer_id or not pm or (pm.get('customer', '') != customer_id):
+            raise serializers.ValidationError('Wrong payment method')
         return value
 
     def validate_package(self, value):
-        user = User.objects.get(id=self.initial_data['user_id'])
+        user = User.objects.get(id=self.initial_data['userId'])
         if user.lesson_bookings.count() == 0:
             self.initial_data['package'] = PACKAGE_TRIAL
         elif value == PACKAGE_TRIAL:
@@ -476,7 +473,7 @@ class LessonBookingRegisterSerializer(serializers.Serializer):
     def validate(self, attrs):
         cleaned_data = super().validate(attrs)
         keys = dict.fromkeys(cleaned_data, 1)
-        if not (keys.get('payment_method_code', 0) ^ keys.get('payment_method_id', 0)):
+        if not keys.get('paymentMethodCode', 0):
             raise serializers.ValidationError('payment_method info should be provided')
         return cleaned_data
 
