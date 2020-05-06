@@ -69,6 +69,7 @@ class LessonBooking(models.Model):
     STATUSES = (
         (REQUESTED, REQUESTED),
         (PAID, PAID),
+        (TRIAL, TRIAL),
         (CANCELLED, CANCELLED),
     )
     user = models.ForeignKey(User, on_delete=models.PROTECT, related_name='lesson_bookings')
