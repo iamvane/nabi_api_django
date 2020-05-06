@@ -1,5 +1,8 @@
+import re
+import stripe
 from dateutil import relativedelta
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
@@ -7,12 +10,22 @@ from rest_framework import serializers
 
 from accounts.models import Instructor, TiedStudent, get_account
 from accounts.serializers import AvailavilitySerializer
+from accounts.utils import get_stripe_customer_id
 from core.constants import *
 
-from .models import Application, GradedLesson, Instrument, LessonBooking, LessonRequest
+from .models import Application, Instrument, Lesson, LessonBooking, LessonRequest
 from .utils import PACKAGES
 
 User = get_user_model()
+stripe.api_key = settings.STRIPE_SECRET_KEY
+
+
+def validate_timezone(value):
+    pattern = r'^[+,-]?[\d]{1,2}:[\d]{1,2}$'
+    if not re.match(pattern, value):
+        raise serializers.ValidationError('Provided timezone has invalid format')
+    else:
+        return value
 
 
 class LessonRequestStudentSerializer(serializers.Serializer):
@@ -421,35 +434,48 @@ class LessonRequestListItemSerializer(serializers.ModelSerializer):
 
 class LessonBookingRegisterSerializer(serializers.Serializer):
     """Serializer for registration of a lesson booking"""
-    application_id = serializers.IntegerField()
-    user_id = serializers.IntegerField()
+    applicationId = serializers.IntegerField()
+    userId = serializers.IntegerField()
     package = serializers.ChoiceField(choices=list(PACKAGES.keys()))
-    stripe_token = serializers.CharField(max_length=500)
+    paymentMethodCode = serializers.CharField(max_length=500, required=False)
 
-    def to_internal_value(self, data):
-        new_data = {}
-        keys = data.keys()
-        if 'applicationId' in keys:
-            new_data['application_id'] = data.get('applicationId')
-        if 'user_id' in keys:
-            new_data['user_id'] = data.get('user_id')
-        if 'package' in keys:
-            new_data['package'] = data.get('package')
-        if 'stripeToken' in keys:
-            new_data['stripe_token'] = data.get('stripeToken')
-        return super().to_internal_value(new_data)
-
-    def validate_user_id(self, value):
+    def validate_userId(self, value):
         if not User.objects.filter(id=value).exists():
             raise serializers.ValidationError('There is not User with provided id')
         else:
             return value
 
-    def validate_application_id(self, value):
+    def validate_applicationId(self, value):
         if not Application.objects.filter(id=value).exists():
             raise serializers.ValidationError('There is not Application with provided id')
         else:
             return value
+
+    def validate_paymentMethodCode(self, value):
+        user = User.objects.get(id=self.initial_data['userId'])
+        customer_id = get_stripe_customer_id(user)
+        try:
+            pm = stripe.PaymentMethod.retrieve(value)
+        except stripe.error.InvalidRequestError:
+            raise serializers.ValidationError('There is not payment method with provided code')
+        if not customer_id or not pm or (pm.get('customer', '') != customer_id):
+            raise serializers.ValidationError('Wrong payment method')
+        return value
+
+    def validate_package(self, value):
+        user = User.objects.get(id=self.initial_data['userId'])
+        if user.lesson_bookings.count() == 0:
+            self.initial_data['package'] = PACKAGE_TRIAL
+        elif value == PACKAGE_TRIAL:
+            raise serializers.ValidationError('Trial is not valid package for this user')
+        return value
+
+    def validate(self, attrs):
+        cleaned_data = super().validate(attrs)
+        keys = dict.fromkeys(cleaned_data, 1)
+        if not keys.get('paymentMethodCode', 0):
+            raise serializers.ValidationError('payment_method info should be provided')
+        return cleaned_data
 
 
 class LessonBookingStudentDashboardSerializer(serializers.ModelSerializer):
@@ -641,26 +667,23 @@ class LessonRequestInstructorDashboardSerializer(serializers.ModelSerializer):
         return data
 
 
-class DataGradeLessonSerializer(serializers.ModelSerializer):
-    """To create a GradedLesson registry"""
-    bookingId = serializers.IntegerField(source='booking_id')
-    date = serializers.DateField(source='lesson_date')
+class UpdateLessonSerializer(serializers.ModelSerializer):
+    """To update a lesson"""
+    id = serializers.IntegerField(read_only=True)
     grade = serializers.IntegerField(min_value=1, max_value=3)
+    date = serializers.DateField(format='%Y-%m-%d')
+    time = serializers.TimeField(format='%H:%M')
+    timezone = serializers.CharField(max_length=10, validators=[validate_timezone])
 
     class Meta:
-        model = GradedLesson
-        fields = ('bookingId', 'date', 'grade', 'comment', )
+        model = Lesson
+        fields = ('id', 'grade', 'comment', 'date', 'time', 'timezone', 'scheduled_datetime')
 
-    def validate_date(self, value):
-        if value > timezone.now().date():
-            raise serializers.ValidationError('Date value not valid')
-        else:
-            return value
-
-    def validate_bookingId(self, value):
-        try:
-            LessonBooking.objects.get(id=value)
-        except LessonBooking.DoesNotExist:
-            raise serializers.ValidationError('There is no Lesson Booking with provided id')
-        else:
-            return value
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        time_zone = attrs.get('timezone')
+        if time_zone:
+            if time_zone[0] not in ('+', '-'):
+                time_zone = '+' + time_zone
+            attrs['scheduled_datetime'] = f'{attrs.pop("date")} {attrs.pop("time")}{attrs.pop(time_zone)}'
+        return attrs

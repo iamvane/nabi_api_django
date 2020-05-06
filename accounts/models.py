@@ -38,6 +38,7 @@ class IUserAccount(models.Model):
     email_verified_at = models.DateTimeField(blank=True, null=True)
     reference = models.CharField(max_length=200, blank=True)
     terms_accepted = models.BooleanField(default=False)
+    stripe_customer_id = models.CharField(max_length=200, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
 
@@ -380,7 +381,8 @@ class Instructor(IUserAccount):
     def lesson_bookings(self):
         """Return a list of lesson bookings related to application of this instructor"""
         from lesson.models import LessonBooking
-        return [item for item in LessonBooking.objects.filter(application__instructor=self, status=LessonBooking.PAID)
+        return [item for item in LessonBooking.objects.filter(application__instructor=self,
+                                                              status__in=[LessonBooking.PAID, LessonBooking.TRIAL])
             .order_by('id')]
 
 

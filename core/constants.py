@@ -288,13 +288,21 @@ SERVICES_CHOICES = (
 
 # --- statuses for payment ---
 PY_REGISTERED = 'registered'
-PY_PROCESSED = 'processed'
+PY_PROCESSED = 'processed'   # ToDo: to delete it
+PY_APPLIED = 'applied'
 PY_CANCELLED = 'cancelled'
 PY_STATUSES = (
     (PY_REGISTERED, PY_REGISTERED),
     (PY_PROCESSED, PY_PROCESSED),
+    (PY_APPLIED, PY_APPLIED),
     (PY_CANCELLED, PY_CANCELLED),
 )
+
+# --- PACKAGES FOR LESSONS ---
+PACKAGE_ARTIST = 'artist'
+PACKAGE_MAESTRO = 'maestro'
+PACKAGE_VIRTUOSO = 'virtuoso'
+PACKAGE_TRIAL = 'trial'
 
 HOSTNAME = "www.nabimusic.com"
 HOSTNAME_PROTOCOL = "http://" + HOSTNAME

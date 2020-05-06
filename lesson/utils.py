@@ -5,14 +5,16 @@ from decimal import Decimal
 
 from django.conf import settings
 
-from core.constants import BENEFIT_AMOUNT, BENEFIT_DISCOUNT, BENEFIT_LESSON, BENEFIT_READY
+from core.constants import (BENEFIT_AMOUNT, BENEFIT_DISCOUNT, BENEFIT_LESSON, BENEFIT_READY,
+                            PACKAGE_ARTIST, PACKAGE_MAESTRO, PACKAGE_TRIAL, PACKAGE_VIRTUOSO)
 from core.utils import send_admin_email, send_email
 from notices.models import Offer
 
 PACKAGES = {
-    'artist': {'lesson_qty': 4, 'discount': 0},
-    'maestro': {'lesson_qty': 8, 'discount': 0},
-    'virtuoso': {'lesson_qty': 12, 'discount': 5},
+    PACKAGE_ARTIST: {'lesson_qty': 4, 'discount': 0},
+    PACKAGE_MAESTRO: {'lesson_qty': 8, 'discount': 0},
+    PACKAGE_VIRTUOSO: {'lesson_qty': 12, 'discount': 5},
+    PACKAGE_TRIAL: {'lesson_qty': 1, 'discount': 0},
 }
 
 
@@ -105,7 +107,7 @@ def send_invoice_booking(booking, payment):
     if res and res.groups():
         package_name = res.groups()[0]
     params = {
-        'transaction_id': payment.charge_id,
+        'transaction_id': payment.operation_id,
         'package_name': package_name,
         'amount': str(payment.amount),
         'date': payment.payment_date.strftime('%m/%d/%Y')
@@ -230,9 +232,9 @@ def get_booking_data(user, package_name, application):
         data['lessonsPrice'] = application.rate * (PACKAGES[package_name].get('lesson_qty') - 1)
     else:
         data['lessonsPrice'] = application.rate * PACKAGES[package_name].get('lesson_qty')
-    data['processingFee'] = Decimal('2.9000')
-    sub_total = data['lessonsPrice'] + data.get('placementFee', 0)
-    data['subTotal'] = round(sub_total * (Decimal('100.0000') + data.get('processingFee')) / 100, 2)
+    # SubTotal is amount to pay if there is not discounts
+    sub_total = data['lessonsPrice'] + data.get('placementFee', 0)   # this variable does not include processingFee
+    data['subTotal'] = round(Decimal('1.0290') * sub_total + Decimal('0.30'), 2)   # to display, add processing fee
     if data.get('discounts'):
         total = round(sub_total * (Decimal('100.0000') - data.get('discounts')) / Decimal('100.0'), 4)
     else:
@@ -241,5 +243,6 @@ def get_booking_data(user, package_name, application):
     if package_name == 'virtuoso':
         data['virtuosoDiscount'] = PACKAGES[package_name].get('discount')
         total = round(total * (Decimal('100.0000') - data['virtuosoDiscount']) / 100, 4)
-    data['total'] = round(total * (100 + data.get('processingFee')) / 100, 2)
+    data['processingFee'] = round(Decimal('0.0290') * total + Decimal('0.30'), 2)
+    data['total'] = round(total + data['processingFee'], 2)
     return data

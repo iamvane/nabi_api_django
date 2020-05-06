@@ -539,7 +539,7 @@ POST localhost:8000/v1/confirm-booking/
 {
 	"applicationId": 1,
 	"package": "maestro",
-	"stripeToken": "tok_1FmQTxKKgfFa5BBCvtUJE1iU"
+	"paymentMethodCode": "pm_1GZ1RNKKgfFa5BBCGeLVyC0r"
 }
 
 ###
@@ -554,11 +554,9 @@ GET localhost:8000/v1/referral-info/WVG3Kw4HaDhEpyag/
 
 ###
 
-POST localhost:8000/v1/grade-lesson/
+PUT localhost:8000/v1/grade-lesson/<lesson_id>/
 
 {
-"bookingId": 1,
-"date": "2020-01-05",
 "grade": 3,
 "comment": "Good work! More practice to reach out the excellence"
 }

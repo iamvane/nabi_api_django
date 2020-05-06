@@ -776,7 +776,8 @@ class DashboardView(views.APIView):
             data.update({'requests': ser_lr.data})
         elif request.user.is_parent():
             serializer = LessonBookingParentDashboardSerializer(
-                request.user.lesson_bookings.filter(status=LessonBooking.PAID).order_by('id'), many=True
+                request.user.lesson_bookings.filter(status__in=[LessonBooking.PAID, LessonBooking.TRIAL]).order_by('id'),
+                many=True
             )
             data = {'bookings': serializer.data}
             ser_lr = LessonRequestParentDashboardSerializer(
@@ -785,7 +786,8 @@ class DashboardView(views.APIView):
             data.update({'requests': ser_lr.data})
         else:
             serializer = LessonBookingStudentDashboardSerializer(
-                request.user.lesson_bookings.filter(status=LessonBooking.PAID).order_by('id'), many=True
+                request.user.lesson_bookings.filter(status__in=[LessonBooking.PAID, LessonBooking.TRIAL]).order_by('id'),
+                many=True
             )
             data = {'bookings': serializer.data}
             ser_rl = LessonRequestStudentDashboardSerializer(

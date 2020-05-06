@@ -64,10 +64,12 @@ class Application(models.Model):
 class LessonBooking(models.Model):
     REQUESTED = 'requested'
     PAID = 'paid'
+    TRIAL = 'trial'
     CANCELLED = 'cancelled'
     STATUSES = (
         (REQUESTED, REQUESTED),
         (PAID, PAID),
+        (TRIAL, TRIAL),
         (CANCELLED, CANCELLED),
     )
     user = models.ForeignKey(User, on_delete=models.PROTECT, related_name='lesson_bookings')
@@ -84,12 +86,22 @@ class LessonBooking(models.Model):
 
     def remaining_lessons(self):
         """How many lessons remain from booking"""
-        return self.quantity - self.graded_lessons.count()
+        return self.quantity - self.lessons.filter(grade__isnull=False).count()
 
 
-class GradedLesson(models.Model):
-    booking = models.ForeignKey(LessonBooking, on_delete=models.CASCADE, related_name='graded_lessons')
-    grade = models.PositiveSmallIntegerField()
-    lesson_date = models.DateField()
-    comment = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
+class Lesson(models.Model):
+    REQUESTED = 'requested'
+    CHANGED = 'changed'
+    AGREED = 'agreed'
+    SCHEDULE_STATUSES = (
+        (REQUESTED, REQUESTED),
+        (CHANGED, CHANGED),
+        (AGREED, AGREED),
+    )
+    booking = models.ForeignKey(LessonBooking, on_delete=models.CASCADE, related_name='lessons')
+    scheduled_datetime = models.DateTimeField(blank=True, null=True)
+    scheduled_status = models.CharField(max_length=50, choices=SCHEDULE_STATUSES, default=REQUESTED)
+    grade = models.PositiveSmallIntegerField(blank=True, null=True)
+    comment = models.TextField(blank=True)   # added on grade
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
