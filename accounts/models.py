@@ -381,7 +381,8 @@ class Instructor(IUserAccount):
     def lesson_bookings(self):
         """Return a list of lesson bookings related to application of this instructor"""
         from lesson.models import LessonBooking
-        return [item for item in LessonBooking.objects.filter(application__instructor=self, status=LessonBooking.PAID)
+        return [item for item in LessonBooking.objects.filter(application__instructor=self,
+                                                              status__in=[LessonBooking.PAID, LessonBooking.TRIAL])
             .order_by('id')]
 
 
