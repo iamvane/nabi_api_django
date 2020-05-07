@@ -425,7 +425,18 @@ class ApplicationBookingView(views.APIView):
             return Response(resp, status=status.HTTP_200_OK)
 
 
-class UpdateLessonView(views.APIView):
+class LessonCreateView(views.APIView):
+
+    def post(self, request):
+        ser = sers.CreateLessonSerializer(data=request.data)
+        if ser.is_valid():
+            ser.save()
+            return Response({'message': 'success'}, status=status.HTTP_200_OK)
+        else:
+            return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class LessonUpdateView(views.APIView):
 
     def put(self, request, lesson_id):
         try:
@@ -436,6 +447,6 @@ class UpdateLessonView(views.APIView):
         ser_data = sers.UpdateLessonSerializer(data=request.data, instance=lesson, partial=True)
         if ser_data.is_valid():
             ser_data.save()
-            return Response({'message': 'Your grade was submitted successfully'}, status=status.HTTP_200_OK)
+            return Response({'message': 'Lesson updated successfully'}, status=status.HTTP_200_OK)
         else:
             return Response(ser_data.errors, status=status.HTTP_400_BAD_REQUEST)
