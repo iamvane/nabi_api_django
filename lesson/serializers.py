@@ -701,7 +701,20 @@ class UpdateLessonSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Lesson
-        fields = ('id', 'grade', 'comment', 'date', 'time', 'timezone', 'scheduled_datetime')
+        fields = ('id', 'grade', 'comment', 'date', 'status', 'time', 'timezone', 'scheduled_datetime')
+
+    def validate_grade(self, value):
+        if self.instance.status in (Lesson.MISSED, Lesson.COMPLETE):
+            raise serializers.ValidationError('This lesson can not be graded')
+        else:
+            return value
+
+    def validate_status(self, value):
+        valid_statuses = (Lesson.SCHEDULED, Lesson.MISSED)
+        if self.instance.status not in valid_statuses or value not in valid_statuses:
+            raise serializers.ValidationError('That change of status is not allowed')
+        else:
+            return value
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
@@ -721,3 +734,8 @@ class UpdateLessonSerializer(serializers.ModelSerializer):
         if (keys.get('grade', 0) + keys.get('comment', 0)) == 1:
             raise serializers.ValidationError('Incomplete data to grade the lesson')
         return attrs
+
+    def update(self, instance, validated_data):
+        if 'grade' in validated_data.keys():
+            validated_data['status'] = Lesson.COMPLETE
+        return super().update(instance, validated_data)
