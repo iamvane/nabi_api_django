@@ -1,3 +1,5 @@
+import os
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.gis.db.models.functions import Distance
@@ -1064,3 +1066,19 @@ class ReferralDashboardSerializer(serializers.ModelSerializer):
     def get_name(self, instance):
         account = get_account(instance.provider)
         return account.display_name
+
+
+class VideoInstructorSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Instructor
+        fields = ['video', ]
+
+    def update(self, instance, validated_data):
+        if instance.video and instance.video.path:
+            # delete existing video file
+            if settings.AWS_S3_USAGE:
+                pass
+            else:
+                os.remove(instance.video.path)
+        return super().update(instance, validated_data)
