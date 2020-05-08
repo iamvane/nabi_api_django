@@ -578,7 +578,8 @@ PUT localhost:8000/lessons/<lesson_id>/
 }
 or
 {
-"grade": 2
+"grade": 2,
+"comment": "Good work!"
 }
 or
 {
