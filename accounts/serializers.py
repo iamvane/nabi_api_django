@@ -1,3 +1,4 @@
+import boto3
 import os
 
 from django.conf import settings
@@ -1075,10 +1076,16 @@ class VideoInstructorSerializer(serializers.ModelSerializer):
         fields = ['video', ]
 
     def update(self, instance, validated_data):
-        if instance.video and instance.video.path:
-            # delete existing video file
+        # delete existing video file
+        if instance.video:
             if settings.AWS_S3_USAGE:
-                pass
+                try:
+                    instance.video.storage.delete(instance.video.name)
+                except Exception:
+                    pass
             else:
-                os.remove(instance.video.path)
+                try:
+                    os.remove(instance.video.path)
+                except Exception:
+                    pass
         return super().update(instance, validated_data)
