@@ -587,3 +587,11 @@ or
 }
 
 ###
+
+POST upload-video-profile/
+
+Body: form-data
+Key: video
+Value: file to upload
+
+###
