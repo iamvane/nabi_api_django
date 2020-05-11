@@ -311,6 +311,8 @@ class Instructor(IUserAccount):
                 list_fields.append('location')
             if not self.avatar:
                 list_fields.append('avatar')
+            if not self.video:
+                list_fields.append('video')
             if self.user.reference_requests.count() == 0:
                 list_fields.append('references')
             try:
@@ -359,6 +361,8 @@ class Instructor(IUserAccount):
                 list_fields.append('location')
             if not self.avatar:
                 list_fields.append('avatar')
+            if not self.video:
+                list_fields.append('video')
             if self.user.reference_requests.count() == 0:
                 list_fields.append('references')
             try:
