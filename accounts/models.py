@@ -395,6 +395,14 @@ class Instructor(IUserAccount):
                                                               status__in=[LessonBooking.PAID, LessonBooking.TRIAL])
             .order_by('id')]
 
+    def get_video_url(self):
+        if not self.video:
+            return ''
+        if settings.AWS_S3_USAGE:
+            return self.video.url
+        else:
+            return self.video.path
+
 
 class Education(models.Model):
     instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE, related_name='education')
