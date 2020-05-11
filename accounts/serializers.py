@@ -957,6 +957,7 @@ class InstructorDetailSerializer(serializers.ModelSerializer):
     education = InstructorEducationSerializer(many=True, read_only=True)
     employment = InstructorEmploymentSerializer(many=True, read_only=True)
     reviews = serializers.IntegerField(default=0)
+    video = serializers.CharField(max_length=200, source='get_video_url', read_only=True)
     member_since = serializers.DateTimeField(source='created_at', format='%Y')
 
     class Meta:
@@ -964,7 +965,7 @@ class InstructorDetailSerializer(serializers.ModelSerializer):
         fields = ['id', 'user_id', 'display_name', 'age', 'member_since', 'bg_status', 'bio_title', 'bio_description',
                   'interviewed', 'location', 'distance', 'music', 'instruments', 'lesson_size', 'age_group', 'rates',
                   'place_for_lessons', 'availability', 'reviews', 'qualifications', 'languages', 'studio_address',
-                  'travel_distance', 'lessons_taught', 'education', 'employment', 'experience_years', 'avatar']
+                  'travel_distance', 'lessons_taught', 'education', 'employment', 'experience_years', 'avatar', 'video']
 
     def get_distance(self, instance):
         if self.context.get('account') and self.context.get('account').coordinates:

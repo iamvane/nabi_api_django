@@ -87,6 +87,7 @@ def get_instructor_profile(user_cc):
             'bioDescription': user_cc.bio_description,
             'music': user_cc.music,
             'backgroundCheckStatus': user_cc.bg_status,
+            'video': user_cc.get_video_url(),
         }
     else:
         return {}
