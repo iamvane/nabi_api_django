@@ -338,7 +338,7 @@ class LessonBookingRegisterView(views.APIView):
             task_log = TaskLog.objects.create(task_name='', args={})
             send_booking_alert.delay(booking.id, task_log.id)
             return Response({'message': 'Lesson(s) booked successfully.',
-                             'booking_id': 'booking.id'}, status=status.HTTP_200_OK)
+                             'booking_id': booking.id}, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
