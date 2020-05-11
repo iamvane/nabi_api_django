@@ -23,13 +23,14 @@ from django.utils import timezone
 from rest_framework import status, views
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import MultiPartParser
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from core import constants as const
 from core.constants import *
 from core.models import UserBenefits, UserToken
+from core.permissions import AccessForInstructor
 from core.utils import generate_hash, get_date_a_month_later
 from lesson.models import Application, Instrument, LessonBooking, LessonRequest
 from lesson.serializers import (LessonBookingParentDashboardSerializer, LessonBookingStudentDashboardSerializer,
@@ -830,6 +831,7 @@ class ReferralDashboardView(views.APIView):
 
 
 class UploadVideoProfileView(views.APIView):
+    permission_classes = (IsAuthenticated, AccessForInstructor)
 
     def post(self, request):
         account = get_account(request.user)
