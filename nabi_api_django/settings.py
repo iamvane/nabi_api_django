@@ -190,7 +190,4 @@ elif ENVIRON_TYPE == 'staging':
     except Exception as e:
         print('Error importing staging_settings.py: {}'.format(str(e)))
 else:
-    try:
-        from .local_settings import *
-    except Exception as e:
-        print('Error importing local_settings.py: {}'.format(str(e)))
+    from .local_settings import *
