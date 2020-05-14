@@ -400,12 +400,10 @@ class Instructor(IUserAccount):
             .order_by('id')]
 
     def get_video_url(self):
-        if not self.video:
-            return ''
-        if settings.AWS_S3_USAGE:
+        if self.video:
             return self.video.url
         else:
-            return self.video.path
+            return ''
 
 
 class Education(models.Model):
