@@ -1,4 +1,6 @@
+from moviepy.editor import VideoFileClip
 from pygeocoder import Geocoder, GeocoderError
+from tempfile import NamedTemporaryFile
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -149,6 +151,13 @@ class InstructorAdmin(admin.ModelAdmin):
             except GeocoderError as e:
                 raise Exception(e.status, e.response)
             obj.coordinates = Point(results[0].coordinates[1], results[0].coordinates[0])
+        if 'video' in form.changed_data:
+            fp = NamedTemporaryFile()
+            fp.write(form.files['video'].read())
+            form.files['video'].seek(0)
+            vi = VideoFileClip(fp.name)
+            if not(60.5 > vi.duration > 20.5):
+                raise Exception(f"Not allowed length for video {form.files['video']}. Must be 20-60 seconds.")
         super().save_model(request, obj, form, change)
 
 
