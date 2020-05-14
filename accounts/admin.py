@@ -156,7 +156,7 @@ class InstructorAdmin(admin.ModelAdmin):
             fp.write(form.files['video'].read())
             form.files['video'].seek(0)
             vi = VideoFileClip(fp.name)
-            if not(60.5 > vi.duration > 20.5):
+            if not(60.5 > vi.duration > 19.5):
                 raise Exception(f"Not allowed length for video {form.files['video']}. Must be 20-60 seconds.")
         super().save_model(request, obj, form, change)
 

@@ -1083,7 +1083,7 @@ class VideoInstructorSerializer(serializers.ModelSerializer):
         fp.write(value.read())
         value.seek(0)
         vi = VideoFileClip(fp.name)
-        if 60.5 > vi.duration > 20.5:
+        if 60.5 > vi.duration > 19.5:
             return value
         else:
             raise serializers.ValidationError('Not allowed length for video. Valid length range is 20-60 seconds')
