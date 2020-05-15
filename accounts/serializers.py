@@ -191,7 +191,7 @@ class InstructorCreateAccountSerializer(BaseCreateAccountSerializer):
         instructor = Instructor.objects.create(user=user, **init_kwargs(Instructor(), validated_data))
         instructor.set_display_name()
         instructor.set_referral_token()
-        add_to_email_list_v2(user, 'instructors')  # add to list in HubSpot
+        add_to_email_list_v2(user, ['instructors', 'incomplete_profiles'])  # add to lists in HubSpot
         return instructor
 
 
