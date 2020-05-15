@@ -150,8 +150,9 @@ def add_to_email_list_v2(user, list_names, remove_list_names=None):
     
                              The status_code for API's response was {resp.status_code} and content: {resp.content.decode()}"""
                              )
+
+    # finally, delete contact from specified list
     for remove_list_name in remove_list_names:
-        # finally, delete contact from specified list
         list_id = settings.HUBSPOT_CONTACT_LIST_IDS[remove_list_name]
         target_url = f'https://api.hubapi.com/contacts/v1/lists/{list_id}/remove?hapikey={settings.HUBSPOT_API_KEY}'
         resp = requests.post(target_url, json={'vids': [contact_id]})
