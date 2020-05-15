@@ -1,4 +1,3 @@
-from moviepy.editor import VideoFileClip
 from pygeocoder import Geocoder, GeocoderError
 from tempfile import NamedTemporaryFile
 
@@ -15,6 +14,7 @@ from django.db.models.functions import Cast
 from accounts.models import (Education, Employment, Instructor, InstructorAdditionalQualifications,
                              InstructorAgeGroup, InstructorInstruments, InstructorLessonRate, InstructorLessonSize,
                              Parent, TiedStudent)
+from accounts.utils import get_format_duration_video
 
 User = get_user_model()
 
@@ -152,12 +152,16 @@ class InstructorAdmin(admin.ModelAdmin):
                 raise Exception(e.status, e.response)
             obj.coordinates = Point(results[0].coordinates[1], results[0].coordinates[0])
         if 'video' in form.changed_data:
-            fp = NamedTemporaryFile()
-            fp.write(form.files['video'].read())
-            form.files['video'].seek(0)
-            vi = VideoFileClip(fp.name)
-            if not(60.5 > vi.duration > 19.5):
-                raise Exception(f"Not allowed length for video {form.files['video']}. Must be 20-60 seconds.")
+            with NamedTemporaryFile() as fp:
+                fp.write(form.files['video'].read())
+                form.files['video'].seek(0)
+                video_format, duration = get_format_duration_video(fp.name)
+                s_video_format = set(video_format.split(','))
+                valid_formats = {'asf', 'avi', 'flv', 'mov', 'mp4', 'mpeg', '3gp', 'asf'}
+                if not (s_video_format & valid_formats):
+                    raise Exception("Not allowed format. Accepted formats are: asf, avi, flv, mov, mp4, 3gp, wmv.")
+                if not(60.5 > duration > 19.5):
+                    raise Exception(f"Not allowed length for video {form.files['video']}. Must be 20-60 seconds.")
         super().save_model(request, obj, form, change)
 
 

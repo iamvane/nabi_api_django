@@ -1,3 +1,4 @@
+import ffmpeg
 import requests
 
 from django.conf import settings
@@ -215,3 +216,10 @@ def get_stripe_customer_id(user):
         return user.student.stripe_customer_id
     else:
         return None
+
+
+def get_format_duration_video(filename):
+    """filename must include path"""
+    data = ffmpeg.probe(filename)
+    format_data = data.get('format', {})
+    return format_data.get('format_name', ''), float(format_data.get('duration', 0))

@@ -1,6 +1,6 @@
 import boto3
 import os
-from moviepy.editor import VideoFileClip
+
 from tempfile import NamedTemporaryFile
 
 from django.conf import settings
@@ -26,7 +26,7 @@ from .models import (
     InstructorPlaceForLessons, InstructorLessonRate, InstructorLessonSize, Parent,
     Student, StudentDetails, TiedStudent, get_account,
 )
-from .utils import add_to_email_list, add_to_email_list_v2, init_kwargs
+from .utils import add_to_email_list, add_to_email_list_v2, init_kwargs, get_format_duration_video
 
 User = get_user_model()
 
@@ -1079,14 +1079,17 @@ class VideoInstructorSerializer(serializers.ModelSerializer):
         fields = ['video', ]
 
     def validate_video(self, value):
-        fp = NamedTemporaryFile()
-        fp.write(value.read())
-        value.seek(0)
-        vi = VideoFileClip(fp.name)
-        if 60.5 > vi.duration > 19.5:
+        with NamedTemporaryFile() as fp:
+            fp.write(value.read())
+            value.seek(0)
+            video_format, duration = get_format_duration_video(fp.name)
+            s_video_format = set(video_format.split(','))
+            valid_formats = {'asf', 'avi', 'flv', 'mov', 'mp4', 'mpeg', '3gp', 'asf'}
+            if len(s_video_format|valid_formats) < (len(s_video_format) + len(valid_formats)):
+                raise serializers.ValidationError('Not allowed format. Accepted formats are: avi, mp4, flv, 3gp.')
+            if not(60.5 > duration > 19.5):
+                raise serializers.ValidationError('Not allowed length for video. Valid length range is 20-60 seconds')
             return value
-        else:
-            raise serializers.ValidationError('Not allowed length for video. Valid length range is 20-60 seconds')
 
     def update(self, instance, validated_data):
         # delete existing video file
