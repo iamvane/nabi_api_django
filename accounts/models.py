@@ -12,6 +12,8 @@ from django.contrib.postgres.fields import HStoreField, ArrayField
 from django.db import models
 from django.utils import timezone
 
+from accounts.utils import add_to_email_list_v2
+
 from core.constants import *
 from core.utils import ElapsedTime, get_date_a_month_later, get_month_integer, send_admin_email
 
@@ -280,8 +282,9 @@ class Instructor(IUserAccount):
         """Update value of complete field, if appropriate"""
         curr_value = self.is_complete()
         if curr_value != self.complete:
-            self.complete = curr_value
-            self.save()
+            Instructor.objects.filter(id=self.id).update(complete=curr_value)   # update to avoid trigger signal for save
+            if curr_value:
+                add_to_email_list_v2(self.user, [], ['incomplete_profile'])
 
     def missing_fields(self):
         """Return a list of fields with absence of values set 'complete' field to False"""
