@@ -114,6 +114,7 @@ class IUserAccount(models.Model):
                 return ()
 
     def set_display_name(self):
+        """Change display_name value, only if different value is generated"""
         if self.user.last_name:
             initial_last_name = self.user.last_name[:1]
         else:
@@ -123,8 +124,9 @@ class IUserAccount(models.Model):
                                                                       initial_last_name=initial_last_name)
         else:
             display_name = self.user.first_name
-        self.display_name = display_name
-        self.save()
+        if display_name != self.display_name:
+            self.display_name = display_name
+            self.save()
 
     def set_referral_token(self):
         """Set referral token to related user.
