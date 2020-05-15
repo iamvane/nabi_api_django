@@ -286,7 +286,7 @@ class Instructor(IUserAccount):
         if curr_value != self.complete:
             Instructor.objects.filter(id=self.id).update(complete=curr_value)   # update to avoid trigger signal for save
             if curr_value:
-                add_to_email_list_v2(self.user, [], ['incomplete_profile'])
+                add_to_email_list_v2(self.user, [], ['incomplete_profiles'])
 
     def missing_fields(self):
         """Return a list of fields with absence of values set 'complete' field to False"""
