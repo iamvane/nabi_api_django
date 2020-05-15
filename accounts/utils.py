@@ -1,4 +1,4 @@
-import ffmpeg
+import av
 import requests
 
 from django.conf import settings
@@ -220,6 +220,5 @@ def get_stripe_customer_id(user):
 
 def get_format_duration_video(filename):
     """filename must include path"""
-    data = ffmpeg.probe(filename)
-    format_data = data.get('format', {})
-    return format_data.get('format_name', ''), float(format_data.get('duration', 0))
+    container = av.read(filename)
+    return container.format.name, round(container.duration / 1000000, 2)
