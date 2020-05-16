@@ -12,5 +12,6 @@ urlpatterns = [
     path('application-list/<int:lesson_req_id>/', views.ApplicationListView.as_view()),
     path('booking-data/<int:app_id>/', views.ApplicationBookingView.as_view()),
     path('confirm-booking/', views.LessonBookingRegisterView.as_view()),
-    path('grade-lesson/<int:lesson_id>/', views.UpdateLessonView.as_view()),
+    path('lessons/', views.LessonCreateView.as_view()),
+    path('lessons/<int:lesson_id>/', views.LessonUpdateView.as_view()),
 ]

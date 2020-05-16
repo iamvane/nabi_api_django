@@ -554,15 +554,36 @@ GET localhost:8000/v1/referral-info/WVG3Kw4HaDhEpyag/
 
 ###
 
-PUT localhost:8000/v1/grade-lesson/<lesson_id>/
+GET localhost:8000/v1/referral-dashboard/
+
+###
+
+POST localhost:8000/lessons/
 
 {
-"grade": 3,
-"comment": "Good work! More practice to reach out the excellence"
+"bookingId": 8,
+"date": "2020-05-18",
+"time": "15:30",
+"timezone": "-06:00"
 }
 
 ###
 
-GET localhost:8000/v1/referral-dashboard/
+PUT localhost:8000/lessons/<lesson_id>/
+
+{
+"date": "2020-05-18",
+"time": "17:30",
+"timezone": "-06:00"
+}
+or
+{
+"grade": 2,
+"comment": "Good work!"
+}
+or
+{
+"status": "missed"
+}
 
 ###

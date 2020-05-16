@@ -90,17 +90,18 @@ class LessonBooking(models.Model):
 
 
 class Lesson(models.Model):
-    REQUESTED = 'requested'
-    CHANGED = 'changed'
-    AGREED = 'agreed'
-    SCHEDULE_STATUSES = (
-        (REQUESTED, REQUESTED),
-        (CHANGED, CHANGED),
-        (AGREED, AGREED),
+    SCHEDULED = 'scheduled'
+    MISSED = 'missed'  # when datetime happens but lesson did not occurs
+    COMPLETE = 'complete'   # when lesson was successful and graded
+    STATUSES = (
+        (SCHEDULED, SCHEDULED),
+        (MISSED, MISSED),
+        (COMPLETE, COMPLETE),
     )
     booking = models.ForeignKey(LessonBooking, on_delete=models.CASCADE, related_name='lessons')
+    student_details = JSONField(default=dict)
     scheduled_datetime = models.DateTimeField(blank=True, null=True)
-    scheduled_status = models.CharField(max_length=50, choices=SCHEDULE_STATUSES, default=REQUESTED)
+    status = models.CharField(max_length=50, choices=STATUSES, default=SCHEDULED)
     grade = models.PositiveSmallIntegerField(blank=True, null=True)
     comment = models.TextField(blank=True)   # added on grade
     created = models.DateTimeField(auto_now_add=True)

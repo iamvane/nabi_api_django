@@ -21,10 +21,14 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
 def validate_timezone(value):
-    pattern = r'^[+,-]?[\d]{1,2}:[\d]{1,2}$'
-    if not re.match(pattern, value):
+    pattern = r'^[+,-]?([\d]{1,2}):([\d]{2})$'
+    match = re.match(pattern, value)
+    if match is None:
         raise serializers.ValidationError('Provided timezone has invalid format')
     else:
+        h, m = match.groups()
+        if int(h) > 24 or int(m) >= 60:
+            raise serializers.ValidationError('Wrong timezone value')
         return value
 
 
@@ -667,23 +671,71 @@ class LessonRequestInstructorDashboardSerializer(serializers.ModelSerializer):
         return data
 
 
+class CreateLessonSerializer(serializers.ModelSerializer):
+    bookingId = serializers.IntegerField(source='booking_id')
+    date = serializers.DateField(format='%Y-%m-%d')
+    time = serializers.TimeField(format='%H:%M')
+    timezone = serializers.CharField(max_length=6, validators=[validate_timezone])
+
+    class Meta:
+        model = Lesson
+        fields = ('bookingId', 'date', 'time', 'timezone')
+
+    def create(self, validated_data):
+        time_zone = validated_data.pop('timezone')
+        if time_zone and time_zone[0] not in ('-', '+'):
+            time_zone = '+' + time_zone
+        if len(time_zone) == 5:
+            time_zone = time_zone[0] + '0' + time_zone[1:]
+        validated_data['scheduled_datetime'] = f"{validated_data.pop('date')} {validated_data.pop('time')}{time_zone}"
+        return super().create(validated_data)
+
+
 class UpdateLessonSerializer(serializers.ModelSerializer):
     """To update a lesson"""
     id = serializers.IntegerField(read_only=True)
     grade = serializers.IntegerField(min_value=1, max_value=3)
     date = serializers.DateField(format='%Y-%m-%d')
     time = serializers.TimeField(format='%H:%M')
-    timezone = serializers.CharField(max_length=10, validators=[validate_timezone])
+    timezone = serializers.CharField(max_length=6, validators=[validate_timezone])
 
     class Meta:
         model = Lesson
-        fields = ('id', 'grade', 'comment', 'date', 'time', 'timezone', 'scheduled_datetime')
+        fields = ('id', 'grade', 'comment', 'date', 'status', 'time', 'timezone', 'scheduled_datetime')
+
+    def validate_grade(self, value):
+        if self.instance.status in (Lesson.MISSED, Lesson.COMPLETE):
+            raise serializers.ValidationError('This lesson can not be graded')
+        else:
+            return value
+
+    def validate_status(self, value):
+        valid_statuses = (Lesson.SCHEDULED, Lesson.MISSED)
+        if self.instance.status not in valid_statuses or value not in valid_statuses:
+            raise serializers.ValidationError('That change of status is not allowed')
+        else:
+            return value
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
+        keys = dict.fromkeys(attrs, 1)
+        # verify data existence for date/time schedule
+        keys_sum = keys.get('date', 0) + keys.get('time', 0) + keys.get('timezone', 0)
+        if 3 > keys_sum > 0:
+            raise serializers.ValidationError('Incomplete data for re-schedule the lesson')
         time_zone = attrs.get('timezone')
         if time_zone:
             if time_zone[0] not in ('+', '-'):
                 time_zone = '+' + time_zone
-            attrs['scheduled_datetime'] = f'{attrs.pop("date")} {attrs.pop("time")}{attrs.pop(time_zone)}'
+            if len(time_zone) == 5:
+                time_zone = time_zone[0] + '0' + time_zone[1:]
+            attrs['scheduled_datetime'] = f'{attrs.pop("date")} {attrs.pop("time")}{time_zone}'
+        # verify data existence for grade a lesson
+        if (keys.get('grade', 0) + keys.get('comment', 0)) == 1:
+            raise serializers.ValidationError('Incomplete data to grade the lesson')
         return attrs
+
+    def update(self, instance, validated_data):
+        if 'grade' in validated_data.keys():
+            validated_data['status'] = Lesson.COMPLETE
+        return super().update(instance, validated_data)

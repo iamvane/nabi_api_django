@@ -337,7 +337,8 @@ class LessonBookingRegisterView(views.APIView):
             send_booking_invoice.delay(booking.id, task_log.id)
             task_log = TaskLog.objects.create(task_name='', args={})
             send_booking_alert.delay(booking.id, task_log.id)
-            return Response({'message': 'Lesson(s) booked successfully.'}, status=status.HTTP_200_OK)
+            return Response({'message': 'Lesson(s) booked successfully.',
+                             'booking_id': booking.id}, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -425,7 +426,18 @@ class ApplicationBookingView(views.APIView):
             return Response(resp, status=status.HTTP_200_OK)
 
 
-class UpdateLessonView(views.APIView):
+class LessonCreateView(views.APIView):
+
+    def post(self, request):
+        ser = sers.CreateLessonSerializer(data=request.data)
+        if ser.is_valid():
+            ser.save()
+            return Response({'message': 'Lesson scheduled successfully!'}, status=status.HTTP_200_OK)
+        else:
+            return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class LessonUpdateView(views.APIView):
 
     def put(self, request, lesson_id):
         try:
@@ -436,6 +448,6 @@ class UpdateLessonView(views.APIView):
         ser_data = sers.UpdateLessonSerializer(data=request.data, instance=lesson, partial=True)
         if ser_data.is_valid():
             ser_data.save()
-            return Response({'message': 'Your grade was submitted successfully'}, status=status.HTTP_200_OK)
+            return Response({'message': 'Lesson updated successfully!'}, status=status.HTTP_200_OK)
         else:
             return Response(ser_data.errors, status=status.HTTP_400_BAD_REQUEST)
