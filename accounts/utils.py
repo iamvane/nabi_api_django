@@ -101,10 +101,12 @@ def add_to_email_list(user, list_name):
                          )
 
 
-def add_to_email_list_v2(user, list_name, remove_list_name=None):
-    """Add user's email and referral token to HubSpot's list, including first_name and last_name if are non-empty"""
+def add_to_email_list_v2(user, list_names, remove_list_names=None):
+    """Add user's email and referral token to HubSpot's lists, including first_name and last_name if are non-empty"""
     if settings.ENVIRON_TYPE != 'production':   # only add account to list in production environment
         return None
+    if remove_list_names is None:
+        remove_list_names = []
     # first, check if contact exists already in HubSpot
     target_url = f'https://api.hubapi.com/contacts/v1/contact/email/{user.email}/profile?hapikey={settings.HUBSPOT_API_KEY}'
     resp = requests.get(target_url)
@@ -138,17 +140,19 @@ def add_to_email_list_v2(user, list_name, remove_list_name=None):
         return None
 
     # now, add contact to required list
-    list_id = settings.HUBSPOT_CONTACT_LIST_IDS[list_name]
-    target_url = f'https://api.hubapi.com/contacts/v1/lists/{list_id}/add?hapikey={settings.HUBSPOT_API_KEY}'
-    resp = requests.post(target_url, json={'emails': [user.email]})
-    if resp.status_code != 200:
-        send_admin_email(f"[INFO] Contact couldn't be added to list {list_name}",
-                         f"""The contact {user.email} could not be added to list {list_name} in HubSpot.
+    for list_name in list_names:
+        list_id = settings.HUBSPOT_CONTACT_LIST_IDS[list_name]
+        target_url = f'https://api.hubapi.com/contacts/v1/lists/{list_id}/add?hapikey={settings.HUBSPOT_API_KEY}'
+        resp = requests.post(target_url, json={'emails': [user.email]})
+        if resp.status_code != 200:
+            send_admin_email(f"[INFO] Contact couldn't be added to list {list_name}",
+                             f"""The contact {user.email} could not be added to list {list_name} in HubSpot.
+    
+                             The status_code for API's response was {resp.status_code} and content: {resp.content.decode()}"""
+                             )
 
-                         The status_code for API's response was {resp.status_code} and content: {resp.content.decode()}"""
-                         )
-    elif remove_list_name:
-        # finally, delete contact from specified list
+    # finally, delete contact from specified list
+    for remove_list_name in remove_list_names:
         list_id = settings.HUBSPOT_CONTACT_LIST_IDS[remove_list_name]
         target_url = f'https://api.hubapi.com/contacts/v1/lists/{list_id}/remove?hapikey={settings.HUBSPOT_API_KEY}'
         resp = requests.post(target_url, json={'vids': [contact_id]})

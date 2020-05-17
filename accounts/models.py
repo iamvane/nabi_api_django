@@ -12,6 +12,8 @@ from django.contrib.postgres.fields import HStoreField, ArrayField
 from django.db import models
 from django.utils import timezone
 
+from accounts.utils import add_to_email_list_v2
+
 from core.constants import *
 from core.utils import ElapsedTime, get_date_a_month_later, get_month_integer, send_admin_email
 
@@ -112,6 +114,7 @@ class IUserAccount(models.Model):
                 return ()
 
     def set_display_name(self):
+        """Change display_name value, only if different value is generated"""
         if self.user.last_name:
             initial_last_name = self.user.last_name[:1]
         else:
@@ -121,8 +124,9 @@ class IUserAccount(models.Model):
                                                                       initial_last_name=initial_last_name)
         else:
             display_name = self.user.first_name
-        self.display_name = display_name
-        self.save()
+        if display_name != self.display_name:
+            self.display_name = display_name
+            self.save()
 
     def set_referral_token(self):
         """Set referral token to related user.
@@ -280,8 +284,9 @@ class Instructor(IUserAccount):
         """Update value of complete field, if appropriate"""
         curr_value = self.is_complete()
         if curr_value != self.complete:
-            self.complete = curr_value
-            self.save()
+            Instructor.objects.filter(id=self.id).update(complete=curr_value)   # update to avoid trigger signal for save
+            if curr_value:
+                add_to_email_list_v2(self.user, [], ['incomplete_profiles'])
 
     def missing_fields(self):
         """Return a list of fields with absence of values set 'complete' field to False"""

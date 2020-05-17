@@ -169,7 +169,7 @@ class ParentCreateAccountSerializer(BaseCreateAccountSerializer):
         parent = Parent.objects.create(user=user, **init_kwargs(Parent(), validated_data))
         parent.set_display_name()
         parent.set_referral_token()
-        add_to_email_list_v2(user, 'parents', 'facebook_lead')   # add to list in HubSpot
+        add_to_email_list_v2(user, ['parents'], ['facebook_lead'])   # add to list in HubSpot
         return parent
 
 
@@ -180,7 +180,7 @@ class StudentCreateAccountSerializer(BaseCreateAccountSerializer):
         student = Student.objects.create(user=user, **init_kwargs(Student(), validated_data))
         student.set_display_name()
         student.set_referral_token()
-        add_to_email_list_v2(user, 'students', 'facebook_lead')   # add to list in HubSpot
+        add_to_email_list_v2(user, ['students'], ['facebook_lead'])   # add to list in HubSpot
         return student
 
 
@@ -191,7 +191,7 @@ class InstructorCreateAccountSerializer(BaseCreateAccountSerializer):
         instructor = Instructor.objects.create(user=user, **init_kwargs(Instructor(), validated_data))
         instructor.set_display_name()
         instructor.set_referral_token()
-        add_to_email_list_v2(user, 'instructors')  # add to list in HubSpot
+        add_to_email_list_v2(user, ['instructors', 'incomplete_profiles'])  # add to lists in HubSpot
         return instructor
 
 

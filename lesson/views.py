@@ -192,6 +192,9 @@ class ApplicationView(views.APIView):
     permission_classes = (IsAuthenticated, AccessForInstructor)
 
     def post(self, request):
+        if not request.user.instructor.complete:
+            return Response({'message': 'Your application was not sent. You must complete your profile'},
+                            status=status.HTTP_400_BAD_REQUEST)
         data = request.data.copy()
         data['instructor_id'] = request.user.instructor.id
         ser = sers.ApplicationCreateSerializer(data=data)
