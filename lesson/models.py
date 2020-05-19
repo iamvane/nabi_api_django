@@ -28,7 +28,7 @@ class LessonRequest(models.Model):
     place_for_lessons = models.CharField(max_length=100, choices=PLACE_FOR_LESSONS_CHOICES)
     lessons_duration = models.CharField(max_length=100, choices=LESSON_DURATION_CHOICES)
     travel_distance = models.IntegerField(blank=True, null=True)
-
+    trial_proposed_schedule = models.DateTimeField(blank=True, null=True)
     students = models.ManyToManyField(TiedStudent, blank=True)
     status = models.CharField(max_length=100, choices=LESSON_REQUEST_STATUSES,
                               blank=True, default=LESSON_REQUEST_ACTIVE)
