@@ -52,11 +52,14 @@ class LessonRequestSerializer(serializers.ModelSerializer):
     skill_level = serializers.ChoiceField(choices=SKILL_LEVEL_CHOICES)
     students = serializers.ListField(child=serializers.DictField(), required=False)
     user_id = serializers.IntegerField(source='user.id')
+    date = serializers.DateField(format='%Y-%m-%d', required=False)
+    time = serializers.TimeField(format='%H:%M', required=False)
+    timezone = serializers.CharField(max_length=6, validators=[validate_timezone], required=False)
 
     class Meta:
         model = LessonRequest
         fields = ('user_id', 'title', 'message', 'instrument', 'lessons_duration', 'travel_distance',
-                  'place_for_lessons', 'skill_level', 'students')
+                  'place_for_lessons', 'skill_level', 'students', 'date', 'time', 'timezone', 'trial_proposed_schedule')
 
     def to_internal_value(self, data):
         keys = dict.fromkeys(data, 1)
@@ -79,6 +82,12 @@ class LessonRequestSerializer(serializers.ModelSerializer):
             new_data['skill_level'] = data.get('skillLevel')
         if keys.get('students'):
             new_data['students'] = data.get('students')
+        if keys.get('date'):
+            new_data['date'] = data.get('date')
+        if keys.get('time'):
+            new_data['time'] = data.get('time')
+        if keys.get('timezone'):
+            new_data['timezone'] = data.get('timezone')
         return super().to_internal_value(new_data)
 
     def validate(self, attrs):
@@ -88,6 +97,10 @@ class LessonRequestSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError('students data must be provided')
             if attrs['place_for_lessons'] == 'studio' and not attrs.get('travel_distance'):
                 raise serializers.ValidationError('travel_distance value must be provided')
+            there_is_one = attrs.get('date') or attrs.get('time') or attrs.get('timezone')
+            there_is_all = attrs.get('date') and attrs.get('time') and attrs.get('timezone')
+            if there_is_one and not there_is_all:
+                raise serializers.ValidationError("Data for schedule trial lesson is missing")
         else:
             if attrs.get('place_for_lessons') == 'studio' and (
                     (self.instance.travel_distance is None and attrs.get('travel_distance') is None)
@@ -102,6 +115,13 @@ class LessonRequestSerializer(serializers.ModelSerializer):
         validated_data['user_id'] = validated_data.get('user', {}).get('id')
         validated_data.pop('user')
         validated_data['instrument_id'] = instrument.id
+        if validated_data.get('date'):
+            time_zone = validated_data.pop('timezone')
+            if time_zone and time_zone[0] not in ('-', '+'):
+                time_zone = '+' + time_zone
+            if len(time_zone) == 5:
+                time_zone = time_zone[0] + '0' + time_zone[1:]
+            validated_data['trial_proposed_schedule'] = f"{validated_data.pop('date')} {validated_data.pop('time')}{time_zone}"
         if self.context['is_parent']:
             parent_obj = User.objects.get(id=validated_data['user_id']).parent
             students_data = validated_data.pop('students')
