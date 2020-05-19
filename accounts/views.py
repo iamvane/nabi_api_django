@@ -58,8 +58,8 @@ def get_tokens_for_user(user):
 def get_user_response(account):
     user = account.user
     if account.coordinates:
-        lat = str(account.coordinates.coords[0])
-        lng = str(account.coordinates.coords[1])
+        lng = str(account.coordinates.coords[0])
+        lat = str(account.coordinates.coords[1])
     else:
         lat = lng = ''
     data = {
@@ -202,8 +202,8 @@ class WhoAmIView(views.APIView):
 
         account = get_account(request.user)
         if account.coordinates:
-            lat = str(account.coordinates.coords[1])
             lng = str(account.coordinates.coords[0])
+            lat = str(account.coordinates.coords[1])
         else:
             lat = lng = ''
         avatar_path = None
