@@ -65,8 +65,8 @@ class IUserAccount(models.Model):
             If no result is obtained, return '' or ()."""
         if self.coordinates:
             try:
-                lat = self.coordinates.coords[1]
                 lng = self.coordinates.coords[0]
+                lat = self.coordinates.coords[1]
             except Exception as e:
                 send_admin_email('[ALERT] Error getting coordinates',
                                  f"""Error with coordinates for user id {self.user.id}, email {self.user.email}. 
