@@ -59,7 +59,8 @@ class LessonRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = LessonRequest
         fields = ('user_id', 'title', 'message', 'instrument', 'lessons_duration', 'travel_distance',
-                  'place_for_lessons', 'skill_level', 'students', 'date', 'time', 'timezone', 'trial_proposed_schedule')
+                  'place_for_lessons', 'skill_level', 'students', 'date', 'time', 'timezone',
+                  'trial_proposed_datetime', 'trial_proposed_timezone')
 
     def to_internal_value(self, data):
         keys = dict.fromkeys(data, 1)
@@ -108,6 +109,8 @@ class LessonRequestSerializer(serializers.ModelSerializer):
                         and attrs.get('travel_distance') is None)
             ):
                 raise serializers.ValidationError('travel_distance value must be provided')
+            if attrs.get('date') or attrs.get('time') or attrs.get('timezone'):
+                raise serializers.ValidationError("Proposed schedule for trial lesson can't be changed here")
         return attrs
 
     def create(self, validated_data):
@@ -121,7 +124,8 @@ class LessonRequestSerializer(serializers.ModelSerializer):
                 time_zone = '+' + time_zone
             if len(time_zone) == 5:
                 time_zone = time_zone[0] + '0' + time_zone[1:]
-            validated_data['trial_proposed_schedule'] = f"{validated_data.pop('date')} {validated_data.pop('time')}{time_zone}"
+            validated_data['trial_proposed_datetime'] = f"{validated_data.pop('date')} {validated_data.pop('time')}{time_zone}"
+            validated_data['trial_proposed_timezone'] = time_zone
         if self.context['is_parent']:
             parent_obj = User.objects.get(id=validated_data['user_id']).parent
             students_data = validated_data.pop('students')
@@ -701,6 +705,7 @@ class CreateLessonSerializer(serializers.ModelSerializer):
         if len(time_zone) == 5:
             time_zone = time_zone[0] + '0' + time_zone[1:]
         validated_data['scheduled_datetime'] = f"{validated_data.pop('date')} {validated_data.pop('time')}{time_zone}"
+        validated_data['scheduled_timezone'] = time_zone
         return super().create(validated_data)
 
 
