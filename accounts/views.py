@@ -694,7 +694,7 @@ class InstructorListView(views.APIView):
                 account = get_account(request.user)
             if query_serializer.validated_data.get('location'):
                 lat_value, lng_value = query_serializer.validated_data.get('location')
-                coordinates = Point(lng_value, lat_value)
+                coordinates = Point(lng_value, lat_value, srid=4326)
             elif account and account.coordinates:
                 coordinates = account.coordinates
             else:
