@@ -220,5 +220,5 @@ def get_stripe_customer_id(user):
 
 def get_format_duration_video(filename):
     """filename must include path"""
-    container = av.read(filename)
+    container = av.open(filename)
     return container.format.name, round(container.duration / 1000000, 2)
