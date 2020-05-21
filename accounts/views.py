@@ -832,6 +832,7 @@ class ReferralDashboardView(views.APIView):
 
 class UploadVideoProfileView(views.APIView):
     permission_classes = (IsAuthenticated, AccessForInstructor)
+    parser_classes = (MultiPartParser,)
 
     def post(self, request):
         account = get_account(request.user)
