@@ -1078,18 +1078,18 @@ class VideoInstructorSerializer(serializers.ModelSerializer):
         model = Instructor
         fields = ['video', ]
 
-    def validate_video(self, value):
-        with NamedTemporaryFile() as fp:
-            fp.write(value.read())
-            value.seek(0)
-            video_format, duration = get_format_duration_video(fp.name)
-            s_video_format = set(video_format.split(','))
-            valid_formats = {'asf', 'avi', 'flv', 'mov', 'mp4', 'mpeg', '3gp', 'asf'}
-            if len(s_video_format|valid_formats) == (len(s_video_format) + len(valid_formats)):
-                raise serializers.ValidationError('Not allowed format. Accepted formats are: avi, mp4, flv, 3gp.')
-            if not(60.5 > duration > 19.5):
-                raise serializers.ValidationError('Not allowed length for video. Valid length range is 20-60 seconds')
-            return value
+    # def validate_video(self, value):
+    #     with NamedTemporaryFile() as fp:
+    #         fp.write(value.read())
+    #         value.seek(0)
+    #         video_format, duration = get_format_duration_video(fp.name)
+    #         s_video_format = set(video_format.split(','))
+    #         valid_formats = {'asf', 'avi', 'flv', 'mov', 'mp4', 'mpeg', '3gp', 'asf'}
+    #         if len(s_video_format|valid_formats) == (len(s_video_format) + len(valid_formats)):
+    #             raise serializers.ValidationError('Not allowed format. Accepted formats are: avi, mp4, flv, 3gp.')
+    #         if not(60.5 > duration > 19.5):
+    #             raise serializers.ValidationError('Not allowed length for video. Valid length range is 20-60 seconds')
+    #         return value
 
     def update(self, instance, validated_data):
         # delete existing video file
