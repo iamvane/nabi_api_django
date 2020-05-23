@@ -861,7 +861,7 @@ class InstructorDataSerializer(serializers.ModelSerializer):
         fields = ('id', 'display_name', 'avatar', 'age', 'gender', 'bio_title', 'bio_description', 'languages',
                   'bg_status', 'distance', 'reviews', 'location', 'interviewed', 'instruments', 'rates', 'availability',
                   'place_for_lessons', 'experience_years', 'qualifications', 'lessons_taught', 'student_ages',
-                  'last_login', 'member_since')
+                  'last_login', 'member_since', 'video',)
 
     def get_availability(self, instructor):
         items = instructor.availability.all()
@@ -922,7 +922,8 @@ class InstructorDataSerializer(serializers.ModelSerializer):
                     'rates': data.get('rates'), 'placeForLessons': data.get('place_for_lessons'),
                     'availability': data.get('availability'), 'student_ages': data.get('student_ages'),
                     'languages': data.get('languages'), 'yearsOfExperience': data.get('experience_years'),
-                    'lastLogin': data.get('last_login'), 'memberSince': data.get('member_since')}
+                    'lastLogin': data.get('last_login'), 'memberSince': data.get('member_since'),
+                    'video': data.get('video')}
         return new_data
 
 
