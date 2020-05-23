@@ -1,3 +1,5 @@
+import boto3
+import json
 from datetime import timedelta
 from functools import reduce
 from logging import getLogger
@@ -15,9 +17,11 @@ from django.core.mail import EmailMultiAlternatives
 from django.db import transaction, IntegrityError
 from django.db.models import Case, F, Min, ObjectDoesNotExist, Prefetch, Q, Sum, When
 from django.db.models.functions import Cast
+from django.http import JsonResponse
 from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404
 from django.template import loader
+from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 
 from rest_framework import status, views
@@ -842,3 +846,35 @@ class UploadVideoProfileView(views.APIView):
             return Response({"message": 'success'}, status=status.HTTP_200_OK)
         else:
             return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class S3SignatureFile(views.APIView):
+    permission_classes = (AllowAny, )
+
+    def post(self, request):
+        data = json.loads(request.body)
+        user_id = data.get('user_id')
+        file_name = data.get('file_name')
+        file_type = data.get('file_type')
+        s3 = boto3.client('s3',
+                          aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                          aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                          region_name=settings.AWS_REGION_NAME,
+                          )
+        file_path = f'media/videos/user_{user_id}/{file_name}'
+        presigned_post = s3.generate_presigned_post(
+            Bucket=settings.AWS_STORAGE_BUCKET_NAME,
+            Key=file_path,
+            Fields={"acl": "public-read", "Content-Type": file_type},
+            Conditions=[
+                {"acl": "public-read"},
+                {"Content-Type": file_type}
+            ],
+        )
+        return JsonResponse({'data': presigned_post,
+                             'url': f'https://{settings.AWS_S3_CUSTOM_DOMAIN}/{file_path}'}
+                            )
+
+    @csrf_exempt
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
