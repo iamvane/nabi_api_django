@@ -26,10 +26,6 @@ def avatar_directory_path(instance, filename):
     return 'avatars/{0}/{1}'.format(instance.user.email, filename)
 
 
-def video_directory_path(instance, filename):
-    return f'videos/user_{instance.user_id}/{filename}'
-
-
 class IUserAccount(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     middle_name = models.CharField(max_length=100, blank=True, null=True)
@@ -226,7 +222,7 @@ class Instructor(IUserAccount):
     rates = HStoreField(blank=True, null=True)
     studio_address = models.CharField(max_length=250, blank=True, null=True)
     travel_distance = models.CharField(max_length=250, blank=True, null=True)
-    video = models.FileField(upload_to=video_directory_path, blank=True, null=True)
+    video = models.URLField(blank=True, default='')
 
     # --- Notifications ---
     request_posted = models.BooleanField(default=False)
@@ -398,12 +394,6 @@ class Instructor(IUserAccount):
         return [item for item in LessonBooking.objects.filter(application__instructor=self,
                                                               status__in=[LessonBooking.PAID, LessonBooking.TRIAL])
             .order_by('id')]
-
-    def get_video_url(self):
-        if self.video:
-            return self.video.url
-        else:
-            return ''
 
 
 class Education(models.Model):
