@@ -595,3 +595,14 @@ Key: video
 Value: file to upload
 
 ###
+
+POST http://localhost:8000/v1/sign-file/
+Content-Type: application/json
+
+{
+	"user_id": 5,
+	"file_name": "video0.flv",
+	"file_type": "video/x-flv"
+}
+
+###
