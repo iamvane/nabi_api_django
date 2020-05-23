@@ -222,7 +222,7 @@ class ApplicationItemSerializer(serializers.ModelSerializer):
     applicationRate = serializers.DecimalField(max_digits=9, decimal_places=4, source='rate', read_only=True)
     availability = AvailavilitySerializer(source='instructor.availability.all', many=True, read_only=True)
     avatar = serializers.SerializerMethodField()
-    video = serializers.CharField(max_length=200, source='instructor.get_video_url', read_only=True)
+    video = serializers.CharField(max_length=200, source='instructor.video', read_only=True)
     backgroundCheckStatus = serializers.CharField(max_length=100, source='instructor.bg_status', read_only=True)
     displayName = serializers.CharField(max_length=100, source='instructor.display_name', read_only=True)
     instructorId = serializers.IntegerField(source='instructor.id', read_only=True)

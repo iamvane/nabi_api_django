@@ -1,8 +1,3 @@
-import boto3
-import os
-
-from tempfile import NamedTemporaryFile
-
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.gis.db.models.functions import Distance
@@ -26,7 +21,7 @@ from .models import (
     InstructorPlaceForLessons, InstructorLessonRate, InstructorLessonSize, Parent,
     Student, StudentDetails, TiedStudent, get_account,
 )
-from .utils import add_to_email_list, add_to_email_list_v2, init_kwargs, get_format_duration_video
+from .utils import add_to_email_list, add_to_email_list_v2, init_kwargs
 
 User = get_user_model()
 
@@ -959,7 +954,6 @@ class InstructorDetailSerializer(serializers.ModelSerializer):
     education = InstructorEducationSerializer(many=True, read_only=True)
     employment = InstructorEmploymentSerializer(many=True, read_only=True)
     reviews = serializers.IntegerField(default=0)
-    video = serializers.CharField(max_length=200, source='get_video_url', read_only=True)
     member_since = serializers.DateTimeField(source='created_at', format='%Y')
 
     class Meta:
@@ -1077,31 +1071,3 @@ class VideoInstructorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Instructor
         fields = ['video', ]
-
-    # def validate_video(self, value):
-    #     with NamedTemporaryFile() as fp:
-    #         fp.write(value.read())
-    #         value.seek(0)
-    #         video_format, duration = get_format_duration_video(fp.name)
-    #         s_video_format = set(video_format.split(','))
-    #         valid_formats = {'asf', 'avi', 'flv', 'mov', 'mp4', 'mpeg', '3gp', 'asf'}
-    #         if len(s_video_format|valid_formats) == (len(s_video_format) + len(valid_formats)):
-    #             raise serializers.ValidationError('Not allowed format. Accepted formats are: avi, mp4, flv, 3gp.')
-    #         if not(60.5 > duration > 19.5):
-    #             raise serializers.ValidationError('Not allowed length for video. Valid length range is 20-60 seconds')
-    #         return value
-
-    def update(self, instance, validated_data):
-        # delete existing video file
-        if instance.video:
-            if settings.AWS_S3_USAGE:
-                try:
-                    instance.video.storage.delete(instance.video.name)
-                except Exception:
-                    pass
-            else:
-                try:
-                    os.remove(instance.video.path)
-                except Exception:
-                    pass
-        return super().update(instance, validated_data)

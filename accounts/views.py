@@ -92,7 +92,7 @@ def get_instructor_profile(user_cc):
             'bioDescription': user_cc.bio_description,
             'music': user_cc.music,
             'backgroundCheckStatus': user_cc.bg_status,
-            'video': user_cc.get_video_url(),
+            'video': user_cc.video,
         }
     else:
         return {}
@@ -836,7 +836,6 @@ class ReferralDashboardView(views.APIView):
 
 class UploadVideoProfileView(views.APIView):
     permission_classes = (IsAuthenticated, AccessForInstructor)
-    parser_classes = (MultiPartParser,)
 
     def post(self, request):
         account = get_account(request.user)

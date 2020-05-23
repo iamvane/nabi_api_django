@@ -1,4 +1,3 @@
-import av
 import requests
 
 from django.conf import settings
@@ -216,9 +215,3 @@ def get_stripe_customer_id(user):
         return user.student.stripe_customer_id
     else:
         return None
-
-
-def get_format_duration_video(filename):
-    """filename must include path"""
-    container = av.open(filename)
-    return container.format.name, round(container.duration / 1000000, 2)

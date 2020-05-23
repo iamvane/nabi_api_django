@@ -1,5 +1,4 @@
 from pygeocoder import Geocoder, GeocoderError
-from tempfile import NamedTemporaryFile
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -14,7 +13,6 @@ from django.db.models.functions import Cast
 from accounts.models import (Education, Employment, Instructor, InstructorAdditionalQualifications,
                              InstructorAgeGroup, InstructorInstruments, InstructorLessonRate, InstructorLessonSize,
                              Parent, TiedStudent)
-from accounts.utils import get_format_duration_video
 
 User = get_user_model()
 
@@ -56,7 +54,7 @@ class LessonSizeAdmin(admin.TabularInline):
 
 class InstructorAdmin(admin.ModelAdmin):
     fields = ('user', 'display_name', 'age', 'avatar', 'bio_title', 'bio_description', 'bg_status', 'location',
-              'music', 'interviewed', 'languages', 'studio_address', 'travel_distance', 'experience_years', 'video')
+              'music', 'interviewed', 'languages', 'studio_address', 'travel_distance', 'experience_years',)
     list_display = ('pk', 'user', 'display_name', 'distance', )
     list_filter = ('interviewed', 'complete', )
     list_select_related = ('user', )
@@ -151,17 +149,6 @@ class InstructorAdmin(admin.ModelAdmin):
             except GeocoderError as e:
                 raise Exception(e.status, e.response)
             obj.coordinates = Point(results[0].coordinates[1], results[0].coordinates[0])
-        if 'video' in form.changed_data:
-            with NamedTemporaryFile() as fp:
-                fp.write(form.files['video'].read())
-                form.files['video'].seek(0)
-                video_format, duration = get_format_duration_video(fp.name)
-                s_video_format = set(video_format.split(','))
-                valid_formats = {'asf', 'avi', 'flv', 'mov', 'mp4', 'mpeg', '3gp', 'asf'}
-                if not (s_video_format & valid_formats):
-                    raise Exception("Not allowed format. Accepted formats are: asf, avi, flv, mov, mp4, 3gp, wmv.")
-                if not(60.5 > duration > 19.5):
-                    raise Exception(f"Not allowed length for video {form.files['video']}. Must be 20-60 seconds.")
         super().save_model(request, obj, form, change)
 
 
