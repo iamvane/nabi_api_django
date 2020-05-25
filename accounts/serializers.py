@@ -1,3 +1,6 @@
+import re
+from urllib import parse
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.gis.db.models.functions import Distance
@@ -1072,3 +1075,14 @@ class VideoInstructorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Instructor
         fields = ['video', ]
+
+    def to_internal_value(self, data):
+        pattern = '(https://' + settings.AWS_S3_CUSTOM_DOMAIN + '/media/videos/user_\d+/)(.+)'
+        match = re.match(pattern, data['video'])
+        if match:
+            base_path = match.group(1)
+            file_name = parse.quote(match.group(2))
+            new_data = {'video': base_path + file_name}
+            return new_data
+        else:
+            return data
