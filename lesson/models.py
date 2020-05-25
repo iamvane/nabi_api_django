@@ -102,7 +102,7 @@ class Lesson(models.Model):
     booking = models.ForeignKey(LessonBooking, on_delete=models.CASCADE, related_name='lessons')
     student_details = JSONField(default=dict)
     scheduled_datetime = models.DateTimeField(blank=True, null=True)
-    scheduled_timezone = models.CharField(max_length=6, blank=True)
+    scheduled_timezone = models.CharField(max_length=50, blank=True)
     status = models.CharField(max_length=50, choices=STATUSES, default=SCHEDULED)
     grade = models.PositiveSmallIntegerField(blank=True, null=True)
     comment = models.TextField(blank=True)   # added on grade

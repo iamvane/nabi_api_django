@@ -686,6 +686,7 @@ class LessonRequestInstructorDashboardSerializer(serializers.ModelSerializer):
 
 
 class CreateLessonSerializer(serializers.ModelSerializer):
+    """Serializer for create a Lesson instance"""
     bookingId = serializers.IntegerField(source='booking_id')
     date = serializers.DateField(format='%Y-%m-%d')
     time = serializers.TimeField(format='%H:%M')
@@ -697,17 +698,15 @@ class CreateLessonSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         time_zone = validated_data.pop('timezone')
-        if time_zone and time_zone[0] not in ('-', '+'):
-            time_zone = '+' + time_zone
-        if len(time_zone) == 5:
-            time_zone = time_zone[0] + '0' + time_zone[1:]
-        validated_data['scheduled_datetime'] = f"{validated_data.pop('date')} {validated_data.pop('time')}{time_zone}"
+        tz_offset = datetime.datetime.now(timezone.pytz.timezone(time_zone)).strftime('%z')
+        validated_data['scheduled_datetime'] = f"{validated_data.pop('date')} {validated_data.pop('time')}{tz_offset}"
         validated_data['scheduled_timezone'] = time_zone
         return super().create(validated_data)
 
 
 class UpdateLessonSerializer(serializers.ModelSerializer):
-    """To update a lesson"""
+    """To update a Lesson instance"""
+    # ToDo: to improve, for schedule and grade
     id = serializers.IntegerField(read_only=True)
     grade = serializers.IntegerField(min_value=1, max_value=3)
     date = serializers.DateField(format='%Y-%m-%d')
