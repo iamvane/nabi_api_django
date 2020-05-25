@@ -1,4 +1,4 @@
-import re
+import datetime
 import stripe
 from dateutil import relativedelta
 
@@ -21,15 +21,7 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
 def validate_timezone(value):
-    pattern = r'^[+,-]?([\d]{1,2}):([\d]{2})$'
-    match = re.match(pattern, value)
-    if match is None:
-        raise serializers.ValidationError('Provided timezone has invalid format')
-    else:
-        h, m = match.groups()
-        if int(h) > 24 or int(m) >= 60:
-            raise serializers.ValidationError('Wrong timezone value')
-        return value
+    return value in timezone.pytz.all_timezones
 
 
 class LessonRequestStudentSerializer(serializers.Serializer):
@@ -54,7 +46,7 @@ class LessonRequestSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField(source='user.id')
     date = serializers.DateField(format='%Y-%m-%d', required=False)
     time = serializers.TimeField(format='%H:%M', required=False)
-    timezone = serializers.CharField(max_length=6, validators=[validate_timezone], required=False)
+    timezone = serializers.CharField(max_length=50, validators=[validate_timezone], required=False)
 
     class Meta:
         model = LessonRequest
@@ -120,11 +112,8 @@ class LessonRequestSerializer(serializers.ModelSerializer):
         validated_data['instrument_id'] = instrument.id
         if validated_data.get('date'):
             time_zone = validated_data.pop('timezone')
-            if time_zone and time_zone[0] not in ('-', '+'):
-                time_zone = '+' + time_zone
-            if len(time_zone) == 5:
-                time_zone = time_zone[0] + '0' + time_zone[1:]
-            validated_data['trial_proposed_datetime'] = f"{validated_data.pop('date')} {validated_data.pop('time')}{time_zone}"
+            tz_offset = datetime.datetime.now(timezone.pytz.timezone(time_zone)).strftime('%z')
+            validated_data['trial_proposed_datetime'] = f"{validated_data.pop('date')} {validated_data.pop('time')}{tz_offset}"
             validated_data['trial_proposed_timezone'] = time_zone
         if self.context['is_parent']:
             parent_obj = User.objects.get(id=validated_data['user_id']).parent
@@ -181,11 +170,14 @@ class LessonRequestDetailSerializer(serializers.ModelSerializer):
     skillLevel = serializers.CharField(max_length=100, source='skill_level', read_only=True)
     travelDistance = serializers.IntegerField(source='travel_distance', read_only=True)
     students = LessonRequestStudentSerializer(many=True, read_only=True)
+    date = serializers.CharField(max_length=10, required=False)
+    time = serializers.CharField(max_length=5, required=False)
+    timezone = serializers.CharField(max_length=50, required=False)
 
     class Meta:
         model = LessonRequest
         fields = ('id', 'instrument', 'requestMessage', 'requestTitle', 'lessonDuration', 'travelDistance',
-                  'placeForLessons', 'skillLevel', 'status', 'students')
+                  'placeForLessons', 'skillLevel', 'status', 'students', 'date', 'time', 'timezone')
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -194,6 +186,11 @@ class LessonRequestDetailSerializer(serializers.ModelSerializer):
             data['studentDetails'] = [{'name': instance.user.first_name, 'age': instance.user.student.age}]
         else:
             data['studentDetails'] = data.pop('students')
+        if instance.trial_proposed_datetime:
+            data['timezone'] = instance.trial_proposed_timezone
+            proposed_datetime = instance.trial_proposed_datetime.astimezone(timezone.pytz.timezone(data['timezone']))
+            data['date'] = proposed_datetime.strftime('%Y-%m-%d')
+            data['time'] = proposed_datetime.strftime('%H:%M')
         return data
 
 
