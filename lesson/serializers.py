@@ -706,7 +706,6 @@ class CreateLessonSerializer(serializers.ModelSerializer):
 
 class UpdateLessonSerializer(serializers.ModelSerializer):
     """To update a Lesson instance"""
-    # ToDo: to improve, for schedule and grade
     id = serializers.IntegerField(read_only=True)
     grade = serializers.IntegerField(min_value=1, max_value=3)
     date = serializers.DateField(format='%Y-%m-%d')
@@ -739,11 +738,8 @@ class UpdateLessonSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Incomplete data for re-schedule the lesson')
         time_zone = attrs.get('timezone')
         if time_zone:
-            if time_zone[0] not in ('+', '-'):
-                time_zone = '+' + time_zone
-            if len(time_zone) == 5:
-                time_zone = time_zone[0] + '0' + time_zone[1:]
-            attrs['scheduled_datetime'] = f'{attrs.pop("date")} {attrs.pop("time")}{time_zone}'
+            tz_offset = datetime.datetime.now(timezone.pytz.timezone(time_zone)).strftime('%z')
+            attrs['scheduled_datetime'] = f'{attrs.pop("date")} {attrs.pop("time")}{tz_offset}'
         # verify data existence for grade a lesson
         if (keys.get('grade', 0) + keys.get('comment', 0)) == 1:
             raise serializers.ValidationError('Incomplete data to grade the lesson')
