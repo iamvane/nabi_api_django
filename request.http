@@ -571,13 +571,17 @@ GET localhost:8000/v1/referral-dashboard/
 
 ###
 
+GET localhost:8000/timezones/
+
+###
+
 POST localhost:8000/lessons/
 
 {
 "bookingId": 8,
 "date": "2020-05-18",
 "time": "15:30",
-"timezone": "-06:00"
+"timezone": "America/New_York"
 }
 
 ###
