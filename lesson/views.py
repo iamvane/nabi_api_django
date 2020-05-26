@@ -17,7 +17,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from accounts.models import get_account
-from accounts.utils import get_stripe_customer_id
+from accounts.utils import get_stripe_customer_id, add_to_email_list_v2
 from core.constants import *
 from core.models import TaskLog
 from core.permissions import AccessForInstructor, AccessForParentOrStudent
@@ -50,6 +50,7 @@ class LessonRequestView(views.APIView):
             task_log = TaskLog.objects.create(task_name='send_request_alert_instructors',
                                               args={'request_id': obj.id})
             send_request_alert_instructors.delay(obj.id, task_log.id)
+            add_to_email_list_v2(request.user, ['request_to_trial'], ['customer_to_request'])
             ser = sers.LessonRequestDetailSerializer(obj)
             return Response(ser.data, status=status.HTTP_200_OK)
         else:
@@ -297,6 +298,10 @@ class LessonBookingRegisterView(views.APIView):
                 if payment:
                     payment.status = PY_APPLIED
                     payment.save()
+                if new_status_booking == LessonBooking.TRIAL:
+                    add_to_email_list_v2(request.user, ['trial_to_booking'], ['request_to_trial'])
+                else:
+                    add_to_email_list_v2(request.user, [], ['trial_to_booking'])
 
                 # get info about benefits, to change status for user_benefits
                 benefit_data = get_benefit_to_redeem(request.user)
