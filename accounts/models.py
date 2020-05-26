@@ -292,101 +292,103 @@ class Instructor(IUserAccount):
     def missing_fields(self):
         """Return a list of fields with absence of values set 'complete' field to False"""
         list_fields = []
-        if self.complete:
-            return list_fields
+        if not self.user.first_name:
+            list_fields.append('first_name')
+        if not self.user.last_name:
+            list_fields.append('last_name')
+        if not self.display_name:
+            list_fields.append('display_name')
+        if not self.birthday:
+            list_fields.append('birthday')
+        if not self.coordinates:
+            list_fields.append('location')
+        if not self.avatar:
+            list_fields.append('avatar')
+        if not self.video:
+            list_fields.append('video')
+        if self.user.reference_requests.count() == 0:
+            list_fields.append('references')
+        try:
+            self.user.phonenumber
+        except models.ObjectDoesNotExist:
+            list_fields.append('phone_number')
         else:
-            if not self.user.first_name:
-                list_fields.append('first_name')
-            if not self.user.last_name:
-                list_fields.append('last_name')
-            if not self.display_name:
-                list_fields.append('display_name')
-            if not self.birthday:
-                list_fields.append('birthday')
-            if not self.coordinates:
-                list_fields.append('location')
-            if not self.avatar:
-                list_fields.append('avatar')
-            if not self.video:
-                list_fields.append('video')
-            if self.user.reference_requests.count() == 0:
-                list_fields.append('references')
-            try:
-                self.user.phonenumber
-            except models.ObjectDoesNotExist:
+            if not self.user.phonenumber.verified_at:
                 list_fields.append('phone_number')
-            else:
-                if not self.user.phonenumber.verified_at:
-                    list_fields.append('phone_number')
-            if not self.bio_title:
-                list_fields.append('bio_title')
-            if not self.bio_description:
-                list_fields.append('bio_description')
-            if self.instruments.count() == 0:
-                list_fields.append('instruments')
-            if self.instructorlessonsize_set.count() == 0:
-                list_fields.append('lesson_size')
-            if self.instructoragegroup_set.count() == 0:
-                list_fields.append('age_group')
-            if self.instructorlessonrate_set.count() == 0:
-                list_fields.append('lesson_rate')
-            if self.availability.count() == 0:
-                list_fields.append('availability')
-            if self.employment.count() == 0:
-                list_fields.append('employment')
-            if self.education.count() == 0:
-                list_fields.append('education')
-            return list_fields
+        if not self.bio_title:
+            list_fields.append('bio_title')
+        if not self.bio_description:
+            list_fields.append('bio_description')
+        if self.instruments.count() == 0:
+            list_fields.append('instruments')
+        if self.instructorlessonsize_set.count() == 0:
+            list_fields.append('lesson_size')
+        if self.instructoragegroup_set.count() == 0:
+            list_fields.append('age_group')
+        if self.instructorlessonrate_set.count() == 0:
+            list_fields.append('lesson_rate')
+        if self.availability.count() == 0:
+            list_fields.append('availability')
+        if self.employment.count() == 0:
+            list_fields.append('employment')
+        if self.education.count() == 0:
+            list_fields.append('education')
+        if not self.instructoradditionalqualifications_set.count():
+            list_fields.append('qualifications')
+        if not self.music:
+            list_fields.append('music')
+        return list_fields
 
     def missing_fields_camelcase(self):
         """Same as missing_fields method, but returning strings in camelCase format, and names to use in UI.
         The option of add this method was chosen, in order to avoid usage of many 'if' statements."""
         list_fields = []
-        if self.complete:
-            return list_fields
+        if not self.user.first_name:
+            list_fields.append('firstName')
+        if not self.user.last_name:
+            list_fields.append('lastName')
+        if not self.display_name:
+            list_fields.append('displayName')
+        if not self.birthday:
+            list_fields.append('birthday')
+        if not self.coordinates:
+            list_fields.append('location')
+        if not self.avatar:
+            list_fields.append('avatar')
+        if not self.video:
+            list_fields.append('video')
+        if self.user.reference_requests.count() == 0:
+            list_fields.append('references')
+        try:
+            self.user.phonenumber
+        except models.ObjectDoesNotExist:
+            list_fields.append('isPhoneVerified')
         else:
-            if not self.user.first_name:
-                list_fields.append('firstName')
-            if not self.user.last_name:
-                list_fields.append('lastName')
-            if not self.display_name:
-                list_fields.append('displayName')
-            if not self.birthday:
-                list_fields.append('birthday')
-            if not self.coordinates:
-                list_fields.append('location')
-            if not self.avatar:
-                list_fields.append('avatar')
-            if not self.video:
-                list_fields.append('video')
-            if self.user.reference_requests.count() == 0:
-                list_fields.append('references')
-            try:
-                self.user.phonenumber
-            except models.ObjectDoesNotExist:
+            if not self.user.phonenumber.verified_at:
                 list_fields.append('isPhoneVerified')
-            else:
-                if not self.user.phonenumber.verified_at:
-                    list_fields.append('isPhoneVerified')
-            if not self.bio_title:
-                list_fields.append('bioTitle')
-            if not self.bio_description:
-                list_fields.append('bioDescription')
-            if self.instruments.count() == 0:
-                list_fields.append('instruments')
-            if self.instructorlessonsize_set.count() == 0:
-                list_fields.append('lessonSize')
-            if self.instructoragegroup_set.count() == 0:
-                list_fields.append('ageGroup')
-            if self.instructorlessonrate_set.count() == 0:
-                list_fields.append('rates')
-            if self.availability.count() == 0:
-                list_fields.append('availability')
-            if self.employment.count() == 0:
-                list_fields.append('employment')
-            if self.education.count() == 0:
-                list_fields.append('education')
-            return list_fields
+        if not self.bio_title:
+            list_fields.append('bioTitle')
+        if not self.bio_description:
+            list_fields.append('bioDescription')
+        if self.instruments.count() == 0:
+            list_fields.append('instruments')
+        if self.instructorlessonsize_set.count() == 0:
+            list_fields.append('lessonSize')
+        if self.instructoragegroup_set.count() == 0:
+            list_fields.append('ageGroup')
+        if self.instructorlessonrate_set.count() == 0:
+            list_fields.append('rates')
+        if self.availability.count() == 0:
+            list_fields.append('availability')
+        if self.employment.count() == 0:
+            list_fields.append('employment')
+        if self.education.count() == 0:
+            list_fields.append('education')
+        if not self.instructoradditionalqualifications_set.count():
+            list_fields.append('qualifications')
+        if not self.music:
+            list_fields.append('music')
+        return list_fields
 
     def lesson_bookings(self):
         """Return a list of lesson bookings related to application of this instructor"""

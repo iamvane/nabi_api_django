@@ -581,20 +581,12 @@ class InstructorDashboardSerializer(serializers.ModelSerializer):
             return data
 
     backgroundCheckStatus = serializers.CharField(max_length=100, source='bg_status', read_only=True)
-    missingFields = serializers.SerializerMethodField()
+    missingFields = serializers.ListField(source='missing_fields_camelcase')
     lessons = serializers.ListField(child=LessonBookingSerializer(), source='lesson_bookings')
 
     class Meta:
         model = Instructor
         fields = ('backgroundCheckStatus', 'complete', 'missingFields', 'lessons')
-
-    def get_missingFields(self, instance):
-        list_fields = instance.missing_fields_camelcase()
-        if not instance.instructoradditionalqualifications_set.count():
-            list_fields.append('qualifications')
-        if not instance.music:
-            list_fields.append('music')
-        return list_fields
 
 
 class LessonRequestInstructorDashboardSerializer(serializers.ModelSerializer):
