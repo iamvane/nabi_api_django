@@ -1,3 +1,6 @@
+import re
+from urllib import parse
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.gis.db.models.functions import Distance
@@ -861,7 +864,7 @@ class InstructorDataSerializer(serializers.ModelSerializer):
         fields = ('id', 'display_name', 'avatar', 'age', 'gender', 'bio_title', 'bio_description', 'languages',
                   'bg_status', 'distance', 'reviews', 'location', 'interviewed', 'instruments', 'rates', 'availability',
                   'place_for_lessons', 'experience_years', 'qualifications', 'lessons_taught', 'student_ages',
-                  'last_login', 'member_since')
+                  'last_login', 'member_since', 'video',)
 
     def get_availability(self, instructor):
         items = instructor.availability.all()
@@ -922,7 +925,8 @@ class InstructorDataSerializer(serializers.ModelSerializer):
                     'rates': data.get('rates'), 'placeForLessons': data.get('place_for_lessons'),
                     'availability': data.get('availability'), 'student_ages': data.get('student_ages'),
                     'languages': data.get('languages'), 'yearsOfExperience': data.get('experience_years'),
-                    'lastLogin': data.get('last_login'), 'memberSince': data.get('member_since')}
+                    'lastLogin': data.get('last_login'), 'memberSince': data.get('member_since'),
+                    'video': data.get('video')}
         return new_data
 
 
@@ -961,7 +965,7 @@ class InstructorDetailSerializer(serializers.ModelSerializer):
         fields = ['id', 'user_id', 'display_name', 'age', 'member_since', 'bg_status', 'bio_title', 'bio_description',
                   'interviewed', 'location', 'distance', 'music', 'instruments', 'lesson_size', 'age_group', 'rates',
                   'place_for_lessons', 'availability', 'reviews', 'qualifications', 'languages', 'studio_address',
-                  'travel_distance', 'lessons_taught', 'education', 'employment', 'experience_years', 'avatar']
+                  'travel_distance', 'lessons_taught', 'education', 'employment', 'experience_years', 'avatar', 'video']
 
     def get_distance(self, instance):
         if self.context.get('account') and self.context.get('account').coordinates:
@@ -1064,3 +1068,21 @@ class ReferralDashboardSerializer(serializers.ModelSerializer):
     def get_name(self, instance):
         account = get_account(instance.provider)
         return account.display_name
+
+
+class VideoInstructorSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Instructor
+        fields = ['video', ]
+
+    def to_internal_value(self, data):
+        pattern = '(https://' + settings.AWS_S3_CUSTOM_DOMAIN + '/media/videos/user_\d+/)(.+)'
+        match = re.match(pattern, data['video'])
+        if match:
+            base_path = match.group(1)
+            file_name = parse.quote(match.group(2))
+            new_data = {'video': base_path + file_name}
+            return new_data
+        else:
+            return data

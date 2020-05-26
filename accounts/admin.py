@@ -54,7 +54,7 @@ class LessonSizeAdmin(admin.TabularInline):
 
 class InstructorAdmin(admin.ModelAdmin):
     fields = ('user', 'display_name', 'age', 'avatar', 'bio_title', 'bio_description', 'bg_status', 'location',
-              'music', 'interviewed', 'languages', 'studio_address', 'travel_distance', 'experience_years', )
+              'music', 'interviewed', 'languages', 'studio_address', 'travel_distance', 'experience_years',)
     list_display = ('pk', 'user', 'display_name', 'distance', )
     list_filter = ('interviewed', 'complete', )
     list_select_related = ('user', )

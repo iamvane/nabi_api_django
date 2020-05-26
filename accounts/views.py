@@ -1,3 +1,5 @@
+import boto3
+import json
 from datetime import timedelta
 from functools import reduce
 from logging import getLogger
@@ -15,21 +17,24 @@ from django.core.mail import EmailMultiAlternatives
 from django.db import transaction, IntegrityError
 from django.db.models import Case, F, Min, ObjectDoesNotExist, Prefetch, Q, Sum, When
 from django.db.models.functions import Cast
+from django.http import JsonResponse
 from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404
 from django.template import loader
+from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 
 from rest_framework import status, views
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import MultiPartParser
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from core import constants as const
 from core.constants import *
 from core.models import UserBenefits, UserToken
+from core.permissions import AccessForInstructor
 from core.utils import generate_hash, get_date_a_month_later
 from lesson.models import Application, Instrument, LessonBooking, LessonRequest
 from lesson.serializers import (LessonBookingParentDashboardSerializer, LessonBookingStudentDashboardSerializer,
@@ -87,6 +92,7 @@ def get_instructor_profile(user_cc):
             'bioDescription': user_cc.bio_description,
             'music': user_cc.music,
             'backgroundCheckStatus': user_cc.bg_status,
+            'video': user_cc.video,
         }
     else:
         return {}
@@ -826,3 +832,48 @@ class ReferralDashboardView(views.APIView):
         if total['total'] is None:
             total['total'] = 0
         return Response({'totalAmount': total['total'], 'providerList': response_data}, status=status.HTTP_200_OK)
+
+
+class UploadVideoProfileView(views.APIView):
+    permission_classes = (IsAuthenticated, AccessForInstructor)
+
+    def post(self, request):
+        account = get_account(request.user)
+        serializer = sers.VideoInstructorSerializer(instance=account, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": 'success'}, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class S3SignatureFile(views.APIView):
+    permission_classes = (AllowAny, )
+
+    def post(self, request):
+        data = json.loads(request.body)
+        user_id = data.get('user_id')
+        file_name = data.get('file_name')
+        file_type = data.get('file_type')
+        s3 = boto3.client('s3',
+                          aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                          aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                          region_name=settings.AWS_REGION_NAME,
+                          )
+        file_path = f'media/videos/user_{user_id}/{file_name}'
+        presigned_post = s3.generate_presigned_post(
+            Bucket=settings.AWS_STORAGE_BUCKET_NAME,
+            Key=file_path,
+            Fields={"acl": "public-read", "Content-Type": file_type},
+            Conditions=[
+                {"acl": "public-read"},
+                {"Content-Type": file_type}
+            ],
+        )
+        return JsonResponse({'data': presigned_post,
+                             'url': f'https://{settings.AWS_S3_CUSTOM_DOMAIN}/{file_path}'}
+                            )
+
+    @csrf_exempt
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
