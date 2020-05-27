@@ -690,7 +690,7 @@ class CreateLessonSerializer(serializers.ModelSerializer):
     bookingId = serializers.IntegerField(source='booking_id')
     date = serializers.DateField(format='%Y-%m-%d')
     time = serializers.TimeField(format='%H:%M')
-    timezone = serializers.CharField(max_length=6, validators=[validate_timezone])
+    timezone = serializers.CharField(max_length=50, validators=[validate_timezone])
 
     class Meta:
         model = Lesson
