@@ -67,6 +67,9 @@ class InstructorAdmin(admin.ModelAdmin):
     inlines = [EducationInline, EmploymentInline, AdicionalQualificationsAdmin, AgeGroupAdmin,
                InstrumentsAdmin, LessonRateAdmin, LessonSizeAdmin]
 
+    def has_add_permission(self, request):
+        return False
+
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.annotate(distance=Cast(None, PointField()))
@@ -186,6 +189,9 @@ class StudentAdmin(admin.ModelAdmin):
     search_fields = ('user__email', 'display_name',)
     readonly_fields = ('user', 'display_name', 'age',)
 
+    def has_add_permission(self, request):
+        return False
+
     def save_model(self, request, obj, form, change):
         if 'location' in form.changed_data:
             obj.coordinates = get_geopoint_from_location(obj.location)
@@ -204,6 +210,9 @@ class ParentAdmin(admin.ModelAdmin):
     search_fields = ('user__email', 'display_name',)
     readonly_fields = ('user', 'display_name', 'age',)
     inlines = (TiedStudentInline,)
+
+    def has_add_permission(self, request):
+        return False
 
     def save_model(self, request, obj, form, change):
         if 'location' in form.changed_data:
