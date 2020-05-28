@@ -192,6 +192,26 @@ class StudentAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-admin.site.register(Student, StudentAdmin)
+class TiedStudentInline(admin.TabularInline):
+    model = TiedStudent
+    extra = 1
+
+
+class ParentAdmin(admin.ModelAdmin):
+    fields = ('user', 'display_name', 'age', 'birthday', 'gender', 'location',)
+    list_display = ('pk', 'user', 'display_name',)
+    list_filter = ('gender', HasCoordinatesFilter,)
+    search_fields = ('user__email', 'display_name',)
+    readonly_fields = ('user', 'display_name', 'age',)
+    inlines = (TiedStudentInline,)
+
+    def save_model(self, request, obj, form, change):
+        if 'location' in form.changed_data:
+            obj.coordinates = get_geopoint_from_location(obj.location)
+        super().save_model(request, obj, form, change)
+
+
 admin.site.register(Instructor, InstructorAdmin)
+admin.site.register(Parent, ParentAdmin)
+admin.site.register(Student, StudentAdmin)
 admin.site.register(TiedStudent, TiedStudentAdmin)
