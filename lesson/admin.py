@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.contrib import admin
+from django.db.models import Q
 
 from accounts.models import TiedStudent
 from core.constants import LESSON_REQUEST_CLOSED
@@ -78,7 +79,8 @@ class LessonRequestAdmin(admin.ModelAdmin):
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'user':
-            kwargs['queryset'] = User.objects.exclude(instructor=None).order_by('email')
+            kwargs['queryset'] = User.objects.filter(Q(student__isnull=False) | Q(parent__isnull=False)
+                                                     ).order_by('email')
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):

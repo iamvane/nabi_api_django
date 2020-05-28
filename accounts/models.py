@@ -222,7 +222,7 @@ class Instructor(IUserAccount):
     rates = HStoreField(blank=True, null=True)
     studio_address = models.CharField(max_length=250, blank=True, null=True)
     travel_distance = models.CharField(max_length=250, blank=True, null=True)
-    video = models.URLField(blank=True, default='')
+    video = models.URLField(blank=True, default='', verbose_name='URL of video file')
 
     # --- Notifications ---
     request_posted = models.BooleanField(default=False)
