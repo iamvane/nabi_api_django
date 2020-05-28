@@ -1,6 +1,8 @@
 import requests
+from pygeocoder import Geocoder, GeocoderError
 
 from django.conf import settings
+from django.contrib.gis.geos import Point
 from django.template import loader
 from django.core.mail import EmailMultiAlternatives
 from django.utils import timezone
@@ -215,3 +217,15 @@ def get_stripe_customer_id(user):
         return user.student.stripe_customer_id
     else:
         return None
+
+
+def get_geopoint_from_location(location):
+    assert location != ''
+    geocoder = Geocoder(api_key=settings.GOOGLE_MAPS_API_KEY)
+    try:
+        results = geocoder.geocode(location)
+    except GeocoderError.G_GEO_ZERO_RESULTS:
+        return None
+    except GeocoderError as e:
+        raise Exception(e.status, e.response)
+    return Point(results[0].coordinates[1], results[0].coordinates[0], srid=4326)
