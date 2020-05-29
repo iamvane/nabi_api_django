@@ -403,6 +403,7 @@ class VerifyPhoneView(views.APIView):
             .verifications \
             .create(to=phone.number, channel=request.data['channel'])
         return Response({"sid": verification.sid, "status": verification.status,
+                         "phoneId": phone.id, "phoneNumber": phone.number,
                          'message': 'Token was sent to {}.'.format(request.data['phoneNumber'])})
 
     def put(self, request):
@@ -416,7 +417,7 @@ class VerifyPhoneView(views.APIView):
         if approved:
             phone.verified_at = timezone.now()
             phone.save()
-        return Response({'status': verification_check.status,
+        return Response({'status': verification_check.status, "phoneId": phone.id, "phoneNumber": phone.number,
                          'message': 'Phone validation was successful.' if approved else 'Failed phone validation.'},
                         status=status.HTTP_200_OK if approved else status.HTTP_400_BAD_REQUEST
                         )
