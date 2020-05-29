@@ -439,8 +439,9 @@ class InstructorEducationView(views.APIView):
         data['instructor'] = request.user.instructor.pk
         serializer = sers.InstructorEducationSerializer(data=data)
         if serializer.is_valid():
-            serializer.save()
-            return Response({"message": "success"}, status=status.HTTP_200_OK)
+            obj = serializer.save()
+            ser = sers.InstructorEducationSerializer(obj)
+            return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -462,8 +463,9 @@ class InstructorEducationItemView(views.APIView):
             return Response({"error": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
         serializer = sers.InstructorEducationSerializer(instance=educ_instance, data=data, partial=True)
         if serializer.is_valid():
-            serializer.save()
-            return Response({"message": "success"}, status=status.HTTP_200_OK)
+            obj = serializer.save()
+            ser = sers.InstructorEducationSerializer(obj)
+            return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -472,8 +474,10 @@ class InstructorEducationItemView(views.APIView):
             educ_instance = Education.objects.get(pk=pk)
         except ObjectDoesNotExist:
             return Response({"error": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
+        ser = sers.InstructorEducationSerializer(educ_instance)
+        data = ser.data
         educ_instance.delete()
-        return Response({"message": "success"}, status=status.HTTP_200_OK)
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class InstructorDetailView(views.APIView):
