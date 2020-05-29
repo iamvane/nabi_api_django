@@ -183,7 +183,7 @@ class HasCoordinatesFilter(admin.SimpleListFilter):
 
 
 class StudentAdmin(admin.ModelAdmin):
-    fields = ('user', 'display_name', 'age', 'birthday', 'gender', 'location',)
+    fields = ('user', 'display_name', 'age', 'avatar', 'birthday', 'gender', 'location',)
     list_display = ('pk', 'user', 'display_name',)
     list_filter = ('gender', HasCoordinatesFilter,)
     search_fields = ('user__email', 'display_name',)
@@ -204,7 +204,7 @@ class TiedStudentInline(admin.TabularInline):
 
 
 class ParentAdmin(admin.ModelAdmin):
-    fields = ('user', 'display_name', 'age', 'birthday', 'gender', 'location',)
+    fields = ('user', 'display_name', 'age', 'avatar', 'birthday', 'gender', 'location',)
     list_display = ('pk', 'user', 'display_name',)
     list_filter = ('gender', HasCoordinatesFilter,)
     search_fields = ('user__email', 'display_name',)
