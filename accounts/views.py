@@ -599,8 +599,9 @@ class InstructorEmploymentView(views.APIView):
     def post(self, request):
         serializer = sers.InstructorEmploymentSerializer(data=request.data, context={'user': request.user})
         if serializer.is_valid():
-            serializer.save()
-            return Response({"message": "success"}, status=status.HTTP_200_OK)
+            obj = serializer.save()
+            ser = sers.InstructorEmploymentSerializer(obj)
+            return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -621,8 +622,9 @@ class InstructorEmploymentItemView(views.APIView):
         serializer = sers.InstructorEmploymentSerializer(instance=instance, data=request.data,
                                                     context={'user': request.user}, partial=True)
         if serializer.is_valid():
-            serializer.save()
-            return Response({"message": "success"}, status=status.HTTP_200_OK)
+            obj = serializer.save()
+            ser = sers.InstructorEmploymentSerializer(obj)
+            return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -632,8 +634,10 @@ class InstructorEmploymentItemView(views.APIView):
         except ObjectDoesNotExist:
             return Response({"error": "Does not exist an object with provided id"},
                             status=status.HTTP_400_BAD_REQUEST)
+        ser = sers.InstructorEmploymentSerializer(instance)
+        data = ser.data
         instance.delete()
-        return Response({"message": "success"}, status=status.HTTP_200_OK)
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class InstructorListView(views.APIView):
