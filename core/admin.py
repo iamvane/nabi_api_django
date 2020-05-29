@@ -54,7 +54,6 @@ class UserAdmin(admin.ModelAdmin):
     list_select_related = ('phonenumber',)
     search_fields = ('email', 'first_name', 'last_name',)
     readonly_fields = ('profile', 'referral_token', 'referred_by',)
-    ordering = ('pk',)
     add_form = CreateUserForm
     inlines = [PhoneNumberAdmin, ]
 
