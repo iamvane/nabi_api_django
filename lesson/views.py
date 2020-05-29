@@ -81,8 +81,9 @@ class LessonRequestItemView(views.APIView):
         else:
             ser = sers.LessonRequestSerializer(data=data, instance=instance, context={'is_parent': False}, partial=True)
         if ser.is_valid():
-            ser.save()
-            return Response({'message': 'success'}, status=status.HTTP_200_OK)
+            obj = ser.save()
+            ser = sers.LessonRequestDetailSerializer(obj)
+            return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -93,8 +94,10 @@ class LessonRequestItemView(views.APIView):
         except ObjectDoesNotExist:
             return Response({'message': 'There is not lesson request with provided id'},
                             status=status.HTTP_400_BAD_REQUEST)
+        ser = sers.LessonRequestDetailSerializer(lesson_request)
+        data = ser.data
         lesson_request.delete()
-        return Response({'message': 'success'}, status=status.HTTP_200_OK)
+        return Response(data, status=status.HTTP_200_OK)
 
     def get(self, request, pk):
         """Get data from existing lesson request"""
