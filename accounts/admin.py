@@ -12,7 +12,8 @@ from django.db.models.functions import Cast
 
 from accounts.models import (Education, Employment, Instructor, InstructorAdditionalQualifications,
                              InstructorAgeGroup, InstructorInstruments, InstructorLessonRate, InstructorLessonSize,
-                             Parent, TiedStudent)
+                             Parent, Student, TiedStudent)
+from accounts.utils import get_geopoint_from_location
 
 User = get_user_model()
 
@@ -62,9 +63,11 @@ class InstructorAdmin(admin.ModelAdmin):
     location_search_values = {}
     places_search_values = {}
     readonly_fields = ('user', 'display_name', 'age', 'experience_years', 'distance', )
-    ordering = ('pk', )
     inlines = [EducationInline, EmploymentInline, AdicionalQualificationsAdmin, AgeGroupAdmin,
                InstrumentsAdmin, LessonRateAdmin, LessonSizeAdmin]
+
+    def has_add_permission(self, request):
+        return False
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
@@ -148,7 +151,7 @@ class InstructorAdmin(admin.ModelAdmin):
                 results = geocoder.geocode(obj.location)
             except GeocoderError as e:
                 raise Exception(e.status, e.response)
-            obj.coordinates = Point(results[0].coordinates[1], results[0].coordinates[0])
+            obj.coordinates = Point(results[0].coordinates[1], results[0].coordinates[0], srid=4326)
         super().save_model(request, obj, form, change)
 
 
@@ -161,5 +164,62 @@ class TiedStudentAdmin(admin.ModelAdmin):
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
+class HasCoordinatesFilter(admin.SimpleListFilter):
+    title = 'Has Coordinates'
+    parameter_name = 'coordinates'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('yes', 'Yes'),
+            ('no', 'No'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'yes':
+            return queryset.filter(coordinates__isnull=False)
+        if self.value() == 'no':
+            return queryset.filter(coordinates__isnull=True)
+
+
+class StudentAdmin(admin.ModelAdmin):
+    fields = ('user', 'display_name', 'age', 'avatar', 'birthday', 'gender', 'location',)
+    list_display = ('pk', 'user', 'display_name',)
+    list_filter = ('gender', HasCoordinatesFilter,)
+    search_fields = ('user__email', 'display_name',)
+    readonly_fields = ('user', 'display_name', 'age',)
+
+    def has_add_permission(self, request):
+        return False
+
+    def save_model(self, request, obj, form, change):
+        if 'location' in form.changed_data:
+            obj.coordinates = get_geopoint_from_location(obj.location)
+        super().save_model(request, obj, form, change)
+
+
+class TiedStudentInline(admin.TabularInline):
+    model = TiedStudent
+    extra = 1
+
+
+class ParentAdmin(admin.ModelAdmin):
+    fields = ('user', 'display_name', 'age', 'avatar', 'birthday', 'gender', 'location',)
+    list_display = ('pk', 'user', 'display_name',)
+    list_filter = ('gender', HasCoordinatesFilter,)
+    search_fields = ('user__email', 'display_name',)
+    readonly_fields = ('user', 'display_name', 'age',)
+    inlines = (TiedStudentInline,)
+
+    def has_add_permission(self, request):
+        return False
+
+    def save_model(self, request, obj, form, change):
+        if 'location' in form.changed_data:
+            obj.coordinates = get_geopoint_from_location(obj.location)
+        super().save_model(request, obj, form, change)
+
+
 admin.site.register(Instructor, InstructorAdmin)
+admin.site.register(Parent, ParentAdmin)
+admin.site.register(Student, StudentAdmin)
 admin.site.register(TiedStudent, TiedStudentAdmin)

@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 
+from accounts.models import PhoneNumber
 from accounts.serializers import (InstructorCreateAccountSerializer, ParentCreateAccountSerializer,
                                   StudentCreateAccountSerializer)
 
@@ -32,6 +33,11 @@ class ProfileListFilter(admin.SimpleListFilter):
             return queryset.filter(student__isnull=False)
 
 
+class PhoneNumberAdmin(admin.TabularInline):
+    model = PhoneNumber
+    extra = 1
+
+
 class UserAdmin(admin.ModelAdmin):
     """Copied from django.contrib.auth.admin.UserAdmin"""
     fieldsets = (
@@ -45,10 +51,11 @@ class UserAdmin(admin.ModelAdmin):
     )
     list_display = ('pk', 'email', 'first_name', 'last_name', 'profile', 'is_active',)
     list_filter = ('is_active', ProfileListFilter,)
+    list_select_related = ('phonenumber',)
     search_fields = ('email', 'first_name', 'last_name',)
     readonly_fields = ('profile', 'referral_token', 'referred_by',)
-    ordering = ('pk',)
     add_form = CreateUserForm
+    inlines = [PhoneNumberAdmin, ]
 
     def profile(self, instance):
         return instance.get_role()
@@ -57,6 +64,11 @@ class UserAdmin(admin.ModelAdmin):
         if not obj:
             return self.add_fieldsets
         return super().get_fieldsets(request, obj)
+
+    def get_formsets_with_inlines(self, request, obj=None):   # for hide phone number when a new user is created
+        if obj is not None:
+            for inline in self.get_inline_instances(request, obj):
+                yield inline.get_formset(request, obj), inline
 
     def get_form(self, request, obj=None, **kwargs):
         """
