@@ -501,8 +501,9 @@ class UploadAvatarView(views.APIView):
         account = get_account(request.user)
         serializer = serializer_class(instance=account, data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response({"message": 'success'}, status=status.HTTP_200_OK)
+            obj = serializer.save()
+            ser = serializer_class(obj)
+            return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
