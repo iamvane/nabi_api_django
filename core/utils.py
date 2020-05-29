@@ -7,11 +7,14 @@ from hashlib import sha1
 
 from django.conf import settings
 from django.core.mail import EmailMessage, EmailMultiAlternatives
+from django.db import IntegrityError
 from django.template.loader import render_to_string
+from django.utils import timezone
 from django.utils.html import strip_tags
 from django.template import loader
 
 from core.constants import MONTH_CHOICES
+from core.models import UserToken
 
 
 def update_model(instance, **kwargs):
@@ -116,3 +119,17 @@ def generate_random_password(length):
     """Generate a random password with specified length"""
     characters = string.ascii_letters + string.digits
     return ''.join(random.choice(characters) for i in range(length))
+
+
+def generate_token_reset_password(user):
+    repeated_token = True
+    while repeated_token:
+        token = generate_hash(user.email)
+        expired_time = timezone.now() + timedelta(days=1)
+        try:
+            UserToken.objects.create(user=user, token=token, expired_at=expired_time)
+        except IntegrityError:
+            pass
+        else:
+            repeated_token = False
+    return token
