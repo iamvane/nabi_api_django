@@ -403,6 +403,7 @@ class VerifyPhoneView(views.APIView):
             .verifications \
             .create(to=phone.number, channel=request.data['channel'])
         return Response({"sid": verification.sid, "status": verification.status,
+                         "phoneId": phone.id, "phoneNumber": phone.number,
                          'message': 'Token was sent to {}.'.format(request.data['phoneNumber'])})
 
     def put(self, request):
@@ -416,7 +417,7 @@ class VerifyPhoneView(views.APIView):
         if approved:
             phone.verified_at = timezone.now()
             phone.save()
-        return Response({'status': verification_check.status,
+        return Response({'status': verification_check.status, "phoneId": phone.id, "phoneNumber": phone.number,
                          'message': 'Phone validation was successful.' if approved else 'Failed phone validation.'},
                         status=status.HTTP_200_OK if approved else status.HTTP_400_BAD_REQUEST
                         )
@@ -438,8 +439,9 @@ class InstructorEducationView(views.APIView):
         data['instructor'] = request.user.instructor.pk
         serializer = sers.InstructorEducationSerializer(data=data)
         if serializer.is_valid():
-            serializer.save()
-            return Response({"message": "success"}, status=status.HTTP_200_OK)
+            obj = serializer.save()
+            ser = sers.InstructorEducationSerializer(obj)
+            return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -461,8 +463,9 @@ class InstructorEducationItemView(views.APIView):
             return Response({"error": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
         serializer = sers.InstructorEducationSerializer(instance=educ_instance, data=data, partial=True)
         if serializer.is_valid():
-            serializer.save()
-            return Response({"message": "success"}, status=status.HTTP_200_OK)
+            obj = serializer.save()
+            ser = sers.InstructorEducationSerializer(obj)
+            return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -471,8 +474,10 @@ class InstructorEducationItemView(views.APIView):
             educ_instance = Education.objects.get(pk=pk)
         except ObjectDoesNotExist:
             return Response({"error": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
+        ser = sers.InstructorEducationSerializer(educ_instance)
+        data = ser.data
         educ_instance.delete()
-        return Response({"message": "success"}, status=status.HTTP_200_OK)
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class InstructorDetailView(views.APIView):
@@ -496,8 +501,9 @@ class UploadAvatarView(views.APIView):
         account = get_account(request.user)
         serializer = serializer_class(instance=account, data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response({"message": 'success'}, status=status.HTTP_200_OK)
+            obj = serializer.save()
+            ser = serializer_class(obj)
+            return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -594,8 +600,9 @@ class InstructorEmploymentView(views.APIView):
     def post(self, request):
         serializer = sers.InstructorEmploymentSerializer(data=request.data, context={'user': request.user})
         if serializer.is_valid():
-            serializer.save()
-            return Response({"message": "success"}, status=status.HTTP_200_OK)
+            obj = serializer.save()
+            ser = sers.InstructorEmploymentSerializer(obj)
+            return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -616,8 +623,9 @@ class InstructorEmploymentItemView(views.APIView):
         serializer = sers.InstructorEmploymentSerializer(instance=instance, data=request.data,
                                                     context={'user': request.user}, partial=True)
         if serializer.is_valid():
-            serializer.save()
-            return Response({"message": "success"}, status=status.HTTP_200_OK)
+            obj = serializer.save()
+            ser = sers.InstructorEmploymentSerializer(obj)
+            return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -627,8 +635,10 @@ class InstructorEmploymentItemView(views.APIView):
         except ObjectDoesNotExist:
             return Response({"error": "Does not exist an object with provided id"},
                             status=status.HTTP_400_BAD_REQUEST)
+        ser = sers.InstructorEmploymentSerializer(instance)
+        data = ser.data
         instance.delete()
-        return Response({"message": "success"}, status=status.HTTP_200_OK)
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class InstructorListView(views.APIView):
@@ -841,8 +851,9 @@ class UploadVideoProfileView(views.APIView):
         account = get_account(request.user)
         serializer = sers.VideoInstructorSerializer(instance=account, data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response({"message": 'success'}, status=status.HTTP_200_OK)
+            obj = serializer.save()
+            ser = sers.VideoInstructorSerializer(obj)
+            return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
