@@ -241,25 +241,6 @@ class Instructor(IUserAccount):
     def role(self):
         return 'Instructor'
 
-    @property
-    def experience_years(self):
-        """Return experience years in base to registered employments"""
-        elapsed_time = ElapsedTime()
-        for employment in self.employment.all():
-            if employment.to_year is None:
-                today = timezone.now()
-                temp_date = get_date_a_month_later(datetime.date(today.year, today.month, today.day))
-            else:
-                temp_date = get_date_a_month_later(datetime.date(employment.to_year,
-                                                                 get_month_integer(employment.to_month),
-                                                                 1)
-                                                   )
-            temp_date = temp_date - datetime.timedelta(days=1)
-            elapsed_time.add_time(datetime.date(employment.from_year, get_month_integer(employment.from_month), 1),
-                                  temp_date)
-        elapsed_time.re_format()
-        return elapsed_time.years
-
     def is_complete(self):
         """Return True if instructor has provided required values for classified his profile as complete"""
         if not (self.user.first_name and self.user.last_name and self.display_name):
@@ -338,6 +319,8 @@ class Instructor(IUserAccount):
             list_fields.append('qualifications')
         if not self.music:
             list_fields.append('music')
+        if self.years_of_experience is None:
+            list_fields.append('yearsOfExperience')
         return list_fields
 
     def missing_fields_camelcase(self):
@@ -389,6 +372,8 @@ class Instructor(IUserAccount):
             list_fields.append('qualifications')
         if not self.music:
             list_fields.append('music')
+        if self.years_of_experience is None:
+            list_fields.append('yearsOfExperience')
         return list_fields
 
     def lesson_bookings(self):

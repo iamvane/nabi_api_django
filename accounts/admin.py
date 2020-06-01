@@ -55,14 +55,14 @@ class LessonSizeAdmin(admin.TabularInline):
 
 class InstructorAdmin(admin.ModelAdmin):
     fields = ('user', 'display_name', 'age', 'avatar', 'bio_title', 'bio_description', 'bg_status', 'location',
-              'music', 'interviewed', 'languages', 'studio_address', 'travel_distance', 'experience_years', 'video',)
+              'music', 'interviewed', 'languages', 'studio_address', 'travel_distance', 'years_of_experience', 'video',)
     list_display = ('pk', 'user', 'display_name', 'distance', )
     list_filter = ('interviewed', 'complete', )
     list_select_related = ('user', )
     search_fields = ('user__email', 'display_name', 'instruments__name')
     location_search_values = {}
     places_search_values = {}
-    readonly_fields = ('user', 'display_name', 'age', 'experience_years', 'distance', )
+    readonly_fields = ('user', 'display_name', 'age', 'distance', )
     inlines = [EducationInline, EmploymentInline, AdditionalQualificationsAdmin, AgeGroupAdmin,
                InstrumentsAdmin, LessonRateAdmin, LessonSizeAdmin]
 
