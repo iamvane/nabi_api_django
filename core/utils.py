@@ -1,4 +1,5 @@
 import random
+import requests
 import string
 
 from datetime import datetime, timedelta
@@ -7,11 +8,14 @@ from hashlib import sha1
 
 from django.conf import settings
 from django.core.mail import EmailMessage, EmailMultiAlternatives
+from django.db import IntegrityError
 from django.template.loader import render_to_string
+from django.utils import timezone
 from django.utils.html import strip_tags
 from django.template import loader
 
 from core.constants import MONTH_CHOICES
+from core.models import UserToken
 
 
 def update_model(instance, **kwargs):
@@ -116,3 +120,36 @@ def generate_random_password(length):
     """Generate a random password with specified length"""
     characters = string.ascii_letters + string.digits
     return ''.join(random.choice(characters) for i in range(length))
+
+
+def generate_token_reset_password(user):
+    repeated_token = True
+    while repeated_token:
+        token = generate_hash(user.email)
+        expired_time = timezone.now() + timedelta(days=1)
+        try:
+            UserToken.objects.create(user=user, token=token, expired_at=expired_time)
+        except IntegrityError:
+            pass
+        else:
+            repeated_token = False
+    return token
+
+
+def send_email_template(email, template_name, email_params=None):
+    assert (isinstance(email_params, list)) or (email_params is None)
+    target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
+    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS[template_name],
+            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": email},
+            "customProperties": []
+            }
+    if email_params:
+        data['customProperties'].extend(email_params)
+    resp = requests.post(target_url, json=data)
+    if resp.status_code != 200:
+        send_admin_email(f"[INFO] Error sending email to template {template_name}",
+                         f"An email could not be send to email {email}, with params {email_params}.\n"
+                         f"Response has status_code {resp.status_code} and content: {resp.content.decode()}"
+                         )
+        return False
+    return True

@@ -35,7 +35,7 @@ from core import constants as const
 from core.constants import *
 from core.models import UserBenefits, UserToken
 from core.permissions import AccessForInstructor
-from core.utils import generate_hash, get_date_a_month_later
+from core.utils import generate_hash, generate_token_reset_password, get_date_a_month_later
 from lesson.models import Application, Instrument, LessonBooking, LessonRequest
 from lesson.serializers import (LessonBookingParentDashboardSerializer, LessonBookingStudentDashboardSerializer,
                                 LessonRequestParentDashboardSerializer, LessonRequestStudentDashboardSerializer,
@@ -151,16 +151,7 @@ class ResetPasswordView(views.APIView):
         if serializer.is_valid():
             email = serializer.data['email']
             user = User.objects.get(email=email)
-            repeated_token = True
-            while repeated_token:
-                token = generate_hash(email)
-                expired_time = timezone.now() + timedelta(days=1)
-                try:
-                    UserToken.objects.create(user=user, token=token, expired_at=expired_time)
-                except IntegrityError:
-                    pass
-                else:
-                    repeated_token = False
+            token = generate_token_reset_password(user)
             if not send_reset_password_email(email, token):
                 return Response({'message': "Error sending email"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         return Response({'message': 'Check your email to set a new password.'}, status=status.HTTP_200_OK)

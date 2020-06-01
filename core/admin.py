@@ -8,7 +8,7 @@ from accounts.serializers import (InstructorCreateAccountSerializer, ParentCreat
 from .constants import BENEFIT_PENDING, ROLE_INSTRUCTOR, ROLE_PARENT, ROLE_STUDENT
 from .forms import CreateUserForm
 from .models import UserBenefits
-from .utils import generate_random_password
+from .utils import generate_random_password, send_email_template
 
 User = get_user_model()
 
@@ -36,6 +36,14 @@ class ProfileListFilter(admin.SimpleListFilter):
 class PhoneNumberAdmin(admin.TabularInline):
     model = PhoneNumber
     extra = 1
+
+
+def send_email_reset_password(user):
+    parameter_list = [
+        {"name": "email", "value": user.email},
+        {"name": "first_name", "value": user.first_name},
+    ]
+    return send_email_template(user.email, 'reset_password', parameter_list)
 
 
 class UserAdmin(admin.ModelAdmin):
@@ -81,19 +89,22 @@ class UserAdmin(admin.ModelAdmin):
         return super().get_form(request, obj, **defaults)
 
     def save_model(self, request, obj, form, change):
-        if not change:
+        if not change:   # call on create, not update
             role = form.cleaned_data.pop('role')
             form.cleaned_data['password'] = generate_random_password(10)
+            ser = None
             if role == ROLE_INSTRUCTOR:
                 ser = InstructorCreateAccountSerializer(data=form.cleaned_data)
             if role == ROLE_PARENT:
                 ser = ParentCreateAccountSerializer(data=form.cleaned_data)
             if role == ROLE_STUDENT:
                 ser = StudentCreateAccountSerializer(data=form.cleaned_data)
-            if ser.is_valid():
-                ser.save()
-            else:
-                raise Exception(f'{ser.errors}')
+            if ser:   # just in case
+                if ser.is_valid():
+                    account = ser.save()
+                    send_email_reset_password(account.user)
+                else:
+                    raise Exception(f'{ser.errors}')
         else:
             super().save_model(request, obj, form, change)
 
