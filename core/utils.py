@@ -137,14 +137,14 @@ def generate_token_reset_password(user):
 
 
 def send_email_template(email, template_name, email_params=None):
-    assert (isinstance(email_params, dict)) or (email_params is None)
+    assert (isinstance(email_params, list)) or (email_params is None)
     target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
     data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS[template_name],
             "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": email},
             "customProperties": []
             }
     if email_params:
-        data['customProperties'].append(email_params)
+        data['customProperties'].extend(email_params)
     resp = requests.post(target_url, json=data)
     if resp.status_code != 200:
         send_admin_email(f"[INFO] Error sending email to template {template_name}",

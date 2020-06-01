@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 
@@ -9,7 +8,7 @@ from accounts.serializers import (InstructorCreateAccountSerializer, ParentCreat
 from .constants import BENEFIT_PENDING, ROLE_INSTRUCTOR, ROLE_PARENT, ROLE_STUDENT
 from .forms import CreateUserForm
 from .models import UserBenefits
-from .utils import generate_random_password, generate_token_reset_password, send_email_template
+from .utils import generate_random_password, send_email_template
 
 User = get_user_model()
 
@@ -39,12 +38,10 @@ class PhoneNumberAdmin(admin.TabularInline):
     extra = 1
 
 
-def send_email_reset_password(user, token):
-    passw_reset_link = '{}/forgot-password?token={}'.format(settings.HOSTNAME_PROTOCOL, token)
+def send_email_reset_password(user):
     parameter_list = [
         {"name": "email", "value": user.email},
         {"name": "first_name", "value": user.first_name},
-        {"name": "password_reset_link", "value": passw_reset_link},
     ]
     return send_email_template(user.email, 'reset_password', parameter_list)
 
@@ -105,8 +102,7 @@ class UserAdmin(admin.ModelAdmin):
             if ser:   # just in case
                 if ser.is_valid():
                     account = ser.save()
-                    token = generate_token_reset_password(account.user)
-                    send_email_reset_password(account.user, token)
+                    send_email_reset_password(account.user)
                 else:
                     raise Exception(f'{ser.errors}')
         else:
