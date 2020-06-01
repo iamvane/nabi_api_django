@@ -129,5 +129,5 @@ HUBSPOT_TEMPLATE_IDS = {
     'alert_request': '27862630310',
     'password_reset': '27908644852',
     'referral_email': '27965493956',
-    'reset_password': '29866156142',   # when user is crated via admin
+    'reset_password': '29982554190',   # when user is crated via admin
 }
