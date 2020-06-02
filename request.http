@@ -10,7 +10,12 @@ Content-Type: application/json
   "firstName": "Idekel",
   "lastName": "Santana",
   "reference": "facebook",
-  "termsAccepted": true
+  "termsAccepted": true,
+  "gender": "male",
+  "phoneNumber": "+18292901143",
+  "location": "Boston MA",
+  "lat": "43",
+  "lng": "27.6"
 }
 
 ### Set-Cookie:  csrftoken=zDbcXUdR4RCvgb7XwRP64VgW69EUc0OJSm3OosxdhgFVVuPKUWGaExApLaXBsb6F; expires=Sat, 22 Aug 2020 11:59:50 GMT; Max-Age=31449600; Path=/; SameSite=Lax
