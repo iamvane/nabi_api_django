@@ -12,7 +12,7 @@ from rest_framework import serializers, validators
 
 from core.constants import (
     DAY_TUPLE, DEGREE_TYPE_CHOICES, GENDER_CHOICES, LESSON_DURATION_CHOICES, MONTH_CHOICES,
-    PLACE_FOR_LESSONS_CHOICES, SKILL_LEVEL_CHOICES,
+    PLACE_FOR_LESSONS_CHOICES, SKILL_LEVEL_CHOICES, PHONE_TYPE_MAIN,
 )
 from core.models import UserBenefits
 from core.utils import update_model
@@ -21,7 +21,7 @@ from lesson.models import Instrument
 from .models import (
     Affiliate, Availability, Education, Employment, Instructor, InstructorAdditionalQualifications,
     InstructorAgeGroup, InstructorInstruments,
-    InstructorPlaceForLessons, InstructorLessonRate, InstructorLessonSize, Parent,
+    InstructorPlaceForLessons, InstructorLessonRate, InstructorLessonSize, Parent, PhoneNumber,
     Student, StudentDetails, TiedStudent, get_account,
 )
 from .utils import add_to_email_list, add_to_email_list_v2, init_kwargs
@@ -40,6 +40,10 @@ class BaseCreateAccountSerializer(serializers.Serializer):
     birthday = serializers.DateField(allow_null=True, required=True, )   # LLL: check this
     referringCode = serializers.CharField(max_length=20, allow_blank=True, allow_null=True, required=False)
     terms_accepted = serializers.BooleanField(required=False)
+    location = serializers.CharField(max_length=150, required=False)
+    phone_number = serializers.CharField(max_length=50, required=False)
+    lat = serializers.FloatField(required=False)
+    lng = serializers.FloatField(required=False)
 
     def validate(self, attrs):
         if User.objects.filter(email=attrs.get('email')).count() > 0:
@@ -66,6 +70,8 @@ class BaseCreateAccountSerializer(serializers.Serializer):
         user.referral_token = validated_data['email'][:ind_at_sign] + timezone.now().strftime('%H%M%S%f')
         user.save()
         user.set_user_benefits()
+        if validated_data.get('phone_number'):
+            PhoneNumber.objects.create(user=user, number=validated_data['phone_number'], type=PHONE_TYPE_MAIN)
         return user
 
     def update(self, instance, validated_data):
@@ -79,6 +85,8 @@ class BaseCreateAccountSerializer(serializers.Serializer):
             data['firstName'] = data.pop('first_name')
         if 'last_name' in data.keys():
             data['lastName'] = data.pop('last_name')
+        if 'phone_number' in data.keys():
+            data['phoneNumber'] = data.pop('phoneNumber')
         return data
 
     def to_internal_value(self, data):
@@ -92,6 +100,8 @@ class BaseCreateAccountSerializer(serializers.Serializer):
             new_data['display_name'] = new_data.pop('displayName')
         if keys.get('termsAccepted'):
             new_data['terms_accepted'] = new_data.pop('termsAccepted')
+        if keys.get('phoneNumber'):
+            new_data['phone_number'] = new_data.pop('phoneNumber')
         return super().to_internal_value(new_data)
 
 
@@ -169,9 +179,17 @@ class ParentCreateAccountSerializer(BaseCreateAccountSerializer):
 
     def create(self, validated_data):
         user = super().create(validated_data)
+        lat = lng = None
+        if validated_data.get('lat'):
+            lat = validated_data.pop('lat')
+        if validated_data.get('lng'):
+            lng = validated_data.pop('lng')
         parent = Parent.objects.create(user=user, **init_kwargs(Parent(), validated_data))
         parent.set_display_name()
         parent.set_referral_token()
+        if lat and lng:
+            parent.coordinates = Point(lng, lat, srid=4326)
+            parent.save()
         add_to_email_list_v2(user, ['parents', 'customer_to_request'], ['facebook_lead'])   # add to list in HubSpot
         return parent
 
@@ -180,9 +198,17 @@ class StudentCreateAccountSerializer(BaseCreateAccountSerializer):
 
     def create(self, validated_data):
         user = super().create(validated_data)
+        lat = lng = None
+        if validated_data.get('lat'):
+            lat = validated_data.pop('lat')
+        if validated_data.get('lng'):
+            lng = validated_data.pop('lng')
         student = Student.objects.create(user=user, **init_kwargs(Student(), validated_data))
         student.set_display_name()
         student.set_referral_token()
+        if lat and lng:
+            student.coordinates = Point(lng, lat, srid=4326)
+            student.save()
         add_to_email_list_v2(user, ['students', 'customer_to_request'], ['facebook_lead'])   # add to list in HubSpot
         return student
 
