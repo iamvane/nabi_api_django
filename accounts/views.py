@@ -358,8 +358,9 @@ class FetchInstructor(views.APIView):
 
 class UpdateProfileView(views.APIView):
     def put(self, request):
-        serializer = sers.InstructorProfileSerializer(data=request.data, instance=Instructor.objects.get(user=request.user),
-                                                 partial=True)
+        serializer = sers.InstructorProfileSerializer(data=request.data,
+                                                      instance=Instructor.objects.get(user=request.user),
+                                                      partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "success"}, status=status.HTTP_200_OK)

@@ -147,6 +147,7 @@ class InstructorProfileSerializer(serializers.Serializer):
     bio_title = serializers.CharField(max_length=200, required=False)
     bio_description = serializers.CharField(required=False)
     music = serializers.ListField(child=serializers.CharField(), required=False)
+    years_of_experience = serializers.IntegerField(required=False)
 
     def update(self, instance, validated_data):
         instance = update_model(instance, **validated_data)
@@ -162,6 +163,8 @@ class InstructorProfileSerializer(serializers.Serializer):
             new_data['bio_description'] = data.get('bioDescription')
         if keys.get('music'):
             new_data['music'] = data.get('music')
+        if keys.get('yearsOfExperience'):
+            new_data['years_of_experience'] = data.get('yearsOfExperience')
         return super().to_internal_value(new_data)
 
 
