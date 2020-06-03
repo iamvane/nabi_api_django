@@ -411,7 +411,7 @@ class Employment(models.Model):
 
 
 class Availability(models.Model):
-    instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE, related_name='availability')
+    instructor = models.OneToOneField(Instructor, on_delete=models.CASCADE, related_name='availability')
     mon8to10 = models.BooleanField(default=False)
     mon10to12 = models.BooleanField(default=False)
     mon12to3 = models.BooleanField(default=False)
@@ -450,6 +450,9 @@ class Availability(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = 'Availabilities'
 
 
 class InstructorInstruments(models.Model):
