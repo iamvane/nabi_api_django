@@ -259,7 +259,7 @@ class Instructor(IUserAccount):
             return False
         if self.instruments.count() == 0 or self.instructorlessonsize_set.count() == 0 \
                 or self.instructoragegroup_set.count() == 0 or self.instructorlessonrate_set.count() == 0 \
-                or self.availability.count() == 0 or self.employment.count() == 0 or self.education.count() == 0:
+                or not hasattr(self, 'availability') or self.employment.count() == 0 or self.education.count() == 0:
             return False
         return True
 
@@ -309,7 +309,7 @@ class Instructor(IUserAccount):
             list_fields.append('age_group')
         if self.instructorlessonrate_set.count() == 0:
             list_fields.append('lesson_rate')
-        if self.availability.count() == 0:
+        if not hasattr(self, 'availability'):
             list_fields.append('availability')
         if self.employment.count() == 0:
             list_fields.append('employment')
@@ -362,7 +362,7 @@ class Instructor(IUserAccount):
             list_fields.append('ageGroup')
         if self.instructorlessonrate_set.count() == 0:
             list_fields.append('rates')
-        if self.availability.count() == 0:
+        if not hasattr(self, 'availability'):
             list_fields.append('availability')
         if self.employment.count() == 0:
             list_fields.append('employment')
