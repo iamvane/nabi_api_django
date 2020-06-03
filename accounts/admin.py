@@ -10,7 +10,7 @@ from django.contrib.gis.measure import D
 from django.db.models import Q
 from django.db.models.functions import Cast
 
-from accounts.models import (Education, Employment, Instructor, InstructorAdditionalQualifications,
+from accounts.models import (Availability, Education, Employment, Instructor, InstructorAdditionalQualifications,
                              InstructorAgeGroup, InstructorInstruments, InstructorLessonRate, InstructorLessonSize,
                              Parent, Student, TiedStudent)
 from accounts.utils import get_geopoint_from_location
@@ -53,6 +53,19 @@ class LessonSizeAdmin(admin.TabularInline):
     extra = 1
 
 
+class AvailabilityAdmin(admin.StackedInline):
+    model = Availability
+    fieldsets = (
+        (None, {'fields': (('mon8to10', 'mon10to12', 'mon12to3', 'mon3to6', 'mon6to9'),)}),
+        (None, {'fields': (('tue8to10', 'tue10to12', 'tue12to3', 'tue3to6', 'tue6to9'),)}),
+        (None, {'fields': (('wed8to10', 'wed10to12', 'wed12to3', 'wed3to6', 'wed6to9'),)}),
+        (None, {'fields': (('thu8to10', 'thu10to12', 'thu12to3', 'thu3to6', 'thu6to9'),)}),
+        (None, {'fields': (('fri8to10', 'fri10to12', 'fri12to3', 'fri3to6', 'fri6to9'),)}),
+        (None, {'fields': (('sat8to10', 'sat10to12', 'sat12to3', 'sat3to6', 'sat6to9'),)}),
+        (None, {'fields': (('sun8to10', 'sun10to12', 'sun12to3', 'sun3to6', 'sun6to9'),)}),
+    )
+
+
 class InstructorAdmin(admin.ModelAdmin):
     fields = ('user', 'display_name', 'age', 'avatar', 'bio_title', 'bio_description', 'bg_status', 'location',
               'music', 'interviewed', 'languages', 'studio_address', 'travel_distance', 'years_of_experience', 'video',)
@@ -62,9 +75,9 @@ class InstructorAdmin(admin.ModelAdmin):
     search_fields = ('user__email', 'display_name', 'instruments__name')
     location_search_values = {}
     places_search_values = {}
-    readonly_fields = ('user', 'display_name', 'age', 'distance', )
-    inlines = [EducationInline, EmploymentInline, AdditionalQualificationsAdmin, AgeGroupAdmin,
-               InstrumentsAdmin, LessonRateAdmin, LessonSizeAdmin]
+    readonly_fields = ('user', 'display_name', 'age', 'experience_years', 'distance', )
+    inlines = [EducationInline, EmploymentInline, AdditionalQualificationsAdmin, InstrumentsAdmin,
+               LessonRateAdmin, AgeGroupAdmin, LessonSizeAdmin, AvailabilityAdmin, ]
 
     def has_add_permission(self, request):
         return False
