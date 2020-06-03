@@ -14,7 +14,7 @@ from accounts.utils import get_stripe_customer_id
 from core.constants import *
 
 from .models import Application, Instrument, Lesson, LessonBooking, LessonRequest
-from .utils import PACKAGES
+from .utils import PACKAGES, get_date_time_from_datetime_timezone
 
 User = get_user_model()
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -188,9 +188,8 @@ class LessonRequestDetailSerializer(serializers.ModelSerializer):
             data['studentDetails'] = data.pop('students')
         if instance.trial_proposed_datetime:
             data['timezone'] = instance.trial_proposed_timezone
-            proposed_datetime = instance.trial_proposed_datetime.astimezone(timezone.pytz.timezone(data['timezone']))
-            data['date'] = proposed_datetime.strftime('%Y-%m-%d')
-            data['time'] = proposed_datetime.strftime('%H:%M')
+            data['date'], data['time'] = get_date_time_from_datetime_timezone(instance.trial_proposed_datetime,
+                                                                              instance.trial_proposed_timezone)
         return data
 
 
@@ -298,12 +297,15 @@ class LessonRequestItemSerializer(serializers.ModelSerializer):
     distance = serializers.FloatField(source='distance.mi', read_only=True)
     applications_received = serializers.SerializerMethodField()
     applied = serializers.SerializerMethodField()
+    date = serializers.CharField(max_length=10, required=False)
+    time = serializers.CharField(max_length=5, required=False)
+    timezone = serializers.CharField(max_length=50, required=False)
 
     class Meta:
         model = LessonRequest
         fields = ('avatar', 'created_at', 'display_name', 'distance', 'id', 'instrument',  'lessons_duration',
                   'location', 'message', 'place_for_lessons', 'role', 'skill_level', 'students', 'title',
-                  'applications_received', 'applied')
+                  'applications_received', 'applied', 'date', 'time', 'timezone')
 
     def get_applications_received(self, instance):
         return instance.applications.count()
@@ -352,6 +354,10 @@ class LessonRequestItemSerializer(serializers.ModelSerializer):
             except ValueError:
                 new_data['avatar'] = ''
             new_data['location'] = instance.user.parent.location
+        if instance.trial_proposed_datetime:
+            new_data['timezone'] = instance.trial_proposed_timezone
+            new_data['date'], new_data['time'] = get_date_time_from_datetime_timezone(instance.trial_proposed_datetime,
+                                                                                      instance.trial_proposed_timezone)
         return new_data
 
 
@@ -406,11 +412,15 @@ class LessonRequestListItemSerializer(serializers.ModelSerializer):
     studentDetails = serializers.SerializerMethodField()
     application = serializers.SerializerMethodField()
     applied = serializers.SerializerMethodField()
+    date = serializers.CharField(max_length=10, required=False)
+    time = serializers.CharField(max_length=5, required=False)
+    timezone = serializers.CharField(max_length=50, required=False)
 
     class Meta:
         model = LessonRequest
         fields = ('id', 'avatar', 'displayName', 'instrument',  'lessonDuration', 'location', 'requestMessage',
-                  'placeForLessons', 'skillLevel', 'studentDetails', 'requestTitle', 'application', 'applied')
+                  'placeForLessons', 'skillLevel', 'studentDetails', 'requestTitle', 'application', 'applied',
+                  'date', 'time', 'timezone')
 
     def get_avatar(self, instance):
         account = get_account(instance.user)
@@ -456,6 +466,14 @@ class LessonRequestListItemSerializer(serializers.ModelSerializer):
             return student_list
         else:
             return [{'name': instance.user.first_name, 'age': instance.user.student.age}]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if instance.trial_proposed_datetime:
+            data['timezone'] = instance.trial_proposed_timezone
+            data['date'], data['time'] = get_date_time_from_datetime_timezone(instance.trial_proposed_datetime,
+                                                                              instance.trial_proposed_timezone)
+        return data
 
 
 class LessonBookingRegisterSerializer(serializers.Serializer):

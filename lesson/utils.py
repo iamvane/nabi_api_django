@@ -4,6 +4,7 @@ import requests
 from decimal import Decimal
 
 from django.conf import settings
+from django.utils import timezone
 
 from core.constants import (BENEFIT_AMOUNT, BENEFIT_DISCOUNT, BENEFIT_LESSON, BENEFIT_READY,
                             PACKAGE_ARTIST, PACKAGE_MAESTRO, PACKAGE_TRIAL, PACKAGE_VIRTUOSO)
@@ -246,3 +247,9 @@ def get_booking_data(user, package_name, application):
     data['processingFee'] = round(Decimal('0.0290') * total + Decimal('0.30'), 2)
     data['total'] = round(total + data['processingFee'], 2)
     return data
+
+
+def get_date_time_from_datetime_timezone(datetime_value, time_zone):
+    """Get date and time elements of a datetime, after apply it a time_zone"""
+    localize_datetime = datetime_value.astimezone(timezone.pytz.timezone(time_zone))
+    return localize_datetime.strftime('%Y-%m-%d'), localize_datetime.strftime('%H:%M')
