@@ -723,24 +723,31 @@ class InstructorEmploymentSerializer(serializers.ModelSerializer):
         if self.partial:   # when update operation is requested
             still_work_here = data.get('still_work_here') if 'still_work_here' in data.keys() \
                 else self.instance.still_work_here
-            to_year = data.get('to_year') if 'to_year' in data.keys() else self.instance.to_year
-            if to_year == '':
-                to_year = None
-            to_month = data.get('to_month') if 'to_month' in data.keys() else self.instance.to_month
-            if to_month == '':
-                to_month = None
-            if still_work_here and (to_year is not None or to_month is not None):
-                raise serializers.ValidationError('toYear or toMonth values are not congruent with stillWorkHere value')
-            elif not still_work_here and (to_year is None or to_month is None):
-                raise serializers.ValidationError('toYear or toMonth values are not congruent with stillWorkHere value')
+            if still_work_here:
+                if data.get('to_year') or data.get('to_month'):
+                    raise serializers.ValidationError('toYear or toMonth values are not congruent with stillWorkHere value')
+                else:
+                    data['to_year'] = None
+                    data['to_month'] = None
+            else:
+                to_year = data.get('to_year') if data.get('to_year') else self.instance.to_year
+                to_month = data.get('to_month') if data.get('to_month') else self.instance.to_month
+                if not (to_year and to_month):
+                    raise serializers.ValidationError('toYear or toMonth values are not congruent with stillWorkHere value')
+                else:
+                    data['to_year'] = to_year
+                    data['to_month'] = to_month
             return data
         else:
             if 'still_work_here' in data.keys():
                 still_work_here = data['still_work_here']
             else:
                 still_work_here = False
-            if not still_work_here:
-                if not data.get('to_year') or not data.get('to_month'):
+            if still_work_here:
+                if data.get('to_year') or data.get('to_month'):
+                    raise serializers.ValidationError('If you work here currently, final date should not be provided')
+            else:
+                if not (data.get('to_year') and data.get('to_month')):
                     raise serializers.ValidationError('If you not work here currently, final date should be provided')
             if data.get('to_month') and not data.get('to_year'):
                 raise serializers.ValidationError('Year of final date should be provided')
