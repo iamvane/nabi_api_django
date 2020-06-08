@@ -882,7 +882,7 @@ class InstructorQueryParamsSerializer(serializers.Serializer):
 
 class InstructorDataSerializer(serializers.ModelSerializer):
     """Serializer for return instructor data, to usage in searching instructor"""
-    availability = serializers.SerializerMethodField()
+    availability = AvailavilitySerializer(default={})
     distance = serializers.FloatField(source='distance.mi', read_only=True)
     instruments = serializers.SerializerMethodField()
     lessons_taught = serializers.IntegerField(default=0, read_only=True)
@@ -901,14 +901,6 @@ class InstructorDataSerializer(serializers.ModelSerializer):
                   'bg_status', 'distance', 'reviews', 'location', 'interviewed', 'instruments', 'rates', 'availability',
                   'place_for_lessons', 'years_of_experience', 'qualifications', 'lessons_taught', 'student_ages',
                   'last_login', 'member_since', 'video',)
-
-    def get_availability(self, instructor):
-        items = instructor.availability.all()
-        if len(items):
-            ser = AvailavilitySerializer(items[0])
-            return ser.data
-        else:
-            return {}
 
     def get_location(self, instructor):
         return instructor.get_location()
@@ -987,7 +979,7 @@ class InstructorDetailSerializer(serializers.ModelSerializer):
     age_group = AgeGroupsSerializer(source='instructoragegroup_set', many=True, read_only=True)
     rates = LessonRateSerializer(source='instructorlessonrate_set', many=True, read_only=True)
     place_for_lessons = PlaceForLessonsSerializer(source='instructorplaceforlessons_set', many=True, read_only=True)
-    availability = AvailavilitySerializer(many=True, read_only=True)
+    availability = AvailavilitySerializer(read_only=True)
     qualifications = AdditionalQualifications(source='instructoradditionalqualifications_set', many=True, read_only=True)
     languages = serializers.ListField(child=serializers.CharField(), read_only=True)
     lessons_taught = serializers.IntegerField(default=0)
@@ -1038,8 +1030,6 @@ class InstructorDetailSerializer(serializers.ModelSerializer):
         else:
             data['placeForLessons'] = data.pop('place_for_lessons')
         data['lessonsTaught'] = data.pop('lessons_taught')
-        if data.get('availability'):
-            data['availability'] = data.pop('availability')[0]
         if data.get('rates'):
             rates = data.pop('rates')[0]
             data['rates'] = {'mins30': str(rates['mins30']), 'mins45': str(rates['mins45']),
