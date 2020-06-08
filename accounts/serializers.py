@@ -147,6 +147,7 @@ class InstructorProfileSerializer(serializers.Serializer):
     bio_title = serializers.CharField(max_length=200, required=False)
     bio_description = serializers.CharField(required=False)
     music = serializers.ListField(child=serializers.CharField(), required=False)
+    years_of_experience = serializers.IntegerField(required=False)
 
     def update(self, instance, validated_data):
         instance = update_model(instance, **validated_data)
@@ -162,6 +163,8 @@ class InstructorProfileSerializer(serializers.Serializer):
             new_data['bio_description'] = data.get('bioDescription')
         if keys.get('music'):
             new_data['music'] = data.get('music')
+        if keys.get('yearsOfExperience'):
+            new_data['years_of_experience'] = data.get('yearsOfExperience')
         return super().to_internal_value(new_data)
 
 
@@ -870,7 +873,7 @@ class InstructorDataSerializer(serializers.ModelSerializer):
         model = Instructor
         fields = ('id', 'display_name', 'avatar', 'age', 'gender', 'bio_title', 'bio_description', 'languages',
                   'bg_status', 'distance', 'reviews', 'location', 'interviewed', 'instruments', 'rates', 'availability',
-                  'place_for_lessons', 'experience_years', 'qualifications', 'lessons_taught', 'student_ages',
+                  'place_for_lessons', 'years_of_experience', 'qualifications', 'lessons_taught', 'student_ages',
                   'last_login', 'member_since', 'video',)
 
     def get_availability(self, instructor):
@@ -931,7 +934,7 @@ class InstructorDataSerializer(serializers.ModelSerializer):
                     'lessonsTaught': data.get('lessons_taught'), 'instruments': data.get('instruments'),
                     'rates': data.get('rates'), 'placeForLessons': data.get('place_for_lessons'),
                     'availability': data.get('availability'), 'student_ages': data.get('student_ages'),
-                    'languages': data.get('languages'), 'yearsOfExperience': data.get('experience_years'),
+                    'languages': data.get('languages'), 'yearsOfExperience': data.get('years_of_experience'),
                     'lastLogin': data.get('last_login'), 'memberSince': data.get('member_since'),
                     'video': data.get('video')}
         return new_data
@@ -972,7 +975,7 @@ class InstructorDetailSerializer(serializers.ModelSerializer):
         fields = ['id', 'user_id', 'display_name', 'age', 'member_since', 'bg_status', 'bio_title', 'bio_description',
                   'interviewed', 'location', 'distance', 'music', 'instruments', 'lesson_size', 'age_group', 'rates',
                   'place_for_lessons', 'availability', 'reviews', 'qualifications', 'languages', 'studio_address',
-                  'travel_distance', 'lessons_taught', 'education', 'employment', 'experience_years', 'avatar', 'video']
+                  'travel_distance', 'lessons_taught', 'education', 'employment', 'years_of_experience', 'avatar', 'video']
 
     def get_distance(self, instance):
         if self.context.get('account') and self.context.get('account').coordinates:
@@ -994,7 +997,7 @@ class InstructorDetailSerializer(serializers.ModelSerializer):
         data['studioAddress'] = data.pop('studio_address')
         data['travelDistance'] = data.pop('travel_distance')
         data['memberSince'] = data.pop('member_since')
-        data['yearsOfExperience'] = data.pop('experience_years')
+        data['yearsOfExperience'] = data.pop('years_of_experience')
         data['avatar'] = data.pop('avatar')
         if data.get('lesson_size'):
             data['lessonSize'] = data.pop('lesson_size')[0]

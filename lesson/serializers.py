@@ -227,7 +227,7 @@ class ApplicationItemSerializer(serializers.ModelSerializer):
     displayName = serializers.CharField(max_length=100, source='instructor.display_name', read_only=True)
     instructorId = serializers.IntegerField(source='instructor.id', read_only=True)
     reviews = serializers.IntegerField(default=0)
-    yearsOfExperience = serializers.IntegerField(source='instructor.experience_years', read_only=True)
+    yearsOfExperience = serializers.IntegerField(source='instructor.years_of_experience', read_only=True)
 
     class Meta:
         model = Application
