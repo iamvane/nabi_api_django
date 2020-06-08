@@ -28,7 +28,8 @@ class LessonRequest(models.Model):
     place_for_lessons = models.CharField(max_length=100, choices=PLACE_FOR_LESSONS_CHOICES)
     lessons_duration = models.CharField(max_length=100, choices=LESSON_DURATION_CHOICES)
     travel_distance = models.IntegerField(blank=True, null=True)
-
+    trial_proposed_datetime = models.DateTimeField(blank=True, null=True)
+    trial_proposed_timezone = models.CharField(max_length=50, blank=True)
     students = models.ManyToManyField(TiedStudent, blank=True)
     status = models.CharField(max_length=100, choices=LESSON_REQUEST_STATUSES,
                               blank=True, default=LESSON_REQUEST_ACTIVE)
@@ -101,6 +102,7 @@ class Lesson(models.Model):
     booking = models.ForeignKey(LessonBooking, on_delete=models.CASCADE, related_name='lessons')
     student_details = JSONField(default=dict)
     scheduled_datetime = models.DateTimeField(blank=True, null=True)
+    scheduled_timezone = models.CharField(max_length=50, blank=True)
     status = models.CharField(max_length=50, choices=STATUSES, default=SCHEDULED)
     grade = models.PositiveSmallIntegerField(blank=True, null=True)
     comment = models.TextField(blank=True)   # added on grade

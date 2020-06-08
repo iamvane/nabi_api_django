@@ -47,6 +47,7 @@ class LessonRequestView(views.APIView):
             ser = sers.LessonRequestSerializer(data=data, context={'is_parent': False})
         if ser.is_valid():
             obj = ser.save()
+            obj.refresh_from_db()   # to avoid trial_proposed_datetime as string, and get it as datetime
             task_log = TaskLog.objects.create(task_name='send_request_alert_instructors',
                                               args={'request_id': obj.id})
             send_request_alert_instructors.delay(obj.id, task_log.id)

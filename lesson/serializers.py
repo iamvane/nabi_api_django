@@ -1,4 +1,4 @@
-import re
+import datetime
 import stripe
 from dateutil import relativedelta
 
@@ -14,22 +14,14 @@ from accounts.utils import get_stripe_customer_id
 from core.constants import *
 
 from .models import Application, Instrument, Lesson, LessonBooking, LessonRequest
-from .utils import PACKAGES
+from .utils import PACKAGES, get_date_time_from_datetime_timezone
 
 User = get_user_model()
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
 def validate_timezone(value):
-    pattern = r'^[+,-]?([\d]{1,2}):([\d]{2})$'
-    match = re.match(pattern, value)
-    if match is None:
-        raise serializers.ValidationError('Provided timezone has invalid format')
-    else:
-        h, m = match.groups()
-        if int(h) > 24 or int(m) >= 60:
-            raise serializers.ValidationError('Wrong timezone value')
-        return value
+    return value in timezone.pytz.all_timezones
 
 
 class LessonRequestStudentSerializer(serializers.Serializer):
@@ -52,11 +44,15 @@ class LessonRequestSerializer(serializers.ModelSerializer):
     skill_level = serializers.ChoiceField(choices=SKILL_LEVEL_CHOICES)
     students = serializers.ListField(child=serializers.DictField(), required=False)
     user_id = serializers.IntegerField(source='user.id')
+    date = serializers.DateField(format='%Y-%m-%d', required=False)
+    time = serializers.TimeField(format='%H:%M', required=False)
+    timezone = serializers.CharField(max_length=50, validators=[validate_timezone], required=False)
 
     class Meta:
         model = LessonRequest
         fields = ('user_id', 'title', 'message', 'instrument', 'lessons_duration', 'travel_distance',
-                  'place_for_lessons', 'skill_level', 'students')
+                  'place_for_lessons', 'skill_level', 'students', 'date', 'time', 'timezone',
+                  'trial_proposed_datetime', 'trial_proposed_timezone')
 
     def to_internal_value(self, data):
         keys = dict.fromkeys(data, 1)
@@ -79,6 +75,12 @@ class LessonRequestSerializer(serializers.ModelSerializer):
             new_data['skill_level'] = data.get('skillLevel')
         if keys.get('students'):
             new_data['students'] = data.get('students')
+        if keys.get('date'):
+            new_data['date'] = data.get('date')
+        if keys.get('time'):
+            new_data['time'] = data.get('time')
+        if keys.get('timezone'):
+            new_data['timezone'] = data.get('timezone')
         return super().to_internal_value(new_data)
 
     def validate(self, attrs):
@@ -88,6 +90,10 @@ class LessonRequestSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError('students data must be provided')
             if attrs['place_for_lessons'] == 'studio' and not attrs.get('travel_distance'):
                 raise serializers.ValidationError('travel_distance value must be provided')
+            there_is_one = attrs.get('date') or attrs.get('time') or attrs.get('timezone')
+            there_is_all = attrs.get('date') and attrs.get('time') and attrs.get('timezone')
+            if there_is_one and not there_is_all:
+                raise serializers.ValidationError("Data for schedule trial lesson is missing")
         else:
             if attrs.get('place_for_lessons') == 'studio' and (
                     (self.instance.travel_distance is None and attrs.get('travel_distance') is None)
@@ -95,6 +101,8 @@ class LessonRequestSerializer(serializers.ModelSerializer):
                         and attrs.get('travel_distance') is None)
             ):
                 raise serializers.ValidationError('travel_distance value must be provided')
+            if attrs.get('date') or attrs.get('time') or attrs.get('timezone'):
+                raise serializers.ValidationError("Proposed schedule for trial lesson can't be changed here")
         return attrs
 
     def create(self, validated_data):
@@ -102,6 +110,11 @@ class LessonRequestSerializer(serializers.ModelSerializer):
         validated_data['user_id'] = validated_data.get('user', {}).get('id')
         validated_data.pop('user')
         validated_data['instrument_id'] = instrument.id
+        if validated_data.get('date'):
+            time_zone = validated_data.pop('timezone')
+            tz_offset = datetime.datetime.now(timezone.pytz.timezone(time_zone)).strftime('%z')
+            validated_data['trial_proposed_datetime'] = f"{validated_data.pop('date')} {validated_data.pop('time')}{tz_offset}"
+            validated_data['trial_proposed_timezone'] = time_zone
         if self.context['is_parent']:
             parent_obj = User.objects.get(id=validated_data['user_id']).parent
             students_data = validated_data.pop('students')
@@ -157,11 +170,14 @@ class LessonRequestDetailSerializer(serializers.ModelSerializer):
     skillLevel = serializers.CharField(max_length=100, source='skill_level', read_only=True)
     travelDistance = serializers.IntegerField(source='travel_distance', read_only=True)
     students = LessonRequestStudentSerializer(many=True, read_only=True)
+    date = serializers.CharField(max_length=10, required=False)
+    time = serializers.CharField(max_length=5, required=False)
+    timezone = serializers.CharField(max_length=50, required=False)
 
     class Meta:
         model = LessonRequest
         fields = ('id', 'instrument', 'requestMessage', 'requestTitle', 'lessonDuration', 'travelDistance',
-                  'placeForLessons', 'skillLevel', 'status', 'students')
+                  'placeForLessons', 'skillLevel', 'status', 'students', 'date', 'time', 'timezone')
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -170,6 +186,10 @@ class LessonRequestDetailSerializer(serializers.ModelSerializer):
             data['studentDetails'] = [{'name': instance.user.first_name, 'age': instance.user.student.age}]
         else:
             data['studentDetails'] = data.pop('students')
+        if instance.trial_proposed_datetime:
+            data['timezone'] = instance.trial_proposed_timezone
+            data['date'], data['time'] = get_date_time_from_datetime_timezone(instance.trial_proposed_datetime,
+                                                                              instance.trial_proposed_timezone)
         return data
 
 
@@ -277,12 +297,15 @@ class LessonRequestItemSerializer(serializers.ModelSerializer):
     distance = serializers.FloatField(source='distance.mi', read_only=True)
     applications_received = serializers.SerializerMethodField()
     applied = serializers.SerializerMethodField()
+    date = serializers.CharField(max_length=10, required=False)
+    time = serializers.CharField(max_length=5, required=False)
+    timezone = serializers.CharField(max_length=50, required=False)
 
     class Meta:
         model = LessonRequest
         fields = ('avatar', 'created_at', 'display_name', 'distance', 'id', 'instrument',  'lessons_duration',
                   'location', 'message', 'place_for_lessons', 'role', 'skill_level', 'students', 'title',
-                  'applications_received', 'applied')
+                  'applications_received', 'applied', 'date', 'time', 'timezone')
 
     def get_applications_received(self, instance):
         return instance.applications.count()
@@ -331,6 +354,10 @@ class LessonRequestItemSerializer(serializers.ModelSerializer):
             except ValueError:
                 new_data['avatar'] = ''
             new_data['location'] = instance.user.parent.location
+        if instance.trial_proposed_datetime:
+            new_data['timezone'] = instance.trial_proposed_timezone
+            new_data['date'], new_data['time'] = get_date_time_from_datetime_timezone(instance.trial_proposed_datetime,
+                                                                                      instance.trial_proposed_timezone)
         return new_data
 
 
@@ -385,11 +412,15 @@ class LessonRequestListItemSerializer(serializers.ModelSerializer):
     studentDetails = serializers.SerializerMethodField()
     application = serializers.SerializerMethodField()
     applied = serializers.SerializerMethodField()
+    date = serializers.CharField(max_length=10, required=False)
+    time = serializers.CharField(max_length=5, required=False)
+    timezone = serializers.CharField(max_length=50, required=False)
 
     class Meta:
         model = LessonRequest
         fields = ('id', 'avatar', 'displayName', 'instrument',  'lessonDuration', 'location', 'requestMessage',
-                  'placeForLessons', 'skillLevel', 'studentDetails', 'requestTitle', 'application', 'applied')
+                  'placeForLessons', 'skillLevel', 'studentDetails', 'requestTitle', 'application', 'applied',
+                  'date', 'time', 'timezone')
 
     def get_avatar(self, instance):
         account = get_account(instance.user)
@@ -435,6 +466,14 @@ class LessonRequestListItemSerializer(serializers.ModelSerializer):
             return student_list
         else:
             return [{'name': instance.user.first_name, 'age': instance.user.student.age}]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if instance.trial_proposed_datetime:
+            data['timezone'] = instance.trial_proposed_timezone
+            data['date'], data['time'] = get_date_time_from_datetime_timezone(instance.trial_proposed_datetime,
+                                                                              instance.trial_proposed_timezone)
+        return data
 
 
 class LessonBookingRegisterSerializer(serializers.Serializer):
@@ -665,10 +704,11 @@ class LessonRequestInstructorDashboardSerializer(serializers.ModelSerializer):
 
 
 class CreateLessonSerializer(serializers.ModelSerializer):
+    """Serializer for create a Lesson instance"""
     bookingId = serializers.IntegerField(source='booking_id')
     date = serializers.DateField(format='%Y-%m-%d')
     time = serializers.TimeField(format='%H:%M')
-    timezone = serializers.CharField(max_length=6, validators=[validate_timezone])
+    timezone = serializers.CharField(max_length=50, validators=[validate_timezone])
 
     class Meta:
         model = Lesson
@@ -676,16 +716,14 @@ class CreateLessonSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         time_zone = validated_data.pop('timezone')
-        if time_zone and time_zone[0] not in ('-', '+'):
-            time_zone = '+' + time_zone
-        if len(time_zone) == 5:
-            time_zone = time_zone[0] + '0' + time_zone[1:]
-        validated_data['scheduled_datetime'] = f"{validated_data.pop('date')} {validated_data.pop('time')}{time_zone}"
+        tz_offset = datetime.datetime.now(timezone.pytz.timezone(time_zone)).strftime('%z')
+        validated_data['scheduled_datetime'] = f"{validated_data.pop('date')} {validated_data.pop('time')}{tz_offset}"
+        validated_data['scheduled_timezone'] = time_zone
         return super().create(validated_data)
 
 
 class UpdateLessonSerializer(serializers.ModelSerializer):
-    """To update a lesson"""
+    """To update a Lesson instance"""
     id = serializers.IntegerField(read_only=True)
     grade = serializers.IntegerField(min_value=1, max_value=3)
     date = serializers.DateField(format='%Y-%m-%d')
@@ -718,11 +756,8 @@ class UpdateLessonSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Incomplete data for re-schedule the lesson')
         time_zone = attrs.get('timezone')
         if time_zone:
-            if time_zone[0] not in ('+', '-'):
-                time_zone = '+' + time_zone
-            if len(time_zone) == 5:
-                time_zone = time_zone[0] + '0' + time_zone[1:]
-            attrs['scheduled_datetime'] = f'{attrs.pop("date")} {attrs.pop("time")}{time_zone}'
+            tz_offset = datetime.datetime.now(timezone.pytz.timezone(time_zone)).strftime('%z')
+            attrs['scheduled_datetime'] = f'{attrs.pop("date")} {attrs.pop("time")}{tz_offset}'
         # verify data existence for grade a lesson
         if (keys.get('grade', 0) + keys.get('comment', 0)) == 1:
             raise serializers.ValidationError('Incomplete data to grade the lesson')

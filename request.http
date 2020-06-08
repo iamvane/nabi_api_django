@@ -421,6 +421,19 @@ Content-Type: application/json
 }
 or
 {
+  "requestTitle": "Guitar Instructor needed in Boston MA",
+  "instrument": "guitar",
+  "placeForLessons": "home",
+  "skillLevel": "beginner",
+  "lessonDuration": "45mins",
+  "requestMessage": "Hello I am looking for a guitar instructor",
+  "maxTravelDistance": 100,
+  "date": "2020-05-22",
+  "time": "09:30",
+  "timezone": "America/New_York"
+}
+or
+{
   "students": [
     {
       "name": "Santiago",
@@ -559,13 +572,17 @@ GET localhost:8000/v1/referral-dashboard/
 
 ###
 
+GET localhost:8000/timezones/
+
+###
+
 POST localhost:8000/lessons/
 
 {
 "bookingId": 8,
 "date": "2020-05-18",
 "time": "15:30",
-"timezone": "-06:00"
+"timezone": "America/New_York"
 }
 
 ###
@@ -575,7 +592,7 @@ PUT localhost:8000/lessons/<lesson_id>/
 {
 "date": "2020-05-18",
 "time": "17:30",
-"timezone": "-06:00"
+"timezone": "America/New_York"
 }
 or
 {
