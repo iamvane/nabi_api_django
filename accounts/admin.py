@@ -75,7 +75,7 @@ class InstructorAdmin(admin.ModelAdmin):
     search_fields = ('user__email', 'display_name', 'instruments__name')
     location_search_values = {}
     places_search_values = {}
-    readonly_fields = ('user', 'display_name', 'age', 'experience_years', 'distance', )
+    readonly_fields = ('user', 'display_name', 'age', 'distance', )
     inlines = [EducationInline, EmploymentInline, AdditionalQualificationsAdmin, InstrumentsAdmin,
                LessonRateAdmin, AgeGroupAdmin, LessonSizeAdmin, AvailabilityAdmin, ]
 
