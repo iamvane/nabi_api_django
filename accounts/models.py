@@ -320,7 +320,9 @@ class Instructor(IUserAccount):
         if not self.music:
             list_fields.append('music')
         if self.years_of_experience is None:
-            list_fields.append('yearsOfExperience')
+            list_fields.append('years_of_experience')
+        if not self.languages:
+            list_fields.append('languages')
         return list_fields
 
     def missing_fields_camelcase(self):
@@ -374,6 +376,8 @@ class Instructor(IUserAccount):
             list_fields.append('music')
         if self.years_of_experience is None:
             list_fields.append('yearsOfExperience')
+        if not self.languages:
+            list_fields.append('languages')
         return list_fields
 
     def lesson_bookings(self):
