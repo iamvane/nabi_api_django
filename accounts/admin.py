@@ -12,7 +12,7 @@ from django.db.models.functions import Cast
 
 from accounts.models import (Availability, Education, Employment, Instructor, InstructorAdditionalQualifications,
                              InstructorAgeGroup, InstructorInstruments, InstructorLessonRate, InstructorLessonSize,
-                             Parent, Student, TiedStudent)
+                             InstructorPlaceForLessons, Parent, Student, TiedStudent)
 from accounts.utils import get_geopoint_from_location
 
 User = get_user_model()
@@ -66,6 +66,11 @@ class AvailabilityAdmin(admin.StackedInline):
     )
 
 
+class InstructorPlaceForLessonsAdmin(admin.TabularInline):
+    model = InstructorPlaceForLessons
+    extra = 1
+
+
 class InstructorAdmin(admin.ModelAdmin):
     fields = ('user', 'display_name', 'age', 'avatar', 'bio_title', 'bio_description', 'bg_status', 'location',
               'music', 'interviewed', 'languages', 'studio_address', 'travel_distance', 'years_of_experience', 'video',)
@@ -77,7 +82,7 @@ class InstructorAdmin(admin.ModelAdmin):
     places_search_values = {}
     readonly_fields = ('user', 'display_name', 'age', 'distance', )
     inlines = [EducationInline, EmploymentInline, AdditionalQualificationsAdmin, InstrumentsAdmin,
-               LessonRateAdmin, AgeGroupAdmin, LessonSizeAdmin, AvailabilityAdmin, ]
+               InstructorPlaceForLessonsAdmin, LessonRateAdmin, AgeGroupAdmin, LessonSizeAdmin, AvailabilityAdmin, ]
 
     def has_add_permission(self, request):
         return False
