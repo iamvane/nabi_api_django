@@ -171,7 +171,7 @@ class ResetPasswordView(views.APIView):
                 user_token.user.set_password(passw)
                 user_token.user.save()
                 user_token.delete()
-                return Response({'message': 'Password set successfully.'}, status=status.HTTP_200_OK)
+                return Response({'message': 'Password set successfully. Please log in.'}, status=status.HTTP_200_OK)
             else:
                 return Response({'message': 'Token value is missing'}, status=status.HTTP_400_BAD_REQUEST)
         else:
