@@ -47,7 +47,7 @@ class LessonRequestView(views.APIView):
             ser = sers.LessonRequestSerializer(data=data, context={'is_parent': False})
         if ser.is_valid():
             obj = ser.save()
-            if request.user.lesson_bookings.count() == 0:
+            if not hasattr(request.user, 'no_booking_lessons'):
                 Lesson.create_lesson(obj)
             obj.refresh_from_db()   # to avoid trial_proposed_datetime as string, and get it as datetime
             task_log = TaskLog.objects.create(task_name='send_request_alert_instructors',
