@@ -92,7 +92,8 @@ class LessonRequestSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError('travel_distance value must be provided')
             there_is_one = attrs.get('date') or attrs.get('time') or attrs.get('timezone')
             there_is_all = attrs.get('date') and attrs.get('time') and attrs.get('timezone')
-            if there_is_one and not there_is_all:
+            user = User.objects.get(id=attrs['user']['id'])
+            if (there_is_one and not there_is_all) or (user.lesson_bookings.count() == 0 and not there_is_all):
                 raise serializers.ValidationError("Data for schedule trial lesson is missing")
         else:
             if attrs.get('place_for_lessons') == 'studio' and (

@@ -110,3 +110,11 @@ class Lesson(models.Model):
     comment = models.TextField(blank=True)   # added on grade
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
+
+    @classmethod
+    def create_lesson(cls, lesson_request):
+        """Create a lesson, linked to provided LessonRequest"""
+        return cls.objects.create(request=lesson_request,
+                                  scheduled_datetime=lesson_request.trial_proposed_datetime,
+                                  scheduled_timezone=lesson_request.trial_proposed_timezone,
+                                  )
