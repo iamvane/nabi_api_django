@@ -1,10 +1,13 @@
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
 from django.db import models
+from django.utils import timezone
 
 from accounts.models import Instructor, Parent, Student, TiedStudent
 from core.constants import *
 from payments.models import Payment
+
+from lesson.utils import get_date_time_from_datetime_timezone
 
 User = get_user_model()
 
@@ -50,6 +53,18 @@ class LessonRequest(models.Model):
             return False
         else:
             return min_age <= self.user.student.age <= max_age
+
+    def get_next_lessons(self):
+        """This returns a queryset"""
+        if hasattr(self, 'no_booking_lessons'):
+            lessons = self.no_booking_lessons.filter(scheduled_datetime__gt=timezone.now(), status=Lesson.SCHEDULED)
+        else:
+            booking = LessonBooking.objects.filter(application__request=self).last()
+            if booking:
+                lessons = booking.lessons.filter(scheduled_datetime__gt=timezone.now(), status=Lesson.SCHEDULED)
+            else:
+                lessons = Lesson.objects.none()
+        return lessons
 
 
 class Application(models.Model):
@@ -118,3 +133,23 @@ class Lesson(models.Model):
                                   scheduled_datetime=lesson_request.trial_proposed_datetime,
                                   scheduled_timezone=lesson_request.trial_proposed_timezone,
                                   )
+
+    @classmethod
+    def get_next_lesson(cls, user, is_instructor=None):
+        lessons = None
+        if is_instructor is None:
+            is_instructor = user.is_instructor()
+        if is_instructor:
+            lessons = cls.objects.filter(booking__application__instructor=user.instructor, status=cls.SCHEDULED,
+                                         scheduled_datetime__gt=timezone.now()).order_by('scheduled_datetime')
+        else:
+            if cls.objects.filter(booking__isnull=False).filter(booking__user=user).count():
+                lessons = cls.objects.filter(booking__isnull=False, booking__user=user, status=cls.SCHEDULED,
+                                             scheduled_datetime__gt=timezone.now()).order_by('scheduled_datetime')
+            if cls.objects.filter(request__isnull=False).filter(request__user=user).count():
+                lessons = cls.objects.filter(request__isnull=False, request__user=user, status=cls.SCHEDULED,
+                                             scheduled_datetime__gt=timezone.now()).order_by('scheduled_datetime')
+        if lessons is not None:
+            return lessons.first()
+        else:
+            return lessons

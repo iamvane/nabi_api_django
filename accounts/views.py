@@ -36,10 +36,11 @@ from core.constants import *
 from core.models import UserBenefits, UserToken
 from core.permissions import AccessForInstructor
 from core.utils import generate_hash, generate_token_reset_password, get_date_a_month_later
-from lesson.models import Application, Instrument, LessonBooking, LessonRequest
+from lesson.models import Application, Instrument, Lesson, LessonBooking, LessonRequest
 from lesson.serializers import (LessonBookingParentDashboardSerializer, LessonBookingStudentDashboardSerializer,
                                 LessonRequestParentDashboardSerializer, LessonRequestStudentDashboardSerializer,
-                                InstructorDashboardSerializer, LessonRequestInstructorDashboardSerializer)
+                                InstructorDashboardSerializer, LessonRequestInstructorDashboardSerializer,
+                                ScheduledLessonSerializer)
 
 from . import serializers as sers
 from .models import (Availability, Education, Employment, Instructor, InstructorAgeGroup, InstructorInstruments,
@@ -782,6 +783,7 @@ class DashboardView(views.APIView):
                 requests = []
             ser_lr = LessonRequestInstructorDashboardSerializer(requests, many=True)
             data.update({'requests': ser_lr.data})
+            next_lesson = Lesson.get_next_lesson(request.user, True)
         elif request.user.is_parent():
             serializer = LessonBookingParentDashboardSerializer(
                 request.user.lesson_bookings.filter(status__in=[LessonBooking.PAID, LessonBooking.TRIAL]).order_by('id'),
@@ -792,6 +794,7 @@ class DashboardView(views.APIView):
                 request.user.lesson_requests.filter(status=LESSON_REQUEST_ACTIVE).order_by('id'), many=True
             )
             data.update({'requests': ser_lr.data})
+            next_lesson = Lesson.get_next_lesson(request.user, False)
         else:
             serializer = LessonBookingStudentDashboardSerializer(
                 request.user.lesson_bookings.filter(status__in=[LessonBooking.PAID, LessonBooking.TRIAL]).order_by('id'),
@@ -802,6 +805,9 @@ class DashboardView(views.APIView):
                 request.user.lesson_requests.filter(status=LESSON_REQUEST_ACTIVE).order_by('id'), many=True
             )
             data.update({'requests': ser_rl.data})
+            next_lesson = Lesson.get_next_lesson(request.user, False)
+        ser_nl = ScheduledLessonSerializer(next_lesson)
+        data.update({'nextLesson': ser_nl.data})
         return Response(data, status=status.HTTP_200_OK)
 
 
