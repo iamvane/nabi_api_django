@@ -596,11 +596,20 @@ class InstructorDashboardSerializer(serializers.ModelSerializer):
         age = serializers.IntegerField(required=False, read_only=True)
         parent = serializers.CharField(max_length=30, required=False, read_only=True)
         students = serializers.ListField(required=False, read_only=True)
+        lastLessonId = serializers.SerializerMethodField()
 
         class Meta:
             model = LessonBooking
             fields = ('bookingId', 'instrument', 'lessonsBooked', 'lessonsRemaining', 'skillLevel',
-                      'studentName', 'age', 'parent', 'students')
+                      'studentName', 'age', 'parent', 'students', 'lastLessonId')
+
+        def get_lastLessonId(self, instance):
+            lesson = Lesson.objects.filter(booking=instance, status=Lesson.SCHEDULED,
+                                           scheduled_datetime__lt=timezone.now()).last()
+            if lesson:
+                return lesson.id
+            else:
+                return None
 
         def to_representation(self, instance):
             data = super().to_representation(instance)
