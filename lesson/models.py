@@ -79,7 +79,11 @@ class LessonBooking(models.Model):
     user = models.ForeignKey(User, on_delete=models.PROTECT, related_name='lesson_bookings')
     quantity = models.IntegerField()
     total_amount = models.DecimalField(max_digits=9, decimal_places=4)
-    application = models.OneToOneField(Application, on_delete=models.CASCADE, related_name='booking')
+    request = models.OneToOneField(LessonRequest, blank=True, null=True, on_delete=models.CASCADE,
+                                   related_name='booking')
+    application = models.ForeignKey(Application, blank=True, null=True, on_delete=models.CASCADE, related_name='bookings')
+    instructor = models.ForeignKey(Instructor, blank=True, null=True, on_delete=models.SET_NULL, related_name='bookings')
+    rate = models.DecimalField(max_digits=9, decimal_places=4, blank=True, null=True)
     description = models.CharField(max_length=200, blank=True)
     status = models.CharField(max_length=50, choices=STATUSES, default=REQUESTED)
     details = JSONField(blank=True, default=dict)
@@ -102,12 +106,13 @@ class Lesson(models.Model):
         (MISSED, MISSED),
         (COMPLETE, COMPLETE),
     )
-    booking = models.ForeignKey(LessonBooking, blank=True, null=True, on_delete=models.CASCADE, related_name='lessons')
-    request = models.ForeignKey(LessonRequest, blank=True, null=True, on_delete=models.CASCADE,
-                                related_name='no_booking_lessons')
-    student_details = JSONField(default=dict)
-    scheduled_datetime = models.DateTimeField(blank=True, null=True)
-    scheduled_timezone = models.CharField(max_length=50, blank=True)
+    booking = models.ForeignKey(LessonBooking, on_delete=models.CASCADE, related_name='lessons')
+    student_details = JSONField(blank=True, default=dict)   # data obtained from LessonRequest
+    scheduled_datetime = models.DateTimeField()
+    scheduled_timezone = models.CharField(max_length=50)
+    # instructor and rate are copied from LessonBooking
+    instructor = models.ForeignKey(Instructor, blank=True, null=True, on_delete=models.SET_NULL, related_name='lessons')
+    rate = models.DecimalField(max_digits=9, decimal_places=4, blank=True, null=True)
     status = models.CharField(max_length=50, choices=STATUSES, default=SCHEDULED)
     grade = models.PositiveSmallIntegerField(blank=True, null=True)
     comment = models.TextField(blank=True)   # added on grade
