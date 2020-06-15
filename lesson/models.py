@@ -54,18 +54,6 @@ class LessonRequest(models.Model):
         else:
             return min_age <= self.user.student.age <= max_age
 
-    def get_next_lessons(self):
-        """This returns a queryset"""
-        if hasattr(self, 'no_booking_lessons'):
-            lessons = self.no_booking_lessons.filter(scheduled_datetime__gt=timezone.now(), status=Lesson.SCHEDULED)
-        else:
-            booking = LessonBooking.objects.filter(application__request=self).last()
-            if booking:
-                lessons = booking.lessons.filter(scheduled_datetime__gt=timezone.now(), status=Lesson.SCHEDULED)
-            else:
-                lessons = Lesson.objects.none()
-        return lessons
-
 
 class Application(models.Model):
     request = models.ForeignKey(LessonRequest, related_name='applications', on_delete=models.PROTECT)
