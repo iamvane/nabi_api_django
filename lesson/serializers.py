@@ -92,7 +92,8 @@ class LessonRequestSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError('travel_distance value must be provided')
             there_is_one = attrs.get('date') or attrs.get('time') or attrs.get('timezone')
             there_is_all = attrs.get('date') and attrs.get('time') and attrs.get('timezone')
-            if there_is_one and not there_is_all:
+            user = User.objects.get(id=attrs['user']['id'])
+            if (there_is_one and not there_is_all) or (not hasattr(user, 'no_booking_lessons') and not there_is_all):
                 raise serializers.ValidationError("Data for schedule trial lesson is missing")
         else:
             if attrs.get('place_for_lessons') == 'studio' and (
@@ -273,7 +274,7 @@ class LessonRequestApplicationsSerializer(serializers.ModelSerializer):
         fields = ('id', 'requestTitle', 'dateCreated', 'applications', 'freeTrial')
 
     def get_freeTrial(self, instance):
-        if instance.user.lesson_bookings.count() == 0:
+        if not hasattr(instance.user, 'no_booking_lessons'):
             return True
         else:
             return False
@@ -502,7 +503,7 @@ class LessonBookingRegisterSerializer(serializers.Serializer):
 
     def validate_package(self, value):
         user = User.objects.get(id=self.initial_data['userId'])
-        if user.lesson_bookings.count() == 0:
+        if not hasattr(user, 'no_booking_lessons'):
             self.initial_data['package'] = PACKAGE_TRIAL
         elif value == PACKAGE_TRIAL:
             raise serializers.ValidationError('Trial is not valid package for this user')

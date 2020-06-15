@@ -99,7 +99,9 @@ class Lesson(models.Model):
         (MISSED, MISSED),
         (COMPLETE, COMPLETE),
     )
-    booking = models.ForeignKey(LessonBooking, on_delete=models.CASCADE, related_name='lessons')
+    booking = models.ForeignKey(LessonBooking, blank=True, null=True, on_delete=models.CASCADE, related_name='lessons')
+    request = models.ForeignKey(LessonRequest, blank=True, null=True, on_delete=models.CASCADE,
+                                related_name='no_booking_lessons')
     student_details = JSONField(default=dict)
     scheduled_datetime = models.DateTimeField(blank=True, null=True)
     scheduled_timezone = models.CharField(max_length=50, blank=True)
@@ -108,3 +110,11 @@ class Lesson(models.Model):
     comment = models.TextField(blank=True)   # added on grade
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
+
+    @classmethod
+    def create_lesson(cls, lesson_request):
+        """Create a lesson, linked to provided LessonRequest"""
+        return cls.objects.create(request=lesson_request,
+                                  scheduled_datetime=lesson_request.trial_proposed_datetime,
+                                  scheduled_timezone=lesson_request.trial_proposed_timezone,
+                                  )

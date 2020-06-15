@@ -10,9 +10,17 @@ def set_students_details(sender, instance, raw, using, update_fields, **kwargs):
     if raw:  # to don't execute when fixtures are loaded
         return None
     elif instance.id is None:   # Lesson creation
-        if instance.booking.user.is_parent():
-            instance.student_details = [{'name': student.name, 'age': student.age}
-                                        for student in instance.booking.application.request.students.all()]
-        else:
-            instance.student_details = [{'name': instance.booking.user.first_name,
-                                         'age': instance.booking.user.student.age}]
+        if instance.booking:
+            if instance.booking.user.is_parent():
+                instance.student_details = [{'name': student.name, 'age': student.age}
+                                            for student in instance.booking.application.request.students.all()]
+            else:
+                instance.student_details = [{'name': instance.booking.user.first_name,
+                                             'age': instance.booking.user.student.age}]
+        elif instance.request:
+            if instance.request.user.is_parent():
+                instance.student_details = [{'name': student.name, 'age': student.age}
+                                            for student in instance.request.students.all()]
+            else:
+                instance.student_details = [{'name': instance.request.user.first_name,
+                                             'age': instance.request.user.student.age}]
