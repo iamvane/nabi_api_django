@@ -6,17 +6,16 @@ from accounts.models import TiedStudent
 from core.constants import LESSON_REQUEST_CLOSED
 from core.models import TaskLog
 
-from .models import Application, LessonBooking, LessonRequest
+from .models import Application, Lesson, LessonBooking, LessonRequest
 from .tasks import send_request_alert_instructors
 
 User = get_user_model()
 
 
 class ApplicationAdmin(admin.ModelAdmin):
-    fields = ('view_request', 'instructor', 'rate', 'message', 'seen', )
+    fields = ('view_request', 'request', 'instructor', 'rate', 'message', )
     list_display = ('pk', 'get_instructor_email', 'request_id', 'created_at', )
     readonly_fields = ('view_request', )
-    ordering = ('pk', )
 
     def get_instructor_email(self, obj):
         return obj.instructor.user.email
@@ -28,11 +27,11 @@ class ApplicationAdmin(admin.ModelAdmin):
 
 
 class LessonBookingAdmin(admin.ModelAdmin):
-    fields = ('user', 'quantity', 'total_amount', 'view_application', 'status')
+    fields = ('view_application', 'application', 'user', 'instructor', 'rate', 'quantity', 'total_amount', 'status')
     list_display = ('pk', 'get_user_email', 'application_id', 'quantity', 'total_amount', 'status', )
     list_filter = ('status', )
     readonly_fields = ('view_application', )
-    ordering = ('pk', )
+    search_fields = ('user__email', )
 
     def get_user_email(self, obj):
         return '{email} (id: {id})'.format(email=obj.user.email, id=obj.user_id)
@@ -41,7 +40,24 @@ class LessonBookingAdmin(admin.ModelAdmin):
 
     def view_application(self, obj):
         return 'id: {} ({})'.format(obj.application.pk, obj.application.instructor.user.email)
-    view_application.short_description = 'application'
+    view_application.short_description = 'application info'
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'user':
+            kwargs['queryset'] = User.objects.filter(Q(student__isnull=False) | Q(parent__isnull=False)
+                                                     ).order_by('email')
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    def save_model(self, request, obj, form, change):
+        if 'application' in form.changed_data or (not change and form.data.get('application')):
+            if form.data.get('application'):
+                application = Application.objects.get(id=form.data['application'])
+                obj.instructor = application.instructor
+                obj.rate = application.rate
+            else:
+                obj.instructor = None
+                obj.rate = None
+        super().save_model(request, obj, form, change)
 
 
 def close_lesson_request(model_admin, request, queryset):
@@ -55,7 +71,6 @@ class LessonRequestAdmin(admin.ModelAdmin):
     list_select_related = ('user', 'instrument', )
     filter_horizontal = ('students', )
     search_fields = ('user__email', 'instrument__name', )
-    ordering = ('pk',)
     actions = [close_lesson_request, ]
     object_id = None
 
@@ -102,6 +117,35 @@ class LessonRequestAdmin(admin.ModelAdmin):
             send_request_alert_instructors.delay(obj.id, task_log.id)
 
 
+class LessonAdmin(admin.ModelAdmin):
+    fields = ('booking', 'student_details', 'scheduled_datetime', 'scheduled_timezone',
+              'instructor', 'rate', 'status')
+    readonly_fields = ('student_details', )
+    list_display = ('pk', 'get_booking_id', 'get_user_email', 'get_instructor', 'scheduled_datetime')
+    list_filter = ('status', )
+    search_fields = ('booking__user__email', 'instructor__user__email')
+
+    def get_user_email(self, obj):
+        return '{email} (user_id: {id})'.format(email=obj.booking.user.email, id=obj.booking.user_id)
+
+    def get_booking_id(self, obj):
+        return obj.booking.id
+
+    def get_instructor(self, obj):
+        if obj.instructor is None:
+            return ''
+        else:
+            return f'{obj.instructor.display_name} ({obj.instructor.user.email})'
+
+    get_user_email.short_description = 'user email'
+    get_user_email.admin_order_field = 'booking__user__email'
+    get_booking_id.short_description = 'booking id'
+    get_booking_id.admin_order_field = 'booking_id'
+    get_instructor.short_description = 'instructor'
+    get_instructor.admin_order_field = 'instructor__user__email'
+
+
 admin.site.register(Application, ApplicationAdmin)
 admin.site.register(LessonBooking, LessonBookingAdmin)
 admin.site.register(LessonRequest, LessonRequestAdmin)
+admin.site.register(Lesson, LessonAdmin)
