@@ -27,7 +27,8 @@ class ApplicationAdmin(admin.ModelAdmin):
 
 
 class LessonBookingAdmin(admin.ModelAdmin):
-    fields = ('view_application', 'application', 'user', 'instructor', 'rate', 'quantity', 'total_amount', 'status')
+    fields = ('view_application', 'application', 'request', 'user', 'instructor', 'rate',
+              'quantity', 'total_amount', 'status')
     list_display = ('pk', 'get_user_email', 'application_id', 'quantity', 'total_amount', 'status', )
     list_filter = ('status', )
     readonly_fields = ('view_application', )
@@ -47,17 +48,6 @@ class LessonBookingAdmin(admin.ModelAdmin):
             kwargs['queryset'] = User.objects.filter(Q(student__isnull=False) | Q(parent__isnull=False)
                                                      ).order_by('email')
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
-
-    def save_model(self, request, obj, form, change):
-        if 'application' in form.changed_data or (not change and form.data.get('application')):
-            if form.data.get('application'):
-                application = Application.objects.get(id=form.data['application'])
-                obj.instructor = application.instructor
-                obj.rate = application.rate
-            else:
-                obj.instructor = None
-                obj.rate = None
-        super().save_model(request, obj, form, change)
 
 
 def close_lesson_request(model_admin, request, queryset):
