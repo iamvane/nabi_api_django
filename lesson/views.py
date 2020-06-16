@@ -47,9 +47,14 @@ class LessonRequestView(views.APIView):
             ser = sers.LessonRequestSerializer(data=data, context={'is_parent': False})
         if ser.is_valid():
             obj = ser.save()
-            if not hasattr(request.user, 'no_booking_lessons'):
-                Lesson.create_lesson(obj)
-            obj.refresh_from_db()   # to avoid trial_proposed_datetime as string, and get it as datetime
+            obj.refresh_from_db()  # to avoid trial_proposed_datetime as string, and get it as datetime
+            if request.user.lesson_bookings.count() == 0:
+                lb = LessonBooking.objects.create(user=request.user, quantity=1, total_amount=0, request=obj,
+                                                  description='Package trial')
+                Lesson.objects.create(booking=lb,
+                                      scheduled_datetime=obj.trial_proposed_datetime,
+                                      scheduled_timezone=obj.trial_proposed_timezone,
+                                      )
             task_log = TaskLog.objects.create(task_name='send_request_alert_instructors',
                                               args={'request_id': obj.id})
             send_request_alert_instructors.delay(obj.id, task_log.id)
@@ -134,7 +139,7 @@ class LessonRequestListView(views.APIView):
             point = None
             distance = None
             if keys.get('location'):
-                point = Point(query_ser.validated_data['location'][1], query_ser.validated_data['location'][0])
+                point = Point(query_ser.validated_data['location'][1], query_ser.validated_data['location'][0], srid=4326)
             if keys.get('distance'):
                 distance = query_ser.validated_data['distance']
             if point and distance is None:

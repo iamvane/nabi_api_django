@@ -93,9 +93,11 @@ class LessonRequestSerializer(serializers.ModelSerializer):
             there_is_one = attrs.get('date') or attrs.get('time') or attrs.get('timezone')
             there_is_all = attrs.get('date') and attrs.get('time') and attrs.get('timezone')
             user = User.objects.get(id=attrs['user']['id'])
-            if (there_is_one and not there_is_all) or (not hasattr(user, 'no_booking_lessons') and not there_is_all):
+            if (there_is_one and not there_is_all) or (user.lesson_bookings.count() == 0 and not there_is_all):
                 raise serializers.ValidationError("Data for schedule trial lesson is missing")
         else:
+            if self.instance.status == LESSON_REQUEST_CLOSED:
+                raise serializers.ValidationError('Closed Lesson Request can not be edited')
             if attrs.get('place_for_lessons') == 'studio' and (
                     (self.instance.travel_distance is None and attrs.get('travel_distance') is None)
                     or (self.instance.travel_distance is not None and 'travel_distance' in attrs.keys()
@@ -274,7 +276,7 @@ class LessonRequestApplicationsSerializer(serializers.ModelSerializer):
         fields = ('id', 'requestTitle', 'dateCreated', 'applications', 'freeTrial')
 
     def get_freeTrial(self, instance):
-        if not hasattr(instance.user, 'no_booking_lessons'):
+        if instance.user.lesson_bookings.count() == 0:
             return True
         else:
             return False
@@ -473,7 +475,7 @@ class LessonRequestListItemSerializer(serializers.ModelSerializer):
 
 class LessonBookingRegisterSerializer(serializers.Serializer):
     """Serializer for registration of a lesson booking"""
-    applicationId = serializers.IntegerField()
+    applicationId = serializers.IntegerField(required=False)
     userId = serializers.IntegerField()
     package = serializers.ChoiceField(choices=list(PACKAGES.keys()))
     paymentMethodCode = serializers.CharField(max_length=500, required=False)
@@ -503,7 +505,7 @@ class LessonBookingRegisterSerializer(serializers.Serializer):
 
     def validate_package(self, value):
         user = User.objects.get(id=self.initial_data['userId'])
-        if not hasattr(user, 'no_booking_lessons'):
+        if user.lesson_bookings.count() == 0:
             self.initial_data['package'] = PACKAGE_TRIAL
         elif value == PACKAGE_TRIAL:
             raise serializers.ValidationError('Trial is not valid package for this user')
@@ -519,7 +521,7 @@ class LessonBookingRegisterSerializer(serializers.Serializer):
 
 class LessonBookingStudentDashboardSerializer(serializers.ModelSerializer):
     """Serializer to get data of lesson booking created by a student"""
-    applicationId = serializers.IntegerField(source='application.id')
+    applicationId = serializers.SerializerMethodField()
     instrument = serializers.CharField(max_length=250, source='application.request.instrument.name', read_only=True)
     skillLevel = serializers.CharField(max_length=100, source='application.request.skill_level', read_only=True)
     instructor = serializers.CharField(max_length=100, source='application.instructor.display_name', read_only=True)
@@ -533,10 +535,16 @@ class LessonBookingStudentDashboardSerializer(serializers.ModelSerializer):
     def get_students(self, instance):
         return [{'name': instance.user.first_name, 'age': instance.user.student.age}]
 
+    def get_applicationId(self, instance):
+        if instance.application:
+            return instance.application.id
+        else:
+            return None
+
 
 class LessonBookingParentDashboardSerializer(serializers.ModelSerializer):
     """Serializer to get data of lesson booking created by a parent"""
-    applicationId = serializers.IntegerField(source='application.id')
+    applicationId = serializers.SerializerMethodField()
     instrument = serializers.CharField(max_length=250, source='application.request.instrument.name', read_only=True)
     skillLevel = serializers.CharField(max_length=100, source='application.request.skill_level', read_only=True)
     instructor = serializers.CharField(max_length=100, source='application.instructor.display_name', read_only=True)
@@ -546,6 +554,12 @@ class LessonBookingParentDashboardSerializer(serializers.ModelSerializer):
     class Meta:
         model = LessonBooking
         fields = ('applicationId', 'instrument', 'skillLevel', 'instructor', 'lessonsRemaining', 'students')
+
+    def get_applicationId(self, instance):
+        if instance.application:
+            return instance.application.id
+        else:
+            return None
 
 
 class LessonRequestStudentDashboardSerializer(serializers.ModelSerializer):
@@ -589,10 +603,10 @@ class InstructorDashboardSerializer(serializers.ModelSerializer):
     """Serializer to get data about instructor, for display in dashboard"""
     class LessonBookingSerializer(serializers.ModelSerializer):
         bookingId = serializers.IntegerField(source='id', read_only=True)
-        instrument = serializers.CharField(max_length=250, source='application.request.instrument.name', read_only=True)
+        instrument = serializers.SerializerMethodField()
         lessonsBooked = serializers.IntegerField(source='quantity', read_only=True)
         lessonsRemaining = serializers.IntegerField(source='remaining_lessons', read_only=True)
-        skillLevel = serializers.CharField(max_length=100, source='application.request.skill_level', read_only=True)
+        skillLevel = serializers.SerializerMethodField()
         studentName = serializers.CharField(max_length=30, required=False, read_only=True)
         age = serializers.IntegerField(required=False, read_only=True)
         parent = serializers.CharField(max_length=30, required=False, read_only=True)
@@ -604,9 +618,21 @@ class InstructorDashboardSerializer(serializers.ModelSerializer):
             fields = ('bookingId', 'instrument', 'lessonsBooked', 'lessonsRemaining', 'skillLevel',
                       'studentName', 'age', 'parent', 'students', 'lastLessonId')
 
+        def get_instrument(self, instance):
+            if instance.application:
+                return instance.application.request.instrument
+            else:
+                return instance.request.instrument
+
+        def get_skillLevel(self, instance):
+            if instance.application:
+                return instance.application.request.skill_level
+            else:
+                return instance.request.skill_level
+
         def get_lastLessonId(self, instance):
             lesson = Lesson.objects.filter(booking=instance, status=Lesson.SCHEDULED,
-                                           scheduled_datetime__lt=timezone.now()).last()
+                                           scheduled_datetime__lt=timezone.now()).order_by('scheduled_datetime').last()
             if lesson:
                 return lesson.id
             else:

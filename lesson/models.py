@@ -120,28 +120,16 @@ class Lesson(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     @classmethod
-    def create_lesson(cls, lesson_request):
-        """Create a lesson, linked to provided LessonRequest"""
-        return cls.objects.create(request=lesson_request,
-                                  scheduled_datetime=lesson_request.trial_proposed_datetime,
-                                  scheduled_timezone=lesson_request.trial_proposed_timezone,
-                                  )
-
-    @classmethod
     def get_next_lesson(cls, user, is_instructor=None):
         lessons = None
         if is_instructor is None:
             is_instructor = user.is_instructor()
         if is_instructor:
-            lessons = cls.objects.filter(booking__application__instructor=user.instructor, status=cls.SCHEDULED,
-                                         scheduled_datetime__gt=timezone.now()).order_by('scheduled_datetime')
-        else:
-            if cls.objects.filter(booking__isnull=False).filter(booking__user=user).count():
-                lessons = cls.objects.filter(booking__isnull=False, booking__user=user, status=cls.SCHEDULED,
-                                             scheduled_datetime__gt=timezone.now()).order_by('scheduled_datetime')
-            if cls.objects.filter(request__isnull=False).filter(request__user=user).count():
-                lessons = cls.objects.filter(request__isnull=False, request__user=user, status=cls.SCHEDULED,
-                                             scheduled_datetime__gt=timezone.now()).order_by('scheduled_datetime')
+            lessons = cls.objects.filter(booking__instructor=user.instructor, status=cls.SCHEDULED,
+                                         scheduled_datetime__gt=timezone.now()).order_by('-scheduled_datetime')
+        elif cls.objects.filter(booking__isnull=False).filter(booking__user=user).count():
+            lessons = cls.objects.filter(booking__user=user, status=cls.SCHEDULED,
+                                         scheduled_datetime__gt=timezone.now()).order_by('-scheduled_datetime')
         if lessons is not None:
             return lessons.first()
         else:
