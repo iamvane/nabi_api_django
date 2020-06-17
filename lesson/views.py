@@ -50,7 +50,7 @@ class LessonRequestView(views.APIView):
             obj.refresh_from_db()  # to avoid trial_proposed_datetime as string, and get it as datetime
             if request.user.lesson_bookings.count() == 0:
                 lb = LessonBooking.objects.create(user=request.user, quantity=1, total_amount=0, request=obj,
-                                                  description='Package trial')
+                                                  description='Package trial', status=LessonBooking.TRIAL)
                 Lesson.objects.create(booking=lb,
                                       scheduled_datetime=obj.trial_proposed_datetime,
                                       scheduled_timezone=obj.trial_proposed_timezone,
