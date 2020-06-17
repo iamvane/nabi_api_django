@@ -652,9 +652,9 @@ class InstructorDashboardSerializer(serializers.ModelSerializer):
 
         def get_instrument(self, instance):
             if instance.application:
-                return instance.application.request.instrument
+                return instance.application.request.instrument.name
             else:
-                return instance.request.instrument
+                return instance.request.instrument.name
 
         def get_skillLevel(self, instance):
             if instance.application:
