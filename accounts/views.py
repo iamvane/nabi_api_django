@@ -36,10 +36,11 @@ from core.constants import *
 from core.models import UserBenefits, UserToken
 from core.permissions import AccessForInstructor
 from core.utils import generate_hash, generate_token_reset_password, get_date_a_month_later
-from lesson.models import Application, Instrument, LessonBooking, LessonRequest
+from lesson.models import Application, Instrument, Lesson, LessonBooking, LessonRequest
 from lesson.serializers import (LessonBookingParentDashboardSerializer, LessonBookingStudentDashboardSerializer,
                                 LessonRequestParentDashboardSerializer, LessonRequestStudentDashboardSerializer,
-                                InstructorDashboardSerializer, LessonRequestInstructorDashboardSerializer)
+                                InstructorDashboardSerializer, LessonRequestInstructorDashboardSerializer,
+                                ScheduledLessonSerializer)
 
 from . import serializers as sers
 from .models import (Availability, Education, Employment, Instructor, InstructorAgeGroup, InstructorInstruments,
@@ -768,40 +769,23 @@ class DashboardView(views.APIView):
         if request.user.is_instructor():
             serializer = InstructorDashboardSerializer(request.user.instructor)
             data = serializer.data.copy()
-            if request.user.instructor.coordinates:
-                requests = LessonRequest.objects.exclude(applications__in=Application.objects.filter(
-                    instructor=request.user.instructor)
-                ).exclude(status=LESSON_REQUEST_CLOSED).annotate(coords=Case(
-                    When(user__parent__isnull=False, then=F('user__parent__coordinates')),
-                    When(user__student__isnull=False, then=F('user__student__coordinates')),
-                    default=None,
-                    output_field=PointField())
-                ).exclude(coords__isnull=True)\
-                    .annotate(distance=Distance('coords', request.user.instructor.coordinates)).order_by('id')[:3]
-            else:
-                requests = []
-            ser_lr = LessonRequestInstructorDashboardSerializer(requests, many=True)
-            data.update({'requests': ser_lr.data})
+            next_lesson = Lesson.get_next_lesson(request.user, True)
         elif request.user.is_parent():
             serializer = LessonBookingParentDashboardSerializer(
                 request.user.lesson_bookings.filter(status__in=[LessonBooking.PAID, LessonBooking.TRIAL]).order_by('id'),
                 many=True
             )
             data = {'bookings': serializer.data}
-            ser_lr = LessonRequestParentDashboardSerializer(
-                request.user.lesson_requests.filter(status=LESSON_REQUEST_ACTIVE).order_by('id'), many=True
-            )
-            data.update({'requests': ser_lr.data})
+            next_lesson = Lesson.get_next_lesson(request.user, False)
         else:
             serializer = LessonBookingStudentDashboardSerializer(
                 request.user.lesson_bookings.filter(status__in=[LessonBooking.PAID, LessonBooking.TRIAL]).order_by('id'),
                 many=True
             )
             data = {'bookings': serializer.data}
-            ser_rl = LessonRequestStudentDashboardSerializer(
-                request.user.lesson_requests.filter(status=LESSON_REQUEST_ACTIVE).order_by('id'), many=True
-            )
-            data.update({'requests': ser_rl.data})
+            next_lesson = Lesson.get_next_lesson(request.user, False)
+        ser_nl = ScheduledLessonSerializer(next_lesson)
+        data.update({'nextLesson': ser_nl.data})
         return Response(data, status=status.HTTP_200_OK)
 
 

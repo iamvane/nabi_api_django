@@ -1,10 +1,13 @@
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
 from django.db import models
+from django.utils import timezone
 
 from accounts.models import Instructor, Parent, Student, TiedStudent
 from core.constants import *
 from payments.models import Payment
+
+from lesson.utils import get_date_time_from_datetime_timezone
 
 User = get_user_model()
 
@@ -76,7 +79,11 @@ class LessonBooking(models.Model):
     user = models.ForeignKey(User, on_delete=models.PROTECT, related_name='lesson_bookings')
     quantity = models.IntegerField()
     total_amount = models.DecimalField(max_digits=9, decimal_places=4)
-    application = models.OneToOneField(Application, on_delete=models.CASCADE, related_name='booking')
+    request = models.OneToOneField(LessonRequest, blank=True, null=True, on_delete=models.CASCADE,
+                                   related_name='booking')
+    application = models.ForeignKey(Application, blank=True, null=True, on_delete=models.CASCADE, related_name='bookings')
+    instructor = models.ForeignKey(Instructor, blank=True, null=True, on_delete=models.SET_NULL, related_name='bookings')
+    rate = models.DecimalField(max_digits=9, decimal_places=4, blank=True, null=True)
     description = models.CharField(max_length=200, blank=True)
     status = models.CharField(max_length=50, choices=STATUSES, default=REQUESTED)
     details = JSONField(blank=True, default=dict)
@@ -99,12 +106,13 @@ class Lesson(models.Model):
         (MISSED, MISSED),
         (COMPLETE, COMPLETE),
     )
-    booking = models.ForeignKey(LessonBooking, blank=True, null=True, on_delete=models.CASCADE, related_name='lessons')
-    request = models.ForeignKey(LessonRequest, blank=True, null=True, on_delete=models.CASCADE,
-                                related_name='no_booking_lessons')
-    student_details = JSONField(default=dict)
-    scheduled_datetime = models.DateTimeField(blank=True, null=True)
-    scheduled_timezone = models.CharField(max_length=50, blank=True)
+    booking = models.ForeignKey(LessonBooking, on_delete=models.CASCADE, related_name='lessons')
+    student_details = JSONField(blank=True, default=dict)   # data obtained from LessonRequest
+    scheduled_datetime = models.DateTimeField()
+    scheduled_timezone = models.CharField(max_length=50)
+    # instructor and rate are copied from LessonBooking
+    instructor = models.ForeignKey(Instructor, blank=True, null=True, on_delete=models.SET_NULL, related_name='lessons')
+    rate = models.DecimalField(max_digits=9, decimal_places=4, blank=True, null=True)
     status = models.CharField(max_length=50, choices=STATUSES, default=SCHEDULED)
     grade = models.PositiveSmallIntegerField(blank=True, null=True)
     comment = models.TextField(blank=True)   # added on grade
@@ -112,9 +120,17 @@ class Lesson(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     @classmethod
-    def create_lesson(cls, lesson_request):
-        """Create a lesson, linked to provided LessonRequest"""
-        return cls.objects.create(request=lesson_request,
-                                  scheduled_datetime=lesson_request.trial_proposed_datetime,
-                                  scheduled_timezone=lesson_request.trial_proposed_timezone,
-                                  )
+    def get_next_lesson(cls, user, is_instructor=None):
+        lessons = None
+        if is_instructor is None:
+            is_instructor = user.is_instructor()
+        if is_instructor:
+            lessons = cls.objects.filter(booking__instructor=user.instructor, status=cls.SCHEDULED,
+                                         scheduled_datetime__gt=timezone.now()).order_by('-scheduled_datetime')
+        elif cls.objects.filter(booking__isnull=False).filter(booking__user=user).count():
+            lessons = cls.objects.filter(booking__user=user, status=cls.SCHEDULED,
+                                         scheduled_datetime__gt=timezone.now()).order_by('-scheduled_datetime')
+        if lessons is not None:
+            return lessons.first()
+        else:
+            return lessons

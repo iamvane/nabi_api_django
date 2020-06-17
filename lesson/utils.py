@@ -203,10 +203,11 @@ def get_benefit_to_redeem(user):
 
 def get_additional_items_booking(user):
     """Return additional items to add in a lesson booking"""
-    if not hasattr(user, 'no_booking_lessons'):
+    booking_count = user.lesson_bookings.count()
+    if booking_count == 0:
         data = {'freeTrial': True}
         return data
-    elif user.lesson_bookings.count() == 1:
+    elif booking_count == 1:
         if user.lesson_bookings.all()[0].quantity == 1:
             data = {'placementFee': Decimal('12.0000')}
         else:
