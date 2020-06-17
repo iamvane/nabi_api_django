@@ -522,9 +522,9 @@ class LessonBookingRegisterSerializer(serializers.Serializer):
 class LessonBookingStudentDashboardSerializer(serializers.ModelSerializer):
     """Serializer to get data of lesson booking created by a student"""
     applicationId = serializers.SerializerMethodField()
-    instrument = serializers.CharField(max_length=250, source='application.request.instrument.name', read_only=True)
-    skillLevel = serializers.CharField(max_length=100, source='application.request.skill_level', read_only=True)
-    instructor = serializers.CharField(max_length=100, source='application.instructor.display_name', read_only=True)
+    instrument = serializers.SerializerMethodField()
+    skillLevel = serializers.SerializerMethodField()
+    instructor = serializers.CharField(max_length=100, source='instructor.display_name', read_only=True)
     lessonsRemaining = serializers.IntegerField(source='remaining_lessons', read_only=True)
     students = serializers.SerializerMethodField()
 
@@ -541,15 +541,27 @@ class LessonBookingStudentDashboardSerializer(serializers.ModelSerializer):
         else:
             return None
 
+    def get_instrument(self, instance):
+        if instance.application:
+            return instance.application.request.instrument.name
+        else:
+            return instance.request.instrument.name
+
+    def get_skillLevel(self, instance):
+        if instance.application:
+            return instance.application.request.skill_level
+        else:
+            return instance.request.skill_level
+
 
 class LessonBookingParentDashboardSerializer(serializers.ModelSerializer):
     """Serializer to get data of lesson booking created by a parent"""
     applicationId = serializers.SerializerMethodField()
-    instrument = serializers.CharField(max_length=250, source='application.request.instrument.name', read_only=True)
-    skillLevel = serializers.CharField(max_length=100, source='application.request.skill_level', read_only=True)
-    instructor = serializers.CharField(max_length=100, source='application.instructor.display_name', read_only=True)
+    instrument = serializers.SerializerMethodField()
+    skillLevel = serializers.SerializerMethodField()
+    instructor = serializers.CharField(max_length=100, source='instructor.display_name', read_only=True)
     lessonsRemaining = serializers.IntegerField(source='remaining_lessons', read_only=True)
-    students = LessonRequestStudentSerializer(source='application.request.students', many=True, read_only=True)
+    students = serializers.SerializerMethodField()
 
     class Meta:
         model = LessonBooking
@@ -560,6 +572,26 @@ class LessonBookingParentDashboardSerializer(serializers.ModelSerializer):
             return instance.application.id
         else:
             return None
+
+    def get_instrument(self, instance):
+        if instance.application:
+            return instance.application.request.instrument.name
+        else:
+            return instance.request.instrument.name
+
+    def get_skillLevel(self, instance):
+        if instance.application:
+            return instance.application.request.skill_level
+        else:
+            return instance.request.skill_level
+
+    def get_students(self, instance):
+        if instance.application:
+            ser = LessonRequestStudentSerializer(instance.application.request.students, many=True)
+            return ser.data
+        else:
+            ser = LessonRequestStudentSerializer(instance.request.students, many=True)
+            return ser.data
 
 
 class LessonRequestStudentDashboardSerializer(serializers.ModelSerializer):
@@ -811,8 +843,8 @@ class ScheduledLessonSerializer(serializers.ModelSerializer):
         fields = ('id', 'date', 'time', 'timezone', 'student_details', 'instructor')
 
     def get_instructor(self, instance):
-        if instance.booking:
-            return instance.booking.application.instructor.display_name
+        if instance.booking.instructor:
+            return instance.booking.instructor.display_name
         else:
             return ''
 
