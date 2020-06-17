@@ -96,6 +96,12 @@ class LessonBooking(models.Model):
         """How many lessons remain from booking"""
         return self.quantity - self.lessons.filter(grade__isnull=False).count()
 
+    def get_request(self):
+        if self.application:
+            return self.application.request
+        else:
+            return self.request
+
 
 class Lesson(models.Model):
     SCHEDULED = 'scheduled'

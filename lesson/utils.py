@@ -80,6 +80,35 @@ def send_alert_request_instructor(instructor, lesson_request, requestor_account)
         return None
 
 
+def send_info_lesson_student_parent(lesson):
+    target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
+    student_name = ''
+    if lesson.student_details:
+        student_name = lesson.student_details[0].name
+    date_str, time_str = get_date_time_from_datetime_timezone(lesson.scheduled_datetime,
+                                                              lesson.scheduled_timezone,
+                                                              '%d/%m/%Y',
+                                                              '%I:%M %p')
+    lesson_request = lesson.booking.get_request()
+    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['alert_request'],
+            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.booking.user.email},
+            "customProperties": [
+                {"name": "first_name", "value": lesson.booking.user.first_name},
+                {"name": "student_name", "value": student_name},
+                {"name": "lesson_date", "value": f'{date_str} at {time_str} ({lesson.scheduled_timezone})'},
+                {"name": "instrument", "value": lesson_request.instrument.name},
+            ]
+            }
+    resp = requests.post(target_url, json=data)
+    if resp.status_code != 200:
+        send_admin_email("[INFO] Alert request email could not be send",
+                         f"""An email to alert about a new lesson could not be send to email {lesson.booking.user.email}, lesson id {lesson.id}.
+
+                         The status_code for API's response was {resp.status_code} and content: {resp.content.decode()}"""
+                         )
+        return None
+
+
 def send_alert_application(application, instructor, request_creator_account):
     """Send advice of new application for a created lesson request"""
     target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)

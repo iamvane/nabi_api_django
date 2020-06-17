@@ -10,8 +10,9 @@ from core.models import TaskLog, User
 from core.utils import send_admin_email
 from nabi_api_django.celery_config import app
 
-from .models import Application, LessonBooking, LessonRequest
-from .utils import send_alert_application, send_alert_booking, send_alert_request_instructor, send_invoice_booking
+from .models import Application, Lesson, LessonBooking, LessonRequest
+from .utils import (send_alert_application, send_alert_booking, send_alert_request_instructor,
+                    send_info_lesson_student_parent, send_invoice_booking)
 
 
 @app.task
@@ -27,6 +28,14 @@ def send_request_alert_instructors(request_id, task_log_id):
             for instructor in Instructor.objects.filter(coordinates__distance_lte=(account.coordinates, D(mi=50)),
                                                         instruments__name=request.instrument.name):
                 send_alert_request_instructor(instructor, request, account)
+    TaskLog.objects.filter(id=task_log_id).delete()
+
+
+@app.task
+def send_lesson_info_student_parent(lesson_id, task_log_id):
+    """Send an email to student or parent when a lesson is created"""
+    lesson = Lesson.objects.get(id=lesson_id)
+    send_info_lesson_student_parent(lesson)
     TaskLog.objects.filter(id=task_log_id).delete()
 
 
