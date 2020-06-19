@@ -27,7 +27,8 @@ from payments.serializers import GetPaymentMethodSerializer
 
 from . import serializers as sers
 from .models import Application, LessonBooking, LessonRequest, Lesson
-from .tasks import send_application_alert, send_booking_alert, send_booking_invoice, send_request_alert_instructors
+from .tasks import (send_application_alert, send_booking_alert, send_booking_invoice,
+                    send_request_alert_instructors, send_lesson_info_student_parent)
 from .utils import get_benefit_to_redeem, get_booking_data, PACKAGES
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -48,16 +49,21 @@ class LessonRequestView(views.APIView):
         if ser.is_valid():
             obj = ser.save()
             obj.refresh_from_db()  # to avoid trial_proposed_datetime as string, and get it as datetime
+            lesson = None
             if request.user.lesson_bookings.count() == 0:
                 lb = LessonBooking.objects.create(user=request.user, quantity=1, total_amount=0, request=obj,
                                                   description='Package trial', status=LessonBooking.TRIAL)
-                Lesson.objects.create(booking=lb,
-                                      scheduled_datetime=obj.trial_proposed_datetime,
-                                      scheduled_timezone=obj.trial_proposed_timezone,
-                                      )
+                lesson = Lesson.objects.create(booking=lb,
+                                               scheduled_datetime=obj.trial_proposed_datetime,
+                                               scheduled_timezone=obj.trial_proposed_timezone,
+                                               )
             task_log = TaskLog.objects.create(task_name='send_request_alert_instructors',
                                               args={'request_id': obj.id})
             send_request_alert_instructors.delay(obj.id, task_log.id)
+            if lesson:
+                task_log = TaskLog.objects.create(task_name='send_request_info_student_parent',
+                                                  args={'request_id': lesson.id})
+                send_lesson_info_student_parent.delay(lesson.id, task_log.id)
             add_to_email_list_v2(request.user, ['request_to_trial'], ['customer_to_request'])
             ser = sers.LessonRequestDetailSerializer(obj)
             return Response(ser.data, status=status.HTTP_200_OK)
@@ -450,7 +456,10 @@ class LessonCreateView(views.APIView):
     def post(self, request):
         ser = sers.CreateLessonSerializer(data=request.data)
         if ser.is_valid():
-            ser.save()
+            obj = ser.save()
+            task_log = TaskLog.objects.create(task_name='send_request_info_student_parent',
+                                              args={'request_id': obj.id})
+            send_lesson_info_student_parent.delay(obj.id, task_log.id)
             return Response({'message': 'Lesson scheduled successfully!'}, status=status.HTTP_200_OK)
         else:
             return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)

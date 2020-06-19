@@ -56,10 +56,17 @@ def send_alert_request_instructor(instructor, lesson_request, requestor_account)
                 {"name": "student_details", "value": student_details},
                 {"name": "lesson_location", "value": lesson_request.place_for_lessons},
                 {"name": "location", "value": f'{location_tuple[2]} {location_tuple[1]}' if location_tuple else 'N/A'},
-                {"name": "request_message", "value": lesson_request.message},
-                {"name": "reference_url", "value": f'{settings.HOSTNAME_PROTOCOL}/request/{lesson_request.id}'}
+                {"name": "reference_url", "value": f'{settings.HOSTNAME_PROTOCOL}/request/{lesson_request.id}'},
             ]
             }
+    if lesson_request.trial_proposed_datetime:
+        date_str, time_str = get_date_time_from_datetime_timezone(lesson_request.trial_proposed_datetime,
+                                                                  lesson_request.trial_proposed_timezone,
+                                                                  '%d/%m/%Y',
+                                                                  '%I:%M %p')
+        data['customProperties'].append({"name": "lesson_date_subject", "value": f'{date_str} at {time_str}'})
+        data['customProperties'].append({"name": "lesson_date",
+                                         "value": f'{date_str} at {time_str} ({lesson_request.trial_proposed_timezone})'})
     resp = requests.post(target_url, json=data)
     if resp.status_code != 200:
         send_admin_email("[INFO] Alert request email could not be send",
@@ -69,6 +76,35 @@ def send_alert_request_instructor(instructor, lesson_request, requestor_account)
                                                                                              lesson_request.id,
                                                                                              resp.status_code,
                                                                                              resp.content.decode())
+                         )
+        return None
+
+
+def send_info_lesson_student_parent(lesson):
+    target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
+    student_name = ''
+    if lesson.student_details:
+        student_name = lesson.student_details[0].name
+    date_str, time_str = get_date_time_from_datetime_timezone(lesson.scheduled_datetime,
+                                                              lesson.scheduled_timezone,
+                                                              '%d/%m/%Y',
+                                                              '%I:%M %p')
+    lesson_request = lesson.booking.get_request()
+    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['alert_request'],
+            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.booking.user.email},
+            "customProperties": [
+                {"name": "first_name", "value": lesson.booking.user.first_name},
+                {"name": "student_name", "value": student_name},
+                {"name": "lesson_date", "value": f'{date_str} at {time_str} ({lesson.scheduled_timezone})'},
+                {"name": "instrument", "value": lesson_request.instrument.name},
+            ]
+            }
+    resp = requests.post(target_url, json=data)
+    if resp.status_code != 200:
+        send_admin_email("[INFO] Alert request email could not be send",
+                         f"""An email to alert about a new lesson could not be send to email {lesson.booking.user.email}, lesson id {lesson.id}.
+
+                         The status_code for API's response was {resp.status_code} and content: {resp.content.decode()}"""
                          )
         return None
 
@@ -250,7 +286,7 @@ def get_booking_data(user, package_name, application):
     return data
 
 
-def get_date_time_from_datetime_timezone(datetime_value, time_zone):
+def get_date_time_from_datetime_timezone(datetime_value, time_zone, date_format='%Y-%m-%d', time_format='%H:%M'):
     """Get date and time elements of a datetime, after apply it a time_zone"""
     localize_datetime = datetime_value.astimezone(timezone.pytz.timezone(time_zone))
-    return localize_datetime.strftime('%Y-%m-%d'), localize_datetime.strftime('%H:%M')
+    return localize_datetime.strftime(date_format), localize_datetime.strftime(time_format)

@@ -7,7 +7,7 @@ from core.constants import LESSON_REQUEST_CLOSED
 from core.models import TaskLog
 
 from .models import Application, Lesson, LessonBooking, LessonRequest
-from .tasks import send_request_alert_instructors
+from .tasks import send_request_alert_instructors, send_lesson_info_student_parent
 
 User = get_user_model()
 
@@ -102,9 +102,20 @@ class LessonRequestAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
+        lesson = None
+        if not change and obj.user.lesson_bookings.count() == 0:
+            lb = LessonBooking.objects.create(user=obj.user, quantity=1, total_amount=0, request=obj,
+                                              description='Package trial', status=LessonBooking.TRIAL)
+            lesson = Lesson.objects.create(booking=lb,
+                                           scheduled_datetime=obj.trial_proposed_datetime,
+                                           scheduled_timezone=obj.trial_proposed_timezone,
+                                           )
         if not change or 'instrument' in form.changed_data or 'place_for_lessons' in form.changed_data:
             task_log = TaskLog.objects.create(task_name='send_request_alert_instructors', args={'request_id': obj.id})
             send_request_alert_instructors.delay(obj.id, task_log.id)
+        if lesson:
+            task_log = TaskLog.objects.create(task_name='send_request_info_student_parent', args={'lesson_id': lesson.id})
+            send_lesson_info_student_parent.delay(lesson.id, task_log.id)
 
 
 class LessonAdmin(admin.ModelAdmin):
