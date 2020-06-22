@@ -255,13 +255,9 @@ class LessonBookingRegisterView(views.APIView):
             booking_values_data = get_booking_data(request.user, package_name,
                                                    Application.objects.get(id=serializer.validated_data['applicationId'])
                                                    )
-            # create/get booking and make the payment
-            if booking_values_data.get('freeTrial'):
-                lesson_qty = 1
-                amount = 0
-            else:
-                lesson_qty = PACKAGES[package_name].get('lesson_qty')
-                amount = booking_values_data['total']
+            # create/get booking instance
+            lesson_qty = PACKAGES[package_name].get('lesson_qty')
+            amount = booking_values_data['total']
             booking = LessonBooking.objects.filter(user_id=serializer.validated_data['userId'],
                                                    application_id=serializer.validated_data['applicationId'],
                                                    status=LessonBooking.REQUESTED).first()
@@ -274,51 +270,44 @@ class LessonBookingRegisterView(views.APIView):
                                                        total_amount=amount,
                                                        application_id=serializer.validated_data['applicationId'],
                                                        status=LessonBooking.REQUESTED)
-            if booking_values_data.get('freeTrial'):
-                # set values to future usage
-                payment = None
-                new_status_booking = LessonBooking.TRIAL
-            else:
-                payment = Payment.objects.filter(user=request.user, amount=booking.total_amount,
-                                                 status=PY_REGISTERED).first()
-                if not payment:
-                    # make payment and register it
-                    try:
-                        st_payment = stripe.PaymentIntent.create(amount=int(round(booking.total_amount * 100, 0)),
-                                                                 currency='usd',
-                                                                 customer=st_customer_id,
-                                                                 payment_method=serializer.validated_data['paymentMethodCode'],
-                                                                 off_session=True,
-                                                                 confirm=True)
-                    except stripe.error.InvalidRequestError as error:
-                        return Response({'message': [error.user_message, ]}, status=status.HTTP_400_BAD_REQUEST)
-                    except stripe.error.StripeError as error:
-                        return Response({'message': error.user_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                    except Exception as ex:
-                        return Response({'message': str(ex)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                    # register the charge made
-                    payment = Payment.objects.create(user=request.user, amount=booking.total_amount,
-                                                     stripe_payment_method=serializer.validated_data['paymentMethodCode'],
-                                                     description='Lesson booking with package {}'.format(package_name.capitalize()),
-                                                     operation_id=st_payment.get('id'))
-                new_status_booking = LessonBooking.PAID
+            # payment step
+            payment = Payment.objects.filter(user=request.user, amount=booking.total_amount,
+                                             status=PY_REGISTERED).first()
+            if not payment:
+                # make payment and register it
+                try:
+                    st_payment = stripe.PaymentIntent.create(amount=int(round(booking.total_amount * 100, 0)),
+                                                             currency='usd',
+                                                             customer=st_customer_id,
+                                                             payment_method=serializer.validated_data['paymentMethodCode'],
+                                                             off_session=True,
+                                                             confirm=True)
+                except stripe.error.InvalidRequestError as error:
+                    return Response({'message': [error.user_message, ]}, status=status.HTTP_400_BAD_REQUEST)
+                except stripe.error.StripeError as error:
+                    return Response({'message': error.user_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                except Exception as ex:
+                    return Response({'message': str(ex)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                # register the charge made
+                payment = Payment.objects.create(user=request.user, amount=booking.total_amount,
+                                                 stripe_payment_method=serializer.validated_data['paymentMethodCode'],
+                                                 description='Lesson booking with package {}'.format(package_name.capitalize()),
+                                                 operation_id=st_payment.get('id'))
+            # set status and info for booking and payment instances
             with transaction.atomic():
                 for k, v in booking_values_data.items():
                     booking_values_data[k] = str(v)
                 booking.details = booking_values_data
                 booking.payment = payment
                 booking.description = 'Package {}'.format(package_name.capitalize())
-                booking.status = new_status_booking
+                booking.status = LessonBooking.PAID
                 booking.save()
                 booking.application.request.status = LESSON_REQUEST_CLOSED
                 booking.application.request.save()
                 if payment:
                     payment.status = PY_APPLIED
                     payment.save()
-                if new_status_booking == LessonBooking.TRIAL:
-                    add_to_email_list_v2(request.user, ['trial_to_booking'], ['request_to_trial'])
-                else:
-                    add_to_email_list_v2(request.user, [], ['trial_to_booking'])
+                add_to_email_list_v2(request.user, [], ['trial_to_booking'])
 
                 # get info about benefits, to change status for user_benefits
                 benefit_data = get_benefit_to_redeem(request.user)
