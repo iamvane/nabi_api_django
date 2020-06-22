@@ -7,7 +7,7 @@ from core.constants import LESSON_REQUEST_CLOSED
 from core.models import TaskLog
 
 from .models import Application, Lesson, LessonBooking, LessonRequest
-from .tasks import send_request_alert_instructors, send_lesson_info_student_parent
+from .tasks import send_application_alert, send_request_alert_instructors, send_lesson_info_student_parent
 
 User = get_user_model()
 
@@ -24,6 +24,12 @@ class ApplicationAdmin(admin.ModelAdmin):
 
     def view_request(self, obj):
         return 'id: {} ({})'.format(obj.request.id, obj.request.user.email)
+
+    def save_model(self, request, obj, form, change):
+        application = super().save_model(request, obj, form, change)
+        if not change:   # is creation
+            task_log = TaskLog.objects.create(task_name='send_application_alert', args={'application_id': application.id})
+            send_application_alert.delay(application.id, task_log.id)
 
 
 class LessonBookingAdmin(admin.ModelAdmin):
