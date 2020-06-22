@@ -19,7 +19,7 @@ from rest_framework.response import Response
 from accounts.models import get_account
 from accounts.utils import get_stripe_customer_id, add_to_email_list_v2
 from core.constants import *
-from core.models import TaskLog
+from core.models import TaskLog, UserBenefits
 from core.permissions import AccessForInstructor, AccessForParentOrStudent
 from core.utils import send_admin_email
 from payments.models import Payment
@@ -61,10 +61,12 @@ class LessonRequestView(views.APIView):
                                               args={'request_id': obj.id})
             send_request_alert_instructors.delay(obj.id, task_log.id)
             if lesson:
-                task_log = TaskLog.objects.create(task_name='send_request_info_student_parent',
-                                                  args={'request_id': lesson.id})
+                task_log = TaskLog.objects.create(task_name='send_lesson_info_student_parent',
+                                                  args={'lesson_id': lesson.id})
                 send_lesson_info_student_parent.delay(lesson.id, task_log.id)
-            add_to_email_list_v2(request.user, ['request_to_trial'], ['customer_to_request'])
+                add_to_email_list_v2(request.user, ['trial_to_booking'], ['customer_to_request'])
+            else:
+                add_to_email_list_v2(request.user, [], ['trial_to_booking'])
             ser = sers.LessonRequestDetailSerializer(obj)
             return Response(ser.data, status=status.HTTP_200_OK)
         else:
@@ -248,7 +250,6 @@ class LessonBookingRegisterView(views.APIView):
 
     def post(self, request):
         request.data['userId'] = request.user.id
-        st_customer_id = get_stripe_customer_id(request.user)
         serializer = sers.LessonBookingRegisterSerializer(data=request.data)
         if serializer.is_valid():
             package_name = serializer.validated_data['package']
@@ -270,86 +271,33 @@ class LessonBookingRegisterView(views.APIView):
                                                        total_amount=amount,
                                                        application_id=serializer.validated_data['applicationId'],
                                                        status=LessonBooking.REQUESTED)
-            # payment step
-            payment = Payment.objects.filter(user=request.user, amount=booking.total_amount,
-                                             status=PY_REGISTERED).first()
-            if not payment:
-                # make payment and register it
-                try:
-                    st_payment = stripe.PaymentIntent.create(amount=int(round(booking.total_amount * 100, 0)),
-                                                             currency='usd',
-                                                             customer=st_customer_id,
-                                                             payment_method=serializer.validated_data['paymentMethodCode'],
-                                                             off_session=True,
-                                                             confirm=True)
-                except stripe.error.InvalidRequestError as error:
-                    return Response({'message': [error.user_message, ]}, status=status.HTTP_400_BAD_REQUEST)
-                except stripe.error.StripeError as error:
-                    return Response({'message': error.user_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                except Exception as ex:
-                    return Response({'message': str(ex)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                # register the charge made
-                payment = Payment.objects.create(user=request.user, amount=booking.total_amount,
-                                                 stripe_payment_method=serializer.validated_data['paymentMethodCode'],
-                                                 description='Lesson booking with package {}'.format(package_name.capitalize()),
-                                                 operation_id=st_payment.get('id'))
+            # make payment
+            pym_status, pym_obj = Payment.make_and_register(request.user, booking.total_amount,
+                                                            f'Lesson booking with package {package_name.capitalize()}',
+                                                            serializer.validated_data['paymentMethodCode'])
+            if pym_status == 'error':
+                return Response({'message': pym_obj}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             # set status and info for booking and payment instances
             with transaction.atomic():
                 for k, v in booking_values_data.items():
                     booking_values_data[k] = str(v)
                 booking.details = booking_values_data
-                booking.payment = payment
+                booking.payment = pym_obj
                 booking.description = 'Package {}'.format(package_name.capitalize())
                 booking.status = LessonBooking.PAID
                 booking.save()
                 booking.application.request.status = LESSON_REQUEST_CLOSED
                 booking.application.request.save()
-                if payment:
-                    payment.status = PY_APPLIED
-                    payment.save()
+                if pym_obj:
+                    pym_obj.status = PY_APPLIED
+                    pym_obj.save()
                 add_to_email_list_v2(request.user, [], ['trial_to_booking'])
-
-                # get info about benefits, to change status for user_benefits
-                benefit_data = get_benefit_to_redeem(request.user)
-                user_benefit_ids = []
-                if benefit_data.get('free_lesson'):
-                    if benefit_data.get('source') == 'benefit':
-                        user_benefit = request.user.benefits.filter(status=BENEFIT_READY,
-                                                                    benefit_type=BENEFIT_LESSON).first()
-                        user_benefit.benefit_qty -= 1
-                        if user_benefit.benefit_qty == 0:
-                            user_benefit.status = BENEFIT_USED
-                            user_benefit_ids.append(user_benefit.id)
-                        user_benefit.save()
-                else:
-                    if benefit_data.get('amount'):   # It's assumed that amount discount is benefit only, not offer
-                        user_benefit = request.user.benefits.filter(status=BENEFIT_READY,
-                                                                    benefit_type=BENEFIT_AMOUNT).first()
-                        user_benefit.status = BENEFIT_USED
-                        user_benefit.save()
-                        user_benefit_ids.append(user_benefit.id)
-                    if benefit_data.get('discount') and benefit_data.get('source') == 'benefit':
-                        user_benefit = request.user.benefits.filter(status=BENEFIT_READY,
-                                                                    benefit_type=BENEFIT_DISCOUNT).first()
-                        user_benefit.status = BENEFIT_USED
-                        user_benefit.save()
-                        user_benefit_ids.append(user_benefit.id)
-
-                first_book_benefit = request.user.benefits.filter(status=BENEFIT_READY,
-                                                                  benefit_type=BENEFIT_DISCOUNT,
-                                                                  source='User registration with referral token'
-                                                                  ).first()
-                if first_book_benefit:
-                    first_book_benefit.status = BENEFIT_CANCELLED
-                    first_book_benefit.save()
-                    user_benefit_ids.append(first_book_benefit.id)
-                if user_benefit_ids:
-                    request.user.provided_benefits.filter(depends_on__in=user_benefit_ids, status=BENEFIT_PENDING) \
-                        .update(status=BENEFIT_READY)
+                # update data for applicable benefits
+                UserBenefits.update_applicable_benefits(request.user)
 
             task_log = TaskLog.objects.create(task_name='send_booking_invoice', args={'booking_id': booking.id})
             send_booking_invoice.delay(booking.id, task_log.id)
-            task_log = TaskLog.objects.create(task_name='', args={})
+            task_log = TaskLog.objects.create(task_name='send_booking_alert', args={'booking_id': booking.id})
             send_booking_alert.delay(booking.id, task_log.id)
             return Response({'message': 'Lesson(s) booked successfully.',
                              'booking_id': booking.id}, status=status.HTTP_200_OK)
@@ -446,8 +394,8 @@ class LessonCreateView(views.APIView):
         ser = sers.CreateLessonSerializer(data=request.data)
         if ser.is_valid():
             obj = ser.save()
-            task_log = TaskLog.objects.create(task_name='send_request_info_student_parent',
-                                              args={'request_id': obj.id})
+            task_log = TaskLog.objects.create(task_name='send_lesson_info_student_parent',
+                                              args={'lesson_id': obj.id})
             send_lesson_info_student_parent.delay(obj.id, task_log.id)
             return Response({'message': 'Lesson scheduled successfully!'}, status=status.HTTP_200_OK)
         else:

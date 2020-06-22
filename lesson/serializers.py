@@ -478,7 +478,7 @@ class LessonBookingRegisterSerializer(serializers.Serializer):
     applicationId = serializers.IntegerField(required=False)
     userId = serializers.IntegerField()
     package = serializers.ChoiceField(choices=list(PACKAGES.keys()))
-    paymentMethodCode = serializers.CharField(max_length=500, required=False)
+    paymentMethodCode = serializers.CharField(max_length=500)
 
     def validate_userId(self, value):
         if not User.objects.filter(id=value).exists():
@@ -510,13 +510,6 @@ class LessonBookingRegisterSerializer(serializers.Serializer):
         elif value == PACKAGE_TRIAL:
             raise serializers.ValidationError('Trial is not valid package for this user')
         return value
-
-    def validate(self, attrs):
-        cleaned_data = super().validate(attrs)
-        keys = dict.fromkeys(cleaned_data, 1)
-        if not keys.get('paymentMethodCode', 0):
-            raise serializers.ValidationError('payment_method info should be provided')
-        return cleaned_data
 
 
 class LessonBookingStudentDashboardSerializer(serializers.ModelSerializer):

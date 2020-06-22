@@ -1,13 +1,16 @@
 from django.contrib.auth import get_user_model
 from django.contrib import admin
+from django.db import transaction
 from django.db.models import Q
 
 from accounts.models import TiedStudent
-from core.constants import LESSON_REQUEST_CLOSED
-from core.models import TaskLog
+from accounts.utils import add_to_email_list_v2
+from core.constants import LESSON_REQUEST_CLOSED, PY_APPLIED
+from core.models import TaskLog, UserBenefits
 
 from .models import Application, Lesson, LessonBooking, LessonRequest
-from .tasks import send_application_alert, send_request_alert_instructors, send_lesson_info_student_parent
+from .tasks import (send_application_alert, send_booking_alert, send_booking_invoice,
+                    send_request_alert_instructors, send_lesson_info_student_parent)
 
 User = get_user_model()
 
@@ -25,16 +28,21 @@ class ApplicationAdmin(admin.ModelAdmin):
     def view_request(self, obj):
         return 'id: {} ({})'.format(obj.request.id, obj.request.user.email)
 
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'request':
+            kwargs['queryset'] = LessonRequest.objects.order_by('id')
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
     def save_model(self, request, obj, form, change):
-        application = super().save_model(request, obj, form, change)
+        super().save_model(request, obj, form, change)
         if not change:   # is creation
-            task_log = TaskLog.objects.create(task_name='send_application_alert', args={'application_id': application.id})
-            send_application_alert.delay(application.id, task_log.id)
+            task_log = TaskLog.objects.create(task_name='send_application_alert', args={'application_id': obj.id})
+            send_application_alert.delay(obj.id, task_log.id)
 
 
 class LessonBookingAdmin(admin.ModelAdmin):
     fields = ('view_application', 'application', 'request', 'user', 'instructor', 'rate',
-              'quantity', 'total_amount', 'status')
+              'quantity', 'total_amount', 'description', 'payment', 'status')
     list_display = ('pk', 'get_user_email', 'application_id', 'quantity', 'total_amount', 'status', )
     list_filter = ('status', )
     readonly_fields = ('view_application', )
@@ -53,7 +61,40 @@ class LessonBookingAdmin(admin.ModelAdmin):
         if db_field.name == 'user':
             kwargs['queryset'] = User.objects.filter(Q(student__isnull=False) | Q(parent__isnull=False)
                                                      ).order_by('email')
+        elif db_field.name == 'request':
+            kwargs['queryset'] = LessonRequest.objects.order_by('id')
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        obj.refresh_from_db()
+        if not change:   # on creation
+            if obj.status == LessonBooking.TRIAL:
+                obj.request.status = LESSON_REQUEST_CLOSED
+                obj.request.save()
+                lesson = Lesson.objects.create(booking=obj, scheduled_datetime=obj.request.trial_proposed_datetime,
+                                               scheduled_timezone=obj.request.trial_proposed_timezone,
+                                               instructor=obj.instructor, rate=obj.rate)
+                add_to_email_list_v2(obj.request.user, ['trial_to_booking'], ['customer_to_request'])
+                task_log = TaskLog.objects.create(task_name='send_lesson_info_student_parent',
+                                                  args={'lesson_id': lesson.id})
+                send_lesson_info_student_parent.delay(lesson.id, task_log.id)
+            else:
+                with transaction.atomic():
+                    if obj.payment:
+                        obj.payment.status = PY_APPLIED
+                        obj.payment.save()
+                    if obj.application:
+                        obj.application.request.status = LESSON_REQUEST_CLOSED
+                        obj.application.request.save()
+                # update data for applicable benefits
+                UserBenefits.update_applicable_benefits(request.user)
+                add_to_email_list_v2(request.user, [], ['trial_to_booking'])
+                if obj.payment:
+                    task_log = TaskLog.objects.create(task_name='send_booking_invoice', args={'booking_id': obj.id})
+                    send_booking_invoice.delay(obj.id, task_log.id)
+                task_log = TaskLog.objects.create(task_name='send_booking_alert', args={'booking_id': obj.id})
+                send_booking_alert.delay(obj.id, task_log.id)
 
 
 def close_lesson_request(model_admin, request, queryset):
@@ -116,11 +157,12 @@ class LessonRequestAdmin(admin.ModelAdmin):
                                            scheduled_datetime=obj.trial_proposed_datetime,
                                            scheduled_timezone=obj.trial_proposed_timezone,
                                            )
+            add_to_email_list_v2(request.user, ['trial_to_booking'], ['customer_to_request'])
         if not change or 'instrument' in form.changed_data or 'place_for_lessons' in form.changed_data:
             task_log = TaskLog.objects.create(task_name='send_request_alert_instructors', args={'request_id': obj.id})
             send_request_alert_instructors.delay(obj.id, task_log.id)
         if lesson:
-            task_log = TaskLog.objects.create(task_name='send_request_info_student_parent', args={'lesson_id': lesson.id})
+            task_log = TaskLog.objects.create(task_name='send_lesson_info_student_parent', args={'lesson_id': lesson.id})
             send_lesson_info_student_parent.delay(lesson.id, task_log.id)
 
 
@@ -150,6 +192,12 @@ class LessonAdmin(admin.ModelAdmin):
     get_booking_id.admin_order_field = 'booking_id'
     get_instructor.short_description = 'instructor'
     get_instructor.admin_order_field = 'instructor__user__email'
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        task_log = TaskLog.objects.create(task_name='send_lesson_info_student_parent',
+                                          args={'lesson_id': obj.id})
+        send_lesson_info_student_parent.delay(obj.id, task_log.id)
 
 
 admin.site.register(Application, ApplicationAdmin)
