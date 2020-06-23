@@ -151,12 +151,15 @@ class LessonRequestAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
         lesson = None
         if not change and obj.user.lesson_bookings.count() == 0:
-            lb = LessonBooking.objects.create(user=obj.user, quantity=1, total_amount=0, request=obj,
-                                              description='Package trial', status=LessonBooking.TRIAL)
-            lesson = Lesson.objects.create(booking=lb,
-                                           scheduled_datetime=obj.trial_proposed_datetime,
-                                           scheduled_timezone=obj.trial_proposed_timezone,
-                                           )
+            with transaction.atomic():
+                lb = LessonBooking.objects.create(user=obj.user, quantity=1, total_amount=0, request=obj,
+                                                  description='Package trial', status=LessonBooking.TRIAL)
+                obj.status = LESSON_REQUEST_CLOSED
+                obj.save()
+                lesson = Lesson.objects.create(booking=lb,
+                                               scheduled_datetime=obj.trial_proposed_datetime,
+                                               scheduled_timezone=obj.trial_proposed_timezone,
+                                               )
             add_to_email_list_v2(request.user, ['trial_to_booking'], ['customer_to_request'])
         if not change or 'instrument' in form.changed_data or 'place_for_lessons' in form.changed_data:
             task_log = TaskLog.objects.create(task_name='send_request_alert_instructors', args={'request_id': obj.id})
