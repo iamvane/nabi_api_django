@@ -4,7 +4,8 @@ from django.db import models
 from django.utils import timezone
 
 from .constants import (
-    BENEFIT_READY, BENEFIT_PENDING, BENEFIT_AMOUNT, BENEFIT_DISCOUNT, BENEFIT_STATUSES, BENEFIT_TYPES,
+    BENEFIT_CANCELLED, BENEFIT_READY, BENEFIT_PENDING, BENEFIT_AMOUNT, BENEFIT_DISCOUNT, BENEFIT_LESSON,
+    BENEFIT_STATUSES, BENEFIT_USED, BENEFIT_TYPES,
     ROLE_AFFILIATE, ROLE_INSTRUCTOR, ROLE_PARENT, ROLE_STUDENT,
 )
 
@@ -119,6 +120,45 @@ class UserBenefits(models.Model):
     status = models.CharField(max_length=50, choices=BENEFIT_STATUSES)
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
+
+    @staticmethod
+    def update_applicable_benefits(user):
+        from lesson.utils import get_benefit_to_redeem
+        # get info about applicable benefits
+        benefit_data = get_benefit_to_redeem(user)
+        user_benefit_ids = []
+        # Update data for used benefit
+        if benefit_data.get('free_lesson'):
+            if benefit_data.get('source') == 'benefit':
+                user_benefit = user.benefits.filter(status=BENEFIT_READY, benefit_type=BENEFIT_LESSON).first()
+                user_benefit.benefit_qty -= 1
+                if user_benefit.benefit_qty == 0:
+                    user_benefit.status = BENEFIT_USED
+                    user_benefit_ids.append(user_benefit.id)
+                user_benefit.save()
+        else:
+            if benefit_data.get('amount'):   # It's assumed that amount discount is benefit only, not offer
+                user_benefit = user.benefits.filter(status=BENEFIT_READY, benefit_type=BENEFIT_AMOUNT).first()
+                user_benefit.status = BENEFIT_USED
+                user_benefit.save()
+                user_benefit_ids.append(user_benefit.id)
+            if benefit_data.get('discount') and benefit_data.get('source') == 'benefit':
+                user_benefit = user.benefits.filter(status=BENEFIT_READY, benefit_type=BENEFIT_DISCOUNT).first()
+                user_benefit.status = BENEFIT_USED
+                user_benefit.save()
+                user_benefit_ids.append(user_benefit.id)
+        # cancel discount benefit from registration, if was not used
+        first_book_benefit = user.benefits.filter(status=BENEFIT_READY, benefit_type=BENEFIT_DISCOUNT,
+                                                  source='User registration with referral token'
+                                                  ).first()
+        if first_book_benefit:
+            first_book_benefit.status = BENEFIT_CANCELLED
+            first_book_benefit.save()
+            user_benefit_ids.append(first_book_benefit.id)
+        # enable user's benefits that depends on usage of others benefits
+        if user_benefit_ids:
+            user.provided_benefits.filter(depends_on__in=user_benefit_ids, status=BENEFIT_PENDING)\
+                .update(status=BENEFIT_READY)
 
 
 class ProviderRequest(models.Model):
