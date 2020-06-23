@@ -35,7 +35,7 @@ def send_request_alert_instructors(request_id, task_log_id):
 def send_lesson_info_student_parent(lesson_id, task_log_id):
     """Send an email to student or parent when a lesson is created"""
     lesson = Lesson.objects.get(id=lesson_id)
-    send_info_lesson_student_parent(lesson)
+    # send_info_lesson_student_parent(lesson)   # some data is missing, required to enable this
     TaskLog.objects.filter(id=task_log_id).delete()
 
 

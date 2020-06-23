@@ -90,7 +90,7 @@ def send_info_lesson_student_parent(lesson):
                                                               '%d/%m/%Y',
                                                               '%I:%M %p')
     lesson_request = lesson.booking.get_request()
-    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['alert_request'],
+    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['info_lesson'],
             "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.booking.user.email},
             "customProperties": [
                 {"name": "first_name", "value": lesson.booking.user.first_name},
