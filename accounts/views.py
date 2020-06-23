@@ -585,9 +585,10 @@ class TiedStudentItemView(views.APIView):
         except ObjectDoesNotExist:
             return Response({"error": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
         ser = sers.TiedStudentItemSerializer(instance)
+        data = ser.data
         instance.tied_student.delete()
         instance.delete()
-        return Response(sers.data, status=status.HTTP_200_OK)
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class InstructorEmploymentView(views.APIView):
