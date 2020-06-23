@@ -769,6 +769,11 @@ class CreateLessonSerializer(serializers.ModelSerializer):
         model = Lesson
         fields = ('bookingId', 'date', 'time', 'timezone')
 
+    def validate(self, attrs):
+        booking = LessonBooking.objects.get(id=attrs['bookingId'])
+        if booking.remaining_lessons() == 0:
+            raise serializers.ValidationError('There is not available lessons')
+
     def create(self, validated_data):
         time_zone = validated_data.pop('timezone')
         tz_offset = datetime.datetime.now(timezone.pytz.timezone(time_zone)).strftime('%z')
