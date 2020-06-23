@@ -27,7 +27,7 @@ from payments.serializers import GetPaymentMethodSerializer
 
 from . import serializers as sers
 from .models import Application, LessonBooking, LessonRequest, Lesson
-from .tasks import (send_application_alert, send_booking_alert, send_booking_invoice,
+from .tasks import (send_application_alert, send_booking_alert, send_booking_invoice, send_info_grade_lesson,
                     send_request_alert_instructors, send_lesson_info_student_parent)
 from .utils import get_benefit_to_redeem, get_booking_data, PACKAGES
 
@@ -393,16 +393,18 @@ class LessonCreateView(views.APIView):
     def post(self, request):
         ser = sers.CreateLessonSerializer(data=request.data)
         if ser.is_valid():
-            obj = ser.save()
+            lesson = ser.save()
+            lesson.refresh_from_db()  # to avoid scheduled_datetime as string, and get it as datetime
+            ser = sers.LessonSerializer(lesson)
             task_log = TaskLog.objects.create(task_name='send_lesson_info_student_parent',
-                                              args={'lesson_id': obj.id})
-            send_lesson_info_student_parent.delay(obj.id, task_log.id)
-            return Response({'message': 'Lesson scheduled successfully!'}, status=status.HTTP_200_OK)
+                                              args={'lesson_id': lesson.id})
+            send_lesson_info_student_parent.delay(lesson.id, task_log.id)
+            return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class LessonUpdateView(views.APIView):
+class LessonView(views.APIView):
 
     def put(self, request, lesson_id):
         try:
@@ -412,7 +414,21 @@ class LessonUpdateView(views.APIView):
                             status=status.HTTP_400_BAD_REQUEST)
         ser_data = sers.UpdateLessonSerializer(data=request.data, instance=lesson, partial=True)
         if ser_data.is_valid():
-            ser_data.save()
-            return Response({'message': 'Lesson updated successfully!'}, status=status.HTTP_200_OK)
+            lesson = ser_data.save()
+            lesson.refresh_from_db()  # to avoid scheduled_datetime as string, and get it as datetime
+            ser = sers.LessonSerializer(lesson)
+            if request.data.get('grade'):
+                task_log = TaskLog.objects.create(task_name='send_info_grade_lesson', args={'lesson_id': lesson.id})
+                send_info_grade_lesson.delay(lesson.id, task_log.id)
+            return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response(ser_data.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request, lesson_id):
+        try:
+            lesson = Lesson.objects.get(id=lesson_id)
+        except Lesson.DoesNotExist:
+            return Response({'message': 'There is not Lesson with provided id'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        ser = sers.LessonSerializer(lesson)
+        return Response(ser.data, status=status.HTTP_200_OK)
