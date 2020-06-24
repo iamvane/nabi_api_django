@@ -771,7 +771,7 @@ class CreateLessonSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         booking = LessonBooking.objects.get(id=attrs['booking_id'])
-        if booking.remaining_lessons() == 0:
+        if booking.quantity - booking.lessons.count() == 0:
             raise serializers.ValidationError('There is not available lessons')
 
     def create(self, validated_data):

@@ -197,7 +197,7 @@ class LessonAdmin(admin.ModelAdmin):
     get_instructor.admin_order_field = 'instructor__user__email'
 
     def save_model(self, request, obj, form, change):
-        if obj.booking.remaining_lessons() == 0:
+        if not change and (obj.booking.quantity - obj.booking.lessons.count()) == 0:
             raise Exception('There is not available lessons for selected booking')
         super().save_model(request, obj, form, change)
         if not change:
