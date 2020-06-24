@@ -93,8 +93,8 @@ class LessonBooking(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def remaining_lessons(self):
-        """How many lessons remain from booking"""
-        return self.quantity - self.lessons.count()
+        """How many lessons remain to take/course from booking"""
+        return self.quantity - self.lessons.filter(status=Lesson.COMPLETE).count()
 
     def get_request(self):
         if self.application:
