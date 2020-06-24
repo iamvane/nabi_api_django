@@ -9,7 +9,7 @@ from core.constants import LESSON_REQUEST_CLOSED, PY_APPLIED
 from core.models import TaskLog, UserBenefits
 
 from .models import Application, Lesson, LessonBooking, LessonRequest
-from .tasks import (send_application_alert, send_booking_alert, send_booking_invoice,
+from .tasks import (send_application_alert, send_booking_alert, send_booking_invoice, send_info_grade_lesson,
                     send_request_alert_instructors, send_lesson_info_student_parent)
 
 User = get_user_model()
@@ -197,10 +197,17 @@ class LessonAdmin(admin.ModelAdmin):
     get_instructor.admin_order_field = 'instructor__user__email'
 
     def save_model(self, request, obj, form, change):
+        if obj.booking.remaining_lessons() == 0:
+            raise Exception('There is not available lessons for selected booking')
         super().save_model(request, obj, form, change)
-        task_log = TaskLog.objects.create(task_name='send_lesson_info_student_parent',
-                                          args={'lesson_id': obj.id})
-        send_lesson_info_student_parent.delay(obj.id, task_log.id)
+        if not change:
+            task_log = TaskLog.objects.create(task_name='send_lesson_info_student_parent',
+                                              args={'lesson_id': obj.id})
+            send_lesson_info_student_parent.delay(obj.id, task_log.id)
+        else:
+            if 'grade' in form.changed_data:
+                task_log = TaskLog.objects.create(task_name='send_info_grade_lesson', args={'lesson_id': obj.id})
+                send_info_grade_lesson.delay(obj.id, task_log.id)
 
 
 admin.site.register(Application, ApplicationAdmin)

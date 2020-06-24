@@ -128,6 +128,8 @@ HUBSPOT_TEMPLATE_IDS = {
     'alert_application': '27908927674',
     'alert_request': '27862630310',
     'info_request': '30861071713',
+    'info_lesson': '',
+    'info_graded_lesson': '31198639395',
     'password_reset': '27908644852',
     'referral_email': '27965493956',
     'reset_password': '29982554190',   # when user is crated via admin

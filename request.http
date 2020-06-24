@@ -611,6 +611,10 @@ or
 
 ###
 
+GET localhost:8000/lessons/<lesson_id>/
+
+###
+
 POST localhost:8000/v1/sign-file/
 Content-Type: application/json
 

@@ -94,7 +94,7 @@ class LessonBooking(models.Model):
 
     def remaining_lessons(self):
         """How many lessons remain from booking"""
-        return self.quantity - self.lessons.filter(grade__isnull=False).count()
+        return self.quantity - self.lessons.count()
 
     def get_request(self):
         if self.application:

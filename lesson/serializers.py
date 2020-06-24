@@ -769,6 +769,11 @@ class CreateLessonSerializer(serializers.ModelSerializer):
         model = Lesson
         fields = ('bookingId', 'date', 'time', 'timezone')
 
+    def validate(self, attrs):
+        booking = LessonBooking.objects.get(id=attrs['booking_id'])
+        if booking.remaining_lessons() == 0:
+            raise serializers.ValidationError('There is not available lessons')
+
     def create(self, validated_data):
         time_zone = validated_data.pop('timezone')
         tz_offset = datetime.datetime.now(timezone.pytz.timezone(time_zone)).strftime('%z')
@@ -845,3 +850,11 @@ class ScheduledLessonSerializer(serializers.ModelSerializer):
         instance.date, instance.time = get_date_time_from_datetime_timezone(instance.scheduled_datetime,
                                                                             instance.scheduled_timezone)
         return super().to_representation(instance)
+
+
+class LessonSerializer(ScheduledLessonSerializer):
+    """To display info about a Lesson"""
+
+    class Meta:
+        model = Lesson
+        fields = ('id', 'date', 'time', 'timezone', 'student_details', 'instructor', 'grade', 'comment')

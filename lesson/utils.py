@@ -90,7 +90,7 @@ def send_info_lesson_student_parent(lesson):
                                                               '%d/%m/%Y',
                                                               '%I:%M %p')
     lesson_request = lesson.booking.get_request()
-    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['alert_request'],
+    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['info_lesson'],
             "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.booking.user.email},
             "customProperties": [
                 {"name": "first_name", "value": lesson.booking.user.first_name},
@@ -195,6 +195,30 @@ def send_alert_booking(booking, instructor, buyer_account):
                                                                            package_name=package_name,
                                                                            instructor_name=instructor.display_name)
                      )
+
+
+def send_info_lesson_graded(lesson):
+    """Send email to parent/student about a graded lesson"""
+    target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
+    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['info_graded_lesson'],
+            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.instructor.user.email},
+            "customProperties": [
+                {"name": "grade", "value": lesson.grade},
+                {"name": "grade_comment", "value": lesson.comment},
+                {"name": "instructor_name", "value": lesson.instructor.display_name},
+            ]
+            }
+    resp = requests.post(target_url, json=data)
+    if resp.status_code != 200:
+        send_admin_email("[INFO] Info about graded lesson email could not be send",
+                         """An email to info about a graded lesson could not be send to email {}, lesson id {}.
+
+                         The status_code for API's response was {} and content: {}""".format(lesson.instructor.user.email,
+                                                                                             lesson.id,
+                                                                                             resp.status_code,
+                                                                                             resp.content.decode())
+                         )
+        return None
 
 
 def get_benefit_to_redeem(user):

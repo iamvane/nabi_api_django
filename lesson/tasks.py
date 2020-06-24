@@ -11,7 +11,7 @@ from core.utils import send_admin_email
 from nabi_api_django.celery_config import app
 
 from .models import Application, Lesson, LessonBooking, LessonRequest
-from .utils import (send_alert_application, send_alert_booking, send_alert_request_instructor,
+from .utils import (send_alert_application, send_alert_booking, send_alert_request_instructor, send_info_lesson_graded,
                     send_info_lesson_student_parent, send_invoice_booking)
 
 
@@ -35,7 +35,7 @@ def send_request_alert_instructors(request_id, task_log_id):
 def send_lesson_info_student_parent(lesson_id, task_log_id):
     """Send an email to student or parent when a lesson is created"""
     lesson = Lesson.objects.get(id=lesson_id)
-    send_info_lesson_student_parent(lesson)
+    # send_info_lesson_student_parent(lesson)   # some data is missing, required to enable this
     TaskLog.objects.filter(id=task_log_id).delete()
 
 
@@ -62,6 +62,14 @@ def send_booking_alert(booking_id, task_log_id):
     booking = LessonBooking.objects.get(id=booking_id)
     account = get_account(booking.user)
     send_alert_booking(booking, booking.application.instructor, account)
+    TaskLog.objects.filter(id=task_log_id).delete()
+
+
+@app.task
+def send_info_grade_lesson(lesson_id, task_log_id):
+    """Send an email to student or parent when a lesson is graded"""
+    lesson = Lesson.objects.get(id=lesson_id)
+    send_info_lesson_graded(lesson)
     TaskLog.objects.filter(id=task_log_id).delete()
 
 
