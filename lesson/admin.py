@@ -17,6 +17,12 @@ from .tasks import (send_application_alert, send_booking_alert, send_booking_inv
 User = get_user_model()
 
 
+class InstrumentAdmin(admin.ModelAdmin):
+    fields = ('name', )
+    search_fields = ('name', )
+    ordering = ['name']
+
+
 class ApplicationAdmin(admin.ModelAdmin):
     fields = ('view_request', 'request', 'instructor', 'rate', 'message', )
     list_display = ('pk', 'get_instructor_email', 'request_id', 'created_at', )
@@ -233,3 +239,5 @@ admin.site.register(Application, ApplicationAdmin)
 admin.site.register(LessonBooking, LessonBookingAdmin)
 admin.site.register(LessonRequest, LessonRequestAdmin)
 admin.site.register(Lesson, LessonAdmin)
+admin.site.register(Instrument, InstrumentAdmin)
+InstrumentAdmin
