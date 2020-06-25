@@ -8,6 +8,7 @@ from accounts.utils import add_to_email_list_v2
 from core.constants import LESSON_REQUEST_CLOSED, PY_APPLIED
 from core.models import TaskLog, UserBenefits
 from lesson.models import Instrument
+from payments.models import Payment
 
 from .models import Application, Lesson, LessonBooking, LessonRequest
 from .tasks import (send_application_alert, send_booking_alert, send_booking_invoice, send_info_grade_lesson,
@@ -66,6 +67,12 @@ class LessonBookingAdmin(admin.ModelAdmin):
                                                      ).order_by('email')
         elif db_field.name == 'request':
             kwargs['queryset'] = LessonRequest.objects.order_by('id')
+        elif db_field.name == 'application':
+            kwargs['queryset'] = Application.objects.order_by('id')
+        elif db_field.name == 'instructor':
+            kwargs['queryset'] = Instructor.objects.order_by('user__email')
+        elif db_field.name == 'payment':
+            kwargs['queryset'] = Payment.objects.order_by('id')
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def save_model(self, request, obj, form, change):
