@@ -7,6 +7,7 @@ from accounts.models import TiedStudent
 from accounts.utils import add_to_email_list_v2
 from core.constants import LESSON_REQUEST_CLOSED, PY_APPLIED
 from core.models import TaskLog, UserBenefits
+from lesson.models import Instrument
 
 from .models import Application, Lesson, LessonBooking, LessonRequest
 from .tasks import (send_application_alert, send_booking_alert, send_booking_invoice, send_info_grade_lesson,
@@ -133,6 +134,8 @@ class LessonRequestAdmin(admin.ModelAdmin):
         if db_field.name == 'user':
             kwargs['queryset'] = User.objects.filter(Q(student__isnull=False) | Q(parent__isnull=False)
                                                      ).order_by('email')
+        elif db_field.name == 'instrument':
+            kwargs['queryset'] = Instrument.objects.order_by('name')
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
