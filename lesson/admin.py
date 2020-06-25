@@ -3,7 +3,7 @@ from django.contrib import admin
 from django.db import transaction
 from django.db.models import Q
 
-from accounts.models import TiedStudent
+from accounts.models import Instructor, TiedStudent
 from accounts.utils import add_to_email_list_v2
 from core.constants import LESSON_REQUEST_CLOSED, PY_APPLIED
 from core.models import TaskLog, UserBenefits
@@ -32,6 +32,8 @@ class ApplicationAdmin(admin.ModelAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'request':
             kwargs['queryset'] = LessonRequest.objects.order_by('id')
+        elif db_field.name == 'instructor':
+            kwargs['queryset'] = Instructor.objects.order_by('user__email')
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def save_model(self, request, obj, form, change):
