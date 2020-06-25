@@ -208,6 +208,13 @@ class LessonAdmin(admin.ModelAdmin):
     get_instructor.short_description = 'instructor'
     get_instructor.admin_order_field = 'instructor__user__email'
 
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'booking':
+            kwargs['queryset'] = LessonBooking.objects.order_by('id')
+        elif db_field.name == 'instructor':
+            kwargs['queryset'] = Instructor.objects.order_by('user__email')
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
     def save_model(self, request, obj, form, change):
         if not change and (obj.booking.quantity - obj.booking.lessons.count()) == 0:
             raise Exception('There is not available lessons for selected booking')
