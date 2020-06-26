@@ -3,16 +3,24 @@ from django.contrib import admin
 from django.db import transaction
 from django.db.models import Q
 
-from accounts.models import TiedStudent
+from accounts.models import Instructor, TiedStudent
 from accounts.utils import add_to_email_list_v2
 from core.constants import LESSON_REQUEST_CLOSED, PY_APPLIED
 from core.models import TaskLog, UserBenefits
+from lesson.models import Instrument
+from payments.models import Payment
 
 from .models import Application, Lesson, LessonBooking, LessonRequest
 from .tasks import (send_application_alert, send_booking_alert, send_booking_invoice, send_info_grade_lesson,
                     send_request_alert_instructors, send_lesson_info_student_parent)
 
 User = get_user_model()
+
+
+class InstrumentAdmin(admin.ModelAdmin):
+    fields = ('name', )
+    search_fields = ('name', )
+    ordering = ['name']
 
 
 class ApplicationAdmin(admin.ModelAdmin):
@@ -31,6 +39,8 @@ class ApplicationAdmin(admin.ModelAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'request':
             kwargs['queryset'] = LessonRequest.objects.order_by('id')
+        elif db_field.name == 'instructor':
+            kwargs['queryset'] = Instructor.objects.order_by('user__email')
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def save_model(self, request, obj, form, change):
@@ -63,6 +73,12 @@ class LessonBookingAdmin(admin.ModelAdmin):
                                                      ).order_by('email')
         elif db_field.name == 'request':
             kwargs['queryset'] = LessonRequest.objects.order_by('id')
+        elif db_field.name == 'application':
+            kwargs['queryset'] = Application.objects.order_by('id')
+        elif db_field.name == 'instructor':
+            kwargs['queryset'] = Instructor.objects.order_by('user__email')
+        elif db_field.name == 'payment':
+            kwargs['queryset'] = Payment.objects.order_by('id')
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def save_model(self, request, obj, form, change):
@@ -133,6 +149,8 @@ class LessonRequestAdmin(admin.ModelAdmin):
         if db_field.name == 'user':
             kwargs['queryset'] = User.objects.filter(Q(student__isnull=False) | Q(parent__isnull=False)
                                                      ).order_by('email')
+        elif db_field.name == 'instrument':
+            kwargs['queryset'] = Instrument.objects.order_by('name')
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
@@ -196,6 +214,13 @@ class LessonAdmin(admin.ModelAdmin):
     get_instructor.short_description = 'instructor'
     get_instructor.admin_order_field = 'instructor__user__email'
 
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'booking':
+            kwargs['queryset'] = LessonBooking.objects.order_by('id')
+        elif db_field.name == 'instructor':
+            kwargs['queryset'] = Instructor.objects.order_by('user__email')
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
     def save_model(self, request, obj, form, change):
         if not change and (obj.booking.quantity - obj.booking.lessons.count()) == 0:
             raise Exception('There is not available lessons for selected booking')
@@ -214,3 +239,5 @@ admin.site.register(Application, ApplicationAdmin)
 admin.site.register(LessonBooking, LessonBookingAdmin)
 admin.site.register(LessonRequest, LessonRequestAdmin)
 admin.site.register(Lesson, LessonAdmin)
+admin.site.register(Instrument, InstrumentAdmin)
+InstrumentAdmin
