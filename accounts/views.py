@@ -550,12 +550,12 @@ class StudentDetailView(views.APIView):
             return Response({}, status=status.HTTP_200_OK)
 
 
-class TiedStudentView(views.APIView):
+class StudentView(views.APIView):
     def post(self, request):
-        # add parent's id to data student
+        # add user's id to received data
         data = request.data.copy()
-        data.update({'user': request.user.pk})
-        serializer = sers.TiedStudentSerializer(data=data)
+        data.update({'user_id': request.user.pk})
+        serializer = sers.StudentSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -563,7 +563,7 @@ class TiedStudentView(views.APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, request):
-        serializer = sers.TiedStudentSerializer(StudentDetails.objects.filter(user__id=request.user.pk), many=True)
+        serializer = sers.StudentSerializer(StudentDetails.objects.filter(user__id=request.user.pk), many=True)
         return Response(serializer.data)
 
 
