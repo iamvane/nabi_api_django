@@ -21,7 +21,7 @@ urlpatterns = [
     path('referral-email/', views.ReferralInvitation.as_view()),
     path('student-details/', views.StudentDetailView.as_view()),
     path('students/<int:pk>/', views.TiedStudentItemView.as_view()),
-    path('students/', views.TiedStudentView.as_view()),
+    path('students/', views.StudentView.as_view()),
     path('education/<int:pk>/', views.InstructorEducationItemView.as_view()),
     path('education/', views.InstructorEducationView.as_view()),
     path('employment/<int:pk>/', views.InstructorEmploymentItemView.as_view()),
