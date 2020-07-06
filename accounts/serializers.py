@@ -628,6 +628,54 @@ class StudentDetailsSerializer(serializers.ModelSerializer):
         return super().to_internal_value(new_data)
 
 
+class StudentSerializer(serializers.ModelSerializer):
+    """Serializer for usage with creation of StudentDetails instance."""
+    id = serializers.IntegerField(read_only=True)
+    name = serializers.CharField(max_length=250, required=False)
+    age = serializers.IntegerField(min_value=0, max_value=120, required=False)
+    instrument = serializers.CharField(max_length=250, source='instrument.name')   # instrument name
+
+    class Meta:
+        model = StudentDetails
+        fields = ['id', 'user', 'name', 'age', 'instrument', 'skill_level', ]
+
+    def validate(self, attrs):
+        if attrs['user'].is_parent():
+            if not attrs.get('name'):
+                raise serializers.ValidationError('Name of student is required')
+            if not attrs.get('age'):
+                raise serializers.ValidationError('Age of student is required')
+        return super().validate(attrs)
+
+    def create(self, validated_data):
+        validated_data['instrument'], _ = Instrument.objects.get_or_create(name=validated_data['instrument']['name'])
+        user = validated_data['user']
+        if user.is_parent():
+            tied_student = TiedStudent.objects.create(parent=user.parent,
+                                                      name=validated_data.pop('name'),
+                                                      age=validated_data.pop('age'))
+            validated_data['tied_student'] = tied_student
+        return super().create(validated_data)
+
+    def to_internal_value(self, data):
+        new_data = data.copy()
+        alt_data = {'skill_level': new_data.pop('skillLevel')}
+        new_data.update(alt_data)
+        return super().to_internal_value(new_data)
+
+    def to_representation(self, instance):
+        dict_data = super().to_representation(instance)
+        user = User.objects.get(id=dict_data.pop('user'))
+        data = {'skillLevel': dict_data.pop('skill_level')}
+        if user.is_parent():
+            pass
+        else:
+            data['name'] = user.first_name
+            data['age'] = user.student.age
+        dict_data.update(data)
+        return dict_data
+
+
 class TiedStudentSerializer(serializers.ModelSerializer):
     """Serializer for usage with detail student creation and retrieve, by parent user."""
     id = serializers.IntegerField(source='pk', read_only=True)
