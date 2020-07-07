@@ -630,14 +630,15 @@ class StudentDetailsSerializer(serializers.ModelSerializer):
 
 class StudentSerializer(serializers.ModelSerializer):
     """Serializer for usage with creation of StudentDetails instance."""
-    id = serializers.IntegerField(read_only=True)
     name = serializers.CharField(max_length=250, required=False)
     age = serializers.IntegerField(min_value=0, max_value=120, required=False)
     instrument = serializers.CharField(max_length=250, source='instrument.name')   # instrument name
+    studentId = serializers.IntegerField(read_only=True)
+    skillLevel = serializers.CharField(max_length=50, source='skill_level')
 
     class Meta:
         model = StudentDetails
-        fields = ['id', 'user', 'name', 'age', 'instrument', 'skill_level', ]
+        fields = ['user', 'name', 'age', 'instrument', 'skillLevel', 'studentId', ]
 
     def validate(self, attrs):
         if attrs['user'].is_parent():
@@ -657,21 +658,17 @@ class StudentSerializer(serializers.ModelSerializer):
             validated_data['tied_student'] = tied_student
         return super().create(validated_data)
 
-    def to_internal_value(self, data):
-        new_data = data.copy()
-        alt_data = {'skill_level': new_data.pop('skillLevel')}
-        new_data.update(alt_data)
-        return super().to_internal_value(new_data)
-
     def to_representation(self, instance):
         dict_data = super().to_representation(instance)
-        user = User.objects.get(id=dict_data.pop('user'))
-        data = {'skillLevel': dict_data.pop('skill_level')}
-        if user.is_parent():
-            pass
+        data = {}
+        if instance.user.is_parent():
+            data['name'] = instance.tied_student.name
+            data['age'] = instance.tied_student.age
+            data['studentId'] = instance.tied_student.id
         else:
-            data['name'] = user.first_name
-            data['age'] = user.student.age
+            data['name'] = instance.user.first_name
+            data['age'] = instance.user.student.age
+            data['studentId'] = instance.user.student.id
         dict_data.update(data)
         return dict_data
 
