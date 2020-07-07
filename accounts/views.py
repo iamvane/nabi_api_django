@@ -554,11 +554,15 @@ class StudentView(views.APIView):
     def post(self, request):
         # add user's id to received data
         data = request.data.copy()
-        data.update({'user_id': request.user.pk})
+        data.update({'user': request.user.pk})
         serializer = sers.StudentSerializer(data=data)
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            student_details = serializer.save()
+            ser = sers.StudentSerializer(student_details)
+            if request.user.lesson_bookings.count() == 0:
+                trial_lesson = LessonBooking.create_trial_lesson(request.user)
+                ser.data['lesson_id'] = trial_lesson.id
+            return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
