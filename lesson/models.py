@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 
 from accounts.models import Instructor, Parent, Student, TiedStudent
@@ -77,6 +77,7 @@ class LessonBooking(models.Model):
         (CANCELLED, CANCELLED),
     )
     user = models.ForeignKey(User, on_delete=models.PROTECT, related_name='lesson_bookings')
+    students = models.ManyToManyField(TiedStudent, blank=True)
     quantity = models.IntegerField()
     total_amount = models.DecimalField(max_digits=9, decimal_places=4)
     request = models.OneToOneField(LessonRequest, blank=True, null=True, on_delete=models.CASCADE,
@@ -102,8 +103,24 @@ class LessonBooking(models.Model):
         else:
             return self.request
 
+    def student_details(self):
+        """Return a list"""
+        if self.user.is_parent():
+            return [{'name': student.name, 'age': student.age}
+                    for student in self.students.all()]
+        else:
+            return [{'name': self.user.first_name, 'age': self.user.student.age}]
+
+    @classmethod
+    def create_trial_lesson(cls, user):
+        with transaction.atomic():
+            lb = LessonBooking.objects.create(user=user, quantity=1, total_amount=0, status=LessonBooking.TRIAL)
+            lesson = Lesson.objects.create(booking=lb)
+        return lesson
+
 
 class Lesson(models.Model):
+    PENDING = 'pending'
     SCHEDULED = 'scheduled'
     MISSED = 'missed'  # when datetime happens but lesson did not occurs
     COMPLETE = 'complete'   # when lesson was successful and graded
@@ -114,12 +131,12 @@ class Lesson(models.Model):
     )
     booking = models.ForeignKey(LessonBooking, on_delete=models.CASCADE, related_name='lessons')
     student_details = JSONField(blank=True, default=dict)   # data obtained from LessonRequest
-    scheduled_datetime = models.DateTimeField()
-    scheduled_timezone = models.CharField(max_length=50)
+    scheduled_datetime = models.DateTimeField(blank=True, null=True)
+    scheduled_timezone = models.CharField(max_length=50, blank=True)
     # instructor and rate are copied from LessonBooking
     instructor = models.ForeignKey(Instructor, blank=True, null=True, on_delete=models.SET_NULL, related_name='lessons')
     rate = models.DecimalField(max_digits=9, decimal_places=4, blank=True, null=True)
-    status = models.CharField(max_length=50, choices=STATUSES, default=SCHEDULED)
+    status = models.CharField(max_length=50, choices=STATUSES, default=PENDING)
     grade = models.PositiveSmallIntegerField(blank=True, null=True)
     comment = models.TextField(blank=True)   # added on grade
     created = models.DateTimeField(auto_now_add=True)
