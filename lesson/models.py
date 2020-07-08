@@ -77,7 +77,7 @@ class LessonBooking(models.Model):
         (CANCELLED, CANCELLED),
     )
     user = models.ForeignKey(User, on_delete=models.PROTECT, related_name='lesson_bookings')
-    students = models.ManyToManyField(TiedStudent, blank=True)
+    tied_student = models.ForeignKey(TiedStudent, on_delete=models.SET_NULL, blank=True, null=True)
     quantity = models.IntegerField()
     total_amount = models.DecimalField(max_digits=9, decimal_places=4)
     request = models.OneToOneField(LessonRequest, blank=True, null=True, on_delete=models.CASCADE,
@@ -106,15 +106,16 @@ class LessonBooking(models.Model):
     def student_details(self):
         """Return a list"""
         if self.user.is_parent():
-            return [{'name': student.name, 'age': student.age}
-                    for student in self.students.all()]
+            return {'name': self.tied_student.name, 'age': self.tied_student.age}
         else:
-            return [{'name': self.user.first_name, 'age': self.user.student.age}]
+            return {'name': self.user.first_name, 'age': self.user.student.age}
 
     @classmethod
-    def create_trial_lesson(cls, user):
+    def create_trial_lesson(cls, user, tied_student=None):
         with transaction.atomic():
-            lb = LessonBooking.objects.create(user=user, quantity=1, total_amount=0, status=LessonBooking.TRIAL)
+            lb = LessonBooking.objects.create(user=user, tied_student=tied_student,
+                                              quantity=1, total_amount=0, description='Trial Lesson',
+                                              status=LessonBooking.TRIAL)
             lesson = Lesson.objects.create(booking=lb)
         return lesson
 

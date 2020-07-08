@@ -11,8 +11,8 @@ from django.utils import timezone
 from rest_framework import serializers, validators
 
 from core.constants import (
-    DAY_TUPLE, DEGREE_TYPE_CHOICES, GENDER_CHOICES, LESSON_DURATION_CHOICES, MONTH_CHOICES,
-    PLACE_FOR_LESSONS_CHOICES, SKILL_LEVEL_CHOICES, PHONE_TYPE_MAIN,
+    DAY_TUPLE, DEGREE_TYPE_CHOICES, GENDER_CHOICES, LESSON_DURATION_CHOICES, LESSON_DURATION_30, MONTH_CHOICES,
+    PLACE_FOR_LESSONS_CHOICES, PLACE_FOR_LESSONS_ONLINE, SKILL_LEVEL_CHOICES, PHONE_TYPE_MAIN,
 )
 from core.models import UserBenefits
 from core.utils import update_model
@@ -649,6 +649,8 @@ class StudentSerializer(serializers.ModelSerializer):
         return super().validate(attrs)
 
     def create(self, validated_data):
+        validated_data['lesson_place'] = PLACE_FOR_LESSONS_ONLINE
+        validated_data['lesson_duration'] = LESSON_DURATION_30
         validated_data['instrument'], _ = Instrument.objects.get_or_create(name=validated_data['instrument']['name'])
         user = validated_data['user']
         if user.is_parent():
