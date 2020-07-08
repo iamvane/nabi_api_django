@@ -560,7 +560,11 @@ class StudentView(views.APIView):
             student_details = serializer.save()
             ser = sers.StudentSerializer(student_details)
             if request.user.lesson_bookings.count() == 0:
-                trial_lesson = LessonBooking.create_trial_lesson(request.user)
+                if request.user.is_parent():
+                    trial_lesson = LessonBooking.create_trial_lesson(request.user,
+                                                                     tied_student=student_details.tied_student)
+                else:
+                    trial_lesson = LessonBooking.create_trial_lesson(request.user)
                 ser.data['lesson_id'] = trial_lesson.id
             return Response(ser.data, status=status.HTTP_200_OK)
         else:
