@@ -559,14 +559,18 @@ class StudentView(views.APIView):
         if serializer.is_valid():
             student_details = serializer.save()
             ser = sers.StudentSerializer(student_details)
-            if request.user.lesson_bookings.count() == 0:
-                if request.user.is_parent():
+            trial_lesson = None
+            if request.user.is_parent():
+                if request.user.lesson_bookings.filter(tied_student=student_details.tied_student).count() == 0:
                     trial_lesson = LessonBooking.create_trial_lesson(request.user,
                                                                      tied_student=student_details.tied_student)
-                else:
+            else:
+                if request.user.lesson_bookings.count() == 0:
                     trial_lesson = LessonBooking.create_trial_lesson(request.user)
-                ser.data['lesson_id'] = trial_lesson.id
-            return Response(ser.data, status=status.HTTP_200_OK)
+            return_data = ser.data.copy()
+            if trial_lesson:
+                return_data['lessonId'] = trial_lesson.id
+            return Response(return_data, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
