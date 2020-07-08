@@ -652,9 +652,9 @@ class StudentSerializer(serializers.ModelSerializer):
         validated_data['instrument'], _ = Instrument.objects.get_or_create(name=validated_data['instrument']['name'])
         user = validated_data['user']
         if user.is_parent():
-            tied_student = TiedStudent.objects.create(parent=user.parent,
-                                                      name=validated_data.pop('name'),
-                                                      age=validated_data.pop('age'))
+            tied_student, _ = TiedStudent.objects.get_or_create(parent=user.parent,
+                                                                name=validated_data.pop('name'),
+                                                                age=validated_data.pop('age'))
             validated_data['tied_student'] = tied_student
         return super().create(validated_data)
 
