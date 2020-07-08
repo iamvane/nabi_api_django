@@ -112,6 +112,8 @@ class LessonBooking(models.Model):
 
     @classmethod
     def create_trial_lesson(cls, user, tied_student=None):
+        """Create a LessonBooking for trial lesson, and related Lesson.
+        Return created Lesson instance."""
         with transaction.atomic():
             lb = LessonBooking.objects.create(user=user, tied_student=tied_student,
                                               quantity=1, total_amount=0, description='Trial Lesson',
