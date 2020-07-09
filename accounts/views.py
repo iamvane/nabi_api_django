@@ -790,8 +790,8 @@ class DashboardView(views.APIView):
             data = {'students': ser.data}
             next_lesson = Lesson.get_next_lesson(request.user, False)
         elif request.user.is_student():
-            ser = sers.StudentDashboardSerializer(request.user)
-            data = ser.data
+            ser = sers.StudentDashboardSerializer(request.user.student)
+            data = {'students': [ser.data]}
             next_lesson = Lesson.get_next_lesson(request.user, False)
         ser_nl = ScheduledLessonSerializer(next_lesson)
         data.update({'nextLesson': ser_nl.data})
