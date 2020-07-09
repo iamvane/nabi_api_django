@@ -644,16 +644,25 @@ class InstructorDashboardSerializer(serializers.ModelSerializer):
                       'studentName', 'age', 'parent', 'students', 'lastLessonId')
 
         def get_instrument(self, instance):
-            if instance.application:
-                return instance.application.request.instrument.name
+            if instance.tied_student:
+                if hasattr(instance.tied_student, 'tied_student_details') \
+                        and instance.tied_student.tied_student_details.instrument:
+                    return instance.tied_student.tied_student_details.instrument.name
             else:
-                return instance.request.instrument.name
+                student_details = instance.user.student_details.first()
+                if student_details and student_details.instrument:
+                    return student_details.instrument.name
+            return ''
 
         def get_skillLevel(self, instance):
-            if instance.application:
-                return instance.application.request.skill_level
+            if instance.tied_student:
+                if hasattr(instance.tied_student, 'tied_student_details'):
+                    return instance.tied_student.tied_student_details.skill_level
             else:
-                return instance.request.skill_level
+                student_details = instance.user.student_details.first()
+                if student_details:
+                    return student_details.skill_level
+            return None
 
         def get_lastLessonId(self, instance):
             lesson = Lesson.objects.filter(booking=instance, status=Lesson.SCHEDULED,
@@ -667,8 +676,7 @@ class InstructorDashboardSerializer(serializers.ModelSerializer):
             data = super().to_representation(instance)
             if instance.user.is_parent():
                 data['parent'] = instance.user.parent.display_name
-                data['students'] = [{'name': student.name, 'age': student.age}
-                                    for student in instance.application.request.students.all()]
+                data['students'] = [{'name': instance.tied_student.name, 'age': instance.tied_student.age}]
             else:
                 data['studentName'] = instance.user.student.display_name
                 data['age'] = instance.user.student.age

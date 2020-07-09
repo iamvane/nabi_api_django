@@ -1165,20 +1165,33 @@ class StudentDashboardSerializer(serializers.ModelSerializer):
     """To return data from Student model"""
     from lesson.serializers import LessonDataSerializer
     name = serializers.CharField(max_length=30, source='user.first_name')
-    instrument = serializers.CharField(max_length=250, source='user.student_details.first.instrument.name')
+    instrument = serializers.SerializerMethodField()
     lessons = LessonDataSerializer(source='get_lessons', many=True)
 
     class Meta:
         model = Student
         fields = ['id', 'name', 'instrument', 'lessons']
 
+    def get_instrument(self, instance):
+        student_details = instance.user.student_details.first()
+        if student_details and student_details.instrument:
+            return student_details.instrument.name
+        else:
+            return ''
+
 
 class TiedStudentParentDashboardSerializer(serializers.ModelSerializer):
     """To return data from Parent model"""
     from lesson.serializers import LessonDataSerializer
-    instrument = serializers.CharField(max_length=250, source='tied_student_details.instrument.name')
+    instrument = serializers.SerializerMethodField()
     lessons = LessonDataSerializer(source='get_lessons', many=True)
 
     class Meta:
         model = TiedStudent
         fields = ['id', 'name', 'instrument', 'lessons']
+
+    def get_instrument(self, instance):
+        if hasattr(instance, 'tied_student_details') and instance.tied_student_details.instrument:
+            return instance.tied_student_details.instrument.name
+        else:
+            return ''
