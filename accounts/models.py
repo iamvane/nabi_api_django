@@ -519,6 +519,10 @@ class Student(IUserAccount):
     def role(self):
         return 'Student'
 
+    def get_lessons(self):
+        from lesson.models import Lesson, LessonBooking
+        return Lesson.objects.filter(booking__in=LessonBooking.objects.filter(user=self.user).order_by('-id'))
+
 
 class TiedStudent(models.Model):
     """Student tied to a Parent, without including an user."""

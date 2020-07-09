@@ -100,14 +100,6 @@ class User(AbstractUser):
     def is_student(self):
         return hasattr(self, 'student')
 
-    def get_lessons(self, tied_student=None):
-        from lesson.models import Lesson, LessonBooking
-        if self.is_student():
-            lessons_qs = Lesson.objects.filter(booking__in=LessonBooking.objects.filter(user=self).order_by('-id'))
-        else:
-            lessons_qs = Lesson.objects.none()
-        return lessons_qs
-
 
 class UserToken(models.Model):
     """Model to store token used in reset password."""
