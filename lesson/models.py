@@ -84,7 +84,6 @@ class LessonBooking(models.Model):
                                    related_name='booking')
     application = models.ForeignKey(Application, blank=True, null=True, on_delete=models.CASCADE, related_name='bookings')
     instructor = models.ForeignKey(Instructor, blank=True, null=True, on_delete=models.SET_NULL, related_name='bookings')
-    instrument = models.ForeignKey(Instrument, on_delete=models.SET_NULL, null=True, related_name='bookings')   # ToDo: remove null=True
     rate = models.DecimalField(max_digits=9, decimal_places=4, blank=True, null=True)
     description = models.CharField(max_length=200, blank=True)
     status = models.CharField(max_length=50, choices=STATUSES, default=REQUESTED)
