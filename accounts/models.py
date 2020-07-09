@@ -529,6 +529,11 @@ class TiedStudent(models.Model):
     def __str__(self):
         return '{name} ({age} years)'.format(name=self.name, age=self.age)
 
+    def get_lessons(self):
+        """Return a queryset of related Lesson instances, ordered from new to old"""
+        from lesson.models import LessonBooking, Lesson
+        return Lesson.objects.filter(booking__in=LessonBooking.objects.filter(tied_student=self).order_by('-id'))
+
 
 class StudentDetails(models.Model):
     from lesson.models import Instrument

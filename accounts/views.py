@@ -786,11 +786,8 @@ class DashboardView(views.APIView):
             data = serializer.data.copy()
             next_lesson = Lesson.get_next_lesson(request.user, True)
         elif request.user.is_parent():
-            serializer = LessonBookingParentDashboardSerializer(
-                request.user.lesson_bookings.filter(status__in=[LessonBooking.PAID, LessonBooking.TRIAL]).order_by('id'),
-                many=True
-            )
-            data = {'bookings': serializer.data}
+            ser = sers.TiedStudentParentDashboardSerializer(request.user.parent.tied_students, many=True)
+            data = {'students': ser.data}
             next_lesson = Lesson.get_next_lesson(request.user, False)
         elif request.user.is_student():
             ser = sers.StudentDashboardSerializer(request.user)

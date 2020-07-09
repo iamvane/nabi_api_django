@@ -1171,3 +1171,14 @@ class StudentDashboardSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'name', 'instrument', 'lessons']
+
+
+class TiedStudentParentDashboardSerializer(serializers.ModelSerializer):
+    """To return data from Parent model"""
+    from lesson.serializers import LessonDataSerializer
+    instrument = serializers.CharField(max_length=250, source='tied_student_details.instrument.name')
+    lessons = LessonDataSerializer(source='get_lessons', many=True)
+
+    class Meta:
+        model = TiedStudent
+        fields = ['id', 'name', 'instrument', 'lessons']
