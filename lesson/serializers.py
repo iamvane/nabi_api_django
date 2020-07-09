@@ -858,3 +858,35 @@ class LessonSerializer(ScheduledLessonSerializer):
     class Meta:
         model = Lesson
         fields = ('id', 'date', 'time', 'timezone', 'student_details', 'instructor', 'grade', 'comment')
+
+
+class LessonDataSerializer(serializers.ModelSerializer):
+    date = serializers.SerializerMethodField()
+    instructor = serializers.SerializerMethodField()
+    instructorId = serializers.SerializerMethodField()
+    gradeComment = serializers.CharField(source='comment')
+    timezone = serializers.CharField(source='scheduled_timezone')
+
+    class Meta:
+        model = Lesson
+        fields = ['id', 'date', 'timezone', 'instructor', 'instructorId', 'status', 'grade', 'gradeComment', ]
+
+    def get_instructor(self, instance):
+        if instance.booking.instructor:
+            return instance.booking.instructor.display_name
+        else:
+            return ''
+
+    def get_instructorId(self, instance):
+        if instance.booking.instructor:
+            return instance.booking.instructor.id
+        else:
+            return None
+
+    def get_date(self, instance):
+        from lesson.utils import get_date_time_from_datetime_timezone
+        date, time = get_date_time_from_datetime_timezone(instance.scheduled_datetime,
+                                                          instance.scheduled_timezone,
+                                                          date_format='%m/%d/%Y',
+                                                          time_format='%I:%M%p')
+        return f'{date} @ {time}'

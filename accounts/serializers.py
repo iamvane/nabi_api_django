@@ -1159,3 +1159,15 @@ class VideoInstructorSerializer(serializers.ModelSerializer):
             return new_data
         else:
             return data
+
+
+class StudentDashboardSerializer(serializers.ModelSerializer):
+    """To return data from Student model"""
+    from lesson.serializers import LessonDataSerializer
+    name = serializers.CharField(max_length=30, source='first_name')
+    instrument = serializers.CharField(max_length=250, source='student_details.first.instrument.name')
+    lessons = LessonDataSerializer(source='get_lessons', many=True)
+
+    class Meta:
+        model = User
+        fields = ['id', 'name', 'instrument', 'lessons']
