@@ -16,7 +16,7 @@ from core.constants import (
 )
 from core.models import UserBenefits
 from core.utils import update_model
-from lesson.models import Instrument
+from lesson.models import Instrument, Lesson
 
 from .models import (
     Affiliate, Availability, Education, Employment, Instructor, InstructorAdditionalQualifications,
@@ -1167,10 +1167,11 @@ class StudentDashboardSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=30, source='user.first_name')
     instrument = serializers.SerializerMethodField()
     lessons = LessonDataSerializer(source='get_lessons', many=True)
+    nextLesson = serializers.SerializerMethodField()
 
     class Meta:
         model = Student
-        fields = ['id', 'name', 'instrument', 'lessons']
+        fields = ['id', 'name', 'instrument', 'nextLesson', 'lessons']
 
     def get_instrument(self, instance):
         student_details = instance.user.student_details.first()
@@ -1179,19 +1180,32 @@ class StudentDashboardSerializer(serializers.ModelSerializer):
         else:
             return ''
 
+    def get_nextLesson(self, instance):
+        from lesson.serializers import ScheduledLessonSerializer
+        next_lesson = Lesson.get_next_lesson(instance.user)
+        ser = ScheduledLessonSerializer(next_lesson)
+        return ser.data
+
 
 class TiedStudentParentDashboardSerializer(serializers.ModelSerializer):
     """To return data from Parent model"""
     from lesson.serializers import LessonDataSerializer
     instrument = serializers.SerializerMethodField()
     lessons = LessonDataSerializer(source='get_lessons', many=True)
+    nextLesson = serializers.SerializerMethodField()
 
     class Meta:
         model = TiedStudent
-        fields = ['id', 'name', 'instrument', 'lessons']
+        fields = ['id', 'name', 'instrument', 'nextLesson', 'lessons', ]
 
     def get_instrument(self, instance):
         if hasattr(instance, 'tied_student_details') and instance.tied_student_details.instrument:
             return instance.tied_student_details.instrument.name
         else:
             return ''
+
+    def get_nextLesson(self, instance):
+        from lesson.serializers import ScheduledLessonSerializer
+        next_lesson = Lesson.get_next_lesson(instance.parent.user, instance)
+        ser = ScheduledLessonSerializer(next_lesson)
+        return ser.data

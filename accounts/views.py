@@ -784,19 +784,17 @@ class DashboardView(views.APIView):
         if request.user.is_instructor():
             serializer = InstructorDashboardSerializer(request.user.instructor)
             data = serializer.data.copy()
-            next_lesson = Lesson.get_next_lesson(request.user, True)
+            next_lesson = Lesson.get_next_lesson(request.user)
+            ser = ScheduledLessonSerializer(next_lesson)
+            data.update({'nextLesson': ser.data})
         elif request.user.is_parent():
             ser = sers.TiedStudentParentDashboardSerializer(request.user.parent.tied_students, many=True)
             data = {'students': ser.data}
-            next_lesson = Lesson.get_next_lesson(request.user, False)
         elif request.user.is_student():
             ser = sers.StudentDashboardSerializer(request.user.student)
             data = {'students': [ser.data]}
-            next_lesson = Lesson.get_next_lesson(request.user, False)
         else:
             return Response({}, status=status.HTTP_200_OK)
-        ser_nl = ScheduledLessonSerializer(next_lesson)
-        data.update({'nextLesson': ser_nl.data})
         return Response(data, status=status.HTTP_200_OK)
 
 
