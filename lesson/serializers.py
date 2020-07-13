@@ -676,7 +676,10 @@ class InstructorDashboardSerializer(serializers.ModelSerializer):
             data = super().to_representation(instance)
             if instance.user.is_parent():
                 data['parent'] = instance.user.parent.display_name
-                data['students'] = [{'name': instance.tied_student.name, 'age': instance.tied_student.age}]
+                if instance.tied_student:
+                    data['students'] = [{'name': instance.tied_student.name, 'age': instance.tied_student.age}]
+                else:
+                    data['students'] = []
             else:
                 data['studentName'] = instance.user.student.display_name
                 data['age'] = instance.user.student.age
