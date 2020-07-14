@@ -151,10 +151,11 @@ class Lesson(models.Model):
         if user.is_instructor():
             lessons = cls.objects.filter(booking__instructor=user.instructor, status=cls.SCHEDULED,
                                          scheduled_datetime__gt=timezone.now()).order_by('scheduled_datetime')
-        elif tied_student and cls.objects.filter(booking__isnull=False, booking__user=user,
-                                                 booking__tied_student__isnull=False, booking__tied_student=tied_student).count():
-            lessons = cls.objects.filter(booking__user=user, status=cls.SCHEDULED, booking__tied_student=tied_student,
-                                         scheduled_datetime__gt=timezone.now()).order_by('scheduled_datetime')
+        elif tied_student:
+            if cls.objects.filter(booking__isnull=False, booking__user=user,
+                                  booking__tied_student__isnull=False, booking__tied_student=tied_student).count():
+                lessons = cls.objects.filter(booking__user=user, status=cls.SCHEDULED, booking__tied_student=tied_student,
+                                             scheduled_datetime__gt=timezone.now()).order_by('scheduled_datetime')
         elif cls.objects.filter(booking__isnull=False).filter(booking__user=user).count():
             lessons = cls.objects.filter(booking__user=user, status=cls.SCHEDULED,
                                          scheduled_datetime__gt=timezone.now()).order_by('scheduled_datetime')
