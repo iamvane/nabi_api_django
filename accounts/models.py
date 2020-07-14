@@ -35,6 +35,7 @@ class IUserAccount(models.Model):
     birthday = models.DateField(blank=True, null=True)
     location = models.CharField(max_length=150, default='')
     coordinates = PointField(blank=True, null=True)
+    timezone = models.CharField(max_length=50, blank=True)
     lat = models.CharField(max_length=50, default='')
     lng = models.CharField(max_length=50, default='')
     email_verified_at = models.DateTimeField(blank=True, null=True)
