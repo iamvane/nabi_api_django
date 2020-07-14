@@ -799,7 +799,7 @@ class UpdateLessonSerializer(serializers.ModelSerializer):
     grade = serializers.IntegerField(min_value=1, max_value=3)
     date = serializers.DateField(format='%Y-%m-%d')
     time = serializers.TimeField(format='%H:%M')
-    timezone = serializers.CharField(max_length=6, validators=[validate_timezone])
+    timezone = serializers.CharField(max_length=50, validators=[validate_timezone])
 
     class Meta:
         model = Lesson
@@ -837,6 +837,8 @@ class UpdateLessonSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         if 'grade' in validated_data.keys():
             validated_data['status'] = Lesson.COMPLETE
+        elif 'scheduled_timezone' in validated_data.keys():
+            validated_data['status'] = Lesson.SCHEDULED
         return super().update(instance, validated_data)
 
 
