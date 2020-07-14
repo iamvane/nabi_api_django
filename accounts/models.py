@@ -1,4 +1,5 @@
 import datetime
+import googlemaps
 import re
 from coolname import RandomGenerator
 from coolname.loader import load_config
@@ -113,6 +114,25 @@ class IUserAccount(models.Model):
                 return ''
             else:
                 return ()
+
+    def get_timezone_from_location_zipcode(self):
+        gmaps = googlemaps.Client(key=settings.GOOGLE_MAPS_API_KEY)
+        coords = None
+        if self.coordinates:
+            coords = (self.coordinates.coords[1], self.coordinates.coords[0])   # coord must be (lat, long)
+        else:
+            if len(self.location) < 12 and re.search('\d{2,6}', self.location):   # if there is a zip code (apparently)
+                geocoder = Geocoder(api_key=settings.GOOGLE_MAPS_API_KEY)
+                results = geocoder.geocode({'address': f'zipcode {self.location}'})
+                try:
+                    coords = results[0].coordinates   # this return (lat, long)
+                except Exception:
+                    pass
+        if coords:
+            time_zone = gmaps.timezone(coords)
+            return time_zone.get('timeZoneId', 'US/Eastern')
+        else:
+            return 'US/Eastern'
 
     def set_display_name(self):
         """Change display_name value, only if different value is generated"""
