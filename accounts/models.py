@@ -115,7 +115,9 @@ class IUserAccount(models.Model):
             else:
                 return ()
 
-    def get_timezone_from_location_zipcode(self):
+    def get_timezone_from_location_zipcode(self, default_value='US/Eastern'):
+        """Return time_zone value from coordinates or location value.
+        When no time_zone could be obtained, return default_value."""
         gmaps = googlemaps.Client(key=settings.GOOGLE_MAPS_API_KEY)
         coords = None
         if self.coordinates:
@@ -130,9 +132,9 @@ class IUserAccount(models.Model):
                     pass
         if coords:
             time_zone = gmaps.timezone(coords)
-            return time_zone.get('timeZoneId', 'US/Eastern')
+            return time_zone.get('timeZoneId', default_value)
         else:
-            return 'US/Eastern'
+            return default_value
 
     def set_display_name(self):
         """Change display_name value, only if different value is generated"""
