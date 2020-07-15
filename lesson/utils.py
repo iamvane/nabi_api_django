@@ -60,8 +60,12 @@ def send_alert_request_instructor(instructor, lesson_request, requestor_account)
             ]
             }
     if lesson_request.trial_proposed_datetime:
+        if instructor.timezone:
+            time_zone = instructor.timezone
+        else:
+            time_zone = instructor.get_timezone_from_location_zipcode()
         date_str, time_str = get_date_time_from_datetime_timezone(lesson_request.trial_proposed_datetime,
-                                                                  lesson_request.trial_proposed_timezone,
+                                                                  time_zone,
                                                                   '%d/%m/%Y',
                                                                   '%I:%M %p')
         data['customProperties'].append({"name": "lesson_date_subject", "value": f'{date_str} at {time_str}'})
@@ -81,12 +85,18 @@ def send_alert_request_instructor(instructor, lesson_request, requestor_account)
 
 
 def send_info_lesson_student_parent(lesson):
+    from accounts.models import get_account
     target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
     student_name = ''
     if lesson.student_details:
         student_name = lesson.student_details[0].name
+    account = get_account(lesson.booking.user)
+    if account.timezone:
+        time_zone = account.timezone
+    else:
+        time_zone = account.get_timezone_from_location_zipcode()
     date_str, time_str = get_date_time_from_datetime_timezone(lesson.scheduled_datetime,
-                                                              lesson.scheduled_timezone,
+                                                              time_zone,
                                                               '%d/%m/%Y',
                                                               '%I:%M %p')
     lesson_request = lesson.booking.get_request()

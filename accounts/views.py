@@ -785,7 +785,7 @@ class DashboardView(views.APIView):
             serializer = InstructorDashboardSerializer(request.user.instructor)
             data = serializer.data.copy()
             next_lesson = Lesson.get_next_lesson(request.user)
-            ser = ScheduledLessonSerializer(next_lesson)
+            ser = ScheduledLessonSerializer(next_lesson, context={'user': request.user})
             data.update({'nextLesson': ser.data})
         elif request.user.is_parent():
             ser = sers.TiedStudentParentDashboardSerializer(request.user.parent.tied_students, many=True)

@@ -67,7 +67,7 @@ class LessonRequestView(views.APIView):
                 add_to_email_list_v2(request.user, ['trial_to_booking'], ['customer_to_request'])
             else:
                 add_to_email_list_v2(request.user, [], ['trial_to_booking'])
-            ser = sers.LessonRequestDetailSerializer(obj)
+            ser = sers.LessonRequestDetailSerializer(obj, context={'user': request.user})
             return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -75,7 +75,7 @@ class LessonRequestView(views.APIView):
     def get(self, request):
         """Get a list of lesson requests, registered by current user"""
         ser = sers.LessonRequestDetailSerializer(request.user.lesson_requests.exclude(status=LESSON_REQUEST_CLOSED),
-                                                 many=True)
+                                                 many=True, context={'user': request.user})
         return Response(ser.data, status=status.HTTP_200_OK)
 
 
@@ -98,7 +98,7 @@ class LessonRequestItemView(views.APIView):
             ser = sers.LessonRequestSerializer(data=data, instance=instance, context={'is_parent': False}, partial=True)
         if ser.is_valid():
             obj = ser.save()
-            ser = sers.LessonRequestDetailSerializer(obj)
+            ser = sers.LessonRequestDetailSerializer(obj, context={'user': request.user})
             return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -110,7 +110,7 @@ class LessonRequestItemView(views.APIView):
         except ObjectDoesNotExist:
             return Response({'message': 'There is not lesson request with provided id'},
                             status=status.HTTP_400_BAD_REQUEST)
-        ser = sers.LessonRequestDetailSerializer(lesson_request)
+        ser = sers.LessonRequestDetailSerializer(lesson_request, context={'user': request.user})
         data = ser.data
         lesson_request.delete()
         return Response(data, status=status.HTTP_200_OK)
@@ -122,7 +122,7 @@ class LessonRequestItemView(views.APIView):
         except ObjectDoesNotExist:
             return Response({'message': 'There is not lesson request with provided id'},
                             status=status.HTTP_400_BAD_REQUEST)
-        ser = sers.LessonRequestDetailSerializer(lesson_request)
+        ser = sers.LessonRequestDetailSerializer(lesson_request, context={'user': request.user})
         return Response(ser.data, status=status.HTTP_200_OK)
 
 
@@ -188,9 +188,9 @@ class LessonRequestListView(views.APIView):
         paginator = PageNumberPagination()
         result_page = paginator.paginate_queryset(qs, request)
         if account:
-            ser = sers.LessonRequestItemSerializer(result_page, many=True, context={'user_id': request.user.id})
+            ser = sers.LessonRequestItemSerializer(result_page, many=True, context={'user': request.user})
         else:
-            ser = sers.LessonRequestItemSerializer(result_page, many=True)
+            ser = sers.LessonRequestItemSerializer(result_page, many=True, context={'user': request.user})
         return paginator.get_paginated_response(ser.data)
 
 

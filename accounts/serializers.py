@@ -1163,10 +1163,9 @@ class VideoInstructorSerializer(serializers.ModelSerializer):
 
 class StudentDashboardSerializer(serializers.ModelSerializer):
     """To return data from Student model"""
-    from lesson.serializers import LessonDataSerializer
     name = serializers.CharField(max_length=30, source='user.first_name')
     instrument = serializers.SerializerMethodField()
-    lessons = LessonDataSerializer(source='get_lessons', many=True)
+    lessons = serializers.SerializerMethodField()
     nextLesson = serializers.SerializerMethodField()
 
     class Meta:
@@ -1183,15 +1182,19 @@ class StudentDashboardSerializer(serializers.ModelSerializer):
     def get_nextLesson(self, instance):
         from lesson.serializers import ScheduledLessonSerializer
         next_lesson = Lesson.get_next_lesson(instance.user)
-        ser = ScheduledLessonSerializer(next_lesson)
+        ser = ScheduledLessonSerializer(next_lesson, context={'user': instance.user})
+        return ser.data
+
+    def get_lessons(self, instance):
+        from lesson.serializers import LessonDataSerializer
+        ser = LessonDataSerializer(instance.get_lessons(), many=True, context={'user': self.context['user']})
         return ser.data
 
 
 class TiedStudentParentDashboardSerializer(serializers.ModelSerializer):
     """To return data from Parent model"""
-    from lesson.serializers import LessonDataSerializer
     instrument = serializers.SerializerMethodField()
-    lessons = LessonDataSerializer(source='get_lessons', many=True)
+    lessons = serializers.SerializerMethodField()
     nextLesson = serializers.SerializerMethodField()
 
     class Meta:
@@ -1207,5 +1210,10 @@ class TiedStudentParentDashboardSerializer(serializers.ModelSerializer):
     def get_nextLesson(self, instance):
         from lesson.serializers import ScheduledLessonSerializer
         next_lesson = Lesson.get_next_lesson(instance.parent.user, instance)
-        ser = ScheduledLessonSerializer(next_lesson)
+        ser = ScheduledLessonSerializer(next_lesson, context={'user': instance.parent.user})
+        return ser.data
+
+    def get_lessons(self, instance):
+        from lesson.serializers import LessonDataSerializer
+        ser = LessonDataSerializer(instance.get_lessons(), many=True, context={'user': self.context['user']})
         return ser.data
