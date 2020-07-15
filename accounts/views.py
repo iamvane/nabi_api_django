@@ -94,6 +94,7 @@ def get_instructor_profile(user_cc):
             'music': user_cc.music,
             'backgroundCheckStatus': user_cc.bg_status,
             'video': user_cc.video,
+            'yearsOfExperience': user_cc.years_of_experience,
         }
     else:
         return {}
