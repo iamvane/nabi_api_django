@@ -857,7 +857,7 @@ class ScheduledLessonSerializer(serializers.ModelSerializer):
     """To display info of scheduled Lesson"""
     date = serializers.DateField(format='%Y-%m-%d')
     time = serializers.TimeField(format='%H:%M')
-    timezone = serializers.CharField(max_length=50, source='scheduled_timezone')
+    timezone = serializers.SerializerMethodField()
     instructor = serializers.SerializerMethodField()
 
     class Meta:
@@ -879,6 +879,14 @@ class ScheduledLessonSerializer(serializers.ModelSerializer):
         instance.date, instance.time = get_date_time_from_datetime_timezone(instance.scheduled_datetime,
                                                                             time_zone)
         return super().to_representation(instance)
+
+    def get_timezone(self, instance):
+        account = get_account(self.context['user'])
+        if account.timezone:
+            time_zone = account.timezone
+        else:
+            time_zone = account.get_timezone_from_location_zipcode()
+        return time_zone
 
 
 class LessonSerializer(ScheduledLessonSerializer):

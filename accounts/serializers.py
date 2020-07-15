@@ -1187,7 +1187,7 @@ class StudentDashboardSerializer(serializers.ModelSerializer):
 
     def get_lessons(self, instance):
         from lesson.serializers import LessonDataSerializer
-        ser = LessonDataSerializer(instance.get_lessons(), many=True, context={'user': self.context['user']})
+        ser = LessonDataSerializer(instance.get_lessons(), many=True, context={'user': instance.user})
         return ser.data
 
 
@@ -1215,5 +1215,5 @@ class TiedStudentParentDashboardSerializer(serializers.ModelSerializer):
 
     def get_lessons(self, instance):
         from lesson.serializers import LessonDataSerializer
-        ser = LessonDataSerializer(instance.get_lessons(), many=True, context={'user': self.context['user']})
+        ser = LessonDataSerializer(instance.get_lessons(), many=True, context={'user': instance.parent.user})
         return ser.data
