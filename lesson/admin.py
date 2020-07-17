@@ -240,4 +240,3 @@ admin.site.register(LessonBooking, LessonBookingAdmin)
 admin.site.register(LessonRequest, LessonRequestAdmin)
 admin.site.register(Lesson, LessonAdmin)
 admin.site.register(Instrument, InstrumentAdmin)
-InstrumentAdmin
