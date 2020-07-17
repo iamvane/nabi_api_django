@@ -859,10 +859,11 @@ class ScheduledLessonSerializer(serializers.ModelSerializer):
     time = serializers.TimeField(format='%H:%M')
     timezone = serializers.SerializerMethodField()
     instructor = serializers.SerializerMethodField()
+    studentDetails = serializers.JSONField(source='student_details')
 
     class Meta:
         model = Lesson
-        fields = ('id', 'date', 'time', 'timezone', 'student_details', 'instructor')
+        fields = ('id', 'date', 'time', 'timezone', 'studentDetails', 'instructor')
 
     def get_instructor(self, instance):
         if instance.booking.instructor:
