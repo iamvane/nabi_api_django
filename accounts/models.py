@@ -1,4 +1,5 @@
 import datetime
+import googlemaps
 import re
 from coolname import RandomGenerator
 from coolname.loader import load_config
@@ -35,6 +36,7 @@ class IUserAccount(models.Model):
     birthday = models.DateField(blank=True, null=True)
     location = models.CharField(max_length=150, default='')
     coordinates = PointField(blank=True, null=True)
+    timezone = models.CharField(max_length=50, blank=True)
     lat = models.CharField(max_length=50, default='')
     lng = models.CharField(max_length=50, default='')
     email_verified_at = models.DateTimeField(blank=True, null=True)
@@ -112,6 +114,27 @@ class IUserAccount(models.Model):
                 return ''
             else:
                 return ()
+
+    def get_timezone_from_location_zipcode(self, default_value='US/Eastern'):
+        """Return time_zone value from coordinates or location value.
+        When no time_zone could be obtained, return default_value."""
+        gmaps = googlemaps.Client(key=settings.GOOGLE_MAPS_API_KEY)
+        coords = None
+        if self.coordinates:
+            coords = (self.coordinates.coords[1], self.coordinates.coords[0])   # coord must be (lat, long)
+        else:
+            if len(self.location) < 12 and re.search('\d{2,6}', self.location):   # if there is a zip code (apparently)
+                geocoder = Geocoder(api_key=settings.GOOGLE_MAPS_API_KEY)
+                results = geocoder.geocode({'address': f'zipcode {self.location}'})
+                try:
+                    coords = results[0].coordinates   # this return (lat, long)
+                except Exception:
+                    pass
+        if coords:
+            time_zone = gmaps.timezone(coords)
+            return time_zone.get('timeZoneId', default_value)
+        else:
+            return default_value
 
     def set_display_name(self):
         """Change display_name value, only if different value is generated"""
@@ -383,7 +406,7 @@ class Instructor(IUserAccount):
     def lesson_bookings(self):
         """Return a list of lesson bookings related to application of this instructor"""
         from lesson.models import LessonBooking
-        return [item for item in LessonBooking.objects.filter(application__instructor=self,
+        return [item for item in LessonBooking.objects.filter(instructor=self,
                                                               status__in=[LessonBooking.PAID, LessonBooking.TRIAL])
             .order_by('id')]
 
@@ -519,6 +542,10 @@ class Student(IUserAccount):
     def role(self):
         return 'Student'
 
+    def get_lessons(self):
+        from lesson.models import Lesson, LessonBooking
+        return Lesson.objects.filter(booking__in=LessonBooking.objects.filter(user=self.user).order_by('-id'))
+
 
 class TiedStudent(models.Model):
     """Student tied to a Parent, without including an user."""
@@ -528,6 +555,11 @@ class TiedStudent(models.Model):
 
     def __str__(self):
         return '{name} ({age} years)'.format(name=self.name, age=self.age)
+
+    def get_lessons(self):
+        """Return a queryset of related Lesson instances, ordered from new to old"""
+        from lesson.models import LessonBooking, Lesson
+        return Lesson.objects.filter(booking__in=LessonBooking.objects.filter(tied_student=self).order_by('-id'))
 
 
 class StudentDetails(models.Model):

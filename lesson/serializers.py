@@ -190,9 +190,13 @@ class LessonRequestDetailSerializer(serializers.ModelSerializer):
         else:
             data['studentDetails'] = data.pop('students')
         if instance.trial_proposed_datetime:
-            data['timezone'] = instance.trial_proposed_timezone
+            account = get_account(self.context['user'])
+            if account.timezone:
+                data['timezone'] = account.timezone
+            else:
+                data['timezone'] = account.get_timezone_from_location_zipcode()
             data['date'], data['time'] = get_date_time_from_datetime_timezone(instance.trial_proposed_datetime,
-                                                                              instance.trial_proposed_timezone)
+                                                                              data['timezone'])
         return data
 
 
@@ -308,9 +312,8 @@ class LessonRequestItemSerializer(serializers.ModelSerializer):
         return instance.applications.count()
 
     def get_applied(self, instance):
-        if self.context.get('user_id'):
-            user = User.objects.get(id=self.context['user_id'])
-            return instance.applications.filter(instructor=user.instructor).exists()
+        if self.context.get('user'):
+            return instance.applications.filter(instructor=self.context['user'].instructor).exists()
         else:
             return False
 
@@ -352,9 +355,13 @@ class LessonRequestItemSerializer(serializers.ModelSerializer):
                 new_data['avatar'] = ''
             new_data['location'] = instance.user.parent.location
         if instance.trial_proposed_datetime:
-            new_data['timezone'] = instance.trial_proposed_timezone
+            account = get_account(self.context['user'])
+            if account.timezone:
+                new_data['timezone'] = account.timezone
+            else:
+                new_data['timezone'] = account.get_timezone_from_location_zipcode()
             new_data['date'], new_data['time'] = get_date_time_from_datetime_timezone(instance.trial_proposed_datetime,
-                                                                                      instance.trial_proposed_timezone)
+                                                                                      new_data['timezone'])
         return new_data
 
 
@@ -467,9 +474,13 @@ class LessonRequestListItemSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         if instance.trial_proposed_datetime:
-            data['timezone'] = instance.trial_proposed_timezone
+            account = get_account(self.context['user'])
+            if account.timezone:
+                data['timezone'] = account.timezone
+            else:
+                data['timezone'] = account.get_timezone_from_location_zipcode()
             data['date'], data['time'] = get_date_time_from_datetime_timezone(instance.trial_proposed_datetime,
-                                                                              instance.trial_proposed_timezone)
+                                                                              data['timezone'])
         return data
 
 
@@ -644,16 +655,25 @@ class InstructorDashboardSerializer(serializers.ModelSerializer):
                       'studentName', 'age', 'parent', 'students', 'lastLessonId')
 
         def get_instrument(self, instance):
-            if instance.application:
-                return instance.application.request.instrument.name
+            if instance.tied_student:
+                if hasattr(instance.tied_student, 'tied_student_details') \
+                        and instance.tied_student.tied_student_details.instrument:
+                    return instance.tied_student.tied_student_details.instrument.name
             else:
-                return instance.request.instrument.name
+                student_details = instance.user.student_details.first()
+                if student_details and student_details.instrument:
+                    return student_details.instrument.name
+            return ''
 
         def get_skillLevel(self, instance):
-            if instance.application:
-                return instance.application.request.skill_level
+            if instance.tied_student:
+                if hasattr(instance.tied_student, 'tied_student_details'):
+                    return instance.tied_student.tied_student_details.skill_level
             else:
-                return instance.request.skill_level
+                student_details = instance.user.student_details.first()
+                if student_details:
+                    return student_details.skill_level
+            return None
 
         def get_lastLessonId(self, instance):
             lesson = Lesson.objects.filter(booking=instance, status=Lesson.SCHEDULED,
@@ -667,8 +687,10 @@ class InstructorDashboardSerializer(serializers.ModelSerializer):
             data = super().to_representation(instance)
             if instance.user.is_parent():
                 data['parent'] = instance.user.parent.display_name
-                data['students'] = [{'name': student.name, 'age': student.age}
-                                    for student in instance.application.request.students.all()]
+                if instance.tied_student:
+                    data['students'] = [{'name': instance.tied_student.name, 'age': instance.tied_student.age}]
+                else:
+                    data['students'] = []
             else:
                 data['studentName'] = instance.user.student.display_name
                 data['age'] = instance.user.student.age
@@ -788,7 +810,7 @@ class UpdateLessonSerializer(serializers.ModelSerializer):
     grade = serializers.IntegerField(min_value=1, max_value=3)
     date = serializers.DateField(format='%Y-%m-%d')
     time = serializers.TimeField(format='%H:%M')
-    timezone = serializers.CharField(max_length=6, validators=[validate_timezone])
+    timezone = serializers.CharField(max_length=50, validators=[validate_timezone])
 
     class Meta:
         model = Lesson
@@ -826,6 +848,8 @@ class UpdateLessonSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         if 'grade' in validated_data.keys():
             validated_data['status'] = Lesson.COMPLETE
+        elif 'scheduled_timezone' in validated_data.keys():
+            validated_data['status'] = Lesson.SCHEDULED
         return super().update(instance, validated_data)
 
 
@@ -833,12 +857,13 @@ class ScheduledLessonSerializer(serializers.ModelSerializer):
     """To display info of scheduled Lesson"""
     date = serializers.DateField(format='%Y-%m-%d')
     time = serializers.TimeField(format='%H:%M')
-    timezone = serializers.CharField(max_length=50, source='scheduled_timezone')
+    timezone = serializers.SerializerMethodField()
     instructor = serializers.SerializerMethodField()
+    studentDetails = serializers.JSONField(source='student_details')
 
     class Meta:
         model = Lesson
-        fields = ('id', 'date', 'time', 'timezone', 'student_details', 'instructor')
+        fields = ('id', 'date', 'time', 'timezone', 'studentDetails', 'instructor')
 
     def get_instructor(self, instance):
         if instance.booking.instructor:
@@ -847,9 +872,22 @@ class ScheduledLessonSerializer(serializers.ModelSerializer):
             return ''
 
     def to_representation(self, instance):
+        account = get_account(self.context['user'])
+        if account.timezone:
+            time_zone = account.timezone
+        else:
+            time_zone = account.get_timezone_from_location_zipcode()
         instance.date, instance.time = get_date_time_from_datetime_timezone(instance.scheduled_datetime,
-                                                                            instance.scheduled_timezone)
+                                                                            time_zone)
         return super().to_representation(instance)
+
+    def get_timezone(self, instance):
+        account = get_account(self.context['user'])
+        if account.timezone:
+            time_zone = account.timezone
+        else:
+            time_zone = account.get_timezone_from_location_zipcode()
+        return time_zone
 
 
 class LessonSerializer(ScheduledLessonSerializer):
@@ -858,3 +896,48 @@ class LessonSerializer(ScheduledLessonSerializer):
     class Meta:
         model = Lesson
         fields = ('id', 'date', 'time', 'timezone', 'student_details', 'instructor', 'grade', 'comment')
+
+
+class LessonDataSerializer(serializers.ModelSerializer):
+    date = serializers.SerializerMethodField()
+    instructor = serializers.SerializerMethodField()
+    instructorId = serializers.SerializerMethodField()
+    gradeComment = serializers.CharField(source='comment')
+    timezone = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Lesson
+        fields = ['id', 'date', 'timezone', 'instructor', 'instructorId', 'status', 'grade', 'gradeComment', ]
+
+    def get_instructor(self, instance):
+        if instance.booking.instructor:
+            return instance.booking.instructor.display_name
+        else:
+            return ''
+
+    def get_instructorId(self, instance):
+        if instance.booking.instructor:
+            return instance.booking.instructor.id
+        else:
+            return None
+
+    def get_date(self, instance):
+        from lesson.utils import get_date_time_from_datetime_timezone
+        account = get_account(self.context['user'])
+        if account.timezone:
+            time_zone = account.timezone
+        else:
+            time_zone = account.get_timezone_from_location_zipcode()
+        date, time = get_date_time_from_datetime_timezone(instance.scheduled_datetime,
+                                                          time_zone,
+                                                          date_format='%m/%d/%Y',
+                                                          time_format='%I:%M%p')
+        return f'{date} @ {time}'
+
+    def get_timezone(self, instance):
+        account = get_account(self.context['user'])
+        if account.timezone:
+            time_zone = account.timezone
+        else:
+            time_zone = account.get_timezone_from_location_zipcode()
+        return time_zone

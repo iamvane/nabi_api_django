@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 
 from accounts.models import Instructor, Parent, Student, TiedStudent
@@ -77,6 +77,7 @@ class LessonBooking(models.Model):
         (CANCELLED, CANCELLED),
     )
     user = models.ForeignKey(User, on_delete=models.PROTECT, related_name='lesson_bookings')
+    tied_student = models.ForeignKey(TiedStudent, on_delete=models.SET_NULL, blank=True, null=True)
     quantity = models.IntegerField()
     total_amount = models.DecimalField(max_digits=9, decimal_places=4)
     request = models.OneToOneField(LessonRequest, blank=True, null=True, on_delete=models.CASCADE,
@@ -102,8 +103,27 @@ class LessonBooking(models.Model):
         else:
             return self.request
 
+    def student_details(self):
+        """Return a list"""
+        if self.user.is_parent():
+            return {'name': self.tied_student.name, 'age': self.tied_student.age}
+        else:
+            return {'name': self.user.first_name, 'age': self.user.student.age}
+
+    @classmethod
+    def create_trial_lesson(cls, user, tied_student=None):
+        """Create a LessonBooking for trial lesson, and related Lesson.
+        Return created Lesson instance."""
+        with transaction.atomic():
+            lb = LessonBooking.objects.create(user=user, tied_student=tied_student,
+                                              quantity=1, total_amount=0, description='Trial Lesson',
+                                              status=LessonBooking.TRIAL)
+            lesson = Lesson.objects.create(booking=lb)
+        return lesson
+
 
 class Lesson(models.Model):
+    PENDING = 'pending'
     SCHEDULED = 'scheduled'
     MISSED = 'missed'  # when datetime happens but lesson did not occurs
     COMPLETE = 'complete'   # when lesson was successful and graded
@@ -114,28 +134,31 @@ class Lesson(models.Model):
     )
     booking = models.ForeignKey(LessonBooking, on_delete=models.CASCADE, related_name='lessons')
     student_details = JSONField(blank=True, default=dict)   # data obtained from LessonRequest
-    scheduled_datetime = models.DateTimeField()
-    scheduled_timezone = models.CharField(max_length=50)
+    scheduled_datetime = models.DateTimeField(blank=True, null=True)
+    scheduled_timezone = models.CharField(max_length=50, blank=True)
     # instructor and rate are copied from LessonBooking
     instructor = models.ForeignKey(Instructor, blank=True, null=True, on_delete=models.SET_NULL, related_name='lessons')
     rate = models.DecimalField(max_digits=9, decimal_places=4, blank=True, null=True)
-    status = models.CharField(max_length=50, choices=STATUSES, default=SCHEDULED)
+    status = models.CharField(max_length=50, choices=STATUSES, default=PENDING)
     grade = models.PositiveSmallIntegerField(blank=True, null=True)
     comment = models.TextField(blank=True)   # added on grade
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
     @classmethod
-    def get_next_lesson(cls, user, is_instructor=None):
+    def get_next_lesson(cls, user, tied_student=None):
         lessons = None
-        if is_instructor is None:
-            is_instructor = user.is_instructor()
-        if is_instructor:
+        if user.is_instructor():
             lessons = cls.objects.filter(booking__instructor=user.instructor, status=cls.SCHEDULED,
-                                         scheduled_datetime__gt=timezone.now()).order_by('-scheduled_datetime')
+                                         scheduled_datetime__gt=timezone.now()).order_by('scheduled_datetime')
+        elif tied_student:
+            if cls.objects.filter(booking__isnull=False, booking__user=user,
+                                  booking__tied_student__isnull=False, booking__tied_student=tied_student).count():
+                lessons = cls.objects.filter(booking__user=user, status=cls.SCHEDULED, booking__tied_student=tied_student,
+                                             scheduled_datetime__gt=timezone.now()).order_by('scheduled_datetime')
         elif cls.objects.filter(booking__isnull=False).filter(booking__user=user).count():
             lessons = cls.objects.filter(booking__user=user, status=cls.SCHEDULED,
-                                         scheduled_datetime__gt=timezone.now()).order_by('-scheduled_datetime')
+                                         scheduled_datetime__gt=timezone.now()).order_by('scheduled_datetime')
         if lessons is not None:
             return lessons.first()
         else:

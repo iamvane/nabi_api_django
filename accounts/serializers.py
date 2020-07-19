@@ -11,12 +11,12 @@ from django.utils import timezone
 from rest_framework import serializers, validators
 
 from core.constants import (
-    DAY_TUPLE, DEGREE_TYPE_CHOICES, GENDER_CHOICES, LESSON_DURATION_CHOICES, MONTH_CHOICES,
-    PLACE_FOR_LESSONS_CHOICES, SKILL_LEVEL_CHOICES, PHONE_TYPE_MAIN,
+    DAY_TUPLE, DEGREE_TYPE_CHOICES, GENDER_CHOICES, LESSON_DURATION_CHOICES, LESSON_DURATION_30, MONTH_CHOICES,
+    PLACE_FOR_LESSONS_CHOICES, PLACE_FOR_LESSONS_ONLINE, SKILL_LEVEL_CHOICES, PHONE_TYPE_MAIN,
 )
 from core.models import UserBenefits
 from core.utils import update_model
-from lesson.models import Instrument
+from lesson.models import Instrument, Lesson
 
 from .models import (
     Affiliate, Availability, Education, Employment, Instructor, InstructorAdditionalQualifications,
@@ -628,6 +628,53 @@ class StudentDetailsSerializer(serializers.ModelSerializer):
         return super().to_internal_value(new_data)
 
 
+class StudentSerializer(serializers.ModelSerializer):
+    """Serializer for usage with creation of StudentDetails instance."""
+    name = serializers.CharField(max_length=250, required=False)
+    age = serializers.IntegerField(min_value=0, max_value=120, required=False)
+    instrument = serializers.CharField(max_length=250, source='instrument.name')   # instrument name
+    studentId = serializers.IntegerField(read_only=True)
+    skillLevel = serializers.CharField(max_length=50, source='skill_level')
+
+    class Meta:
+        model = StudentDetails
+        fields = ['user', 'name', 'age', 'instrument', 'skillLevel', 'studentId', ]
+
+    def validate(self, attrs):
+        if attrs['user'].is_parent():
+            if not attrs.get('name'):
+                raise serializers.ValidationError('Name of student is required')
+            if not attrs.get('age'):
+                raise serializers.ValidationError('Age of student is required')
+        return super().validate(attrs)
+
+    def create(self, validated_data):
+        validated_data['lesson_place'] = PLACE_FOR_LESSONS_ONLINE
+        validated_data['lesson_duration'] = LESSON_DURATION_30
+        validated_data['instrument'], _ = Instrument.objects.get_or_create(name=validated_data['instrument']['name'])
+        user = validated_data['user']
+        if user.is_parent():
+            tied_student, _ = TiedStudent.objects.get_or_create(parent=user.parent,
+                                                                name=validated_data.pop('name'),
+                                                                age=validated_data.pop('age'))
+            validated_data['tied_student'] = tied_student
+        return super().create(validated_data)
+
+    def to_representation(self, instance):
+        dict_data = super().to_representation(instance)
+        data = {}
+        if instance.user.is_parent():
+            data['name'] = instance.tied_student.name
+            data['age'] = instance.tied_student.age
+            data['studentId'] = instance.tied_student.id
+        else:
+            data['name'] = instance.user.first_name
+            data['age'] = instance.user.student.age
+            data['studentId'] = instance.user.student.id
+        dict_data.update(data)
+        return dict_data
+
+
 class TiedStudentSerializer(serializers.ModelSerializer):
     """Serializer for usage with detail student creation and retrieve, by parent user."""
     id = serializers.IntegerField(source='pk', read_only=True)
@@ -1112,3 +1159,61 @@ class VideoInstructorSerializer(serializers.ModelSerializer):
             return new_data
         else:
             return data
+
+
+class StudentDashboardSerializer(serializers.ModelSerializer):
+    """To return data from Student model"""
+    name = serializers.CharField(max_length=30, source='user.first_name')
+    instrument = serializers.SerializerMethodField()
+    lessons = serializers.SerializerMethodField()
+    nextLesson = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Student
+        fields = ['id', 'name', 'instrument', 'nextLesson', 'lessons']
+
+    def get_instrument(self, instance):
+        student_details = instance.user.student_details.first()
+        if student_details and student_details.instrument:
+            return student_details.instrument.name
+        else:
+            return ''
+
+    def get_nextLesson(self, instance):
+        from lesson.serializers import ScheduledLessonSerializer
+        next_lesson = Lesson.get_next_lesson(instance.user)
+        ser = ScheduledLessonSerializer(next_lesson, context={'user': instance.user})
+        return ser.data
+
+    def get_lessons(self, instance):
+        from lesson.serializers import LessonDataSerializer
+        ser = LessonDataSerializer(instance.get_lessons(), many=True, context={'user': instance.user})
+        return ser.data
+
+
+class TiedStudentParentDashboardSerializer(serializers.ModelSerializer):
+    """To return data from Parent model"""
+    instrument = serializers.SerializerMethodField()
+    lessons = serializers.SerializerMethodField()
+    nextLesson = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TiedStudent
+        fields = ['id', 'name', 'instrument', 'nextLesson', 'lessons', ]
+
+    def get_instrument(self, instance):
+        if hasattr(instance, 'tied_student_details') and instance.tied_student_details.instrument:
+            return instance.tied_student_details.instrument.name
+        else:
+            return ''
+
+    def get_nextLesson(self, instance):
+        from lesson.serializers import ScheduledLessonSerializer
+        next_lesson = Lesson.get_next_lesson(instance.parent.user, instance)
+        ser = ScheduledLessonSerializer(next_lesson, context={'user': instance.parent.user})
+        return ser.data
+
+    def get_lessons(self, instance):
+        from lesson.serializers import LessonDataSerializer
+        ser = LessonDataSerializer(instance.get_lessons(), many=True, context={'user': instance.parent.user})
+        return ser.data

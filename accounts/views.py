@@ -550,20 +550,32 @@ class StudentDetailView(views.APIView):
             return Response({}, status=status.HTTP_200_OK)
 
 
-class TiedStudentView(views.APIView):
+class StudentView(views.APIView):
     def post(self, request):
-        # add parent's id to data student
+        # add user's id to received data
         data = request.data.copy()
         data.update({'user': request.user.pk})
-        serializer = sers.TiedStudentSerializer(data=data)
+        serializer = sers.StudentSerializer(data=data)
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            student_details = serializer.save()
+            ser = sers.StudentSerializer(student_details)
+            trial_lesson = None
+            if request.user.is_parent():
+                if request.user.lesson_bookings.filter(tied_student=student_details.tied_student).count() == 0:
+                    trial_lesson = LessonBooking.create_trial_lesson(request.user,
+                                                                     tied_student=student_details.tied_student)
+            else:
+                if request.user.lesson_bookings.count() == 0:
+                    trial_lesson = LessonBooking.create_trial_lesson(request.user)
+            return_data = ser.data.copy()
+            if trial_lesson:
+                return_data['lessonId'] = trial_lesson.id
+            return Response(return_data, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, request):
-        serializer = sers.TiedStudentSerializer(StudentDetails.objects.filter(user__id=request.user.pk), many=True)
+        serializer = sers.StudentSerializer(StudentDetails.objects.filter(user__id=request.user.pk), many=True)
         return Response(serializer.data)
 
 
@@ -772,23 +784,17 @@ class DashboardView(views.APIView):
         if request.user.is_instructor():
             serializer = InstructorDashboardSerializer(request.user.instructor)
             data = serializer.data.copy()
-            next_lesson = Lesson.get_next_lesson(request.user, True)
+            next_lesson = Lesson.get_next_lesson(request.user)
+            ser = ScheduledLessonSerializer(next_lesson, context={'user': request.user})
+            data.update({'nextLesson': ser.data})
         elif request.user.is_parent():
-            serializer = LessonBookingParentDashboardSerializer(
-                request.user.lesson_bookings.filter(status__in=[LessonBooking.PAID, LessonBooking.TRIAL]).order_by('id'),
-                many=True
-            )
-            data = {'bookings': serializer.data}
-            next_lesson = Lesson.get_next_lesson(request.user, False)
+            ser = sers.TiedStudentParentDashboardSerializer(request.user.parent.tied_students, many=True)
+            data = {'students': ser.data}
+        elif request.user.is_student():
+            ser = sers.StudentDashboardSerializer(request.user.student)
+            data = {'students': [ser.data]}
         else:
-            serializer = LessonBookingStudentDashboardSerializer(
-                request.user.lesson_bookings.filter(status__in=[LessonBooking.PAID, LessonBooking.TRIAL]).order_by('id'),
-                many=True
-            )
-            data = {'bookings': serializer.data}
-            next_lesson = Lesson.get_next_lesson(request.user, False)
-        ser_nl = ScheduledLessonSerializer(next_lesson)
-        data.update({'nextLesson': ser_nl.data})
+            return Response({}, status=status.HTTP_200_OK)
         return Response(data, status=status.HTTP_200_OK)
 
 
