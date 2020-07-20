@@ -928,11 +928,14 @@ class LessonDataSerializer(serializers.ModelSerializer):
             time_zone = account.timezone
         else:
             time_zone = account.get_timezone_from_location_zipcode()
-        date, time = get_date_time_from_datetime_timezone(instance.scheduled_datetime,
-                                                          time_zone,
-                                                          date_format='%m/%d/%Y',
-                                                          time_format='%I:%M%p')
-        return f'{date} @ {time}'
+        if instance.scheduled_datetime:
+            date, time = get_date_time_from_datetime_timezone(instance.scheduled_datetime,
+                                                              time_zone,
+                                                              date_format='%m/%d/%Y',
+                                                              time_format='%I:%M%p')
+            return f'{date} @ {time}'
+        else:
+            return ''
 
     def get_timezone(self, instance):
         account = get_account(self.context['user'])

@@ -27,8 +27,8 @@ from payments.serializers import GetPaymentMethodSerializer
 
 from . import serializers as sers
 from .models import Application, LessonBooking, LessonRequest, Lesson
-from .tasks import (send_application_alert, send_booking_alert, send_booking_invoice, send_info_grade_lesson,
-                    send_request_alert_instructors, send_lesson_info_student_parent)
+from .tasks import (send_application_alert, send_alert_admin_request_closed, send_booking_alert, send_booking_invoice,
+                    send_info_grade_lesson, send_request_alert_instructors, send_lesson_info_student_parent)
 from .utils import get_benefit_to_redeem, get_booking_data, PACKAGES
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -222,6 +222,10 @@ class ApplicationView(views.APIView):
             obj = ser.save()
             task_log = TaskLog.objects.create(task_name='send_application_alert', args={'application_id': obj.id})
             send_application_alert.delay(obj.id, task_log.id)
+            if Application.objects.filter(request=obj.request).count() == 7:
+                obj.request.status = LESSON_REQUEST_CLOSED
+                obj.request.save()
+                send_alert_admin_request_closed.delay(obj.request.id)
             return Response({'message': 'success'}, status=status.HTTP_200_OK)
         else:
             return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
