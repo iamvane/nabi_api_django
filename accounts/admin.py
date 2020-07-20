@@ -12,7 +12,7 @@ from django.db.models.functions import Cast
 
 from accounts.models import (Availability, Education, Employment, Instructor, InstructorAdditionalQualifications,
                              InstructorAgeGroup, InstructorInstruments, InstructorLessonRate, InstructorLessonSize,
-                             InstructorPlaceForLessons, Parent, Student, TiedStudent)
+                             InstructorPlaceForLessons, Parent, Student, StudentDetails, TiedStudent)
 from accounts.utils import get_geopoint_from_location
 
 User = get_user_model()
@@ -220,6 +220,25 @@ class TiedStudentInline(admin.TabularInline):
     extra = 1
 
 
+class StudentDetailsAdmin(admin.ModelAdmin):
+    list_display = ('get_user_email', 'get_tied_student_name')
+    list_filter = ('instrument', )
+    fields = ('user', 'tied_student', 'instrument', 'skill_level', 'lesson_place', 'lesson_duration', )
+
+    def get_user_email(self, instance):
+        return instance.user.email
+    get_user_email.short_description = 'user email'
+    get_user_email.admin_order_field = 'user__email'
+
+    def get_tied_student_name(self, instance):
+        if instance.tied_student:
+            return instance.tied_student.name
+        else:
+            return ' - '
+    get_tied_student_name.short_description = 'tied student name'
+    get_tied_student_name.admin_order_field = 'tied_student__name'
+
+
 class ParentAdmin(admin.ModelAdmin):
     fields = ('user', 'display_name', 'age', 'avatar', 'birthday', 'gender', 'location',)
     list_display = ('pk', 'user', 'display_name',)
@@ -241,3 +260,4 @@ admin.site.register(Instructor, InstructorAdmin)
 admin.site.register(Parent, ParentAdmin)
 admin.site.register(Student, StudentAdmin)
 admin.site.register(TiedStudent, TiedStudentAdmin)
+admin.site.register(StudentDetails, StudentDetailsAdmin)
