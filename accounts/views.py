@@ -208,6 +208,10 @@ class WhoAmIView(views.APIView):
         avatar_path = None
         if account.avatar:
             avatar_path = account.avatar.url
+        if account.timezone:
+            time_zone = account.timezone
+        else:
+            time_zone = account.get_timezone_from_location_zipcode()
         data = {
             'id': request.user.id,
             'email': request.user.email,
@@ -220,6 +224,7 @@ class WhoAmIView(views.APIView):
             'phone': get_user_phone(account),
             'gender': account.gender,
             'location': account.location,
+            'timezone': time_zone,
             'lat': lat,
             'lng': lng,
             'referralToken': request.user.referral_token,
