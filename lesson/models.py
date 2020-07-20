@@ -121,6 +121,31 @@ class LessonBooking(models.Model):
             lesson = Lesson.objects.create(booking=lb)
         return lesson
 
+    def create_lesson_request(self):
+        """Create a LessonRequest instance from current LessonBooking. Return None if could not be possible"""
+        instrument = skill_level = None
+        if self.user.is_student():
+            student_details = self.user.student.student_details.first()
+            if student_details:
+                instrument = student_details.instrument
+                skill_level = student_details.skill_level
+        elif self.user.is_parent():
+            if self.tied_student and self.tied_student.tied_student_details:
+                instrument = self.tied_student.tied_student_details.instrument
+                skill_level = self.tied_student.tied_student_details.skill_level
+        if instrument and skill_level:
+            title = f'{instrument.name.capitalize()} Instructor'
+            request = LessonRequest.objects.create(user=self.user,
+                                                   title=title,
+                                                   instrument=instrument,
+                                                   skill_level=skill_level,
+                                                   place_for_lessons=PLACE_FOR_LESSONS_ONLINE,
+                                                   lessons_duration=LESSON_DURATION_30,
+                                                   )
+            return request
+        else:
+            return None
+
 
 class Lesson(models.Model):
     PENDING = 'pending'

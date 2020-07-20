@@ -45,7 +45,7 @@ class ApplicationAdmin(admin.ModelAdmin):
 
 
 class LessonBookingAdmin(admin.ModelAdmin):
-    fields = ('view_application', 'application', 'request', 'user', 'instructor', 'rate',
+    fields = ('view_application', 'application', 'request', 'user', 'tied_student', 'instructor', 'rate',
               'quantity', 'total_amount', 'description', 'payment', 'status')
     list_display = ('pk', 'get_user_email', 'application_id', 'quantity', 'total_amount', 'status', )
     list_filter = ('status', )
@@ -83,9 +83,16 @@ class LessonBookingAdmin(admin.ModelAdmin):
                 if obj.request:
                     obj.request.status = LESSON_REQUEST_CLOSED
                     obj.request.save()
-                lesson = Lesson.objects.create(booking=obj, scheduled_datetime=obj.request.trial_proposed_datetime,
-                                               scheduled_timezone=obj.request.trial_proposed_timezone,
-                                               instructor=obj.instructor, rate=obj.rate)
+                    lesson = Lesson.objects.create(booking=obj, scheduled_datetime=obj.request.trial_proposed_datetime,
+                                                   scheduled_timezone=obj.request.trial_proposed_timezone,
+                                                   instructor=obj.instructor, rate=obj.rate)
+                else:
+                    lesson = Lesson.objects.create(booking=obj, instructor=obj.instructor, rate=obj.rate)
+                if not obj.application and not obj.request:
+                    lesson_request = obj.create_lesson_request()
+                    if lesson_request:
+                        obj.request = lesson_request
+                        obj.save()
                 add_to_email_list_v2(obj.request.user, ['trial_to_booking'], ['customer_to_request'])
                 task_log = TaskLog.objects.create(task_name='send_lesson_info_student_parent',
                                                   args={'lesson_id': lesson.id})
