@@ -795,6 +795,7 @@ class CreateLessonSerializer(serializers.ModelSerializer):
         booking = LessonBooking.objects.get(id=attrs['booking_id'])
         if booking.quantity - booking.lessons.count() == 0:
             raise serializers.ValidationError('There is not available lessons')
+        return attrs
 
     def create(self, validated_data):
         time_zone = validated_data.pop('timezone')

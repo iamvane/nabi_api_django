@@ -400,7 +400,7 @@ class LessonCreateView(views.APIView):
         if ser.is_valid():
             lesson = ser.save()
             lesson.refresh_from_db()  # to avoid scheduled_datetime as string, and get it as datetime
-            ser = sers.LessonSerializer(lesson)
+            ser = sers.LessonSerializer(lesson, context={'user': request.user})
             task_log = TaskLog.objects.create(task_name='send_lesson_info_student_parent',
                                               args={'lesson_id': lesson.id})
             send_lesson_info_student_parent.delay(lesson.id, task_log.id)
@@ -435,5 +435,5 @@ class LessonView(views.APIView):
         except Lesson.DoesNotExist:
             return Response({'message': 'There is not Lesson with provided id'},
                             status=status.HTTP_400_BAD_REQUEST)
-        ser = sers.LessonSerializer(lesson)
+        ser = sers.LessonSerializer(lesson, context={'user': request.user})
         return Response(ser.data, status=status.HTTP_200_OK)
