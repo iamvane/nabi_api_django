@@ -189,7 +189,7 @@ class LessonRequestAdmin(admin.ModelAdmin):
 
 class LessonAdmin(admin.ModelAdmin):
     fields = ('booking', 'student_details', 'scheduled_datetime', 'scheduled_timezone',
-              'instructor', 'rate', 'status')
+              'instructor', 'rate', 'grade', 'comment', 'status')
     readonly_fields = ('student_details', )
     list_display = ('pk', 'get_booking_id', 'get_user_email', 'get_instructor', 'scheduled_datetime')
     list_filter = ('status', )
