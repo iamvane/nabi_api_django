@@ -866,7 +866,9 @@ class ScheduledLessonSerializer(serializers.ModelSerializer):
         fields = ('id', 'date', 'time', 'timezone', 'studentDetails', 'instructor')
 
     def get_instructor(self, instance):
-        if instance.booking.instructor:
+        if instance.instructor:
+            return instance.instructor.display_name
+        elif instance.booking.instructor:
             return instance.booking.instructor.display_name
         else:
             return ''
@@ -910,13 +912,17 @@ class LessonDataSerializer(serializers.ModelSerializer):
         fields = ['id', 'date', 'timezone', 'instructor', 'instructorId', 'status', 'grade', 'gradeComment', ]
 
     def get_instructor(self, instance):
-        if instance.booking.instructor:
+        if instance.instructor:
+            return instance.instructor.display_name
+        elif instance.booking.instructor:
             return instance.booking.instructor.display_name
         else:
             return ''
 
     def get_instructorId(self, instance):
-        if instance.booking.instructor:
+        if instance.instructor:
+            return instance.instructor.id
+        elif instance.booking.instructor:
             return instance.booking.instructor.id
         else:
             return None
