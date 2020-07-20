@@ -421,7 +421,7 @@ class LessonView(views.APIView):
         if ser_data.is_valid():
             lesson = ser_data.save()
             lesson.refresh_from_db()  # to avoid scheduled_datetime as string, and get it as datetime
-            ser = sers.LessonSerializer(lesson)
+            ser = sers.LessonSerializer(lesson, context={'user': request.user})
             if request.data.get('grade'):
                 task_log = TaskLog.objects.create(task_name='send_info_grade_lesson', args={'lesson_id': lesson.id})
                 send_info_grade_lesson.delay(lesson.id, task_log.id)
