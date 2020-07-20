@@ -290,8 +290,9 @@ class LessonBookingRegisterView(views.APIView):
                 booking.description = 'Package {}'.format(package_name.capitalize())
                 booking.status = LessonBooking.PAID
                 booking.save()
-                booking.application.request.status = LESSON_REQUEST_CLOSED
-                booking.application.request.save()
+                if booking.application:
+                    booking.application.request.status = LESSON_REQUEST_CLOSED
+                    booking.application.request.save()
                 if pym_obj:
                     pym_obj.status = PY_APPLIED
                     pym_obj.save()
