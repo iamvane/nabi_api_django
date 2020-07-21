@@ -142,6 +142,8 @@ class LessonBooking(models.Model):
                                                    place_for_lessons=PLACE_FOR_LESSONS_ONLINE,
                                                    lessons_duration=LESSON_DURATION_30,
                                                    )
+            if self.user.is_parent() and self.tied_student:
+                request.students.add(self.tied_student)
             return request
         else:
             return None
