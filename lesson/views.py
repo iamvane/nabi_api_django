@@ -221,8 +221,8 @@ class ApplicationView(views.APIView):
         ser = sers.ApplicationCreateSerializer(data=data)
         if ser.is_valid():
             obj = ser.save()
-            task_log = TaskLog.objects.create(task_name='send_application_alert', args={'application_id': obj.id})
-            send_application_alert.delay(obj.id, task_log.id)
+            # task_log = TaskLog.objects.create(task_name='send_application_alert', args={'application_id': obj.id})
+            # send_application_alert.delay(obj.id, task_log.id)
             if Application.objects.filter(request=obj.request).count() == 7:
                 obj.request.status = LESSON_REQUEST_CLOSED
                 obj.request.save()
@@ -433,7 +433,11 @@ class LessonCreateView(views.APIView):
                                                       description='Trial Lesson', status=PACKAGE_TRIAL)
             if lb:
                 request.data['bookingId'] = lb.id
-                lb.create_lesson_request()
+                lr = lb.create_lesson_request()
+                if lr:
+                    task_log = TaskLog.objects.create(task_name='send_request_alert_instructors',
+                                                      args={'request_id': lr.id})
+                    send_request_alert_instructors.delay(lr.id, task_log.id)
             elif create_trial_lesson:
                 return Response({'message': 'No Booking for Trial Lession could be created'},
                                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
