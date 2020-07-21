@@ -590,7 +590,12 @@ POST localhost:8000/lessons/
 "bookingId": 8,
 "date": "2020-05-18",
 "time": "15:30",
-"timezone": "America/New_York"
+}
+or
+{
+"studentId": 16,
+"date": "2020-05-18",
+"time": "15:30",
 }
 
 ###
