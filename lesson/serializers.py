@@ -798,6 +798,8 @@ class CreateLessonSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         booking = LessonBooking.objects.get(id=validated_data['booking_id'])
+        if booking.status == PACKAGE_TRIAL:
+            validated_data['status'] = Lesson.SCHEDULED
         account = get_account(booking.user)
         time_zone = account.get_timezone_from_location_zipcode()
         tz_offset = datetime.datetime.now(timezone.pytz.timezone(time_zone)).strftime('%z')
