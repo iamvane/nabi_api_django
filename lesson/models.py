@@ -125,7 +125,7 @@ class LessonBooking(models.Model):
         """Create a LessonRequest instance from current LessonBooking. Return None if could not be possible"""
         instrument = skill_level = None
         if self.user.is_student():
-            student_details = self.user.student.student_details.first()
+            student_details = self.user.student_details.first()
             if student_details:
                 instrument = student_details.instrument
                 skill_level = student_details.skill_level
