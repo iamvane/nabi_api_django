@@ -188,3 +188,10 @@ class Lesson(models.Model):
             return lessons.first()
         else:
             return lessons
+
+    @classmethod
+    def get_last_lesson(cls, user, tied_student):
+        if user.is_parent():
+            return cls.objects.filter(booking__user=user, booking__tied_student=tied_student).last()
+        else:
+            return cls.objects.filter(user=user).last()

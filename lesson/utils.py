@@ -318,6 +318,33 @@ def get_booking_data(user, package_name, application):
     return data
 
 
+def get_booking_data_v2(user, package_name, last_lesson):
+    """Get data related to booking: total amount, fees, discounts, etc"""
+    data = get_additional_items_booking(user)
+    data['lessonRate'] = last_lesson.rate
+    if data.get('freeLesson'):
+        data['lessonsPrice'] = last_lesson.rate * (PACKAGES[package_name].get('lesson_qty') - 1)
+    else:
+        data['lessonsPrice'] = last_lesson.rate * PACKAGES[package_name].get('lesson_qty')
+    # SubTotal is amount to pay if there is not discounts
+    sub_total = data['lessonsPrice'] + data.get('placementFee', 0)   # this variable does not include processingFee
+    data['processingFee'] = round(Decimal('0.029') * sub_total + Decimal('0.30'), 2)
+    data['subTotal'] = round(sub_total + data['processingFee'], 2)   # to display, add processing fee
+    # Now, calculate total
+    if data.get('discounts'):
+        total = round(data['lessonsPrice'] * (Decimal('100.0000') - data.get('discounts')) / Decimal('100.0'), 4)
+    else:
+        total = data['lessonsPrice']
+    total = total - data.get('credits', 0)
+    if package_name == 'virtuoso':
+        data['virtuosoDiscount'] = PACKAGES[package_name].get('discount')
+        total = round(total * (Decimal('100.0000') - data['virtuosoDiscount']) / 100, 4)
+    total += data.get('placementFee', 0)
+    data['processingFee'] = round(Decimal('0.029') * total + Decimal('0.30'), 2)
+    data['total'] = round(total + data['processingFee'], 2)
+    return data
+
+
 def get_date_time_from_datetime_timezone(datetime_value, time_zone, date_format='%Y-%m-%d', time_format='%H:%M'):
     """Get date and time elements of a datetime, after apply it a time_zone"""
     localize_datetime = datetime_value.astimezone(timezone.pytz.timezone(time_zone))

@@ -30,7 +30,7 @@ from . import serializers as sers
 from .models import Application, LessonBooking, LessonRequest, Lesson
 from .tasks import (send_application_alert, send_alert_admin_request_closed, send_booking_alert, send_booking_invoice,
                     send_info_grade_lesson, send_request_alert_instructors, send_lesson_info_student_parent)
-from .utils import get_benefit_to_redeem, get_booking_data, PACKAGES
+from .utils import get_benefit_to_redeem, get_booking_data, get_booking_data_v2, PACKAGES
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -258,14 +258,21 @@ class LessonBookingRegisterView(views.APIView):
         serializer = sers.LessonBookingRegisterSerializer(data=request.data)
         if serializer.is_valid():
             package_name = serializer.validated_data['package']
-            booking_values_data = get_booking_data(request.user, package_name,
-                                                   Application.objects.get(id=serializer.validated_data['applicationId'])
-                                                   )
+            if request.user.is_parent():
+                tied_student = TiedStudent.objects.get(id=request.data.pop('studentId'))
+            else:
+                tied_student = None
+                request.data.pop('studentId')
+            last_lesson = Lesson.get_last_lesson(user=request.user, tied_student=tied_student)
+            if not last_lesson:
+                return Response({'message': 'Looks like you should create a Trial Lesson first'},
+                                status=status.HTTP_400_BAD_REQUEST)
+            booking_values_data = get_booking_data_v2(request.user, package_name, last_lesson)
             # create/get booking instance
             lesson_qty = PACKAGES[package_name].get('lesson_qty')
             amount = booking_values_data['total']
             booking = LessonBooking.objects.filter(user_id=serializer.validated_data['userId'],
-                                                   application_id=serializer.validated_data['applicationId'],
+                                                   tied_student=tied_student,
                                                    status=LessonBooking.REQUESTED).first()
             if booking:
                 booking.quantity = lesson_qty
@@ -274,7 +281,8 @@ class LessonBookingRegisterView(views.APIView):
                 booking = LessonBooking.objects.create(user_id=serializer.validated_data['userId'],
                                                        quantity=lesson_qty,
                                                        total_amount=amount,
-                                                       application_id=serializer.validated_data['applicationId'],
+                                                       instructor=last_lesson.instructor,
+                                                       rate=last_lesson.rate,
                                                        status=LessonBooking.REQUESTED)
             # make payment
             pym_status, pym_obj = Payment.make_and_register(request.user, booking.total_amount,
@@ -291,12 +299,19 @@ class LessonBookingRegisterView(views.APIView):
                 booking.description = 'Package {}'.format(package_name.capitalize())
                 booking.status = LessonBooking.PAID
                 booking.save()
-                if booking.application:
-                    booking.application.request.status = LESSON_REQUEST_CLOSED
-                    booking.application.request.save()
+                if booking.request:
+                    booking.request.status = LESSON_REQUEST_CLOSED
+                    booking.request.save()
                 if pym_obj:
                     pym_obj.status = PY_APPLIED
                     pym_obj.save()
+                if booking.lessons.count() == 0:
+                    Lesson.objects.create(booking=booking,
+                                          scheduled_datetime=last_lesson.scheduled_datetime,
+                                          scheduled_timezone=last_lesson.scheduled_timezone,
+                                          instructor=booking.instructor,
+                                          rate=booking.rate,
+                                          status=Lesson.SCHEDULED)
                 add_to_email_list_v2(request.user, [], ['trial_to_booking'])
                 # update data for applicable benefits
                 UserBenefits.update_applicable_benefits(request.user)
@@ -314,15 +329,19 @@ class LessonBookingRegisterView(views.APIView):
 class ApplicationBookingView(views.APIView):
     """To return data for booking an application"""
 
-    def common(self, request, app_id, package='artist'):
+    def common(self, request, student_id, package='artist'):
         """Execute common operations.
         Return instance of Response or data (dict)"""
-        try:
-            application = Application.objects.get(id=app_id)
-        except ObjectDoesNotExist:
-            return Response({'message': 'There is not an application with provided id'},
-                            status=status.HTTP_400_BAD_REQUEST)
-        data = get_booking_data(request.user, package, application)
+        if request.user.is_parent():
+            try:
+                tied_student = TiedStudent.objects.get(id=student_id)
+            except TiedStudent.DoesNotExist:
+                return Response({'message': 'There is not student with provided id'},
+                                status=status.HTTP_400_BAD_REQUEST)
+        else:
+            tied_student = None
+        last_lesson = Lesson.get_last_lesson(user=request.user, tied_student=tied_student)
+        data = get_booking_data_v2(request.user, package, last_lesson)
         account = get_account(request.user)
         if not account.stripe_customer_id:
             # try to get from Stripe
@@ -371,15 +390,15 @@ class ApplicationBookingView(views.APIView):
         data['clientSecret'] = intent.client_secret
         return data
 
-    def get(self, request, app_id):
+    def get(self, request, student_id):
         """Default, with artist package"""
-        resp = self.common(request, app_id)
+        resp = self.common(request, student_id)
         if isinstance(resp, Response):
             return resp
         else:   # then, its data, not Response
             return Response(resp, status=status.HTTP_200_OK)
 
-    def post(self, request, app_id):
+    def post(self, request, student_id):
         """Receiving package name"""
         if not request.data.get('package'):
             return Response({'message': 'Package value is required'}, status=status.HTTP_400_BAD_REQUEST)
@@ -387,7 +406,7 @@ class ApplicationBookingView(views.APIView):
             package = request.data.get('package')
         if not PACKAGES.get(package):
             return Response({'message': 'Package value is invalid'}, status=status.HTTP_400_BAD_REQUEST)
-        resp = self.common(request, app_id, package)
+        resp = self.common(request, student_id, package)
         if isinstance(resp, Response):
             return resp
         else:   # then, its data, not Response
