@@ -865,7 +865,7 @@ class ScheduledLessonSerializer(serializers.ModelSerializer):
     time = serializers.TimeField(format='%H:%M')
     timezone = serializers.SerializerMethodField()
     instructor = serializers.SerializerMethodField()
-    studentDetails = serializers.JSONField(source='student_details')
+    studentDetails = serializers.SerializerMethodField()
 
     class Meta:
         model = Lesson
@@ -896,6 +896,17 @@ class ScheduledLessonSerializer(serializers.ModelSerializer):
         else:
             time_zone = account.get_timezone_from_location_zipcode()
         return time_zone
+
+    def get_studentDetails(self, instance):
+        if instance.student_details:
+            return instance.student_details
+        data = []
+        if instance.booking.user.is_parent():
+            if instance.booking.tied_student:
+                data.append({'name': instance.booking.tied_student.name, 'age': instance.booking.tied_student.age})
+        else:
+            data.append({'name': instance.booking.user.first_name, 'age': instance.booking.user.student.age})
+        return data
 
 
 class LessonSerializer(ScheduledLessonSerializer):
