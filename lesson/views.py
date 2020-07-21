@@ -10,13 +10,14 @@ from django.contrib.gis.measure import D
 from django.db import transaction
 from django.db.models import Case, F, ObjectDoesNotExist, Q, When
 from django.db.models.functions import Cast
+from django.shortcuts import get_object_or_404
 
 from rest_framework import status, views
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from accounts.models import get_account
+from accounts.models import TiedStudent, get_account
 from accounts.utils import get_stripe_customer_id, add_to_email_list_v2
 from core.constants import *
 from core.models import TaskLog, UserBenefits
@@ -394,8 +395,32 @@ class ApplicationBookingView(views.APIView):
 
 
 class LessonCreateView(views.APIView):
+    permission_classes = (IsAuthenticated, AccessForParentOrStudent)
 
     def post(self, request):
+        if not request.data.get('bookingId'):
+            lb = None
+            create_trial_lesson = False
+            if request.user.is_parent():
+                tied_student = get_object_or_404(TiedStudent, pk=request.data.get('studentId'))
+                if LessonBooking.objects.filter(user=request.user, tied_student=tied_student).count() == 0:
+                    create_trial_lesson = True
+                    lb = LessonBooking.objects.create(user=request.user, tied_student=tied_student, quantity=1,
+                                                      total_amount=0, description='Trial Lesson', status=PACKAGE_TRIAL)
+            else:
+                if LessonBooking.objects.filter(user=request.user).count() == 0:
+                    create_trial_lesson = True
+                    lb = LessonBooking.objects.create(user=request.user, quantity=1, total_amount=0,
+                                                      description='Trial Lesson', status=PACKAGE_TRIAL)
+            if lb:
+                request.data['bookingId'] = lb.id
+                lb.create_lesson_request()
+            elif create_trial_lesson:
+                return Response({'message': 'No Booking for Trial Lession could be created'},
+                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            else:
+                return Response({'message': 'No BookingId was provided and trial lesson is not allowed'},
+                                status=status.HTTP_400_BAD_REQUEST)
         ser = sers.CreateLessonSerializer(data=request.data)
         if ser.is_valid():
             lesson = ser.save()

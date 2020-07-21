@@ -781,15 +781,14 @@ class LessonRequestInstructorDashboardSerializer(serializers.ModelSerializer):
 
 
 class CreateLessonSerializer(serializers.ModelSerializer):
-    """Serializer for create a Lesson instance"""
+    """Serializer for create a Lesson instance, when a Booking was created already"""
     bookingId = serializers.IntegerField(source='booking_id')
     date = serializers.DateField(format='%Y-%m-%d')
     time = serializers.TimeField(format='%H:%M')
-    timezone = serializers.CharField(max_length=50, validators=[validate_timezone])
 
     class Meta:
         model = Lesson
-        fields = ('bookingId', 'date', 'time', 'timezone')
+        fields = ('bookingId', 'date', 'time', )
 
     def validate(self, attrs):
         booking = LessonBooking.objects.get(id=attrs['booking_id'])
@@ -798,7 +797,9 @@ class CreateLessonSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        time_zone = validated_data.pop('timezone')
+        booking = LessonBooking.objects.get(id=validated_data['booking_id'])
+        account = get_account(booking.user)
+        time_zone = account.get_timezone_from_location_zipcode()
         tz_offset = datetime.datetime.now(timezone.pytz.timezone(time_zone)).strftime('%z')
         validated_data['scheduled_datetime'] = f"{validated_data.pop('date')} {validated_data.pop('time')}{tz_offset}"
         validated_data['scheduled_timezone'] = time_zone
@@ -811,11 +812,10 @@ class UpdateLessonSerializer(serializers.ModelSerializer):
     grade = serializers.IntegerField(min_value=1, max_value=3)
     date = serializers.DateField(format='%Y-%m-%d')
     time = serializers.TimeField(format='%H:%M')
-    timezone = serializers.CharField(max_length=50, validators=[validate_timezone])
 
     class Meta:
         model = Lesson
-        fields = ('id', 'grade', 'comment', 'date', 'status', 'time', 'timezone', 'scheduled_datetime')
+        fields = ('id', 'grade', 'comment', 'date', 'status', 'time', 'scheduled_datetime')
 
     def validate_grade(self, value):
         if self.instance.status in (Lesson.MISSED, Lesson.COMPLETE):
@@ -834,16 +834,18 @@ class UpdateLessonSerializer(serializers.ModelSerializer):
         attrs = super().validate(attrs)
         keys = dict.fromkeys(attrs, 1)
         # verify data existence for date/time schedule
-        keys_sum = keys.get('date', 0) + keys.get('time', 0) + keys.get('timezone', 0)
-        if 3 > keys_sum > 0:
+        if (keys.get('date', 0) + keys.get('time', 0)) == 1:
             raise serializers.ValidationError('Incomplete data for re-schedule the lesson')
-        time_zone = attrs.get('timezone')
+        time_zone = self.instance.booking.user.get_timezone_from_location_zipcode()
         if time_zone:
             tz_offset = datetime.datetime.now(timezone.pytz.timezone(time_zone)).strftime('%z')
             attrs['scheduled_datetime'] = f'{attrs.pop("date")} {attrs.pop("time")}{tz_offset}'
+            attrs['scheduled_timezone'] = time_zone
         # verify data existence for grade a lesson
         if (keys.get('grade', 0) + keys.get('comment', 0)) == 1:
             raise serializers.ValidationError('Incomplete data to grade the lesson')
+        if self.instance.status == Lesson.COMPLETE:
+            raise serializers.ValidationError('This lesson could not be updated')
         return attrs
 
     def update(self, instance, validated_data):
