@@ -836,7 +836,8 @@ class UpdateLessonSerializer(serializers.ModelSerializer):
         # verify data existence for date/time schedule
         if (keys.get('date', 0) + keys.get('time', 0)) == 1:
             raise serializers.ValidationError('Incomplete data for re-schedule the lesson')
-        time_zone = self.instance.booking.user.get_timezone_from_location_zipcode()
+        account = get_account(self.instance.booking.user)
+        time_zone = account.get_timezone_from_location_zipcode()
         if time_zone:
             tz_offset = datetime.datetime.now(timezone.pytz.timezone(time_zone)).strftime('%z')
             attrs['scheduled_datetime'] = f'{attrs.pop("date")} {attrs.pop("time")}{tz_offset}'
