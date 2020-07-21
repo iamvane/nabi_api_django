@@ -121,7 +121,7 @@ class LessonBooking(models.Model):
             lesson = Lesson.objects.create(booking=lb)
         return lesson
 
-    def create_lesson_request(self):
+    def create_lesson_request(self, lesson):
         """Create a LessonRequest instance from current LessonBooking. Return None if could not be possible"""
         instrument = skill_level = None
         if self.user.is_student():
@@ -135,13 +135,24 @@ class LessonBooking(models.Model):
                 skill_level = self.tied_student.tied_student_details.skill_level
         if instrument and skill_level:
             title = f'{instrument.name.capitalize()} Instructor'
-            request = LessonRequest.objects.create(user=self.user,
-                                                   title=title,
-                                                   instrument=instrument,
-                                                   skill_level=skill_level,
-                                                   place_for_lessons=PLACE_FOR_LESSONS_ONLINE,
-                                                   lessons_duration=LESSON_DURATION_30,
-                                                   )
+            if lesson:
+                request = LessonRequest.objects.create(user=self.user,
+                                                       title=title,
+                                                       instrument=instrument,
+                                                       skill_level=skill_level,
+                                                       place_for_lessons=PLACE_FOR_LESSONS_ONLINE,
+                                                       lessons_duration=LESSON_DURATION_30,
+                                                       trial_proposed_datetime=lesson.scheduled_datetime,
+                                                       trial_proposed_timezone=lesson.scheduled_timezone,
+                                                       )
+            else:
+                request = LessonRequest.objects.create(user=self.user,
+                                                       title=title,
+                                                       instrument=instrument,
+                                                       skill_level=skill_level,
+                                                       place_for_lessons=PLACE_FOR_LESSONS_ONLINE,
+                                                       lessons_duration=LESSON_DURATION_30,
+                                                       )
             if self.user.is_parent() and self.tied_student:
                 request.students.add(self.tied_student)
             return request

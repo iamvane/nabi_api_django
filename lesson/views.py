@@ -433,11 +433,6 @@ class LessonCreateView(views.APIView):
                                                       description='Trial Lesson', status=PACKAGE_TRIAL)
             if lb:
                 request.data['bookingId'] = lb.id
-                lr = lb.create_lesson_request()
-                if lr:
-                    task_log = TaskLog.objects.create(task_name='send_request_alert_instructors',
-                                                      args={'request_id': lr.id})
-                    send_request_alert_instructors.delay(lr.id, task_log.id)
             elif create_trial_lesson:
                 return Response({'message': 'No Booking for Trial Lession could be created'},
                                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -448,6 +443,15 @@ class LessonCreateView(views.APIView):
         if ser.is_valid():
             lesson = ser.save()
             lesson.refresh_from_db()  # to avoid scheduled_datetime as string, and get it as datetime
+
+            # create Lesson Request when Trial Booking
+            if lesson.booking.status == LessonBooking.TRIAL:
+                lr = lesson.booking.create_lesson_request(lesson)
+                if lr:
+                    task_log = TaskLog.objects.create(task_name='send_request_alert_instructors',
+                                                      args={'request_id': lr.id})
+                    send_request_alert_instructors.delay(lr.id, task_log.id)
+
             ser = sers.LessonSerializer(lesson, context={'user': request.user})
             task_log = TaskLog.objects.create(task_name='send_lesson_info_student_parent',
                                               args={'lesson_id': lesson.id})
