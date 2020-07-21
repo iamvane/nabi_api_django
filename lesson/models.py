@@ -121,6 +121,44 @@ class LessonBooking(models.Model):
             lesson = Lesson.objects.create(booking=lb)
         return lesson
 
+    def create_lesson_request(self, lesson):
+        """Create a LessonRequest instance from current LessonBooking. Return None if could not be possible"""
+        instrument = skill_level = None
+        if self.user.is_student():
+            student_details = self.user.student_details.first()
+            if student_details:
+                instrument = student_details.instrument
+                skill_level = student_details.skill_level
+        elif self.user.is_parent():
+            if self.tied_student and self.tied_student.tied_student_details:
+                instrument = self.tied_student.tied_student_details.instrument
+                skill_level = self.tied_student.tied_student_details.skill_level
+        if instrument and skill_level:
+            title = f'{instrument.name.capitalize()} Instructor'
+            if lesson:
+                request = LessonRequest.objects.create(user=self.user,
+                                                       title=title,
+                                                       instrument=instrument,
+                                                       skill_level=skill_level,
+                                                       place_for_lessons=PLACE_FOR_LESSONS_ONLINE,
+                                                       lessons_duration=LESSON_DURATION_30,
+                                                       trial_proposed_datetime=lesson.scheduled_datetime,
+                                                       trial_proposed_timezone=lesson.scheduled_timezone,
+                                                       )
+            else:
+                request = LessonRequest.objects.create(user=self.user,
+                                                       title=title,
+                                                       instrument=instrument,
+                                                       skill_level=skill_level,
+                                                       place_for_lessons=PLACE_FOR_LESSONS_ONLINE,
+                                                       lessons_duration=LESSON_DURATION_30,
+                                                       )
+            if self.user.is_parent() and self.tied_student:
+                request.students.add(self.tied_student)
+            return request
+        else:
+            return None
+
 
 class Lesson(models.Model):
     PENDING = 'pending'
@@ -163,3 +201,10 @@ class Lesson(models.Model):
             return lessons.first()
         else:
             return lessons
+
+    @classmethod
+    def get_last_lesson(cls, user, tied_student):
+        if user.is_parent():
+            return cls.objects.filter(booking__user=user, booking__tied_student=tied_student).last()
+        else:
+            return cls.objects.filter(user=user).last()

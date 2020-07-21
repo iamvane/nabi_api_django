@@ -43,15 +43,9 @@ class ApplicationAdmin(admin.ModelAdmin):
             kwargs['queryset'] = Instructor.objects.order_by('user__email')
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
-    def save_model(self, request, obj, form, change):
-        super().save_model(request, obj, form, change)
-        if not change:   # is creation
-            task_log = TaskLog.objects.create(task_name='send_application_alert', args={'application_id': obj.id})
-            send_application_alert.delay(obj.id, task_log.id)
-
 
 class LessonBookingAdmin(admin.ModelAdmin):
-    fields = ('view_application', 'application', 'request', 'user', 'instructor', 'rate',
+    fields = ('view_application', 'application', 'request', 'user', 'tied_student', 'instructor', 'rate',
               'quantity', 'total_amount', 'description', 'payment', 'status')
     list_display = ('pk', 'get_user_email', 'application_id', 'quantity', 'total_amount', 'status', )
     list_filter = ('status', )
@@ -86,11 +80,19 @@ class LessonBookingAdmin(admin.ModelAdmin):
         obj.refresh_from_db()
         if not change:   # on creation
             if obj.status == LessonBooking.TRIAL:
-                obj.request.status = LESSON_REQUEST_CLOSED
-                obj.request.save()
-                lesson = Lesson.objects.create(booking=obj, scheduled_datetime=obj.request.trial_proposed_datetime,
-                                               scheduled_timezone=obj.request.trial_proposed_timezone,
-                                               instructor=obj.instructor, rate=obj.rate)
+                if obj.request:
+                    obj.request.status = LESSON_REQUEST_CLOSED
+                    obj.request.save()
+                    lesson = Lesson.objects.create(booking=obj, scheduled_datetime=obj.request.trial_proposed_datetime,
+                                                   scheduled_timezone=obj.request.trial_proposed_timezone,
+                                                   instructor=obj.instructor, rate=obj.rate)
+                else:
+                    lesson = Lesson.objects.create(booking=obj, instructor=obj.instructor, rate=obj.rate)
+                if not obj.application and not obj.request:
+                    lesson_request = obj.create_lesson_request()
+                    if lesson_request:
+                        obj.request = lesson_request
+                        obj.save()
                 add_to_email_list_v2(obj.request.user, ['trial_to_booking'], ['customer_to_request'])
                 task_log = TaskLog.objects.create(task_name='send_lesson_info_student_parent',
                                                   args={'lesson_id': lesson.id})
@@ -109,8 +111,9 @@ class LessonBookingAdmin(admin.ModelAdmin):
                 if obj.payment:
                     task_log = TaskLog.objects.create(task_name='send_booking_invoice', args={'booking_id': obj.id})
                     send_booking_invoice.delay(obj.id, task_log.id)
-                task_log = TaskLog.objects.create(task_name='send_booking_alert', args={'booking_id': obj.id})
-                send_booking_alert.delay(obj.id, task_log.id)
+                if obj.application:
+                    task_log = TaskLog.objects.create(task_name='send_booking_alert', args={'booking_id': obj.id})
+                    send_booking_alert.delay(obj.id, task_log.id)
 
 
 def close_lesson_request(model_admin, request, queryset):
@@ -179,9 +182,6 @@ class LessonRequestAdmin(admin.ModelAdmin):
                                                scheduled_timezone=obj.trial_proposed_timezone,
                                                )
             add_to_email_list_v2(request.user, ['trial_to_booking'], ['customer_to_request'])
-        if not change or 'instrument' in form.changed_data or 'place_for_lessons' in form.changed_data:
-            task_log = TaskLog.objects.create(task_name='send_request_alert_instructors', args={'request_id': obj.id})
-            send_request_alert_instructors.delay(obj.id, task_log.id)
         if lesson:
             task_log = TaskLog.objects.create(task_name='send_lesson_info_student_parent', args={'lesson_id': lesson.id})
             send_lesson_info_student_parent.delay(lesson.id, task_log.id)
@@ -189,7 +189,7 @@ class LessonRequestAdmin(admin.ModelAdmin):
 
 class LessonAdmin(admin.ModelAdmin):
     fields = ('booking', 'student_details', 'scheduled_datetime', 'scheduled_timezone',
-              'instructor', 'rate', 'status')
+              'instructor', 'rate', 'grade', 'comment', 'status')
     readonly_fields = ('student_details', )
     list_display = ('pk', 'get_booking_id', 'get_user_email', 'get_instructor', 'scheduled_datetime')
     list_filter = ('status', )

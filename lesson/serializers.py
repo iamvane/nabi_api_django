@@ -781,23 +781,27 @@ class LessonRequestInstructorDashboardSerializer(serializers.ModelSerializer):
 
 
 class CreateLessonSerializer(serializers.ModelSerializer):
-    """Serializer for create a Lesson instance"""
+    """Serializer for create a Lesson instance, when a Booking was created already"""
     bookingId = serializers.IntegerField(source='booking_id')
     date = serializers.DateField(format='%Y-%m-%d')
     time = serializers.TimeField(format='%H:%M')
-    timezone = serializers.CharField(max_length=50, validators=[validate_timezone])
 
     class Meta:
         model = Lesson
-        fields = ('bookingId', 'date', 'time', 'timezone')
+        fields = ('bookingId', 'date', 'time', )
 
     def validate(self, attrs):
         booking = LessonBooking.objects.get(id=attrs['booking_id'])
         if booking.quantity - booking.lessons.count() == 0:
             raise serializers.ValidationError('There is not available lessons')
+        return attrs
 
     def create(self, validated_data):
-        time_zone = validated_data.pop('timezone')
+        booking = LessonBooking.objects.get(id=validated_data['booking_id'])
+        if booking.status == PACKAGE_TRIAL:
+            validated_data['status'] = Lesson.SCHEDULED
+        account = get_account(booking.user)
+        time_zone = account.get_timezone_from_location_zipcode()
         tz_offset = datetime.datetime.now(timezone.pytz.timezone(time_zone)).strftime('%z')
         validated_data['scheduled_datetime'] = f"{validated_data.pop('date')} {validated_data.pop('time')}{tz_offset}"
         validated_data['scheduled_timezone'] = time_zone
@@ -810,11 +814,10 @@ class UpdateLessonSerializer(serializers.ModelSerializer):
     grade = serializers.IntegerField(min_value=1, max_value=3)
     date = serializers.DateField(format='%Y-%m-%d')
     time = serializers.TimeField(format='%H:%M')
-    timezone = serializers.CharField(max_length=50, validators=[validate_timezone])
 
     class Meta:
         model = Lesson
-        fields = ('id', 'grade', 'comment', 'date', 'status', 'time', 'timezone', 'scheduled_datetime')
+        fields = ('id', 'grade', 'comment', 'date', 'status', 'time', 'scheduled_datetime')
 
     def validate_grade(self, value):
         if self.instance.status in (Lesson.MISSED, Lesson.COMPLETE):
@@ -833,16 +836,19 @@ class UpdateLessonSerializer(serializers.ModelSerializer):
         attrs = super().validate(attrs)
         keys = dict.fromkeys(attrs, 1)
         # verify data existence for date/time schedule
-        keys_sum = keys.get('date', 0) + keys.get('time', 0) + keys.get('timezone', 0)
-        if 3 > keys_sum > 0:
+        if (keys.get('date', 0) + keys.get('time', 0)) == 1:
             raise serializers.ValidationError('Incomplete data for re-schedule the lesson')
-        time_zone = attrs.get('timezone')
-        if time_zone:
+        account = get_account(self.instance.booking.user)
+        if attrs.get("date") and attrs.get("time"):
+            time_zone = account.get_timezone_from_location_zipcode()
             tz_offset = datetime.datetime.now(timezone.pytz.timezone(time_zone)).strftime('%z')
             attrs['scheduled_datetime'] = f'{attrs.pop("date")} {attrs.pop("time")}{tz_offset}'
+            attrs['scheduled_timezone'] = time_zone
         # verify data existence for grade a lesson
         if (keys.get('grade', 0) + keys.get('comment', 0)) == 1:
             raise serializers.ValidationError('Incomplete data to grade the lesson')
+        if self.instance.status == Lesson.COMPLETE:
+            raise serializers.ValidationError('This lesson could not be updated')
         return attrs
 
     def update(self, instance, validated_data):
@@ -859,14 +865,16 @@ class ScheduledLessonSerializer(serializers.ModelSerializer):
     time = serializers.TimeField(format='%H:%M')
     timezone = serializers.SerializerMethodField()
     instructor = serializers.SerializerMethodField()
-    studentDetails = serializers.JSONField(source='student_details')
+    studentDetails = serializers.SerializerMethodField()
 
     class Meta:
         model = Lesson
         fields = ('id', 'date', 'time', 'timezone', 'studentDetails', 'instructor')
 
     def get_instructor(self, instance):
-        if instance.booking.instructor:
+        if instance.instructor:
+            return instance.instructor.display_name
+        elif instance.booking.instructor:
             return instance.booking.instructor.display_name
         else:
             return ''
@@ -889,6 +897,17 @@ class ScheduledLessonSerializer(serializers.ModelSerializer):
             time_zone = account.get_timezone_from_location_zipcode()
         return time_zone
 
+    def get_studentDetails(self, instance):
+        if instance.student_details:
+            return instance.student_details
+        data = []
+        if instance.booking.user.is_parent():
+            if instance.booking.tied_student:
+                data.append({'name': instance.booking.tied_student.name, 'age': instance.booking.tied_student.age})
+        else:
+            data.append({'name': instance.booking.user.first_name, 'age': instance.booking.user.student.age})
+        return data
+
 
 class LessonSerializer(ScheduledLessonSerializer):
     """To display info about a Lesson"""
@@ -910,13 +929,17 @@ class LessonDataSerializer(serializers.ModelSerializer):
         fields = ['id', 'date', 'timezone', 'instructor', 'instructorId', 'status', 'grade', 'gradeComment', ]
 
     def get_instructor(self, instance):
-        if instance.booking.instructor:
+        if instance.instructor:
+            return instance.instructor.display_name
+        elif instance.booking.instructor:
             return instance.booking.instructor.display_name
         else:
             return ''
 
     def get_instructorId(self, instance):
-        if instance.booking.instructor:
+        if instance.instructor:
+            return instance.instructor.id
+        elif instance.booking.instructor:
             return instance.booking.instructor.id
         else:
             return None
@@ -928,11 +951,14 @@ class LessonDataSerializer(serializers.ModelSerializer):
             time_zone = account.timezone
         else:
             time_zone = account.get_timezone_from_location_zipcode()
-        date, time = get_date_time_from_datetime_timezone(instance.scheduled_datetime,
-                                                          time_zone,
-                                                          date_format='%m/%d/%Y',
-                                                          time_format='%I:%M%p')
-        return f'{date} @ {time}'
+        if instance.scheduled_datetime:
+            date, time = get_date_time_from_datetime_timezone(instance.scheduled_datetime,
+                                                              time_zone,
+                                                              date_format='%m/%d/%Y',
+                                                              time_format='%I:%M%p')
+            return f'{date} @ {time}'
+        else:
+            return ''
 
     def get_timezone(self, instance):
         account = get_account(self.context['user'])

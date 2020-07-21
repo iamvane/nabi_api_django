@@ -208,6 +208,10 @@ class WhoAmIView(views.APIView):
         avatar_path = None
         if account.avatar:
             avatar_path = account.avatar.url
+        if account.timezone:
+            time_zone = account.timezone
+        else:
+            time_zone = account.get_timezone_from_location_zipcode()
         data = {
             'id': request.user.id,
             'email': request.user.email,
@@ -220,6 +224,7 @@ class WhoAmIView(views.APIView):
             'phone': get_user_phone(account),
             'gender': account.gender,
             'location': account.location,
+            'timezone': time_zone,
             'lat': lat,
             'lng': lng,
             'referralToken': request.user.referral_token,
@@ -559,18 +564,7 @@ class StudentView(views.APIView):
         if serializer.is_valid():
             student_details = serializer.save()
             ser = sers.StudentSerializer(student_details)
-            trial_lesson = None
-            if request.user.is_parent():
-                if request.user.lesson_bookings.filter(tied_student=student_details.tied_student).count() == 0:
-                    trial_lesson = LessonBooking.create_trial_lesson(request.user,
-                                                                     tied_student=student_details.tied_student)
-            else:
-                if request.user.lesson_bookings.count() == 0:
-                    trial_lesson = LessonBooking.create_trial_lesson(request.user)
-            return_data = ser.data.copy()
-            if trial_lesson:
-                return_data['lessonId'] = trial_lesson.id
-            return Response(return_data, status=status.HTTP_200_OK)
+            return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

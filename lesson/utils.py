@@ -54,8 +54,6 @@ def send_alert_request_instructor(instructor, lesson_request, requestor_account)
                 {"name": "instrument", "value": lesson_request.instrument.name},
                 {"name": "display_name", "value": requestor_account.display_name},
                 {"name": "student_details", "value": student_details},
-                {"name": "lesson_location", "value": lesson_request.place_for_lessons},
-                {"name": "location", "value": f'{location_tuple[2]} {location_tuple[1]}' if location_tuple else 'N/A'},
                 {"name": "reference_url", "value": f'{settings.HOSTNAME_PROTOCOL}/request/{lesson_request.id}'},
             ]
             }
@@ -299,6 +297,33 @@ def get_booking_data(user, package_name, application):
         data['lessonsPrice'] = application.rate * (PACKAGES[package_name].get('lesson_qty') - 1)
     else:
         data['lessonsPrice'] = application.rate * PACKAGES[package_name].get('lesson_qty')
+    # SubTotal is amount to pay if there is not discounts
+    sub_total = data['lessonsPrice'] + data.get('placementFee', 0)   # this variable does not include processingFee
+    data['processingFee'] = round(Decimal('0.029') * sub_total + Decimal('0.30'), 2)
+    data['subTotal'] = round(sub_total + data['processingFee'], 2)   # to display, add processing fee
+    # Now, calculate total
+    if data.get('discounts'):
+        total = round(data['lessonsPrice'] * (Decimal('100.0000') - data.get('discounts')) / Decimal('100.0'), 4)
+    else:
+        total = data['lessonsPrice']
+    total = total - data.get('credits', 0)
+    if package_name == 'virtuoso':
+        data['virtuosoDiscount'] = PACKAGES[package_name].get('discount')
+        total = round(total * (Decimal('100.0000') - data['virtuosoDiscount']) / 100, 4)
+    total += data.get('placementFee', 0)
+    data['processingFee'] = round(Decimal('0.029') * total + Decimal('0.30'), 2)
+    data['total'] = round(total + data['processingFee'], 2)
+    return data
+
+
+def get_booking_data_v2(user, package_name, last_lesson):
+    """Get data related to booking: total amount, fees, discounts, etc"""
+    data = get_additional_items_booking(user)
+    data['lessonRate'] = last_lesson.rate
+    if data.get('freeLesson'):
+        data['lessonsPrice'] = last_lesson.rate * (PACKAGES[package_name].get('lesson_qty') - 1)
+    else:
+        data['lessonsPrice'] = last_lesson.rate * PACKAGES[package_name].get('lesson_qty')
     # SubTotal is amount to pay if there is not discounts
     sub_total = data['lessonsPrice'] + data.get('placementFee', 0)   # this variable does not include processingFee
     data['processingFee'] = round(Decimal('0.029') * sub_total + Decimal('0.30'), 2)

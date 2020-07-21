@@ -137,3 +137,11 @@ def update_list_users_without_request():
             pass
         else:
             add_to_email_list(user, 'students_without_request')
+
+
+@app.task
+def send_alert_admin_request_closed(request_id):
+    lesson_request = LessonRequest.objects.get(id=request_id)
+    send_admin_email('Lesson Request had get 7 applications',
+                     f"The Lesson Request with id {request_id} ({lesson_request.title}) "
+                     "has 7 applications now and it's closed.""")
