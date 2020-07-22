@@ -540,26 +540,26 @@ GET localhost:8000/v1/application-list/1/
 
 ###
 
-GET localhost:8000/v1/booking-data/1/
+GET localhost:8000/v1/booking-data/7/
 
-# Note: the id value is application_id
+# Note: the id value is student_id
 
 ###
 
-POST localhost:8000/v1/booking-data/1/
+POST localhost:8000/v1/booking-data/7/
 
 {
 "package": "maestro"
 }
 
-# Note: the id value is application_id
+# Note: the id value is student_id
 
 ###
 
 POST localhost:8000/v1/confirm-booking/
 
 {
-	"applicationId": 1,
+	"studentId": 1,
 	"package": "maestro",
 	"paymentMethodCode": "pm_1GZ1RNKKgfFa5BBCGeLVyC0r"
 }
