@@ -702,7 +702,7 @@ class InstructorDashboardSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Instructor
-        fields = ('backgroundCheckStatus', 'complete', 'missingFields', 'lessons')
+        fields = ('id', 'backgroundCheckStatus', 'complete', 'missingFields', 'lessons')
 
 
 class LessonRequestInstructorDashboardSerializer(serializers.ModelSerializer):
