@@ -1,3 +1,4 @@
+import datetime as dt
 import stripe
 from functools import reduce
 
@@ -30,7 +31,7 @@ from . import serializers as sers
 from .models import Application, LessonBooking, LessonRequest, Lesson
 from .tasks import (send_application_alert, send_alert_admin_request_closed, send_booking_alert, send_booking_invoice,
                     send_info_grade_lesson, send_request_alert_instructors, send_lesson_info_student_parent)
-from .utils import get_benefit_to_redeem, get_booking_data, get_booking_data_v2, PACKAGES
+from .utils import get_benefit_to_redeem, get_booking_data, get_booking_data_v2, PACKAGES, get_next_date_same_weekday
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -279,6 +280,7 @@ class LessonBookingRegisterView(views.APIView):
                 booking.save()
             else:
                 booking = LessonBooking.objects.create(user_id=serializer.validated_data['userId'],
+                                                       tied_student=tied_student,
                                                        quantity=lesson_qty,
                                                        total_amount=amount,
                                                        instructor=last_lesson.instructor,
@@ -306,8 +308,11 @@ class LessonBookingRegisterView(views.APIView):
                     pym_obj.status = PY_APPLIED
                     pym_obj.save()
                 if booking.lessons.count() == 0:
+                    next_date = get_next_date_same_weekday(last_lesson.scheduled_datetime.date())
+                    next_datetime = dt.datetime.combine(next_date, last_lesson.scheduled_datetime.time(),
+                                                        tzinfo=last_lesson.scheduled_datetime.tzinfo)
                     Lesson.objects.create(booking=booking,
-                                          scheduled_datetime=last_lesson.scheduled_datetime,
+                                          scheduled_datetime=next_datetime,
                                           scheduled_timezone=last_lesson.scheduled_timezone,
                                           instructor=booking.instructor,
                                           rate=booking.rate,
@@ -326,7 +331,7 @@ class LessonBookingRegisterView(views.APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class ApplicationBookingView(views.APIView):
+class AmountsForBookingView(views.APIView):
     """To return data for booking an application"""
 
     def common(self, request, student_id, package='artist'):
@@ -341,6 +346,11 @@ class ApplicationBookingView(views.APIView):
         else:
             tied_student = None
         last_lesson = Lesson.get_last_lesson(user=request.user, tied_student=tied_student)
+        if not last_lesson or not last_lesson.rate:
+            return Response({'message': 'Error getting rate from last lesson'},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        if package not in [PACKAGE_ARTIST, PACKAGE_MAESTRO, PACKAGE_TRIAL, PACKAGE_VIRTUOSO]:
+            return Response({'message': 'Wrong package value'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         data = get_booking_data_v2(request.user, package, last_lesson)
         account = get_account(request.user)
         if not account.stripe_customer_id:

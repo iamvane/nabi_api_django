@@ -1,3 +1,4 @@
+import datetime as dt
 import json
 import re
 import requests
@@ -347,3 +348,14 @@ def get_date_time_from_datetime_timezone(datetime_value, time_zone, date_format=
     """Get date and time elements of a datetime, after apply it a time_zone"""
     localize_datetime = datetime_value.astimezone(timezone.pytz.timezone(time_zone))
     return localize_datetime.strftime(date_format), localize_datetime.strftime(time_format)
+
+
+def get_next_date_same_weekday(previous_date):
+    """Return next date with same weekday as previous_date"""
+    next_week_day = previous_date.weekday()
+    hoy = timezone.now().date()
+    today_week_day = hoy.weekday()
+    if next_week_day > today_week_day:
+        return hoy + dt.timedelta(days=(next_week_day - today_week_day))
+    else:
+        return hoy + dt.timedelta(days=(next_week_day + (7 - today_week_day)))
