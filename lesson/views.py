@@ -192,7 +192,7 @@ class LessonRequestListView(views.APIView):
         if account:
             ser = sers.LessonRequestItemSerializer(result_page, many=True, context={'user': request.user})
         else:
-            ser = sers.LessonRequestItemSerializer(result_page, many=True, context={'user': request.user})
+            ser = sers.LessonRequestItemSerializer(result_page, many=True)
         return paginator.get_paginated_response(ser.data)
 
 

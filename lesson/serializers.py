@@ -355,11 +355,14 @@ class LessonRequestItemSerializer(serializers.ModelSerializer):
                 new_data['avatar'] = ''
             new_data['location'] = instance.user.parent.location
         if instance.trial_proposed_datetime:
-            account = get_account(self.context['user'])
-            if account.timezone:
-                new_data['timezone'] = account.timezone
+            if self.context.get('user'):
+                account = get_account(self.context['user'])
+                if account.timezone:
+                    new_data['timezone'] = account.timezone
+                else:
+                    new_data['timezone'] = account.get_timezone_from_location_zipcode()
             else:
-                new_data['timezone'] = account.get_timezone_from_location_zipcode()
+                new_data['timezone'] = 'US/Eastern'
             new_data['date'], new_data['time'] = get_date_time_from_datetime_timezone(instance.trial_proposed_datetime,
                                                                                       new_data['timezone'])
         return new_data
