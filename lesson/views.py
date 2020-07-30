@@ -254,23 +254,31 @@ class ApplicationListView(views.APIView):
 
 class LessonBookingRegisterView(views.APIView):
     """Register a booking for a lesson (or group of lessons) with an instructor"""
-    permission_classes = (IsAuthenticated, AccessForParentOrStudent)
+    permission_classes = (AllowAny, )
 
     def post(self, request):
-        request.data['userId'] = request.user.id
+        if isinstance(request.user, AnonymousUser):
+            try:
+                user = User.objects.get(id=request.data.get('userId'))
+            except User.DoesNotExist:
+                return Response({'message': 'Does not exist use with provided id'},
+                                status=status.HTTP_400_BAD_REQUEST)
+        else:
+            user = request.user
+        request.data['userId'] = user.id
         serializer = sers.LessonBookingRegisterSerializer(data=request.data)
         if serializer.is_valid():
             package_name = serializer.validated_data['package']
-            if request.user.is_parent():
+            if user.is_parent():
                 tied_student = TiedStudent.objects.get(id=request.data.pop('studentId'))
             else:
                 tied_student = None
                 request.data.pop('studentId')
-            last_lesson = Lesson.get_last_lesson(user=request.user, tied_student=tied_student)
+            last_lesson = Lesson.get_last_lesson(user=user, tied_student=tied_student)
             if not last_lesson:
                 return Response({'message': 'Looks like you should create a Trial Lesson first'},
                                 status=status.HTTP_400_BAD_REQUEST)
-            booking_values_data = get_booking_data_v2(request.user, package_name, last_lesson)
+            booking_values_data = get_booking_data_v2(user, package_name, last_lesson)
             # create/get booking instance
             lesson_qty = PACKAGES[package_name].get('lesson_qty')
             amount = booking_values_data['total']
@@ -289,7 +297,7 @@ class LessonBookingRegisterView(views.APIView):
                                                        rate=last_lesson.rate,
                                                        status=LessonBooking.REQUESTED)
             # make payment
-            pym_status, pym_obj = Payment.make_and_register(request.user, booking.total_amount,
+            pym_status, pym_obj = Payment.make_and_register(user, booking.total_amount,
                                                             f'Lesson booking with package {package_name.capitalize()}',
                                                             serializer.validated_data['paymentMethodCode'])
             if pym_status == 'error':
@@ -319,9 +327,9 @@ class LessonBookingRegisterView(views.APIView):
                                           instructor=booking.instructor,
                                           rate=booking.rate,
                                           status=Lesson.SCHEDULED)
-                add_to_email_list_v2(request.user, [], ['trial_to_booking'])
+                add_to_email_list_v2(user, [], ['trial_to_booking'])
                 # update data for applicable benefits
-                UserBenefits.update_applicable_benefits(request.user)
+                UserBenefits.update_applicable_benefits(user)
 
             task_log = TaskLog.objects.create(task_name='send_booking_invoice', args={'booking_id': booking.id})
             send_booking_invoice.delay(booking.id, task_log.id)
