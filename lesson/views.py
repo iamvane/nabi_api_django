@@ -3,6 +3,7 @@ import stripe
 from functools import reduce
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.gis.db.models import PointField
 from django.contrib.gis.db.models.functions import Distance
@@ -33,6 +34,7 @@ from .tasks import (send_application_alert, send_alert_admin_request_closed, sen
                     send_info_grade_lesson, send_request_alert_instructors, send_lesson_info_student_parent)
 from .utils import get_benefit_to_redeem, get_booking_data, get_booking_data_v2, PACKAGES, get_next_date_same_weekday
 
+User = get_user_model()
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
@@ -437,6 +439,73 @@ class AmountsForBookingView(views.APIView):
         if not PACKAGES.get(package):
             return Response({'message': 'Package value is invalid'}, status=status.HTTP_400_BAD_REQUEST)
         resp = self.common(request, student_id, package)
+        if isinstance(resp, Response):
+            return resp
+        else:   # then, its data, not Response
+            return Response(resp, status=status.HTTP_200_OK)
+
+
+class DataForBookingView(views.APIView):
+    """Return data for create a booking. Based in AmountsForBookingView"""
+    permission_classes = (AllowAny,)
+
+    def common(self, user_id, student_id, package):
+        """Execute common operations.
+        Return instance of Response or data (dict)"""
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({'message': 'Does not exist user with provided id'},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        if user.is_parent():
+            try:
+                tied_student = TiedStudent.objects.get(id=student_id)
+            except TiedStudent.DoesNotExist:
+                return Response({'message': 'There is not student with provided id'},
+                                status=status.HTTP_400_BAD_REQUEST)
+        else:
+            tied_student = None
+        last_lesson = Lesson.get_last_lesson(user=user, tied_student=tied_student)
+        if not last_lesson or not last_lesson.rate:
+            return Response({'message': 'Error getting rate from last lesson'},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        if package not in [PACKAGE_ARTIST, PACKAGE_MAESTRO, PACKAGE_TRIAL, PACKAGE_VIRTUOSO]:
+            return Response({'message': 'Wrong package value'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        data = get_booking_data_v2(user, package, last_lesson)
+        account = get_account(user)
+        try:
+            stripe_customer = stripe.Customer.create(email=user.email, name=account.display_name)
+        except Exception as e:
+            return Response({'message': f'Error creating Customer in Stripe:\n {str(e)}'},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        account.stripe_customer_id = stripe_customer.get('id')
+        account.save()
+        data['paymentMethods'] = []
+        try:
+            intent = stripe.SetupIntent.create(customer=account.stripe_customer_id)
+        except Exception as e:
+            return Response({'message': f'Error creating Intent in Stripe:\n {str(e)}'},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        data['clientSecret'] = intent.client_secret
+        return data
+
+    def get(self, request, user_id, student_id):
+        """Default, with artist package"""
+        resp = self.common(user_id, student_id, 'artist')
+        if isinstance(resp, Response):
+            return resp
+        else:   # then, its data, not Response
+            return Response(resp, status=status.HTTP_200_OK)
+
+    def post(self, request, user_id, student_id):
+        """Receiving package name"""
+        if not request.data.get('package'):
+            return Response({'message': 'Package value is required'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            package = request.data.get('package')
+        if not PACKAGES.get(package):
+            return Response({'message': 'Package value is invalid'}, status=status.HTTP_400_BAD_REQUEST)
+        resp = self.common(user_id, student_id, package)
         if isinstance(resp, Response):
             return resp
         else:   # then, its data, not Response

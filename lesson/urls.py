@@ -11,6 +11,7 @@ urlpatterns = [
     path('lesson-request-item/<int:pk>/', views.LessonRequestItemListView.as_view(), name='lesson_request_item'),
     path('application-list/<int:lesson_req_id>/', views.ApplicationListView.as_view()),
     path('booking-data/<int:student_id>/', views.AmountsForBookingView.as_view()),
+    path('get-booking-data/<int:user_id>/<int:student_id>/', views.DataForBookingView.as_view()),
     path('confirm-booking/', views.LessonBookingRegisterView.as_view()),
     path('lessons/', views.LessonCreateView.as_view()),
     path('lessons/<int:lesson_id>/', views.LessonView.as_view()),
