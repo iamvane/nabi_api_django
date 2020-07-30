@@ -563,6 +563,13 @@ POST localhost:8000/v1/confirm-booking/
 	"package": "maestro",
 	"paymentMethodCode": "pm_1GZ1RNKKgfFa5BBCGeLVyC0r"
 }
+or
+{
+	"userId": 1,
+	"studentId": 1,
+	"package": "maestro",
+	"paymentMethodCode": "pm_1GZ1RNKKgfFa5BBCGeLVyC0r"
+}
 
 ###
 
