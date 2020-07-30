@@ -573,6 +573,18 @@ or
 
 ###
 
+GET localhost:8000/v1/get-booking-data/<user_id>/<student_id>/
+
+###
+
+POST localhost:8000/v1/get-booking-data/<user_id>/<student_id>/
+
+{
+"package": "maestro"
+}
+
+###
+
 GET localhost:8000/v1/dashboard/
 
 ###
