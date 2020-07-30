@@ -336,7 +336,7 @@ class AmountsForBookingView(views.APIView):
 
     def common(self, request, student_id, package='artist'):
         """Execute common operations.
-        Return instance of Response or data (dict)"""
+        Return instance of Response (for error) or data dict (for successful)"""
         if request.user.is_parent():
             try:
                 tied_student = TiedStudent.objects.get(id=student_id)
@@ -398,6 +398,26 @@ class AmountsForBookingView(views.APIView):
             return Response({'message': f'Error creating Intent in Stripe:\n {str(e)}'},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         data['clientSecret'] = intent.client_secret
+        if last_lesson.instructor:
+            data.update({'instructor': {'avatar': last_lesson.instructor.avatar.url,
+                                        'reviews': None,
+                                        'backgroundCheckStatus': last_lesson.instructor.bg_status,
+                                        'display_name': last_lesson.instructor.display_name,
+                                        'rate': last_lesson.rate,
+                                        'yearsOfExperience': last_lesson.instructor.years_of_experience,
+                                        'age': last_lesson.instructor.age,
+                                        }
+                         })
+        else:
+            data.update({'instructor': {'avatar': '',
+                                        'reviews': None,
+                                        'backgroundCheckStatus': '',
+                                        'display_name': '',
+                                        'rate': None,
+                                        'yearsOfExperience': None,
+                                        'age': None,
+                                        }
+                         })
         return data
 
     def get(self, request, student_id):
