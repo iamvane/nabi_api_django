@@ -1,4 +1,3 @@
-import datetime as dt
 import stripe
 from functools import reduce
 
@@ -32,7 +31,7 @@ from . import serializers as sers
 from .models import Application, LessonBooking, LessonRequest, Lesson
 from .tasks import (send_application_alert, send_alert_admin_request_closed, send_booking_alert, send_booking_invoice,
                     send_info_grade_lesson, send_request_alert_instructors, send_lesson_info_student_parent)
-from .utils import get_benefit_to_redeem, get_booking_data, get_booking_data_v2, PACKAGES, get_next_date_same_weekday
+from .utils import get_benefit_to_redeem, get_booking_data, get_booking_data_v2, PACKAGES
 
 User = get_user_model()
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -325,15 +324,7 @@ class LessonBookingRegisterView(views.APIView):
                     pym_obj.status = PY_APPLIED
                     pym_obj.save()
                 if booking.lessons.count() == 0:
-                    next_date = get_next_date_same_weekday(last_lesson.scheduled_datetime.date())
-                    next_datetime = dt.datetime.combine(next_date, last_lesson.scheduled_datetime.time(),
-                                                        tzinfo=last_lesson.scheduled_datetime.tzinfo)
-                    Lesson.objects.create(booking=booking,
-                                          scheduled_datetime=next_datetime,
-                                          scheduled_timezone=last_lesson.scheduled_timezone,
-                                          instructor=booking.instructor,
-                                          rate=booking.rate,
-                                          status=Lesson.SCHEDULED)
+                    booking.create_lessons(last_lesson)
                 add_to_email_list_v2(user, [], ['trial_to_booking'])
                 # update data for applicable benefits
                 UserBenefits.update_applicable_benefits(user)
