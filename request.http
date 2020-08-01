@@ -565,7 +565,7 @@ POST localhost:8000/v1/confirm-booking/
 }
 or
 {
-	"userId": 1,
+	"email": "padre@yopmail.com",
 	"studentId": 1,
 	"package": "maestro",
 	"paymentMethodCode": "pm_1GZ1RNKKgfFa5BBCGeLVyC0r"
@@ -573,11 +573,19 @@ or
 
 ###
 
-GET localhost:8000/v1/get-booking-data/<user_id>/<student_id>/
+GET localhost:8000/v1/get-booking-data/<email>/<student_id>/
+
+or
+
+GET localhost:8000/v1/get-booking-data/<email>/
 
 ###
 
-POST localhost:8000/v1/get-booking-data/<user_id>/<student_id>/
+POST localhost:8000/v1/get-booking-data/<email>/<student_id>/
+
+or
+
+POST localhost:8000/v1/get-booking-data/<email>/
 
 {
 "package": "maestro"
