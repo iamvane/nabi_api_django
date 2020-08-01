@@ -259,7 +259,7 @@ class LessonBookingRegisterView(views.APIView):
     def post(self, request):
         if isinstance(request.user, AnonymousUser):
             try:
-                user = User.objects.get(id=request.data.get('userId'))
+                user = User.objects.get(email=request.data.get('email'))
             except User.DoesNotExist:
                 return Response({'message': 'Does not exist use with provided id'},
                                 status=status.HTTP_400_BAD_REQUEST)
@@ -270,10 +270,17 @@ class LessonBookingRegisterView(views.APIView):
         if serializer.is_valid():
             package_name = serializer.validated_data['package']
             if user.is_parent():
-                tied_student = TiedStudent.objects.get(id=request.data.pop('studentId'))
+                if user.parent.tied_students.count() > 1:
+                    try:
+                        tied_student = TiedStudent.objects.get(id=request.data.pop('tiedStudentId'), parent=user.parent)
+                    except TiedStudent.DoesNotExist:
+                        return Response({'message': 'There is not student with provided id'},
+                                        status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    tied_student = user.parent.tied_students.first()
             else:
                 tied_student = None
-                request.data.pop('studentId')
+                request.data.pop('tiedStudentId', '')
             last_lesson = Lesson.get_last_lesson(user=user, tied_student=tied_student)
             if not last_lesson:
                 return Response({'message': 'Looks like you should create a Trial Lesson first'},
@@ -457,20 +464,23 @@ class DataForBookingView(views.APIView):
     """Return data for create a booking. Based in AmountsForBookingView"""
     permission_classes = (AllowAny,)
 
-    def common(self, user_id, student_id, package):
+    def common(self, email, tied_student_id, package):
         """Execute common operations.
         Return instance of Response or data (dict)"""
         try:
-            user = User.objects.get(id=user_id)
+            user = User.objects.get(email=email)
         except User.DoesNotExist:
             return Response({'message': 'Does not exist user with provided id'},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         if user.is_parent():
-            try:
-                tied_student = TiedStudent.objects.get(id=student_id)
-            except TiedStudent.DoesNotExist:
-                return Response({'message': 'There is not student with provided id'},
-                                status=status.HTTP_400_BAD_REQUEST)
+            if user.parent.tied_students.count() > 1:
+                try:
+                    tied_student = TiedStudent.objects.get(id=tied_student_id, parent=user.parent)
+                except TiedStudent.DoesNotExist:
+                    return Response({'message': 'There is not student with provided id'},
+                                    status=status.HTTP_400_BAD_REQUEST)
+            else:
+                tied_student = user.parent.tied_students.first()
         else:
             tied_student = None
         last_lesson = Lesson.get_last_lesson(user=user, tied_student=tied_student)
@@ -517,15 +527,15 @@ class DataForBookingView(views.APIView):
                          })
         return data
 
-    def get(self, request, user_id, student_id):
+    def get(self, request, email, tied_student_id=None):
         """Default, with artist package"""
-        resp = self.common(user_id, student_id, 'artist')
+        resp = self.common(email, tied_student_id, 'artist')
         if isinstance(resp, Response):
             return resp
         else:   # then, its data, not Response
             return Response(resp, status=status.HTTP_200_OK)
 
-    def post(self, request, user_id, student_id):
+    def post(self, request, email, tied_student_id=None):
         """Receiving package name"""
         if not request.data.get('package'):
             return Response({'message': 'Package value is required'}, status=status.HTTP_400_BAD_REQUEST)
@@ -533,7 +543,7 @@ class DataForBookingView(views.APIView):
             package = request.data.get('package')
         if not PACKAGES.get(package):
             return Response({'message': 'Package value is invalid'}, status=status.HTTP_400_BAD_REQUEST)
-        resp = self.common(user_id, student_id, package)
+        resp = self.common(email, tied_student_id, package)
         if isinstance(resp, Response):
             return resp
         else:   # then, its data, not Response
