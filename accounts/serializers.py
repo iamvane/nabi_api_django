@@ -677,10 +677,12 @@ class StudentSerializer(serializers.ModelSerializer):
 
 class MinimalTiedStudentSerializer(serializers.ModelSerializer):
     """Serializer for return id and name of TiedStudent instance."""
+    studentName = serializers.CharField(max_length=250, source='name')
+    instrument = serializers.CharField(max_length=250, source='tied_student_details.instrument.name')  # instrument name
 
     class Meta:
         model = TiedStudent
-        fields = ('id', 'name')
+        fields = ('id', 'studentName', 'instrument', )
 
 
 class TiedStudentSerializer(serializers.ModelSerializer):
