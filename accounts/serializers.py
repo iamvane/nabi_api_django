@@ -675,6 +675,14 @@ class StudentSerializer(serializers.ModelSerializer):
         return dict_data
 
 
+class MinimalTiedStudentSerializer(serializers.ModelSerializer):
+    """Serializer for return id and name of TiedStudent instance."""
+
+    class Meta:
+        model = TiedStudent
+        fields = ('id', 'name')
+
+
 class TiedStudentSerializer(serializers.ModelSerializer):
     """Serializer for usage with detail student creation and retrieve, by parent user."""
     id = serializers.IntegerField(source='pk', read_only=True)

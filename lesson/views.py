@@ -19,6 +19,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from accounts.models import TiedStudent, get_account
+from accounts.serializers import MinimalTiedStudentSerializer
 from accounts.utils import get_stripe_customer_id, add_to_email_list_v2
 from core.constants import *
 from core.models import TaskLog, UserBenefits
@@ -468,8 +469,8 @@ class DataForBookingView(views.APIView):
                 try:
                     tied_student = TiedStudent.objects.get(id=student_id, parent=user.parent)
                 except TiedStudent.DoesNotExist:
-                    return Response({'message': 'There is not student with provided id'},
-                                    status=status.HTTP_400_BAD_REQUEST)
+                    ser = MinimalTiedStudentSerializer(user.parent.tied_students.all(), many=True)
+                    return Response(ser.data, status=status.HTTP_400_BAD_REQUEST)
             else:
                 tied_student = user.parent.tied_students.first()
         else:
