@@ -870,16 +870,23 @@ class ScheduledLessonSerializer(serializers.ModelSerializer):
     timezone = serializers.SerializerMethodField()
     instructor = serializers.SerializerMethodField()
     studentDetails = serializers.SerializerMethodField()
+    zoomLink = serializers.SerializerMethodField()
 
     class Meta:
         model = Lesson
-        fields = ('id', 'date', 'time', 'timezone', 'studentDetails', 'instructor')
+        fields = ('id', 'date', 'time', 'timezone', 'studentDetails', 'instructor', 'zoomLink', )
 
     def get_instructor(self, instance):
         if instance.instructor:
             return instance.instructor.display_name
         elif instance.booking.instructor:
             return instance.booking.instructor.display_name
+        else:
+            return ''
+
+    def get_zoomLink(self, instance):
+        if instance.instructor:
+            return instance.instructor.zoom_link
         else:
             return ''
 
