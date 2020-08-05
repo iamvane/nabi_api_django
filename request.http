@@ -55,7 +55,8 @@ X-CSRFToken: yfmsbIDJlhHYk4m1kQh8r445PNfrBVPekzW0OtFAWkl0rLn1go7uQ4Wdj4KNughA
   "bioTitle": "Nice instructor",
   "bioDescription": "Son long text",
   "music": ["something1", "something2", "something3"],
-  "yearsOfExperience": 3
+  "yearsOfExperience": 3,
+  "zoomLink": "https://us02web.zoom.us/j/84538217493?pwd=amlQSfJpWGlwWklnOVQyWjFmODA2QT49"
 }
 
 ###
