@@ -247,6 +247,7 @@ class Instructor(IUserAccount):
     travel_distance = models.CharField(max_length=250, blank=True, null=True)
     video = models.URLField(blank=True, default='', verbose_name='URL of video file')
     years_of_experience = models.IntegerField(blank=True, null=True)
+    zoom_link = models.URLField(blank=True, null=True)
 
     # --- Notifications ---
     request_posted = models.BooleanField(default=False)
