@@ -1,3 +1,4 @@
+import re
 from pygeocoder import Geocoder, GeocoderError
 
 from django.conf import settings
@@ -73,7 +74,8 @@ class InstructorPlaceForLessonsAdmin(admin.TabularInline):
 
 class InstructorAdmin(admin.ModelAdmin):
     fields = ('user', 'display_name', 'age', 'avatar', 'bio_title', 'bio_description', 'bg_status', 'location',
-              'music', 'interviewed', 'languages', 'studio_address', 'travel_distance', 'years_of_experience', 'video',)
+              'music', 'interviewed', 'languages', 'studio_address', 'travel_distance', 'years_of_experience', 'video',
+              'zoom_link')
     list_display = ('pk', 'user', 'display_name', 'distance', )
     list_filter = ('interviewed', 'complete', )
     list_select_related = ('user', )
@@ -170,6 +172,9 @@ class InstructorAdmin(admin.ModelAdmin):
             except GeocoderError as e:
                 raise Exception(e.status, e.response)
             obj.coordinates = Point(results[0].coordinates[1], results[0].coordinates[0], srid=4326)
+        if 'zoom_link' in form.changed_data:
+            if re.match(r'^https://.+\.zoom\.us/j/[\d]+.*', obj.zoom_link) is None:
+                raise Exception('Wrong Zoom meeting link')
         super().save_model(request, obj, form, change)
 
 

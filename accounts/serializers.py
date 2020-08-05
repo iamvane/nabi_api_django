@@ -158,11 +158,18 @@ class InstructorProfileSerializer(serializers.Serializer):
     bio_description = serializers.CharField(required=False)
     music = serializers.ListField(child=serializers.CharField(), required=False)
     years_of_experience = serializers.IntegerField(required=False)
+    zoom_link = serializers.URLField(required=False)
 
     def update(self, instance, validated_data):
         instance = update_model(instance, **validated_data)
         instance.save()
         return instance
+
+    def validate_zoom_link(self, value):
+        if re.match(r'^https://.+\.zoom\.us/j/[\d]+.*', value):
+            return value
+        else:
+            raise serializers.ValidationError("Does not look like a valid Zoom meeting link")
 
     def to_internal_value(self, data):
         keys = dict.fromkeys(data, 1)
@@ -175,6 +182,8 @@ class InstructorProfileSerializer(serializers.Serializer):
             new_data['music'] = data.get('music')
         if keys.get('yearsOfExperience'):
             new_data['years_of_experience'] = data.get('yearsOfExperience')
+        if keys.get('zoomLink'):
+            new_data['zoom_link'] = data.get('zoomLink')
         return super().to_internal_value(new_data)
 
 
