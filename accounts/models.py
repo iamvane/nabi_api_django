@@ -347,6 +347,8 @@ class Instructor(IUserAccount):
             list_fields.append('years_of_experience')
         if not self.languages:
             list_fields.append('languages')
+        if not self.zoom_link:
+            list_fields.append('zoom_link')
         return list_fields
 
     def missing_fields_camelcase(self):
@@ -402,6 +404,8 @@ class Instructor(IUserAccount):
             list_fields.append('yearsOfExperience')
         if not self.languages:
             list_fields.append('languages')
+        if not self.zoom_link:
+            list_fields.append('zoomLink')
         return list_fields
 
     def lesson_bookings(self):
