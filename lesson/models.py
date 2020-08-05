@@ -1,3 +1,5 @@
+import datetime as dt
+
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
 from django.db import models, transaction
@@ -7,7 +9,7 @@ from accounts.models import Instructor, Parent, Student, TiedStudent
 from core.constants import *
 from payments.models import Payment
 
-from lesson.utils import get_date_time_from_datetime_timezone
+from lesson.utils import get_date_time_from_datetime_timezone, get_next_date_same_weekday
 
 User = get_user_model()
 
@@ -158,6 +160,21 @@ class LessonBooking(models.Model):
             return request
         else:
             return None
+
+    def create_lessons(self, last_lesson):
+        next_date = get_next_date_same_weekday(last_lesson.scheduled_datetime.date())
+        next_datetime = dt.datetime.combine(next_date, last_lesson.scheduled_datetime.time(),
+                                            tzinfo=last_lesson.scheduled_datetime.tzinfo)
+        for i in range(self.quantity):
+            Lesson.objects.create(booking=self,
+                                  scheduled_datetime=next_datetime,
+                                  scheduled_timezone=last_lesson.scheduled_timezone,
+                                  instructor=self.instructor,
+                                  rate=self.rate,
+                                  status=Lesson.SCHEDULED)
+            next_date = next_date + dt.timedelta(days=7)
+            next_datetime = dt.datetime.combine(next_date, last_lesson.scheduled_datetime.time(),
+                                                tzinfo=last_lesson.scheduled_datetime.tzinfo)
 
 
 class Lesson(models.Model):

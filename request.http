@@ -563,6 +563,33 @@ POST localhost:8000/v1/confirm-booking/
 	"package": "maestro",
 	"paymentMethodCode": "pm_1GZ1RNKKgfFa5BBCGeLVyC0r"
 }
+or
+{
+	"email": "padre@yopmail.com",
+	"studentId": 1,
+	"package": "maestro",
+	"paymentMethodCode": "pm_1GZ1RNKKgfFa5BBCGeLVyC0r"
+}
+
+###
+
+GET localhost:8000/v1/get-booking-data/<email>/<student_id>/
+
+or
+
+GET localhost:8000/v1/get-booking-data/<email>/
+
+###
+
+POST localhost:8000/v1/get-booking-data/<email>/<student_id>/
+
+or
+
+POST localhost:8000/v1/get-booking-data/<email>/
+
+{
+"package": "maestro"
+}
 
 ###
 

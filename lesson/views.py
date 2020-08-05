@@ -1,8 +1,8 @@
-import datetime as dt
 import stripe
 from functools import reduce
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.gis.db.models import PointField
 from django.contrib.gis.db.models.functions import Distance
@@ -19,6 +19,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from accounts.models import TiedStudent, get_account
+from accounts.serializers import MinimalTiedStudentSerializer
 from accounts.utils import get_stripe_customer_id, add_to_email_list_v2
 from core.constants import *
 from core.models import TaskLog, UserBenefits
@@ -31,8 +32,9 @@ from . import serializers as sers
 from .models import Application, LessonBooking, LessonRequest, Lesson
 from .tasks import (send_application_alert, send_alert_admin_request_closed, send_booking_alert, send_booking_invoice,
                     send_info_grade_lesson, send_request_alert_instructors, send_lesson_info_student_parent)
-from .utils import get_benefit_to_redeem, get_booking_data, get_booking_data_v2, PACKAGES, get_next_date_same_weekday
+from .utils import get_benefit_to_redeem, get_booking_data, get_booking_data_v2, PACKAGES
 
+User = get_user_model()
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
@@ -252,23 +254,38 @@ class ApplicationListView(views.APIView):
 
 class LessonBookingRegisterView(views.APIView):
     """Register a booking for a lesson (or group of lessons) with an instructor"""
-    permission_classes = (IsAuthenticated, AccessForParentOrStudent)
+    permission_classes = (AllowAny, )
 
     def post(self, request):
-        request.data['userId'] = request.user.id
+        if isinstance(request.user, AnonymousUser):
+            try:
+                user = User.objects.get(email=request.data.get('email'))
+            except User.DoesNotExist:
+                return Response({'message': 'Does not exist use with provided id'},
+                                status=status.HTTP_400_BAD_REQUEST)
+        else:
+            user = request.user
+        request.data['userId'] = user.id
         serializer = sers.LessonBookingRegisterSerializer(data=request.data)
         if serializer.is_valid():
             package_name = serializer.validated_data['package']
-            if request.user.is_parent():
-                tied_student = TiedStudent.objects.get(id=request.data.pop('studentId'))
+            if user.is_parent():
+                if user.parent.tied_students.count() > 1:
+                    try:
+                        tied_student = TiedStudent.objects.get(id=request.data.pop('studentId'), parent=user.parent)
+                    except TiedStudent.DoesNotExist:
+                        return Response({'message': 'There is not student with provided id'},
+                                        status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    tied_student = user.parent.tied_students.first()
             else:
                 tied_student = None
-                request.data.pop('studentId')
-            last_lesson = Lesson.get_last_lesson(user=request.user, tied_student=tied_student)
+                request.data.pop('studentId', '')
+            last_lesson = Lesson.get_last_lesson(user=user, tied_student=tied_student)
             if not last_lesson:
                 return Response({'message': 'Looks like you should create a Trial Lesson first'},
                                 status=status.HTTP_400_BAD_REQUEST)
-            booking_values_data = get_booking_data_v2(request.user, package_name, last_lesson)
+            booking_values_data = get_booking_data_v2(user, package_name, last_lesson)
             # create/get booking instance
             lesson_qty = PACKAGES[package_name].get('lesson_qty')
             amount = booking_values_data['total']
@@ -287,7 +304,7 @@ class LessonBookingRegisterView(views.APIView):
                                                        rate=last_lesson.rate,
                                                        status=LessonBooking.REQUESTED)
             # make payment
-            pym_status, pym_obj = Payment.make_and_register(request.user, booking.total_amount,
+            pym_status, pym_obj = Payment.make_and_register(user, booking.total_amount,
                                                             f'Lesson booking with package {package_name.capitalize()}',
                                                             serializer.validated_data['paymentMethodCode'])
             if pym_status == 'error':
@@ -308,18 +325,10 @@ class LessonBookingRegisterView(views.APIView):
                     pym_obj.status = PY_APPLIED
                     pym_obj.save()
                 if booking.lessons.count() == 0:
-                    next_date = get_next_date_same_weekday(last_lesson.scheduled_datetime.date())
-                    next_datetime = dt.datetime.combine(next_date, last_lesson.scheduled_datetime.time(),
-                                                        tzinfo=last_lesson.scheduled_datetime.tzinfo)
-                    Lesson.objects.create(booking=booking,
-                                          scheduled_datetime=next_datetime,
-                                          scheduled_timezone=last_lesson.scheduled_timezone,
-                                          instructor=booking.instructor,
-                                          rate=booking.rate,
-                                          status=Lesson.SCHEDULED)
-                add_to_email_list_v2(request.user, [], ['trial_to_booking'])
+                    booking.create_lessons(last_lesson)
+                add_to_email_list_v2(user, [], ['trial_to_booking'])
                 # update data for applicable benefits
-                UserBenefits.update_applicable_benefits(request.user)
+                UserBenefits.update_applicable_benefits(user)
 
             task_log = TaskLog.objects.create(task_name='send_booking_invoice', args={'booking_id': booking.id})
             send_booking_invoice.delay(booking.id, task_log.id)
@@ -437,6 +446,96 @@ class AmountsForBookingView(views.APIView):
         if not PACKAGES.get(package):
             return Response({'message': 'Package value is invalid'}, status=status.HTTP_400_BAD_REQUEST)
         resp = self.common(request, student_id, package)
+        if isinstance(resp, Response):
+            return resp
+        else:   # then, its data, not Response
+            return Response(resp, status=status.HTTP_200_OK)
+
+
+class DataForBookingView(views.APIView):
+    """Return data for create a booking. Based in AmountsForBookingView"""
+    permission_classes = (AllowAny,)
+
+    def common(self, email, student_id, package):
+        """Execute common operations.
+        Return instance of Response or data (dict)"""
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({'message': 'Does not exist user with provided id'},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        if user.is_parent():
+            if user.parent.tied_students.count() > 1:
+                try:
+                    tied_student = TiedStudent.objects.get(id=student_id, parent=user.parent)
+                except TiedStudent.DoesNotExist:
+                    ser = MinimalTiedStudentSerializer(user.parent.tied_students.all(), many=True)
+                    return Response(ser.data, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                tied_student = user.parent.tied_students.first()
+        else:
+            tied_student = None
+        last_lesson = Lesson.get_last_lesson(user=user, tied_student=tied_student)
+        if not last_lesson or not last_lesson.rate:
+            return Response({'message': 'Error getting rate from last lesson'},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        if package not in [PACKAGE_ARTIST, PACKAGE_MAESTRO, PACKAGE_TRIAL, PACKAGE_VIRTUOSO]:
+            return Response({'message': 'Wrong package value'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        data = get_booking_data_v2(user, package, last_lesson)
+        account = get_account(user)
+        try:
+            stripe_customer = stripe.Customer.create(email=user.email, name=account.display_name)
+        except Exception as e:
+            return Response({'message': f'Error creating Customer in Stripe:\n {str(e)}'},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        account.stripe_customer_id = stripe_customer.get('id')
+        account.save()
+        data['paymentMethods'] = []
+        try:
+            intent = stripe.SetupIntent.create(customer=account.stripe_customer_id)
+        except Exception as e:
+            return Response({'message': f'Error creating Intent in Stripe:\n {str(e)}'},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        data['clientSecret'] = intent.client_secret
+        if last_lesson.instructor:
+            data.update({'instructor': {'avatar': last_lesson.instructor.avatar.url,
+                                        'reviews': None,
+                                        'backgroundCheckStatus': last_lesson.instructor.bg_status,
+                                        'displayName': last_lesson.instructor.display_name,
+                                        'rate': last_lesson.rate,
+                                        'yearsOfExperience': last_lesson.instructor.years_of_experience,
+                                        'age': last_lesson.instructor.age,
+                                        }
+                         })
+        else:
+            data.update({'instructor': {'avatar': '',
+                                        'reviews': None,
+                                        'backgroundCheckStatus': '',
+                                        'displayName': '',
+                                        'rate': None,
+                                        'yearsOfExperience': None,
+                                        'age': None,
+                                        }
+                         })
+        return data
+
+    def get(self, request, email, student_id=None):
+        """Default, with artist package"""
+        resp = self.common(email, student_id, 'artist')
+        if isinstance(resp, Response):
+            return resp
+        else:   # then, its data, not Response
+            return Response(resp, status=status.HTTP_200_OK)
+
+    def post(self, request, email, student_id=None):
+        """Receiving package name"""
+        if not request.data.get('package'):
+            return Response({'message': 'Package value is required'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            package = request.data.get('package')
+        if not PACKAGES.get(package):
+            return Response({'message': 'Package value is invalid'}, status=status.HTTP_400_BAD_REQUEST)
+        resp = self.common(email, student_id, package)
         if isinstance(resp, Response):
             return resp
         else:   # then, its data, not Response
