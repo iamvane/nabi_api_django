@@ -370,7 +370,8 @@ class UpdateProfileView(views.APIView):
                                                       partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response({"message": "success"}, status=status.HTTP_200_OK)
+            ser = sers.InstructorProfileSerializer(Instructor.objects.get(user=request.user))
+            return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response({'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 

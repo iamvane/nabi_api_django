@@ -204,6 +204,15 @@ class InstructorProfileSerializer(serializers.Serializer):
             new_data['zoom_link'] = data.get('zoomLink')
         return super().to_internal_value(new_data)
 
+    def to_representation(self, instance):
+        data = {'bioTitle': instance.bio_title,
+                'bio_description': instance.bio_description,
+                'music': instance.music,
+                'yearsOfExperience': instance.years_of_experience,
+                'zoomLink': instance.zoom_link,
+                }
+        return data
+
 
 class ParentCreateAccountSerializer(BaseCreateAccountSerializer):
 
