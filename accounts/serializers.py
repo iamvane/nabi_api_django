@@ -793,6 +793,13 @@ class TiedStudentItemSerializer(serializers.ModelSerializer):
             new_data['lesson_duration'] = data.pop('lessonDuration')
         return super().to_internal_value(new_data)
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['skillLevel'] = data.pop('skill_level')
+        data['lessonPlace'] = data.pop('lesson_place')
+        data['lessonDuration'] = data.pop('lesson_duration')
+        return data
+
 
 class InstructorEmploymentSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True, source='pk')
