@@ -5,6 +5,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Point
+from django.db import transaction
 from django.db.models import ObjectDoesNotExist
 from django.utils import timezone
 
@@ -651,14 +652,16 @@ class StudentSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data['lesson_place'] = PLACE_FOR_LESSONS_ONLINE
         validated_data['lesson_duration'] = LESSON_DURATION_30
-        validated_data['instrument'], _ = Instrument.objects.get_or_create(name=validated_data['instrument']['name'])
-        user = validated_data['user']
-        if user.is_parent():
-            tied_student, _ = TiedStudent.objects.get_or_create(parent=user.parent,
-                                                                name=validated_data.pop('name'),
-                                                                age=validated_data.pop('age'))
-            validated_data['tied_student'] = tied_student
-        return super().create(validated_data)
+        with transaction.atomic():
+            validated_data['instrument'], _ = Instrument.objects.get_or_create(name=validated_data['instrument']['name'])
+            user = validated_data['user']
+            if user.is_parent():
+                tied_student, _ = TiedStudent.objects.get_or_create(parent=user.parent,
+                                                                    name=validated_data.pop('name'),
+                                                                    age=validated_data.pop('age'))
+                validated_data['tied_student'] = tied_student
+            student_details = StudentDetails.objects.create(**validated_data)
+        return student_details
 
     def to_representation(self, instance):
         dict_data = super().to_representation(instance)
