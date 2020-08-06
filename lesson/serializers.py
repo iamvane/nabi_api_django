@@ -702,10 +702,11 @@ class InstructorDashboardSerializer(serializers.ModelSerializer):
     backgroundCheckStatus = serializers.CharField(max_length=100, source='bg_status', read_only=True)
     missingFields = serializers.ListField(source='missing_fields_camelcase')
     lessons = serializers.ListField(child=LessonBookingSerializer(), source='lesson_bookings')
+    zoomLink = serializers.URLField(source='zoom_link')
 
     class Meta:
         model = Instructor
-        fields = ('id', 'backgroundCheckStatus', 'complete', 'missingFields', 'lessons')
+        fields = ('id', 'backgroundCheckStatus', 'complete', 'missingFields', 'zoomLink', 'lessons', )
 
 
 class LessonRequestInstructorDashboardSerializer(serializers.ModelSerializer):
@@ -869,16 +870,23 @@ class ScheduledLessonSerializer(serializers.ModelSerializer):
     timezone = serializers.SerializerMethodField()
     instructor = serializers.SerializerMethodField()
     studentDetails = serializers.SerializerMethodField()
+    zoomLink = serializers.SerializerMethodField()
 
     class Meta:
         model = Lesson
-        fields = ('id', 'date', 'time', 'timezone', 'studentDetails', 'instructor')
+        fields = ('id', 'date', 'time', 'timezone', 'studentDetails', 'instructor', 'zoomLink', )
 
     def get_instructor(self, instance):
         if instance.instructor:
             return instance.instructor.display_name
         elif instance.booking.instructor:
             return instance.booking.instructor.display_name
+        else:
+            return ''
+
+    def get_zoomLink(self, instance):
+        if instance.instructor:
+            return instance.instructor.zoom_link
         else:
             return ''
 
