@@ -153,6 +153,23 @@ class UserInfoUpdateSerializer(serializers.ModelSerializer):
             new_data['middle_name'] = new_data.pop('middleName')
         return super().to_internal_value(new_data)
 
+    def to_representation(self, instance):
+        data = {'firstName': instance.first_name,
+                'lastName': instance.last_name,
+                'email': instance.email,
+                }
+        account = get_account(instance)
+        if account:
+            data.update({'middleName': account.middle_name,
+                         'gender': account.gender,
+                         'location': account.location,
+                         'lat': account.coordinates[1],
+                         'lng': account.coordinates[0],
+                         })
+        else:
+            data.update({'middleName': '', 'gender': '', 'location': '', 'lat': '', 'lng': '', })
+        return data
+
 
 class InstructorProfileSerializer(serializers.Serializer):
     bio_title = serializers.CharField(max_length=200, required=False)
