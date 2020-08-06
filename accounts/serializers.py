@@ -1165,9 +1165,8 @@ class AffiliateRegisterSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        data['id'] = data.get('id')
-        data['firstName'] = data.get('first_name')
-        data['lastName'] = data.get('last_name')
+        data['firstName'] = data.pop('first_name')
+        data['lastName'] = data.pop('last_name')
         return data
 
     def create(self, validated_data):
