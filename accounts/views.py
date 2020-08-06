@@ -537,7 +537,8 @@ class StudentDetailView(views.APIView):
         data = request.data.copy()
         data['user'] = request.user.pk
         if request.user.student_details.count():
-            serializer = sers.StudentDetailsSerializer(instance=request.user.student_details, data=data, partial=True)
+            serializer = sers.StudentDetailsSerializer(instance=request.user.student_details,
+                                                       data=data, partial=True)
         else:
             serializer = sers.StudentDetailsSerializer(data=data)
         if serializer.is_valid():
@@ -545,7 +546,8 @@ class StudentDetailView(views.APIView):
                 serializer.save()
             else:
                 serializer.create(serializer.validated_data)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            ser = sers.StudentDetailsSerializer(request.user.student_details.fist())
+            return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
