@@ -224,13 +224,14 @@ class ApplicationView(views.APIView):
         ser = sers.ApplicationCreateSerializer(data=data)
         if ser.is_valid():
             obj = ser.save()
+            ser_data = sers.ApplicationListSerializer(obj, many=False)
             # task_log = TaskLog.objects.create(task_name='send_application_alert', args={'application_id': obj.id})
             # send_application_alert.delay(obj.id, task_log.id)
             if Application.objects.filter(request=obj.request).count() == 7:
                 obj.request.status = LESSON_REQUEST_CLOSED
                 obj.request.save()
                 send_alert_admin_request_closed.delay(obj.request.id)
-            return Response({'message': 'success'}, status=status.HTTP_200_OK)
+            return Response(ser_data.data, status=status.HTTP_200_OK)
         else:
             return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
 
