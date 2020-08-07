@@ -540,6 +540,14 @@ class InstructorAdditionalQualifications(models.Model):
     repertoire_selection = models.BooleanField(default=False)
 
 
+class InstructorReview(models.Model):
+    instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE, related_name='reviews')
+    rate = models.IntegerField()
+    comment = models.CharField(max_length=600)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='reviews')
+    reported_at = models.DateField(auto_now=True)
+
+
 class Student(IUserAccount):
     parent = models.ForeignKey(Parent, on_delete=models.SET_NULL, blank=True, null=True, related_name='students')
 
