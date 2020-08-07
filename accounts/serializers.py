@@ -22,7 +22,7 @@ from lesson.models import Instrument, Lesson
 from .models import (
     Affiliate, Availability, Education, Employment, Instructor, InstructorAdditionalQualifications,
     InstructorAgeGroup, InstructorInstruments,
-    InstructorPlaceForLessons, InstructorLessonRate, InstructorLessonSize, Parent, PhoneNumber,
+    InstructorPlaceForLessons, InstructorLessonRate, InstructorLessonSize, InstructorReview, Parent, PhoneNumber,
     Student, StudentDetails, TiedStudent, get_account,
 )
 from .utils import add_to_email_list, add_to_email_list_v2, init_kwargs
@@ -1273,3 +1273,18 @@ class TiedStudentParentDashboardSerializer(serializers.ModelSerializer):
         from lesson.serializers import LessonDataSerializer
         ser = LessonDataSerializer(instance.get_lessons(), many=True, context={'user': instance.parent.user})
         return ser.data
+
+
+class CreateInstructorReview(serializers.ModelSerializer):
+
+    class Meta:
+        model = InstructorReview
+        fields = ('instructor', 'user', 'rate', 'comment', )
+
+
+class ReturnCreateInstructorReview(serializers.ModelSerializer):
+    instructor = serializers.CharField(max_length=100, source='instructor.display_name')
+
+    class Meta:
+        model = InstructorReview
+        fields = ('instructor', 'rate', 'comment', )
