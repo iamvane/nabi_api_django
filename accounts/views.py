@@ -878,10 +878,10 @@ class InstructorReviews(views.APIView):
     def post(self, request, pk):
         request.data['user'] = request.user.id
         request.data['instructor'] = pk
-        ser = sers.CreateInstructorReview(data=request.data)
+        ser = sers.CreateInstructorReviewSerializer(data=request.data)
         if ser.is_valid():
             obj = ser.save()
-            ser_data = sers.ReturnCreateInstructorReview(obj)
+            ser_data = sers.ReturnCreateInstructorReviewSerializer(obj)
             return Response(ser_data.data, status=status.HTTP_200_OK)
         else:
             return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
