@@ -153,6 +153,23 @@ class UserInfoUpdateSerializer(serializers.ModelSerializer):
             new_data['middle_name'] = new_data.pop('middleName')
         return super().to_internal_value(new_data)
 
+    def to_representation(self, instance):
+        data = {'firstName': instance.first_name,
+                'lastName': instance.last_name,
+                'email': instance.email,
+                }
+        account = get_account(instance)
+        if account:
+            data.update({'middleName': account.middle_name,
+                         'gender': account.gender,
+                         'location': account.location,
+                         'lat': account.coordinates[1],
+                         'lng': account.coordinates[0],
+                         })
+        else:
+            data.update({'middleName': '', 'gender': '', 'location': '', 'lat': '', 'lng': '', })
+        return data
+
 
 class InstructorProfileSerializer(serializers.Serializer):
     bio_title = serializers.CharField(max_length=200, required=False)
@@ -186,6 +203,15 @@ class InstructorProfileSerializer(serializers.Serializer):
         if keys.get('zoomLink'):
             new_data['zoom_link'] = data.get('zoomLink')
         return super().to_internal_value(new_data)
+
+    def to_representation(self, instance):
+        data = {'bioTitle': instance.bio_title,
+                'bio_description': instance.bio_description,
+                'music': instance.music,
+                'yearsOfExperience': instance.years_of_experience,
+                'zoomLink': instance.zoom_link,
+                }
+        return data
 
 
 class ParentCreateAccountSerializer(BaseCreateAccountSerializer):
@@ -767,6 +793,13 @@ class TiedStudentItemSerializer(serializers.ModelSerializer):
             new_data['lesson_duration'] = data.pop('lessonDuration')
         return super().to_internal_value(new_data)
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['skillLevel'] = data.pop('skill_level')
+        data['lessonPlace'] = data.pop('lesson_place')
+        data['lessonDuration'] = data.pop('lesson_duration')
+        return data
+
 
 class InstructorEmploymentSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True, source='pk')
@@ -1132,9 +1165,8 @@ class AffiliateRegisterSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        data['id'] = data.get('id')
-        data['firstName'] = data.get('first_name')
-        data['lastName'] = data.get('last_name')
+        data['firstName'] = data.pop('first_name')
+        data['lastName'] = data.pop('last_name')
         return data
 
     def create(self, validated_data):

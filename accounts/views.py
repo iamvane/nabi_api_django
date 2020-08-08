@@ -370,7 +370,8 @@ class UpdateProfileView(views.APIView):
                                                       partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response({"message": "success"}, status=status.HTTP_200_OK)
+            ser = sers.InstructorProfileSerializer(Instructor.objects.get(user=request.user))
+            return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response({'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -380,7 +381,8 @@ class UpdateUserInfoView(views.APIView):
         serializer = sers.UserInfoUpdateSerializer(instance=request.user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response({"message": "success"}, status=status.HTTP_200_OK)
+            ser = sers.UserInfoUpdateSerializer(request.user)
+            return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -535,7 +537,8 @@ class StudentDetailView(views.APIView):
         data = request.data.copy()
         data['user'] = request.user.pk
         if request.user.student_details.count():
-            serializer = sers.StudentDetailsSerializer(instance=request.user.student_details, data=data, partial=True)
+            serializer = sers.StudentDetailsSerializer(instance=request.user.student_details,
+                                                       data=data, partial=True)
         else:
             serializer = sers.StudentDetailsSerializer(data=data)
         if serializer.is_valid():
@@ -543,7 +546,8 @@ class StudentDetailView(views.APIView):
                 serializer.save()
             else:
                 serializer.create(serializer.validated_data)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            ser = sers.StudentDetailsSerializer(request.user.student_details.fist())
+            return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
