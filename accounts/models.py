@@ -11,6 +11,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.gis.db.models import PointField
 from django.contrib.postgres.fields import HStoreField, ArrayField
 from django.db import models
+from django.db.models import Avg, Count
 from django.utils import timezone
 
 from accounts.utils import add_to_email_list_v2
@@ -414,6 +415,15 @@ class Instructor(IUserAccount):
         return [item for item in LessonBooking.objects.filter(instructor=self,
                                                               status__in=[LessonBooking.PAID, LessonBooking.TRIAL])
             .order_by('id')]
+
+    def get_review_dict(self):
+        """Return a dict with rate (average) of instructor, and quantity of reviews received.
+        Return empty dict when instructor has not reviews."""
+        results = self.reviews.aggregate(mean=Avg('rate'), qty=Count('*'))
+        if results.get('mean'):
+            return {'rate': f"{results.get('mean'):.2f}", 'quantity': results.get('qty')}
+        else:
+            return {}
 
 
 class Education(models.Model):
