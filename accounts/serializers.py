@@ -995,7 +995,7 @@ class InstructorDataSerializer(serializers.ModelSerializer):
     rates = serializers.SerializerMethodField()
     qualifications = serializers.SerializerMethodField()
     student_ages = serializers.SerializerMethodField()
-    reviews = serializers.IntegerField(default=0, read_only=True)
+    reviews = serializers.DictField(source='get_review_dict')
     last_login = serializers.DateTimeField(source='user.last_login', format='%Y-%m-%d %H:%M:%S', read_only=True)
     member_since = serializers.DateTimeField(source='created_at', format='%Y', read_only=True)
 

@@ -253,7 +253,7 @@ class ApplicationItemSerializer(serializers.ModelSerializer):
     backgroundCheckStatus = serializers.CharField(max_length=100, source='instructor.bg_status', read_only=True)
     displayName = serializers.CharField(max_length=100, source='instructor.display_name', read_only=True)
     instructorId = serializers.IntegerField(source='instructor.id', read_only=True)
-    reviews = serializers.IntegerField(default=0)
+    reviews = serializers.DictField(source='instructor.get_review_dict')
     yearsOfExperience = serializers.IntegerField(source='instructor.years_of_experience', read_only=True)
 
     class Meta:
