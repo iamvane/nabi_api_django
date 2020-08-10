@@ -874,9 +874,19 @@ class S3SignatureFile(views.APIView):
 
 
 class InstructorReviews(views.APIView):
+    permission_classes = (AllowAny, )
 
-    def post(self, request, pk):
-        request.data['user'] = request.user.id
+    def post(self, request, pk, email=None):
+        if email:
+            try:
+                user = User.objects.get(email=email)
+            except User.DoesNotExist:
+                return Response({'message': 'There is not user with provided email'}, status=status.HTTP_400_BAD_REQUEST)
+            request.data['user'] = user.id
+        else:
+            if isinstance(request.user, AnonymousUser):
+                return Response({'message': "Can't register a review without user"}, status=status.HTTP_400_BAD_REQUEST)
+            request.data['user'] = request.user.id
         request.data['instructor'] = pk
         ser = sers.CreateInstructorReviewSerializer(data=request.data)
         if ser.is_valid():
