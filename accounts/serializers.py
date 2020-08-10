@@ -695,6 +695,8 @@ class StudentSerializer(serializers.ModelSerializer):
                                                                     name=validated_data.pop('name'),
                                                                     age=validated_data.pop('age'))
                 validated_data['tied_student'] = tied_student
+            validated_data.pop('name', '')
+            validated_data.pop('age', '')
             student_details = StudentDetails.objects.create(**validated_data)
         return student_details
 
