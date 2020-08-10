@@ -1082,7 +1082,7 @@ class GetInstructorReviewSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = InstructorReview
-        fields = ('displayName', 'avatar', 'rate', 'comment', 'date', )
+        fields = ('displayName', 'avatar', 'rating', 'comment', 'date', )
 
     def get_displayName(self, instance):
         account = get_account(instance.user)
@@ -1303,7 +1303,7 @@ class CreateInstructorReviewSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = InstructorReview
-        fields = ('instructor', 'user', 'rate', 'comment', )
+        fields = ('instructor', 'user', 'rating', 'comment', )
 
 
 class ReturnCreateInstructorReviewSerializer(serializers.ModelSerializer):
@@ -1311,4 +1311,4 @@ class ReturnCreateInstructorReviewSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = InstructorReview
-        fields = ('instructor', 'rate', 'comment', )
+        fields = ('instructor', 'rating', 'comment', )

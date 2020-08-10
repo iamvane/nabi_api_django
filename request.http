@@ -673,7 +673,7 @@ POST localhost:8000/upload-video-profile/
 POST localhost:8000/instructor-reviews/<instructor_id>/
 
 {
-"rate": 5,
+"rating": 5,
 "comment": "Very Good!"
 }
 

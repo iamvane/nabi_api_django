@@ -262,9 +262,9 @@ class ParentAdmin(admin.ModelAdmin):
 
 
 class InstructorReviewAdmin(admin.ModelAdmin):
-    fields = ('instructor', 'user', 'rate', 'comment', )
-    list_display = ('instructor', 'user', 'rate', 'reported_at')
-    list_filter = ('rate', )
+    fields = ('instructor', 'user', 'rating', 'comment', )
+    list_display = ('instructor', 'user', 'rating', 'reported_at')
+    list_filter = ('rating', )
     search_fields = ('instructor__user__email', 'user__email',)
 
 
