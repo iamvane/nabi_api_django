@@ -552,7 +552,7 @@ class InstructorAdditionalQualifications(models.Model):
 
 class InstructorReview(models.Model):
     instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE, related_name='reviews')
-    rate = models.IntegerField()
+    rating = models.IntegerField()
     comment = models.CharField(max_length=600)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='reviews')
     reported_at = models.DateField(auto_now=True)
