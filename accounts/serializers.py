@@ -709,8 +709,12 @@ class StudentSerializer(serializers.ModelSerializer):
             data['studentId'] = instance.tied_student.id
         else:
             data['name'] = instance.user.first_name
-            data['age'] = instance.user.student.age
-            data['studentId'] = instance.user.student.id
+            if hasattr(instance.user, 'student'):
+                data['age'] = instance.user.student.age
+                data['studentId'] = instance.user.student.id
+            else:
+                data['age'] = None
+                data['studentId'] = None
         dict_data.update(data)
         return dict_data
 
