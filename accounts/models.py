@@ -11,6 +11,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.gis.db.models import PointField
 from django.contrib.postgres.fields import HStoreField, ArrayField
 from django.db import models
+from django.db.models import Avg, Count
 from django.utils import timezone
 
 from accounts.utils import add_to_email_list_v2
@@ -415,6 +416,15 @@ class Instructor(IUserAccount):
                                                               status__in=[LessonBooking.PAID, LessonBooking.TRIAL])
             .order_by('id')]
 
+    def get_review_dict(self):
+        """Return a dict with rate (average) of instructor, and quantity of reviews received.
+        Return empty dict when instructor has not reviews."""
+        results = self.reviews.aggregate(mean=Avg('rating'), qty=Count('*'))
+        if results.get('mean'):
+            return {'rating': f"{results.get('mean'):.2f}", 'quantity': results.get('qty')}
+        else:
+            return {}
+
 
 class Education(models.Model):
     instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE, related_name='education')
@@ -538,6 +548,14 @@ class InstructorAdditionalQualifications(models.Model):
     music_theory = models.BooleanField(default=False)
     young_children_experience = models.BooleanField(default=False)
     repertoire_selection = models.BooleanField(default=False)
+
+
+class InstructorReview(models.Model):
+    instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE, related_name='reviews')
+    rating = models.IntegerField()
+    comment = models.CharField(max_length=600)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='reviews')
+    reported_at = models.DateField(auto_now=True)
 
 
 class Student(IUserAccount):

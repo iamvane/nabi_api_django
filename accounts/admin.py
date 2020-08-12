@@ -13,7 +13,7 @@ from django.db.models.functions import Cast
 
 from accounts.models import (Availability, Education, Employment, Instructor, InstructorAdditionalQualifications,
                              InstructorAgeGroup, InstructorInstruments, InstructorLessonRate, InstructorLessonSize,
-                             InstructorPlaceForLessons, Parent, Student, StudentDetails, TiedStudent)
+                             InstructorPlaceForLessons, InstructorReview, Parent, Student, StudentDetails, TiedStudent)
 from accounts.utils import get_geopoint_from_location
 
 User = get_user_model()
@@ -261,8 +261,16 @@ class ParentAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
+class InstructorReviewAdmin(admin.ModelAdmin):
+    fields = ('instructor', 'user', 'rating', 'comment', )
+    list_display = ('instructor', 'user', 'rating', 'reported_at')
+    list_filter = ('rating', )
+    search_fields = ('instructor__user__email', 'user__email',)
+
+
 admin.site.register(Instructor, InstructorAdmin)
 admin.site.register(Parent, ParentAdmin)
 admin.site.register(Student, StudentAdmin)
 admin.site.register(TiedStudent, TiedStudentAdmin)
 admin.site.register(StudentDetails, StudentDetailsAdmin)
+admin.site.register(InstructorReview, InstructorReviewAdmin)

@@ -22,7 +22,7 @@ from lesson.models import Instrument, Lesson
 from .models import (
     Affiliate, Availability, Education, Employment, Instructor, InstructorAdditionalQualifications,
     InstructorAgeGroup, InstructorInstruments,
-    InstructorPlaceForLessons, InstructorLessonRate, InstructorLessonSize, Parent, PhoneNumber,
+    InstructorPlaceForLessons, InstructorLessonRate, InstructorLessonSize, InstructorReview, Parent, PhoneNumber,
     Student, StudentDetails, TiedStudent, get_account,
 )
 from .utils import add_to_email_list, add_to_email_list_v2, init_kwargs
@@ -995,7 +995,7 @@ class InstructorDataSerializer(serializers.ModelSerializer):
     rates = serializers.SerializerMethodField()
     qualifications = serializers.SerializerMethodField()
     student_ages = serializers.SerializerMethodField()
-    reviews = serializers.IntegerField(default=0, read_only=True)
+    reviews = serializers.DictField(source='get_review_dict')
     last_login = serializers.DateTimeField(source='user.last_login', format='%Y-%m-%d %H:%M:%S', read_only=True)
     member_since = serializers.DateTimeField(source='created_at', format='%Y', read_only=True)
 
@@ -1075,6 +1075,30 @@ class InstructorInstrumentSerializer(serializers.ModelSerializer):
         return data
 
 
+class GetInstructorReviewSerializer(serializers.ModelSerializer):
+    displayName = serializers.SerializerMethodField()
+    avatar = serializers.SerializerMethodField()
+    date = serializers.DateField(source='reported_at')
+
+    class Meta:
+        model = InstructorReview
+        fields = ('displayName', 'avatar', 'rating', 'comment', 'date', )
+
+    def get_displayName(self, instance):
+        account = get_account(instance.user)
+        if account:
+            return account.display_name
+        else:
+            return ''
+
+    def get_avatar(self, instance):
+        account = get_account(instance.user)
+        if account and account.avatar:
+            return account.avatar.url
+        else:
+            return ''
+
+
 class InstructorDetailSerializer(serializers.ModelSerializer):
     """Serializer to get data of an instructor"""
     distance = serializers.SerializerMethodField()
@@ -1089,7 +1113,7 @@ class InstructorDetailSerializer(serializers.ModelSerializer):
     lessons_taught = serializers.IntegerField(default=0)
     education = InstructorEducationSerializer(many=True, read_only=True)
     employment = InstructorEmploymentSerializer(many=True, read_only=True)
-    reviews = serializers.IntegerField(default=0)
+    reviews = GetInstructorReviewSerializer(many=True)
     member_since = serializers.DateTimeField(source='created_at', format='%Y')
 
     class Meta:
@@ -1273,3 +1297,18 @@ class TiedStudentParentDashboardSerializer(serializers.ModelSerializer):
         from lesson.serializers import LessonDataSerializer
         ser = LessonDataSerializer(instance.get_lessons(), many=True, context={'user': instance.parent.user})
         return ser.data
+
+
+class CreateInstructorReviewSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = InstructorReview
+        fields = ('instructor', 'user', 'rating', 'comment', )
+
+
+class ReturnCreateInstructorReviewSerializer(serializers.ModelSerializer):
+    instructor = serializers.CharField(max_length=100, source='instructor.display_name')
+
+    class Meta:
+        model = InstructorReview
+        fields = ('instructor', 'rating', 'comment', )

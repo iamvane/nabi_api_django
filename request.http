@@ -669,3 +669,14 @@ POST localhost:8000/upload-video-profile/
 }
 
 ###
+
+POST localhost:8000/instructor-reviews/<instructor_id>/<email>/
+or
+POST localhost:8000/instructor-reviews/<instructor_id>/
+
+{
+"rating": 5,
+"comment": "Very Good!"
+}
+
+###

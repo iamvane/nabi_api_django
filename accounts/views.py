@@ -491,7 +491,11 @@ class InstructorDetailView(views.APIView):
         else:
             account = get_account(request.user)
         serializer = sers.InstructorDetailSerializer(instructor, context={'account': account})
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        total_rating = instructor.get_review_dict()
+        resp_data = serializer.data.copy()
+        if total_rating:
+            resp_data.update({'ratings': total_rating.get('rating'), 'count': total_rating.get('quantity')})
+        return Response(resp_data, status=status.HTTP_200_OK)
 
 
 class UploadAvatarView(views.APIView):
@@ -871,3 +875,27 @@ class S3SignatureFile(views.APIView):
     @csrf_exempt
     def dispatch(self, request, *args, **kwargs):
         return super().dispatch(request, *args, **kwargs)
+
+
+class InstructorReviews(views.APIView):
+    permission_classes = (AllowAny, )
+
+    def post(self, request, pk, email=None):
+        if email:
+            try:
+                user = User.objects.get(email=email)
+            except User.DoesNotExist:
+                return Response({'message': 'There is not user with provided email'}, status=status.HTTP_400_BAD_REQUEST)
+            request.data['user'] = user.id
+        else:
+            if isinstance(request.user, AnonymousUser):
+                return Response({'message': "Can't register a review without user"}, status=status.HTTP_400_BAD_REQUEST)
+            request.data['user'] = request.user.id
+        request.data['instructor'] = pk
+        ser = sers.CreateInstructorReviewSerializer(data=request.data)
+        if ser.is_valid():
+            obj = ser.save()
+            ser_data = sers.ReturnCreateInstructorReviewSerializer(obj)
+            return Response(ser_data.data, status=status.HTTP_200_OK)
+        else:
+            return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)

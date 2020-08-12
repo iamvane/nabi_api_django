@@ -37,4 +37,6 @@ urlpatterns = [
     path('referral-dashboard/', views.ReferralDashboardView.as_view()),
     path('upload-video-profile/', views.UploadVideoProfileView.as_view()),
     path('sign-file/', views.S3SignatureFile.as_view()),
+    path('instructor-reviews/<int:pk>/<str:email>/', views.InstructorReviews.as_view()),
+    path('instructor-reviews/<int:pk>/', views.InstructorReviews.as_view()),
 ]

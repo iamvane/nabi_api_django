@@ -410,7 +410,7 @@ class AmountsForBookingView(views.APIView):
         data['clientSecret'] = intent.client_secret
         if last_lesson.instructor:
             data.update({'instructor': {'avatar': last_lesson.instructor.avatar.url,
-                                        'reviews': None,
+                                        'reviews': last_lesson.instructor.get_review_dict(),
                                         'backgroundCheckStatus': last_lesson.instructor.bg_status,
                                         'display_name': last_lesson.instructor.display_name,
                                         'rate': last_lesson.rate,
@@ -420,7 +420,7 @@ class AmountsForBookingView(views.APIView):
                          })
         else:
             data.update({'instructor': {'avatar': '',
-                                        'reviews': None,
+                                        'reviews': {},
                                         'backgroundCheckStatus': '',
                                         'display_name': '',
                                         'rate': None,
@@ -500,7 +500,7 @@ class DataForBookingView(views.APIView):
         data['clientSecret'] = intent.client_secret
         if last_lesson.instructor:
             data.update({'instructor': {'avatar': last_lesson.instructor.avatar.url,
-                                        'reviews': None,
+                                        'reviews': last_lesson.instructor.get_review_dict(),
                                         'backgroundCheckStatus': last_lesson.instructor.bg_status,
                                         'displayName': last_lesson.instructor.display_name,
                                         'rate': last_lesson.rate,
@@ -510,7 +510,7 @@ class DataForBookingView(views.APIView):
                          })
         else:
             data.update({'instructor': {'avatar': '',
-                                        'reviews': None,
+                                        'reviews': {},
                                         'backgroundCheckStatus': '',
                                         'displayName': '',
                                         'rate': None,
