@@ -491,7 +491,11 @@ class InstructorDetailView(views.APIView):
         else:
             account = get_account(request.user)
         serializer = sers.InstructorDetailSerializer(instructor, context={'account': account})
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        total_rating = instructor.get_review_dict()
+        resp_data = serializer.data.copy()
+        if total_rating:
+            resp_data.update({'ratings': total_rating.get('rating'), 'count': total_rating.get('quantity')})
+        return Response(resp_data, status=status.HTTP_200_OK)
 
 
 class UploadAvatarView(views.APIView):
