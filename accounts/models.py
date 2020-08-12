@@ -419,9 +419,9 @@ class Instructor(IUserAccount):
     def get_review_dict(self):
         """Return a dict with rate (average) of instructor, and quantity of reviews received.
         Return empty dict when instructor has not reviews."""
-        results = self.reviews.aggregate(mean=Avg('rate'), qty=Count('*'))
+        results = self.reviews.aggregate(mean=Avg('rating'), qty=Count('*'))
         if results.get('mean'):
-            return {'rate': f"{results.get('mean'):.2f}", 'quantity': results.get('qty')}
+            return {'rating': f"{results.get('mean'):.2f}", 'quantity': results.get('qty')}
         else:
             return {}
 
