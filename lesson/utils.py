@@ -65,7 +65,7 @@ def send_alert_request_instructor(instructor, lesson_request, requestor_account)
             time_zone = instructor.get_timezone_from_location_zipcode()
         date_str, time_str = get_date_time_from_datetime_timezone(lesson_request.trial_proposed_datetime,
                                                                   time_zone,
-                                                                  '%d/%m/%Y',
+                                                                  '%m/%d/%Y',
                                                                   '%I:%M %p')
         data['customProperties'].append({"name": "lesson_date_subject", "value": f'{date_str} at {time_str}'})
         data['customProperties'].append({"name": "lesson_date",
@@ -96,7 +96,7 @@ def send_info_lesson_student_parent(lesson):
         time_zone = account.get_timezone_from_location_zipcode()
     date_str, time_str = get_date_time_from_datetime_timezone(lesson.scheduled_datetime,
                                                               time_zone,
-                                                              '%d/%m/%Y',
+                                                              '%m/%d/%Y',
                                                               '%I:%M %p')
     lesson_request = lesson.booking.get_request()
     data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['info_lesson'],

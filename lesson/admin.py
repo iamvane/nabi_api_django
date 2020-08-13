@@ -129,6 +129,7 @@ class LessonRequestAdmin(admin.ModelAdmin):
     search_fields = ('user__email', 'instrument__name', )
     actions = [close_lesson_request, ]
     object_id = None
+    raw_id_fields = ('user', )
 
     def get_user_email(self, obj):
         return '{email} (user_id: {id})'.format(email=obj.user.email, id=obj.user_id)
@@ -170,21 +171,31 @@ class LessonRequestAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
-        lesson = None
-        if not change and obj.user.lesson_bookings.count() == 0:
-            with transaction.atomic():
-                lb = LessonBooking.objects.create(user=obj.user, quantity=1, total_amount=0, request=obj,
-                                                  description='Package trial', status=LessonBooking.TRIAL)
-                obj.status = LESSON_REQUEST_CLOSED
-                obj.save()
-                lesson = Lesson.objects.create(booking=lb,
-                                               scheduled_datetime=obj.trial_proposed_datetime,
-                                               scheduled_timezone=obj.trial_proposed_timezone,
-                                               )
-            add_to_email_list_v2(request.user, ['trial_to_booking'], ['customer_to_request'])
-        if lesson:
-            task_log = TaskLog.objects.create(task_name='send_lesson_info_student_parent', args={'lesson_id': lesson.id})
-            send_lesson_info_student_parent.delay(lesson.id, task_log.id)
+        if not change:
+            lesson = None
+            is_trial = False
+            if obj.user.is_parent() and form.cleaned_data.get('students'):
+                if not obj.user.parent.tied_students.filter(id=form.cleaned_data['students'][0].id).exists():
+                    raise ValueError("Selected TiedStudent don't belong to this parent")
+                if obj.user.lesson_bookings.filter(tied_student=form.cleaned_data['students'][0]).count() == 0:
+                    is_trial = True
+            elif obj.user.is_student and obj.user.lesson_bookings.count() == 0:
+                is_trial = True
+            if is_trial:
+                with transaction.atomic():
+                    lb = LessonBooking.objects.create(user=obj.user, quantity=1, total_amount=0, request=obj,
+                                                      description='Package trial', status=LessonBooking.TRIAL)
+                    obj.save()
+                    lesson = Lesson.objects.create(booking=lb,
+                                                   scheduled_datetime=obj.trial_proposed_datetime,
+                                                   scheduled_timezone=obj.trial_proposed_timezone,
+                                                   )
+                add_to_email_list_v2(request.user, ['trial_to_booking'], ['customer_to_request'])
+            if lesson:
+                task_log = TaskLog.objects.create(task_name='send_lesson_info_student_parent', args={'lesson_id': lesson.id})
+                send_lesson_info_student_parent.delay(lesson.id, task_log.id)
+            task_log = TaskLog.objects.create(task_name='send_request_alert_instructors', args={'request_id': obj.id})
+            send_request_alert_instructors.delay(obj.id, task_log.id)
 
 
 class LessonAdmin(admin.ModelAdmin):
