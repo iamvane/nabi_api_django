@@ -123,7 +123,7 @@ class LessonBooking(models.Model):
             lesson = Lesson.objects.create(booking=lb)
         return lesson
 
-    def create_lesson_request(self, lesson):
+    def create_lesson_request(self, lesson=None):
         """Create a LessonRequest instance from current LessonBooking. Return None if could not be possible"""
         instrument = skill_level = None
         if self.user.is_student():
