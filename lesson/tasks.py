@@ -149,6 +149,14 @@ def send_alert_admin_request_closed(request_id):
 
 
 @app.task
+def send_admin_assign_instructor(request_id):
+    lesson_request = LessonRequest.objects.get(id=request_id)
+    send_admin_email('A Lesson Request was created',
+                     f"Lesson Request with id {request_id} ({lesson_request.title}) was created, "
+                     "review and assign it an instructor.""")
+
+
+@app.task
 def send_alert_request_compatible_instructors(request_id, task_log_id):
     l_req = LessonRequest.objects.get(id=request_id)
     instructors_instrument = InstructorInstruments.objects.filter(instrument_id=l_req.instrument_id,
@@ -173,3 +181,4 @@ def send_alert_request_compatible_instructors(request_id, task_log_id):
     for ins_id in chosen_inst_ids:
         send_info_request_available(l_req, Instructor.objects.get(id=ins_id), next_lesson.scheduled_datetime)
     TaskLog.objects.filter(id=task_log_id).delete()
+    send_admin_assign_instructor.apply_async((l_req.id, ), countdown=3600)
