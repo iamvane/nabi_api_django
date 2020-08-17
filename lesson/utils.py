@@ -230,6 +230,36 @@ def send_info_lesson_graded(lesson):
         return None
 
 
+def send_info_request_available(lesson_request, instructor, scheduled_datetime):
+    """Send email to instructor about a request available, which match his data"""
+    target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
+    if lesson_request.user.is_parent():
+        tied_student = lesson_request.students.first()
+        student_first_name = tied_student.name
+    else:
+        student_first_name = lesson_request.user.first_name
+    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['info_new_request'],
+            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": instructor.user.email},
+            "customProperties": [
+                {"name": "instrument", "value": lesson_request.instrument.name},
+                {"name": "first_name", "value": student_first_name},
+                {"name": "lesson_date_subject", "value": scheduled_datetime.strftime('%m/%d/%Y %H:%M %p')},
+                {"name": "request_url", "value": ''},
+            ]
+            }
+    resp = requests.post(target_url, json=data)
+    if resp.status_code != 200:
+        send_admin_email("[INFO] Info about a new created lesson request could not be send",
+                         """An email about a new created lesson request could not be send to email {}, lesson request id {}.
+
+                         The status_code for API's response was {} and content: {}""".format(lesson_request.instructor.user.email,
+                                                                                             lesson_request.id,
+                                                                                             resp.status_code,
+                                                                                             resp.content.decode())
+                         )
+        return None
+
+
 def get_benefit_to_redeem(user):
     """Return a dict for existing benefit that can be used in lesson booking"""
     data = {'free_lesson': False, 'discount': 0, 'amount': 0, 'source': ''}

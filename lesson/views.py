@@ -30,8 +30,9 @@ from payments.serializers import GetPaymentMethodSerializer
 
 from . import serializers as sers
 from .models import Application, LessonBooking, LessonRequest, Lesson
-from .tasks import (send_application_alert, send_alert_admin_request_closed, send_booking_alert, send_booking_invoice,
-                    send_info_grade_lesson, send_request_alert_instructors, send_lesson_info_student_parent)
+from .tasks import (send_application_alert, send_alert_admin_request_closed, send_alert_request_compatible_instructors,
+                    send_booking_alert, send_booking_invoice, send_info_grade_lesson,
+                    send_request_alert_instructors, send_lesson_info_student_parent)
 from .utils import get_benefit_to_redeem, get_booking_data, get_booking_data_v2, PACKAGES
 
 User = get_user_model()
@@ -327,6 +328,13 @@ class LessonBookingRegisterView(views.APIView):
                     pym_obj.save()
                 if booking.lessons.count() == 0:
                     booking.create_lessons(last_lesson)
+                if not booking.request:
+                    next_lesson = booking.lessons.order_by('scheduled_datetime').first()
+                    lr = booking.create_lesson_request(next_lesson)
+                    if lr:
+                        task_log = TaskLog.objects.create(task_name='send_alert_request_compatible_instructors',
+                                                          args={'request_id': lr.id})
+                        send_alert_request_compatible_instructors.delay(lr.id, task_log.id)
                 add_to_email_list_v2(user, [], ['trial_to_booking'])
                 # update data for applicable benefits
                 UserBenefits.update_applicable_benefits(user)

@@ -1,10 +1,11 @@
+import random
 import requests
 
 from django.conf import settings
 from django.contrib.gis.measure import D
 
-from accounts.models import get_account, Instructor
-from accounts.utils import add_to_email_list, remove_contact_from_email_list
+from accounts.models import get_account, Instructor, InstructorInstruments
+from accounts.utils import add_to_email_list, get_availaibility_field_name_from_dt, remove_contact_from_email_list
 from core.constants import PLACE_FOR_LESSONS_ONLINE
 from core.models import TaskLog, User
 from core.utils import send_admin_email
@@ -12,7 +13,7 @@ from nabi_api_django.celery_config import app
 
 from .models import Application, Lesson, LessonBooking, LessonRequest
 from .utils import (send_alert_application, send_alert_booking, send_alert_request_instructor, send_info_lesson_graded,
-                    send_info_lesson_student_parent, send_invoice_booking)
+                    send_info_lesson_student_parent, send_info_request_available, send_invoice_booking, )
 
 
 @app.task
@@ -145,3 +146,30 @@ def send_alert_admin_request_closed(request_id):
     send_admin_email('Lesson Request had get 7 applications',
                      f"The Lesson Request with id {request_id} ({lesson_request.title}) "
                      "has 7 applications now and it's closed.""")
+
+
+@app.task
+def send_alert_request_compatible_instructors(request_id, task_log_id):
+    l_req = LessonRequest.objects.get(id=request_id)
+    instructors_instrument = InstructorInstruments.objects.filter(instrument_id=l_req.instrument_id,
+                                                                  skill_level=l_req.skill_level)\
+        .values_list('instructor_id', flat=True)
+    instructor_ids = []
+    next_lesson = Lesson.get_next_lesson(l_req.user, l_req.students.first())
+    for instructor in Instructor.objects.filter(id__in=instructors_instrument, complete=True):
+        if hasattr(instructor, 'availability'):
+            field_name = get_availaibility_field_name_from_dt(next_lesson.scheduled_datetime,
+                                                              instructor.timezone)
+            if getattr(instructor.availability, field_name):
+                instructor_ids.append(instructor.id)
+    if len(instructor_ids) <= 7:
+        chosen_inst_ids = instructor_ids
+    else:
+        chosen_inst_ids = []
+        for i in range(7):
+            index = random.randrange(len(instructor_ids))
+            chosen = instructor_ids.pop(index)
+            chosen_inst_ids.append(chosen)
+    for ins_id in chosen_inst_ids:
+        send_info_request_available(l_req, Instructor.objects.get(id=ins_id), next_lesson.scheduled_datetime)
+    TaskLog.objects.filter(id=task_log_id).delete()
