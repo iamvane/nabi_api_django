@@ -130,6 +130,7 @@ HUBSPOT_TEMPLATE_IDS = {
     'info_request': '30861071713',
     'info_lesson': '',
     'info_graded_lesson': '31198639395',
+    'info_new_request': '33651799070',
     'password_reset': '27908644852',
     'referral_email': '27965493956',
     'reset_password': '29982554190',   # when user is crated via admin
