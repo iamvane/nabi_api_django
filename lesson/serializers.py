@@ -268,6 +268,18 @@ class ApplicationItemSerializer(serializers.ModelSerializer):
             return ''
 
 
+class MinimalApplicationSerializer(serializers.ModelSerializer):
+    """Serializer to display data to instructor"""
+    applicationId = serializers.IntegerField(source='id', read_only=True)
+    applicationRate = serializers.DecimalField(max_digits=9, decimal_places=4, source='rate', read_only=True)
+    displayName = serializers.CharField(max_length=100, source='instructor.display_name', read_only=True)
+    requestId = serializers.IntegerField(source='request.id', read_only=True)
+
+    class Meta:
+        model = Application
+        fields = ('applicationId', 'applicationRate', 'displayName', 'requestId', )
+
+
 class LessonRequestApplicationsSerializer(serializers.ModelSerializer):
     """Serializer to get data of applications made in a lesson request; called by a parent or student"""
     requestTitle = serializers.CharField(max_length=100, source='title', read_only=True)

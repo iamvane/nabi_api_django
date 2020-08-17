@@ -628,3 +628,46 @@ class LessonView(views.APIView):
                             status=status.HTTP_400_BAD_REQUEST)
         ser = sers.LessonSerializer(lesson, context={'user': request.user})
         return Response(ser.data, status=status.HTTP_200_OK)
+
+
+class AcceptLessonRequestView(views.APIView):
+    permission_classes = (AllowAny, )
+
+    def post(self, request):
+        if isinstance(request.user, AnonymousUser):
+            try:
+                user = User.objects.get(id=request.data.get('userId'))
+            except User.DoesNotExist:
+                return Response({'message': 'There is not User with provided id'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            user = request.user
+        try:
+            lr = LessonRequest.objects.get(id=request.data.get('requestId'))
+        except LessonRequest.DoesNotExist:
+            return Response({'message': 'There is not LessonRequest with provided id'}, status=status.HTTP_400_BAD_REQUEST)
+        if user.is_instructor():
+            if user.instructor.instructorlessonrate_set.count():
+                instructor_rate = user.instructor.instructorlessonrate_set.first()
+            else:
+                instructor_rate = None
+            if instructor_rate:
+                application = Application.objects.create(request=lr, instructor=user.instructor,
+                                                         rate=instructor_rate.mins30, message='')
+            else:
+                application = Application.objects.create(request=lr, instructor=user.instructor, message='')
+            lr.booking.application = application
+            lr.booking.instructor = user.instructor
+            if instructor_rate:
+                lr.booking.rate = instructor_rate.mins30
+            lr.booking.save()
+            lr.booking.refresh_from_db()
+            for lesson in lr.booking.lessons.all():
+                lesson.instructor = lr.booking.instructor
+                lesson.rate = lr.booking.rate
+                lesson.save()
+            lr.status = LESSON_REQUEST_CLOSED
+            lr.save()
+            ser_resp = sers.MinimalApplicationSerializer(application)
+            return Response(ser_resp.data, status=status.HTTP_200_OK)
+        else:
+            return Response({'message': 'You must be an instructor'}, status=status.HTTP_400_BAD_REQUEST)
