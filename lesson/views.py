@@ -341,8 +341,9 @@ class LessonBookingRegisterView(views.APIView):
 
             task_log = TaskLog.objects.create(task_name='send_booking_invoice', args={'booking_id': booking.id})
             send_booking_invoice.delay(booking.id, task_log.id)
-            task_log = TaskLog.objects.create(task_name='send_booking_alert', args={'booking_id': booking.id})
-            send_booking_alert.delay(booking.id, task_log.id)
+            if booking.application:
+                task_log = TaskLog.objects.create(task_name='send_booking_alert', args={'booking_id': booking.id})
+                send_booking_alert.delay(booking.id, task_log.id)
             return Response({'message': 'Lesson(s) booked successfully.',
                              'booking_id': booking.id}, status=status.HTTP_200_OK)
         else:
