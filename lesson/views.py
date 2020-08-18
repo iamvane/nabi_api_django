@@ -328,13 +328,6 @@ class LessonBookingRegisterView(views.APIView):
                     pym_obj.save()
                 if booking.lessons.count() == 0:
                     booking.create_lessons(last_lesson)
-                if not booking.request:
-                    next_lesson = booking.lessons.order_by('scheduled_datetime').first()
-                    lr = booking.create_lesson_request(next_lesson)
-                    if lr:
-                        task_log = TaskLog.objects.create(task_name='send_alert_request_compatible_instructors',
-                                                          args={'request_id': lr.id})
-                        send_alert_request_compatible_instructors.delay(lr.id, task_log.id)
                 add_to_email_list_v2(user, [], ['trial_to_booking'])
                 # update data for applicable benefits
                 UserBenefits.update_applicable_benefits(user)
@@ -560,7 +553,10 @@ class LessonCreateView(views.APIView):
             lb = None
             create_trial_lesson = False
             if request.user.is_parent():
-                tied_student = get_object_or_404(TiedStudent, pk=request.data.get('studentId'))
+                try:
+                    tied_student = TiedStudent.objects.get(id=request.data.get('studentId'))
+                except TiedStudent.DoesNotExist:
+                    return Response({'message': 'There is not student with provided id'}, status=status.HTTP_400_BAD_REQUEST)
                 if LessonBooking.objects.filter(user=request.user, tied_student=tied_student).count() == 0:
                     create_trial_lesson = True
                     lb = LessonBooking.objects.create(user=request.user, tied_student=tied_student, quantity=1,
@@ -587,14 +583,14 @@ class LessonCreateView(views.APIView):
             if lesson.booking.status == LessonBooking.TRIAL:
                 lr = lesson.booking.create_lesson_request(lesson)
                 if lr:
-                    task_log = TaskLog.objects.create(task_name='send_request_alert_instructors',
+                    task_log = TaskLog.objects.create(task_name='send_alert_request_compatible_instructors',
                                                       args={'request_id': lr.id})
-                    send_request_alert_instructors.delay(lr.id, task_log.id)
+                    send_alert_request_compatible_instructors.delay(lr.id, task_log.id)
 
             ser = sers.LessonSerializer(lesson, context={'user': request.user})
-            task_log = TaskLog.objects.create(task_name='send_lesson_info_student_parent',
-                                              args={'lesson_id': lesson.id})
-            send_lesson_info_student_parent.delay(lesson.id, task_log.id)
+            # task_log = TaskLog.objects.create(task_name='send_lesson_info_student_parent',
+            #                                   args={'lesson_id': lesson.id})
+            # send_lesson_info_student_parent.delay(lesson.id, task_log.id)
             return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
