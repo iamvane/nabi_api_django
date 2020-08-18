@@ -608,11 +608,11 @@ GET localhost:8000/v1/referral-dashboard/
 
 ###
 
-GET localhost:8000/timezones/
+GET localhost:8000/v1/timezones/
 
 ###
 
-POST localhost:8000/lessons/
+POST localhost:8000/v1/lessons/
 
 {
 "bookingId": 8,
@@ -628,7 +628,7 @@ or
 
 ###
 
-PUT localhost:8000/lessons/<lesson_id>/
+PUT localhost:8000/v1/lessons/<lesson_id>/
 
 {
 "date": "2020-05-18",
@@ -647,7 +647,7 @@ or
 
 ###
 
-GET localhost:8000/lessons/<lesson_id>/
+GET localhost:8000/v1/lessons/<lesson_id>/
 
 ###
 
@@ -662,7 +662,7 @@ Content-Type: application/json
 
 ###
 
-POST localhost:8000/upload-video-profile/
+POST localhost:8000/v1/upload-video-profile/
 
 {
 "video": "https://nabi-test.s3.amazonaws.com/media/videos/user_5/video.flv"
@@ -670,13 +670,26 @@ POST localhost:8000/upload-video-profile/
 
 ###
 
-POST localhost:8000/instructor-reviews/<instructor_id>/<email>/
+POST localhost:8000/v1/instructor-reviews/<instructor_id>/<email>/
 or
-POST localhost:8000/instructor-reviews/<instructor_id>/
+POST localhost:8000/v1/instructor-reviews/<instructor_id>/
 
 {
 "rating": 5,
 "comment": "Very Good!"
+}
+
+###
+
+POST localhost:8000/v1/accept-request/
+
+{
+"requestId": 163
+}
+or
+{
+"requestId": 163,
+"userId": 5
 }
 
 ###
