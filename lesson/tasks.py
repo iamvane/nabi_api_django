@@ -13,7 +13,8 @@ from nabi_api_django.celery_config import app
 
 from .models import Application, Lesson, LessonBooking, LessonRequest
 from .utils import (send_alert_application, send_alert_booking, send_alert_request_instructor, send_info_lesson_graded,
-                    send_info_lesson_student_parent, send_info_request_available, send_invoice_booking, )
+                    send_info_lesson_student_parent, send_info_lesson_instructor,
+                    send_info_request_available, send_invoice_booking, )
 
 
 @app.task
@@ -36,7 +37,15 @@ def send_request_alert_instructors(request_id, task_log_id):
 def send_lesson_info_student_parent(lesson_id, task_log_id):
     """Send an email to student or parent when a lesson is created"""
     lesson = Lesson.objects.get(id=lesson_id)
-    # send_info_lesson_student_parent(lesson)   # some data is missing, required to enable this
+    send_info_lesson_student_parent(lesson)
+    TaskLog.objects.filter(id=task_log_id).delete()
+
+
+@app.task
+def send_lesson_info_instructor(lesson_id, task_log_id):
+    """Send an email to instructor when is assigned to a lesson. Used for trial lesson only."""
+    lesson = Lesson.objects.get(id=lesson_id)
+    send_info_lesson_instructor(lesson)
     TaskLog.objects.filter(id=task_log_id).delete()
 
 
