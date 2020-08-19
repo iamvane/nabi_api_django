@@ -632,7 +632,7 @@ class AcceptLessonRequestView(views.APIView):
     def post(self, request):
         if isinstance(request.user, AnonymousUser):
             try:
-                user = User.objects.get(id=request.data.get('userId'))
+                user = User.objects.get(email=request.data.get('userEmail'))
             except User.DoesNotExist:
                 return Response({'message': 'There is not User with provided id'}, status=status.HTTP_400_BAD_REQUEST)
         else:
