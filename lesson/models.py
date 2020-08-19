@@ -228,3 +228,9 @@ class Lesson(models.Model):
             return cls.objects.filter(booking__user=user, booking__tied_student=tied_student).last()
         else:
             return cls.objects.filter(booking__user=user).last()
+
+
+class InstructorRefuseLessonRequest(models.Model):
+    instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE, related_name='request_refuses')
+    request = models.ForeignKey(LessonRequest, on_delete=models.CASCADE, related_name='refuses')
+    created_at = models.DateTimeField(auto_now_add=True)
