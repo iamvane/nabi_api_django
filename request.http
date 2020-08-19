@@ -684,12 +684,14 @@ POST localhost:8000/v1/instructor-reviews/<instructor_id>/
 POST localhost:8000/v1/accept-request/
 
 {
-"requestId": 163
+"requestId": 163,
+"accept": true
 }
 or
 {
 "requestId": 163,
-"userId": 5
+"userId": 5,
+"accept": true
 }
 
 ###
