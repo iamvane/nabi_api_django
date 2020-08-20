@@ -471,7 +471,7 @@ class DataForBookingView(views.APIView):
                     tied_student = TiedStudent.objects.get(id=student_id, parent=user.parent)
                 except TiedStudent.DoesNotExist:
                     ser = MinimalTiedStudentSerializer(user.parent.tied_students.all(), many=True)
-                    return Response(ser.data, status=status.HTTP_400_BAD_REQUEST)
+                    return Response(ser.data, status=status.HTTP_200_OK)
             else:
                 tied_student = user.parent.tied_students.first()
         else:
