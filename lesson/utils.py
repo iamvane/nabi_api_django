@@ -254,13 +254,23 @@ def send_info_request_available(lesson_request, instructor, scheduled_datetime):
         student_first_name = tied_student.name
     else:
         student_first_name = lesson_request.user.first_name
+    if instructor.timezone:
+        sch_date, sch_time = get_date_time_from_datetime_timezone(scheduled_datetime,
+                                                                  instructor.timezone,
+                                                                  date_format='%m/%d/%Y',
+                                                                  time_format='%I:%M %p')
+    else:
+        sch_date, sch_time = get_date_time_from_datetime_timezone(scheduled_datetime,
+                                                                  instructor.get_timezone_from_location_zipcode(),
+                                                                  date_format='%m/%d/%Y',
+                                                                  time_format='%I:%M %p')
     data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['info_new_request'],
             "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": instructor.user.email},
             "customProperties": [
                 {"name": "instrument", "value": lesson_request.instrument.name},
                 {"name": "first_name", "value": student_first_name},
-                {"name": "lesson_date_subject", "value": scheduled_datetime.strftime('%m/%d/%Y %I:%M %p')},
-                {"name": "request_url", "value": f'{settings.HOSTNAME_PROTOCOL}/new-request/{lesson_request.id}/?userId={lesson_request.user.id}'},
+                {"name": "lesson_date_subject", "value": f'{sch_date} {sch_time}'},
+                {"name": "request_url", "value": f'{settings.HOSTNAME_PROTOCOL}/new-request/{lesson_request.id}/?userId={instructor.user.id}'},
             ]
             }
     resp = requests.post(target_url, json=data)
