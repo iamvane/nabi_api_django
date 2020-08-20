@@ -81,6 +81,7 @@ def get_user_response(account):
         'location': account.location,
         'lat': lat,
         'lng': lng,
+        'timezone': account.timezone,
         'referralToken': user.referral_token,
     }
     return data

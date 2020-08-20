@@ -112,10 +112,11 @@ class UserInfoUpdateSerializer(serializers.ModelSerializer):
     location = serializers.CharField(max_length=150)
     lat = serializers.CharField(max_length=150)
     lng = serializers.CharField(max_length=150)
+    timezone = serializers.CharField(max_length=50, read_only=True)
 
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'middle_name', 'email', 'gender', 'location', 'lat', 'lng', ]
+        fields = ['first_name', 'last_name', 'middle_name', 'email', 'gender', 'location', 'lat', 'lng', 'timezone', ]
 
     def update(self, instance, validated_data):
         account = get_account(instance)
@@ -166,9 +167,10 @@ class UserInfoUpdateSerializer(serializers.ModelSerializer):
                          'location': account.location,
                          'lat': account.coordinates[1],
                          'lng': account.coordinates[0],
+                         'timezone': account.timezone,
                          })
         else:
-            data.update({'middleName': '', 'gender': '', 'location': '', 'lat': '', 'lng': '', })
+            data.update({'middleName': '', 'gender': '', 'location': '', 'lat': '', 'lng': '', 'timezone': ''})
         return data
 
 
