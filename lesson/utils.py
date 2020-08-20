@@ -88,7 +88,7 @@ def send_info_lesson_student_parent(lesson):
     data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['info_lesson_user'],
             "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.booking.user.email},
             "customProperties": [
-                {"name": "first_name", "value": lesson.booking.user.first_name},
+                {"name": "first_name", "value": lesson.booking.instructor.user.first_name},
                 {"name": "instructor_name", "value": lesson.instructor.display_name},
                 {"name": "instructor_profile", "value": f'{settings.HOSTNAME_PROTOCOL}/instructor/{lesson.instructor.id}'},
             ]
