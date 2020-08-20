@@ -4,6 +4,7 @@ from dateutil import relativedelta
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AnonymousUser
 from django.utils import timezone
 
 from rest_framework import serializers
@@ -489,11 +490,14 @@ class LessonRequestListItemSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         if instance.trial_proposed_datetime:
-            account = get_account(self.context['user'])
-            if account.timezone:
-                data['timezone'] = account.timezone
+            if self.context.get('user'):
+                account = get_account(self.context['user'])
+                if account.timezone:
+                    data['timezone'] = account.timezone
+                else:
+                    data['timezone'] = account.get_timezone_from_location_zipcode()
             else:
-                data['timezone'] = account.get_timezone_from_location_zipcode()
+                data['timezone'] = 'US/Eastern'
             data['date'], data['time'] = get_date_time_from_datetime_timezone(instance.trial_proposed_datetime,
                                                                               data['timezone'])
         return data

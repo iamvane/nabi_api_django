@@ -201,6 +201,7 @@ class LessonRequestListView(views.APIView):
 
 class LessonRequestItemListView(views.APIView):
     """Return data of a lesson request created by a parent or student"""
+    permission_classes = (AllowAny, )
 
     def get(self, request, pk):
         try:
@@ -208,7 +209,10 @@ class LessonRequestItemListView(views.APIView):
         except ObjectDoesNotExist:
             return Response({'message': 'There is not lesson request with provider id'},
                             status=status.HTTP_400_BAD_REQUEST)
-        serializer = sers.LessonRequestListItemSerializer(lesson_request, context={'user': request.user})
+        if not isinstance(request.user, AnonymousUser):
+            serializer = sers.LessonRequestListItemSerializer(lesson_request, context={'user': request.user})
+        else:
+            serializer = sers.LessonRequestListItemSerializer(lesson_request)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
