@@ -260,7 +260,7 @@ def send_info_request_available(lesson_request, instructor, scheduled_datetime):
                 {"name": "instrument", "value": lesson_request.instrument.name},
                 {"name": "first_name", "value": student_first_name},
                 {"name": "lesson_date_subject", "value": scheduled_datetime.strftime('%m/%d/%Y %I:%M %p')},
-                {"name": "request_url", "value": f'{settings.HOSTNAME_PROTOCOL}/v1/new_request/{lesson_request.id}/'},
+                {"name": "request_url", "value": f'{settings.HOSTNAME_PROTOCOL}/new-request/{lesson_request.id}/?userId={lesson_request.user.id}'},
             ]
             }
     resp = requests.post(target_url, json=data)
