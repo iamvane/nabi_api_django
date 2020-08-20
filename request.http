@@ -690,7 +690,7 @@ POST localhost:8000/v1/accept-request/
 or
 {
 "requestId": 163,
-"userEmail": "instructor@yopmail.com",
+"userId": 3,
 "accept": true
 }
 
