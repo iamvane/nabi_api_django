@@ -29,7 +29,7 @@ from payments.models import Payment
 from payments.serializers import GetPaymentMethodSerializer
 
 from . import serializers as sers
-from .models import Application, InstructorRefuseLessonRequest, LessonBooking, LessonRequest, Lesson
+from .models import Application, InstructorAcceptanceLessonRequest, LessonBooking, LessonRequest, Lesson
 from .tasks import (send_application_alert, send_alert_admin_request_closed, send_alert_request_compatible_instructors,
                     send_booking_alert, send_booking_invoice, send_info_grade_lesson,
                     send_request_alert_instructors, send_lesson_info_student_parent)
@@ -650,30 +650,5 @@ class AcceptLessonRequestView(views.APIView):
             return Response({'message': 'Value of accept (true/false) is missing'}, status=status.HTTP_400_BAD_REQUEST)
         if not user.is_instructor():
             return Response({'message': 'You must be an instructor'}, status=status.HTTP_400_BAD_REQUEST)
-        if decision:
-            if user.instructor.instructorlessonrate_set.count():
-                instructor_rate = user.instructor.instructorlessonrate_set.first()
-            else:
-                instructor_rate = None
-            if instructor_rate:
-                application = Application.objects.create(request=lr, instructor=user.instructor,
-                                                         rate=instructor_rate.mins30, message='')
-            else:
-                application = Application.objects.create(request=lr, instructor=user.instructor, message='')
-            lr.booking.application = application
-            lr.booking.instructor = user.instructor
-            if instructor_rate:
-                lr.booking.rate = instructor_rate.mins30
-            lr.booking.save()
-            lr.booking.refresh_from_db()
-            for lesson in lr.booking.lessons.all():
-                lesson.instructor = lr.booking.instructor
-                lesson.rate = lr.booking.rate
-                lesson.save()
-            lr.status = LESSON_REQUEST_CLOSED
-            lr.save()
-            ser_resp = sers.MinimalApplicationSerializer(application)
-            return Response(ser_resp.data, status=status.HTTP_200_OK)
-        else:
-            InstructorRefuseLessonRequest.objects.create(instructor=user.instructor, request=lr)
-            return Response({'message': 'Decision registered'}, status=status.HTTP_200_OK)
+        InstructorAcceptanceLessonRequest.objects.create(instructor=user.instructor, request=lr, accept=decision)
+        return Response({'message': 'Decision registered'}, status=status.HTTP_200_OK)

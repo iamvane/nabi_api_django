@@ -10,16 +10,17 @@ from core.models import TaskLog, UserBenefits
 from lesson.models import Instrument
 from payments.models import Payment
 
-from .models import Application, InstructorRefuseLessonRequest, Lesson, LessonBooking, LessonRequest
+from .models import Application, InstructorAcceptanceLessonRequest, Lesson, LessonBooking, LessonRequest
 from .tasks import (send_application_alert, send_booking_alert, send_booking_invoice, send_info_grade_lesson,
                     send_request_alert_instructors, send_lesson_info_student_parent, send_lesson_info_instructor)
 
 User = get_user_model()
 
 
-class InstructorRefuseLessonRequestAdmin(admin.ModelAdmin):
-    list_display = ('instructor', 'request_id', )
+class InstructorAcceptanceLessonRequestAdmin(admin.ModelAdmin):
+    list_display = ('instructor', 'request_id', 'accept', )
     search_fields = ('instructor__user__email', 'request__id', )
+    list_filter = ('accept', )
 
 
 class InstrumentAdmin(admin.ModelAdmin):
@@ -277,5 +278,5 @@ admin.site.register(Application, ApplicationAdmin)
 admin.site.register(LessonBooking, LessonBookingAdmin)
 admin.site.register(LessonRequest, LessonRequestAdmin)
 admin.site.register(Lesson, LessonAdmin)
-admin.site.register(InstructorRefuseLessonRequest, InstructorRefuseLessonRequestAdmin)
+admin.site.register(InstructorAcceptanceLessonRequest, InstructorAcceptanceLessonRequestAdmin)
 admin.site.register(Instrument, InstrumentAdmin)

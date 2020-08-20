@@ -230,7 +230,11 @@ class Lesson(models.Model):
             return cls.objects.filter(booking__user=user).last()
 
 
-class InstructorRefuseLessonRequest(models.Model):
-    instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE, related_name='request_refuses')
-    request = models.ForeignKey(LessonRequest, on_delete=models.CASCADE, related_name='refuses')
+class InstructorAcceptanceLessonRequest(models.Model):
+    instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE, related_name='acceptance_requests')
+    request = models.ForeignKey(LessonRequest, on_delete=models.CASCADE, related_name='acceptances')
+    accept = models.BooleanField()
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('instructor', 'request')
