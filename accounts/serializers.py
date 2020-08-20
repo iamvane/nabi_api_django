@@ -133,6 +133,7 @@ class UserInfoUpdateSerializer(serializers.ModelSerializer):
         if latitude is not None and longitude is not None:
             point = Point(float(longitude), float(latitude), srid=4326)
             account.coordinates = point
+            account.timezone = account.get_timezone_from_location_zipcode()
             account_changed = True
         middle_name = validated_data.pop('middle_name', None)
         if middle_name is not None:
@@ -228,6 +229,7 @@ class ParentCreateAccountSerializer(BaseCreateAccountSerializer):
         parent.set_referral_token()
         if lat and lng:
             parent.coordinates = Point(lng, lat, srid=4326)
+            parent.timezone = parent.get_timezone_from_location_zipcode()
             parent.save()
         add_to_email_list_v2(user, ['parents', 'customer_to_request'], ['facebook_lead'])   # add to list in HubSpot
         return parent
@@ -247,6 +249,7 @@ class StudentCreateAccountSerializer(BaseCreateAccountSerializer):
         student.set_referral_token()
         if lat and lng:
             student.coordinates = Point(lng, lat, srid=4326)
+            student.timezone = student.get_timezone_from_location_zipcode()
             student.save()
         add_to_email_list_v2(user, ['students', 'customer_to_request'], ['facebook_lead'])   # add to list in HubSpot
         return student
