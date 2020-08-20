@@ -73,7 +73,7 @@ class InstructorPlaceForLessonsAdmin(admin.TabularInline):
 
 
 class InstructorAdmin(admin.ModelAdmin):
-    fields = ('user', 'display_name', 'age', 'avatar', 'bio_title', 'bio_description', 'bg_status', 'location',
+    fields = ('user', 'display_name', 'age', 'avatar', 'bio_title', 'bio_description', 'bg_status', 'location', 'timezone',
               'music', 'interviewed', 'languages', 'studio_address', 'travel_distance', 'years_of_experience', 'video',
               'zoom_link')
     list_display = ('pk', 'user', 'display_name', 'distance', )
@@ -82,7 +82,7 @@ class InstructorAdmin(admin.ModelAdmin):
     search_fields = ('user__email', 'display_name', 'instruments__name')
     location_search_values = {}
     places_search_values = {}
-    readonly_fields = ('user', 'display_name', 'age', 'distance', )
+    readonly_fields = ('user', 'display_name', 'age', 'distance', 'timezone', )
     inlines = [EducationInline, EmploymentInline, AdditionalQualificationsAdmin, InstrumentsAdmin,
                InstructorPlaceForLessonsAdmin, LessonRateAdmin, AgeGroupAdmin, LessonSizeAdmin, AvailabilityAdmin, ]
 
@@ -205,11 +205,11 @@ class HasCoordinatesFilter(admin.SimpleListFilter):
 
 
 class StudentAdmin(admin.ModelAdmin):
-    fields = ('user', 'display_name', 'age', 'avatar', 'birthday', 'gender', 'location',)
+    fields = ('user', 'display_name', 'age', 'avatar', 'birthday', 'gender', 'location', 'timezone', )
     list_display = ('pk', 'user', 'display_name',)
     list_filter = ('gender', HasCoordinatesFilter,)
     search_fields = ('user__email', 'display_name',)
-    readonly_fields = ('user', 'display_name', 'age',)
+    readonly_fields = ('user', 'display_name', 'age', 'timezone', )
 
     def has_add_permission(self, request):
         return False
@@ -245,11 +245,11 @@ class StudentDetailsAdmin(admin.ModelAdmin):
 
 
 class ParentAdmin(admin.ModelAdmin):
-    fields = ('user', 'display_name', 'age', 'avatar', 'birthday', 'gender', 'location',)
+    fields = ('user', 'display_name', 'age', 'avatar', 'birthday', 'gender', 'location', 'timezone', )
     list_display = ('pk', 'user', 'display_name',)
     list_filter = ('gender', HasCoordinatesFilter,)
     search_fields = ('user__email', 'display_name',)
-    readonly_fields = ('user', 'display_name', 'age',)
+    readonly_fields = ('user', 'display_name', 'age', 'timezone', )
     inlines = (TiedStudentInline,)
 
     def has_add_permission(self, request):
