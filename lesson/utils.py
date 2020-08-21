@@ -88,7 +88,7 @@ def send_info_lesson_student_parent(lesson):
     data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['info_lesson_user'],
             "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.booking.user.email},
             "customProperties": [
-                {"name": "first_name", "value": lesson.booking.instructor.user.first_name},
+                {"name": "first_name", "value": lesson.booking.user.first_name},
                 {"name": "instructor_name", "value": lesson.instructor.display_name},
                 {"name": "instructor_profile", "value": f'{settings.HOSTNAME_PROTOCOL}/instructor/{lesson.instructor.id}'},
             ]
@@ -249,11 +249,6 @@ def send_info_lesson_graded(lesson):
 def send_info_request_available(lesson_request, instructor, scheduled_datetime):
     """Send email to instructor about a request available, which match his data"""
     target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
-    if lesson_request.user.is_parent():
-        tied_student = lesson_request.students.first()
-        student_first_name = tied_student.name
-    else:
-        student_first_name = lesson_request.user.first_name
     if instructor.timezone:
         sch_date, sch_time = get_date_time_from_datetime_timezone(scheduled_datetime,
                                                                   instructor.timezone,
@@ -268,7 +263,7 @@ def send_info_request_available(lesson_request, instructor, scheduled_datetime):
             "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": instructor.user.email},
             "customProperties": [
                 {"name": "instrument", "value": lesson_request.instrument.name},
-                {"name": "first_name", "value": student_first_name},
+                {"name": "first_name", "value": instructor.user.first_name},
                 {"name": "lesson_date_subject", "value": f'{sch_date} {sch_time}'},
                 {"name": "request_url", "value": f'{settings.HOSTNAME_PROTOCOL}/new-request/{lesson_request.id}/?userId={instructor.user.id}'},
             ]
