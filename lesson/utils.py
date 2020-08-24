@@ -122,7 +122,7 @@ def send_info_lesson_instructor(lesson):
             "customProperties": [
                 {"name": "instructor_name", "value": lesson.instructor.display_name},
                 {"name": "lesson_details", "value": f'{student_details.get("name")}, {student_details.get("age")} year old, {instrument_name}'},
-                {"name": "schedule_details", "value": f'{date_str} at {time_str} ({lesson.scheduled_timezone})'},
+                {"name": "schedule_details", "value": f'{date_str} at {time_str} ({time_zone})'},
             ]
             }
     resp = requests.post(target_url, json=data)
