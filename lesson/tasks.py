@@ -179,15 +179,7 @@ def send_alert_request_compatible_instructors(request_id, task_log_id):
                                                               instructor.timezone)
             if getattr(instructor.availability, field_name):
                 instructor_ids.append(instructor.id)
-    if len(instructor_ids) <= 7:
-        chosen_inst_ids = instructor_ids
-    else:
-        chosen_inst_ids = []
-        for i in range(7):
-            index = random.randrange(len(instructor_ids))
-            chosen = instructor_ids.pop(index)
-            chosen_inst_ids.append(chosen)
-    for ins_id in chosen_inst_ids:
+    for ins_id in instructor_ids:
         send_info_request_available(l_req, Instructor.objects.get(id=ins_id), next_lesson.scheduled_datetime)
     TaskLog.objects.filter(id=task_log_id).delete()
     send_admin_assign_instructor.apply_async((l_req.id, ), countdown=3600)
