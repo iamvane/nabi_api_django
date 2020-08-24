@@ -227,7 +227,7 @@ def send_info_lesson_graded(lesson):
     """Send email to parent/student about a graded lesson"""
     target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
     data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['info_graded_lesson'],
-            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.instructor.user.email},
+            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.booking.user.email},
             "customProperties": [
                 {"name": "grade", "value": lesson.grade},
                 {"name": "grade_comment", "value": lesson.comment},
