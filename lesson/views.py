@@ -29,9 +29,10 @@ from payments.models import Payment
 from payments.serializers import GetPaymentMethodSerializer
 
 from . import serializers as sers
-from .models import Application, LessonBooking, LessonRequest, Lesson
-from .tasks import (send_application_alert, send_alert_admin_request_closed, send_booking_alert, send_booking_invoice,
-                    send_info_grade_lesson, send_request_alert_instructors, send_lesson_info_student_parent)
+from .models import Application, InstructorAcceptanceLessonRequest, LessonBooking, LessonRequest, Lesson
+from .tasks import (send_application_alert, send_alert_admin_request_closed, send_alert_request_compatible_instructors,
+                    send_booking_alert, send_booking_invoice, send_info_grade_lesson,
+                    send_request_alert_instructors, send_lesson_info_student_parent)
 from .utils import get_benefit_to_redeem, get_booking_data, get_booking_data_v2, PACKAGES
 
 User = get_user_model()
@@ -200,6 +201,7 @@ class LessonRequestListView(views.APIView):
 
 class LessonRequestItemListView(views.APIView):
     """Return data of a lesson request created by a parent or student"""
+    permission_classes = (AllowAny, )
 
     def get(self, request, pk):
         try:
@@ -207,7 +209,10 @@ class LessonRequestItemListView(views.APIView):
         except ObjectDoesNotExist:
             return Response({'message': 'There is not lesson request with provider id'},
                             status=status.HTTP_400_BAD_REQUEST)
-        serializer = sers.LessonRequestListItemSerializer(lesson_request, context={'user': request.user})
+        if not isinstance(request.user, AnonymousUser):
+            serializer = sers.LessonRequestListItemSerializer(lesson_request, context={'user': request.user})
+        else:
+            serializer = sers.LessonRequestListItemSerializer(lesson_request)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -333,8 +338,9 @@ class LessonBookingRegisterView(views.APIView):
 
             task_log = TaskLog.objects.create(task_name='send_booking_invoice', args={'booking_id': booking.id})
             send_booking_invoice.delay(booking.id, task_log.id)
-            task_log = TaskLog.objects.create(task_name='send_booking_alert', args={'booking_id': booking.id})
-            send_booking_alert.delay(booking.id, task_log.id)
+            if booking.application:
+                task_log = TaskLog.objects.create(task_name='send_booking_alert', args={'booking_id': booking.id})
+                send_booking_alert.delay(booking.id, task_log.id)
             return Response({'message': 'Lesson(s) booked successfully.',
                              'booking_id': booking.id}, status=status.HTTP_200_OK)
         else:
@@ -551,7 +557,10 @@ class LessonCreateView(views.APIView):
             lb = None
             create_trial_lesson = False
             if request.user.is_parent():
-                tied_student = get_object_or_404(TiedStudent, pk=request.data.get('studentId'))
+                try:
+                    tied_student = TiedStudent.objects.get(id=request.data.get('studentId'))
+                except TiedStudent.DoesNotExist:
+                    return Response({'message': 'There is not student with provided id'}, status=status.HTTP_400_BAD_REQUEST)
                 if LessonBooking.objects.filter(user=request.user, tied_student=tied_student).count() == 0:
                     create_trial_lesson = True
                     lb = LessonBooking.objects.create(user=request.user, tied_student=tied_student, quantity=1,
@@ -578,14 +587,14 @@ class LessonCreateView(views.APIView):
             if lesson.booking.status == LessonBooking.TRIAL:
                 lr = lesson.booking.create_lesson_request(lesson)
                 if lr:
-                    task_log = TaskLog.objects.create(task_name='send_request_alert_instructors',
+                    task_log = TaskLog.objects.create(task_name='send_alert_request_compatible_instructors',
                                                       args={'request_id': lr.id})
-                    send_request_alert_instructors.delay(lr.id, task_log.id)
+                    send_alert_request_compatible_instructors.delay(lr.id, task_log.id)
 
             ser = sers.LessonSerializer(lesson, context={'user': request.user})
-            task_log = TaskLog.objects.create(task_name='send_lesson_info_student_parent',
-                                              args={'lesson_id': lesson.id})
-            send_lesson_info_student_parent.delay(lesson.id, task_log.id)
+            # task_log = TaskLog.objects.create(task_name='send_lesson_info_student_parent',
+            #                                   args={'lesson_id': lesson.id})
+            # send_lesson_info_student_parent.delay(lesson.id, task_log.id)
             return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -619,3 +628,27 @@ class LessonView(views.APIView):
                             status=status.HTTP_400_BAD_REQUEST)
         ser = sers.LessonSerializer(lesson, context={'user': request.user})
         return Response(ser.data, status=status.HTTP_200_OK)
+
+
+class AcceptLessonRequestView(views.APIView):
+    permission_classes = (AllowAny, )
+
+    def post(self, request):
+        if isinstance(request.user, AnonymousUser):
+            try:
+                user = User.objects.get(id=request.data.get('userId'))
+            except User.DoesNotExist:
+                return Response({'message': 'There is not User with provided id'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            user = request.user
+        try:
+            lr = LessonRequest.objects.get(id=request.data.get('requestId'))
+        except LessonRequest.DoesNotExist:
+            return Response({'message': 'There is not LessonRequest with provided id'}, status=status.HTTP_400_BAD_REQUEST)
+        decision = request.data.get('accept')
+        if decision is None:
+            return Response({'message': 'Value of accept (true/false) is missing'}, status=status.HTTP_400_BAD_REQUEST)
+        if not user.is_instructor():
+            return Response({'message': 'You must be an instructor'}, status=status.HTTP_400_BAD_REQUEST)
+        InstructorAcceptanceLessonRequest.objects.create(instructor=user.instructor, request=lr, accept=decision)
+        return Response({'message': 'Decision registered'}, status=status.HTTP_200_OK)

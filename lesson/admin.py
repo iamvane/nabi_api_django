@@ -5,16 +5,22 @@ from django.db.models import Q
 
 from accounts.models import Instructor, TiedStudent
 from accounts.utils import add_to_email_list_v2
-from core.constants import LESSON_REQUEST_CLOSED, PY_APPLIED
+from core.constants import LESSON_REQUEST_ACTIVE, LESSON_REQUEST_CLOSED, PY_APPLIED
 from core.models import TaskLog, UserBenefits
 from lesson.models import Instrument
 from payments.models import Payment
 
-from .models import Application, Lesson, LessonBooking, LessonRequest
+from .models import Application, InstructorAcceptanceLessonRequest, Lesson, LessonBooking, LessonRequest
 from .tasks import (send_application_alert, send_booking_alert, send_booking_invoice, send_info_grade_lesson,
-                    send_request_alert_instructors, send_lesson_info_student_parent)
+                    send_request_alert_instructors, send_lesson_info_student_parent, send_lesson_info_instructor)
 
 User = get_user_model()
+
+
+class InstructorAcceptanceLessonRequestAdmin(admin.ModelAdmin):
+    list_display = ('instructor', 'request_id', 'accept', )
+    search_fields = ('instructor__user__email', 'request__id', )
+    list_filter = ('accept', )
 
 
 class InstrumentAdmin(admin.ModelAdmin):
@@ -114,6 +120,28 @@ class LessonBookingAdmin(admin.ModelAdmin):
                 if obj.application:
                     task_log = TaskLog.objects.create(task_name='send_booking_alert', args={'booking_id': obj.id})
                     send_booking_alert.delay(obj.id, task_log.id)
+        elif 'instructor' in form.changed_data:
+            if obj.instructor:
+                with transaction.atomic():
+                    if 'rate' not in form.changed_data:
+                        rate_obj = obj.instructor.instructorlessonrate_set.last()
+                        obj.rate = rate_obj.mins30
+                        obj.save()
+                        obj.refresh_from_db()
+                    if obj.status == LessonBooking.TRIAL:
+                        if obj.request and obj.request.status == LESSON_REQUEST_ACTIVE:
+                            obj.request.status = LESSON_REQUEST_CLOSED
+                            obj.request.save()
+                            lesson = obj.lessons.first()
+                            lesson.instructor = obj.instructor
+                            lesson.rate = obj.rate
+                            lesson.save()
+                        task_log = TaskLog.objects.create(task_name='send_lesson_info_student_parent',
+                                                          args={'lesson_id': lesson.id})
+                        send_lesson_info_student_parent.delay(lesson.id, task_log.id)
+                        task_log = TaskLog.objects.create(task_name='send_lesson_info_instructor',
+                                                          args={'lesson_id': lesson.id})
+                        send_lesson_info_instructor.delay(lesson.id, task_log.id)
 
 
 def close_lesson_request(model_admin, request, queryset):
@@ -250,4 +278,5 @@ admin.site.register(Application, ApplicationAdmin)
 admin.site.register(LessonBooking, LessonBookingAdmin)
 admin.site.register(LessonRequest, LessonRequestAdmin)
 admin.site.register(Lesson, LessonAdmin)
+admin.site.register(InstructorAcceptanceLessonRequest, InstructorAcceptanceLessonRequestAdmin)
 admin.site.register(Instrument, InstrumentAdmin)

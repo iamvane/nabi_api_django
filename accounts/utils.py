@@ -229,3 +229,24 @@ def get_geopoint_from_location(location):
     except GeocoderError as e:
         raise Exception(e.status, e.response)
     return Point(results[0].coordinates[1], results[0].coordinates[0], srid=4326)
+
+
+def get_availaibility_field_name_from_dt(datetime_obj, tz_target):
+    localize_datetime = datetime_obj.astimezone(timezone.pytz.timezone(tz_target))
+    field_name = localize_datetime.strftime('%A').lower()[:3]
+    if localize_datetime.hour >= 18:
+        if localize_datetime.hour < 21:
+            field_name += '6to9'
+        else:
+            return ''
+    elif localize_datetime.hour >= 15:
+        field_name += '3to6'
+    elif localize_datetime.hour >= 12:
+        field_name += '12to3'
+    elif localize_datetime.hour >= 10:
+        field_name += '10to12'
+    elif localize_datetime.hour >= 8:
+        field_name += '8to10'
+    else:
+        return ''
+    return field_name

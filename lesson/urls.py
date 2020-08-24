@@ -14,6 +14,7 @@ urlpatterns = [
     path('get-booking-data/<str:email>/<int:student_id>/', views.DataForBookingView.as_view()),
     path('get-booking-data/<str:email>/', views.DataForBookingView.as_view()),
     path('confirm-booking/', views.LessonBookingRegisterView.as_view()),
+    path('accept-request/', views.AcceptLessonRequestView.as_view()),
     path('lessons/', views.LessonCreateView.as_view()),
     path('lessons/<int:lesson_id>/', views.LessonView.as_view()),
 ]

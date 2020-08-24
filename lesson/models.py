@@ -123,7 +123,7 @@ class LessonBooking(models.Model):
             lesson = Lesson.objects.create(booking=lb)
         return lesson
 
-    def create_lesson_request(self, lesson):
+    def create_lesson_request(self, lesson=None):
         """Create a LessonRequest instance from current LessonBooking. Return None if could not be possible"""
         instrument = skill_level = None
         if self.user.is_student():
@@ -137,26 +137,29 @@ class LessonBooking(models.Model):
                 skill_level = self.tied_student.tied_student_details.skill_level
         if instrument and skill_level:
             title = f'{instrument.name.capitalize()} Instructor'
-            if lesson:
-                request = LessonRequest.objects.create(user=self.user,
-                                                       title=title,
-                                                       instrument=instrument,
-                                                       skill_level=skill_level,
-                                                       place_for_lessons=PLACE_FOR_LESSONS_ONLINE,
-                                                       lessons_duration=LESSON_DURATION_30,
-                                                       trial_proposed_datetime=lesson.scheduled_datetime,
-                                                       trial_proposed_timezone=lesson.scheduled_timezone,
-                                                       )
-            else:
-                request = LessonRequest.objects.create(user=self.user,
-                                                       title=title,
-                                                       instrument=instrument,
-                                                       skill_level=skill_level,
-                                                       place_for_lessons=PLACE_FOR_LESSONS_ONLINE,
-                                                       lessons_duration=LESSON_DURATION_30,
-                                                       )
-            if self.user.is_parent() and self.tied_student:
-                request.students.add(self.tied_student)
+            with transaction.atomic():
+                if lesson:
+                    request = LessonRequest.objects.create(user=self.user,
+                                                           title=title,
+                                                           instrument=instrument,
+                                                           skill_level=skill_level,
+                                                           place_for_lessons=PLACE_FOR_LESSONS_ONLINE,
+                                                           lessons_duration=LESSON_DURATION_30,
+                                                           trial_proposed_datetime=lesson.scheduled_datetime,
+                                                           trial_proposed_timezone=lesson.scheduled_timezone,
+                                                           )
+                    lesson.booking.request = request
+                    lesson.booking.save()
+                else:
+                    request = LessonRequest.objects.create(user=self.user,
+                                                           title=title,
+                                                           instrument=instrument,
+                                                           skill_level=skill_level,
+                                                           place_for_lessons=PLACE_FOR_LESSONS_ONLINE,
+                                                           lessons_duration=LESSON_DURATION_30,
+                                                           )
+                if self.user.is_parent() and self.tied_student:
+                    request.students.add(self.tied_student)
             return request
         else:
             return None
@@ -225,3 +228,13 @@ class Lesson(models.Model):
             return cls.objects.filter(booking__user=user, booking__tied_student=tied_student).last()
         else:
             return cls.objects.filter(booking__user=user).last()
+
+
+class InstructorAcceptanceLessonRequest(models.Model):
+    instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE, related_name='acceptance_requests')
+    request = models.ForeignKey(LessonRequest, on_delete=models.CASCADE, related_name='acceptances')
+    accept = models.BooleanField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('instructor', 'request')
