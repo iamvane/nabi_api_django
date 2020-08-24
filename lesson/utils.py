@@ -104,15 +104,15 @@ def send_info_lesson_student_parent(lesson):
 
 
 def send_info_lesson_instructor(lesson):
-    from accounts.models import get_account
     target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
     student_details = lesson.booking.student_details()
     instrument_name = lesson.booking.request.instrument.name
-    account = get_account(lesson.booking.user)
-    if account.timezone:
-        time_zone = account.timezone
+    if lesson.instructor and lesson.instructor.timezone:
+        time_zone = lesson.instructor.timezone
+    elif lesson.instructor:
+        time_zone = lesson.instructor.get_timezone_from_location_zipcode()
     else:
-        time_zone = account.get_timezone_from_location_zipcode()
+        time_zone = 'US/Eastern'
     date_str, time_str = get_date_time_from_datetime_timezone(lesson.scheduled_datetime,
                                                               time_zone,
                                                               '%m/%d/%Y',
