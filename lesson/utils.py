@@ -90,7 +90,7 @@ def send_info_lesson_student_parent(lesson):
             "customProperties": [
                 {"name": "first_name", "value": lesson.booking.user.first_name},
                 {"name": "instructor_name", "value": lesson.instructor.display_name},
-                {"name": "instructor_profile", "value": f'{settings.HOSTNAME_PROTOCOL}/instructor/{lesson.instructor.id}'},
+                {"name": "instructor_profile", "value": f'{settings.HOSTNAME_PROTOCOL}/profile/{lesson.instructor.id}'},
             ]
             }
     resp = requests.post(target_url, json=data)
