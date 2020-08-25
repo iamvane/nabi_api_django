@@ -14,7 +14,8 @@ from nabi_api_django.celery_config import app
 from .models import Application, Lesson, LessonBooking, LessonRequest
 from .utils import (send_alert_application, send_alert_booking, send_alert_request_instructor, send_info_lesson_graded,
                     send_info_lesson_student_parent, send_info_lesson_instructor,
-                    send_info_request_available, send_invoice_booking, send_instructor_lesson_graded, )
+                    send_info_request_available, send_invoice_booking, send_instructor_lesson_graded,
+                    send_trial_confirmation)
 
 
 @app.task
@@ -88,6 +89,13 @@ def send_instructor_grade_lesson(lesson_id, task_log_id):
     lesson = Lesson.objects.get(id=lesson_id)
     send_instructor_lesson_graded(lesson)
     TaskLog.objects.filter(id=task_log_id).delete()
+
+@app.task
+def send_trial_confirm(lesson_id, task_log_id):
+    lesson = Lesson.objects.get(id=lesson_id)
+    send_trial_confirmation(lesson)
+    TaskLog.objects.filter(id=task_log_id).delete()
+
 
 @app.task
 def update_list_users_without_request():

@@ -7,6 +7,7 @@ from decimal import Decimal
 from django.conf import settings
 from django.utils import timezone
 
+from accounts.models import get_account
 from core.constants import (BENEFIT_AMOUNT, BENEFIT_DISCOUNT, BENEFIT_LESSON, BENEFIT_READY,
                             PACKAGE_ARTIST, PACKAGE_MAESTRO, PACKAGE_TRIAL, PACKAGE_VIRTUOSO)
 from core.utils import send_admin_email, send_email
@@ -302,6 +303,42 @@ def send_info_request_available(lesson_request, instructor, scheduled_datetime):
                                                                                              lesson_request.id,
                                                                                              resp.status_code,
                                                                                              resp.content.decode())
+                         )
+        return None
+
+
+def send_trial_confirmation(lesson):
+    """Send email to parent/student, when a Trial Lesson is created"""
+    target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
+    account = get_account(lesson.booking.user)
+    if account.timezone:
+        time_zone = account.timezone
+    else:
+        time_zone = account.get_timezone_from_location_zipcode()
+    student_details = lesson.booking.student_details()
+    sch_date, sch_time = get_date_time_from_datetime_timezone(lesson.scheduled_datetime,
+                                                              time_zone,
+                                                              date_format='%A %b %-jth',
+                                                              time_format='%-I:%M %p')
+    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['trial_confirmation'],
+            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.boooking.user.email},
+            "customProperties": [
+                {"name": "student_name", "value": student_details.get('student_name')},
+                {"name": "first_name", "value": lesson.booking.user.first_name},
+                {"name": "instrument", "value": lesson.booking.request.instrument.name},
+                {"name": "lesson_date_time", "value": f'{sch_date} at {sch_time} ({time_zone})'},
+            ]
+            }
+    resp = requests.post(target_url, json=data)
+    if resp.status_code != 200:
+        send_admin_email("[INFO] Info about a created trial lesson could not be send",
+                         """An email about a created trial lesson could not be send to email {}, lesson id {}.
+
+                         The status_code for API's response was {} and content: {}""".format(
+                             lesson.booking.user.email,
+                             lesson.id,
+                             resp.status_code,
+                             resp.content.decode())
                          )
         return None
 

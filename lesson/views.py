@@ -32,7 +32,8 @@ from . import serializers as sers
 from .models import Application, InstructorAcceptanceLessonRequest, LessonBooking, LessonRequest, Lesson
 from .tasks import (send_application_alert, send_alert_admin_request_closed, send_alert_request_compatible_instructors,
                     send_booking_alert, send_booking_invoice, send_info_grade_lesson,
-                    send_request_alert_instructors, send_lesson_info_student_parent, send_instructor_grade_lesson)
+                    send_request_alert_instructors, send_lesson_info_student_parent, send_instructor_grade_lesson,
+                    send_trial_confirm)
 from .utils import get_benefit_to_redeem, get_booking_data, get_booking_data_v2, PACKAGES
 
 User = get_user_model()
@@ -592,9 +593,8 @@ class LessonCreateView(views.APIView):
                     send_alert_request_compatible_instructors.delay(lr.id, task_log.id)
 
             ser = sers.LessonSerializer(lesson, context={'user': request.user})
-            # task_log = TaskLog.objects.create(task_name='send_lesson_info_student_parent',
-            #                                   args={'lesson_id': lesson.id})
-            # send_lesson_info_student_parent.delay(lesson.id, task_log.id)
+            task_log = TaskLog.objects.create(task_name='send_trial_confirm', args={'lesson_id': lesson.id})
+            send_trial_confirm.delay(lesson.id, task_log.id)
             return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
