@@ -2,11 +2,12 @@ from django.contrib.auth import get_user_model
 from django.contrib import admin
 from django.db import transaction
 from django.db.models import Q
+from django.utils import timezone
 
 from accounts.models import Instructor, TiedStudent
 from accounts.utils import add_to_email_list_v2
 from core.constants import LESSON_REQUEST_ACTIVE, LESSON_REQUEST_CLOSED, PY_APPLIED
-from core.models import TaskLog, UserBenefits
+from core.models import ScheduledEmail, TaskLog, UserBenefits
 from lesson.models import Instrument
 from payments.models import Payment
 
@@ -130,10 +131,10 @@ class LessonBookingAdmin(admin.ModelAdmin):
                         obj.save()
                         obj.refresh_from_db()
                     if obj.status == LessonBooking.TRIAL:
+                        lesson = obj.lessons.first()
                         if obj.request and obj.request.status == LESSON_REQUEST_ACTIVE:
                             obj.request.status = LESSON_REQUEST_CLOSED
                             obj.request.save()
-                            lesson = obj.lessons.first()
                             lesson.instructor = obj.instructor
                             lesson.rate = obj.rate
                             lesson.save()
@@ -143,6 +144,9 @@ class LessonBookingAdmin(admin.ModelAdmin):
                         task_log = TaskLog.objects.create(task_name='send_lesson_info_instructor',
                                                           args={'lesson_id': lesson.id})
                         send_lesson_info_instructor.delay(lesson.id, task_log.id)
+                        ScheduledEmail.objects.create(function_name='send_lesson_reminder',
+                                                      schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=30),
+                                                      parameters={'lesson_id': lesson.id, 'user_id': obj.user.id})
 
 
 def close_lesson_request(model_admin, request, queryset):

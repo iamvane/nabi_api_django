@@ -12,6 +12,7 @@ from django.db import transaction
 from django.db.models import Case, F, ObjectDoesNotExist, Q, When
 from django.db.models.functions import Cast
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 
 from rest_framework import status, views
 from rest_framework.pagination import PageNumberPagination
@@ -22,7 +23,7 @@ from accounts.models import TiedStudent, get_account
 from accounts.serializers import MinimalTiedStudentSerializer
 from accounts.utils import get_stripe_customer_id, add_to_email_list_v2
 from core.constants import *
-from core.models import TaskLog, UserBenefits
+from core.models import ScheduledEmail, TaskLog, UserBenefits
 from core.permissions import AccessForInstructor, AccessForParentOrStudent
 from core.utils import send_admin_email
 from payments.models import Payment
@@ -63,6 +64,12 @@ class LessonRequestView(views.APIView):
                                                scheduled_datetime=obj.trial_proposed_datetime,
                                                scheduled_timezone=obj.trial_proposed_timezone,
                                                )
+                ScheduledEmail.objects.create(function_name='send_reminder_grade_lesson',
+                                              schedule=obj.trial_proposed_datetime + timezone.timedelta(minutes=30),
+                                              parameters={'lesson_id': lesson.id})
+                ScheduledEmail.objects.create(function_name='send_lesson_reminder',
+                                              schedule=lesson.scheduled_datetime + timezone.timedelta(minutes=30),
+                                              parameters={'lesson_id': lesson.id, 'user_id': obj.user.id})
             task_log = TaskLog.objects.create(task_name='send_request_alert_instructors',
                                               args={'request_id': obj.id})
             send_request_alert_instructors.delay(obj.id, task_log.id)
