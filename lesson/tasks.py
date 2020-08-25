@@ -3,6 +3,7 @@ import requests
 
 from django.conf import settings
 from django.contrib.gis.measure import D
+from django.utils import timezone
 
 from accounts.models import get_account, Instructor, InstructorInstruments
 from accounts.utils import add_to_email_list, get_availaibility_field_name_from_dt, remove_contact_from_email_list
@@ -11,6 +12,7 @@ from core.models import TaskLog, User
 from core.utils import send_admin_email
 from nabi_api_django.celery_config import app
 
+from core.models import ScheduledEmail
 from .models import Application, Lesson, LessonBooking, LessonRequest
 from .utils import (send_alert_application, send_alert_booking, send_alert_request_instructor, send_info_lesson_graded,
                     send_info_lesson_student_parent, send_info_lesson_instructor,
@@ -197,3 +199,14 @@ def send_alert_request_compatible_instructors(request_id, task_log_id):
         send_info_request_available(l_req, Instructor.objects.get(id=ins_id), next_lesson.scheduled_datetime)
     TaskLog.objects.filter(id=task_log_id).delete()
     send_admin_assign_instructor.apply_async((l_req.id, ), countdown=3600)
+
+
+@app.task
+def send_scheduled_email():
+    """Search for scheduled emails to be send"""
+    import lesson.utils
+    for sch_email in ScheduledEmail.objects.filter(schedule__lte=timezone.now(), executed=False):
+        func = getattr(lesson.utils, sch_email.function_name)
+        func(**sch_email.parameters)
+        sch_email.executed = True
+        sch_email.save()
