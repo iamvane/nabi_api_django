@@ -7,7 +7,7 @@ from accounts.serializers import (InstructorCreateAccountSerializer, ParentCreat
 
 from .constants import BENEFIT_PENDING, ROLE_INSTRUCTOR, ROLE_PARENT, ROLE_STUDENT
 from .forms import CreateUserForm
-from .models import UserBenefits
+from .models import ScheduledEmail, UserBenefits
 from .utils import generate_random_password, send_email_template
 
 User = get_user_model()
@@ -134,5 +134,13 @@ class UserBenefitsAdmin(admin.ModelAdmin):
     search_fields = ('beneficiary__email', 'provider__email')
 
 
+class ScheduledEmailAdmin(admin.ModelAdmin):
+    list_display = ('function_name', 'schedule', 'executed', )
+    fields = ('function_name', 'schedule', 'parameters', 'executed', )
+    list_filter = ('executed', )
+    search_fields = ('function_name', )
+
+
+admin.site.register(ScheduledEmail, ScheduledEmailAdmin)
 admin.site.register(User, UserAdmin)
 admin.site.register(UserBenefits, UserBenefitsAdmin)
