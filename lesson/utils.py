@@ -8,11 +8,9 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
-from accounts.models import get_account
 from core.constants import (BENEFIT_AMOUNT, BENEFIT_DISCOUNT, BENEFIT_LESSON, BENEFIT_READY,
                             PACKAGE_ARTIST, PACKAGE_MAESTRO, PACKAGE_TRIAL, PACKAGE_VIRTUOSO)
 from core.utils import send_admin_email, send_email
-from lesson.models import Lesson
 from notices.models import Offer
 
 User = get_user_model()
@@ -312,6 +310,7 @@ def send_info_request_available(lesson_request, instructor, scheduled_datetime):
 
 def send_trial_confirmation(lesson):
     """Send email to parent/student, when a Trial Lesson is created"""
+    from accounts.models import get_account
     target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
     account = get_account(lesson.booking.user)
     if account.timezone:
@@ -367,6 +366,8 @@ def send_reminder_grade_lesson(lesson):
 
 def send_lesson_reminder(lesson_id, user_id):
     """Send email to reminder about a lesson. Parameter user_id points to receiver user"""
+    from accounts.models import get_account
+    from lesson.models import Lesson
     lesson = Lesson.objects.get(id=lesson_id)
     user = User.objects.get(id=user_id)
     student_details = lesson.booking.student_details()
