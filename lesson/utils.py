@@ -343,6 +343,25 @@ def send_trial_confirmation(lesson):
         return None
 
 
+def send_reminder_grade_lesson(lesson):
+    """Send email to instructor to reminder about a lesson without grade"""
+    target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
+    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['reminder_grade_lesson'],
+            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.instructor.user.email},
+            "customProperties": [
+                {"name": "first_name", "value": lesson.instructor.user.first_name},
+            ]
+            }
+    resp = requests.post(target_url, json=data)
+    if resp.status_code != 200:
+        send_admin_email("[INFO] Reminder email to grade lesson",
+                         f"""An email to reminder an instructor about grade a lesson could not be send to {lesson.instructor.user.email}, lesson id {lesson.id}.
+
+                         The status_code for API's response was {resp.status_code} and content: {resp.content.decode()}"""
+                         )
+        return None
+
+
 def get_benefit_to_redeem(user):
     """Return a dict for existing benefit that can be used in lesson booking"""
     data = {'free_lesson': False, 'discount': 0, 'amount': 0, 'source': ''}

@@ -97,6 +97,10 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'accounts.tasks.alert_user_without_location_coordinates',
         'schedule': crontab(hour='7', minute='0'),
     },
+    'send-lesson-scheduled-emails': {
+        'task': 'lesson.tasks.send_scheduled_email',
+        'schedule': crontab(minute='*/5'),
+    },
 }
 
 
@@ -134,6 +138,7 @@ HUBSPOT_TEMPLATE_IDS = {
     'info_new_request': '33651799070',
     'password_reset': '27908644852',
     'referral_email': '27965493956',
+    'reminder_grade_lesson': '33862645099',
     'reset_password': '29982554190',   # when user is crated via admin
     'trial_confirmation': '33858534253',
 }
