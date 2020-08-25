@@ -5,14 +5,17 @@ import requests
 from decimal import Decimal
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.utils import timezone
 
 from accounts.models import get_account
 from core.constants import (BENEFIT_AMOUNT, BENEFIT_DISCOUNT, BENEFIT_LESSON, BENEFIT_READY,
                             PACKAGE_ARTIST, PACKAGE_MAESTRO, PACKAGE_TRIAL, PACKAGE_VIRTUOSO)
 from core.utils import send_admin_email, send_email
+from lesson.models import Lesson
 from notices.models import Offer
 
+User = get_user_model()
 PACKAGES = {
     PACKAGE_ARTIST: {'lesson_qty': 4, 'discount': 0},
     PACKAGE_MAESTRO: {'lesson_qty': 8, 'discount': 0},
@@ -318,12 +321,12 @@ def send_trial_confirmation(lesson):
     student_details = lesson.booking.student_details()
     sch_date, sch_time = get_date_time_from_datetime_timezone(lesson.scheduled_datetime,
                                                               time_zone,
-                                                              date_format='%A %b %-jth',
+                                                              date_format='%A %b %-dth',
                                                               time_format='%-I:%M %p')
     data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['trial_confirmation'],
             "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.boooking.user.email},
             "customProperties": [
-                {"name": "student_name", "value": student_details.get('student_name')},
+                {"name": "student_name", "value": student_details.get('name')},
                 {"name": "first_name", "value": lesson.booking.user.first_name},
                 {"name": "instrument", "value": lesson.booking.request.instrument.name},
                 {"name": "lesson_date_time", "value": f'{sch_date} at {sch_time} ({time_zone})'},
@@ -358,6 +361,42 @@ def send_reminder_grade_lesson(lesson):
                          f"""An email to reminder an instructor about grade a lesson could not be send to {lesson.instructor.user.email}, lesson id {lesson.id}.
 
                          The status_code for API's response was {resp.status_code} and content: {resp.content.decode()}"""
+                         )
+        return None
+
+
+def send_lesson_reminder(lesson_id, user_id):
+    """Send email to reminder about a lesson. Parameter user_id points to receiver user"""
+    lesson = Lesson.objects.get(id=lesson_id)
+    user = User.objects.get(id=user_id)
+    student_details = lesson.booking.student_details()
+    account = get_account(user)
+    if account.timezone:
+        time_zone = account.timezone
+    else:
+        time_zone = account.get_timezone_from_location_zipcode()
+    sch_date, sch_time = get_date_time_from_datetime_timezone(lesson.scheduled_datetime,
+                                                              time_zone,
+                                                              date_format='%A %-d, %Y',
+                                                              time_format='%I:%M %p')
+    target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
+    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['reminder_grade_lesson'],
+            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": user.email},
+            "customProperties": [
+                {"name": "first_name", "value": user.first_name},
+                {"name": "student_name", "value": student_details.get('name')},
+                {"name": "instrument", "value": lesson.booking.request.instrument.name},
+                {"name": "student_details", "value": f"{student_details.get('age')} years old, {lesson.booking.request.skill_level}"},
+                {"name": "lesson_date_time", "value": f'{sch_date} at {sch_time} ({time_zone})'},
+                {"name": "zoom_link", "value": lesson.booking.instructor.zoom_link},
+            ]
+            }
+    resp = requests.post(target_url, json=data)
+    if resp.status_code != 200:
+        send_admin_email("[INFO] Reminder lesson email",
+                         f"""An email to reminder about a lesson could not be send to {user.email}, lesson id {lesson.id}.
+
+                             The status_code for API's response was {resp.status_code} and content: {resp.content.decode()}"""
                          )
         return None
 
