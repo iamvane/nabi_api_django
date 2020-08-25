@@ -345,8 +345,10 @@ def send_trial_confirmation(lesson):
         return None
 
 
-def send_reminder_grade_lesson(lesson):
+def send_reminder_grade_lesson(lesson_id):
     """Send email to instructor to reminder about a lesson without grade"""
+    from lesson.models import Lesson
+    lesson = Lesson.objects.get(id=lesson_id)
     target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
     data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['reminder_grade_lesson'],
             "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.instructor.user.email},
