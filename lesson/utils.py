@@ -323,7 +323,7 @@ def send_trial_confirmation(lesson):
                                                               date_format='%A %b %-dth',
                                                               time_format='%-I:%M %p')
     data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['trial_confirmation'],
-            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.boooking.user.email},
+            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.booking.user.email},
             "customProperties": [
                 {"name": "student_name", "value": student_details.get('name')},
                 {"name": "first_name", "value": lesson.booking.user.first_name},
