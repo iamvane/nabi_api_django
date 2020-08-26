@@ -146,7 +146,7 @@ class LessonBookingAdmin(admin.ModelAdmin):
                         send_lesson_info_instructor.delay(lesson.id, task_log.id)
                         ScheduledEmail.objects.create(function_name='send_lesson_reminder',
                                                       schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=30),
-                                                      parameters={'lesson_id': lesson.id, 'user_id': obj.user.id})
+                                                      parameters={'lesson_id': lesson.id, 'user_id': obj.instructor.user.id})
 
 
 def close_lesson_request(model_admin, request, queryset):
