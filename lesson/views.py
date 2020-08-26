@@ -56,30 +56,10 @@ class LessonRequestView(views.APIView):
         if ser.is_valid():
             obj = ser.save()
             obj.refresh_from_db()  # to avoid trial_proposed_datetime as string, and get it as datetime
-            lesson = None
-            if request.user.lesson_bookings.count() == 0:
-                lb = LessonBooking.objects.create(user=request.user, quantity=1, total_amount=0, request=obj,
-                                                  description='Package trial', status=LessonBooking.TRIAL)
-                lesson = Lesson.objects.create(booking=lb,
-                                               scheduled_datetime=obj.trial_proposed_datetime,
-                                               scheduled_timezone=obj.trial_proposed_timezone,
-                                               )
-                ScheduledEmail.objects.create(function_name='send_reminder_grade_lesson',
-                                              schedule=obj.trial_proposed_datetime + timezone.timedelta(minutes=30),
-                                              parameters={'lesson_id': lesson.id})
-                ScheduledEmail.objects.create(function_name='send_lesson_reminder',
-                                              schedule=lesson.scheduled_datetime + timezone.timedelta(minutes=30),
-                                              parameters={'lesson_id': lesson.id, 'user_id': obj.user.id})
             task_log = TaskLog.objects.create(task_name='send_request_alert_instructors',
                                               args={'request_id': obj.id})
             send_request_alert_instructors.delay(obj.id, task_log.id)
-            if lesson:
-                task_log = TaskLog.objects.create(task_name='send_lesson_info_student_parent',
-                                                  args={'lesson_id': lesson.id})
-                send_lesson_info_student_parent.delay(lesson.id, task_log.id)
-                add_to_email_list_v2(request.user, ['trial_to_booking'], ['customer_to_request'])
-            else:
-                add_to_email_list_v2(request.user, [], ['trial_to_booking'])
+            add_to_email_list_v2(request.user, [], ['trial_to_booking'])
             ser = sers.LessonRequestDetailSerializer(obj, context={'user': request.user})
             return Response(ser.data, status=status.HTTP_200_OK)
         else:
@@ -598,6 +578,12 @@ class LessonCreateView(views.APIView):
                     task_log = TaskLog.objects.create(task_name='send_alert_request_compatible_instructors',
                                                       args={'request_id': lr.id})
                     send_alert_request_compatible_instructors.delay(lr.id, task_log.id)
+                    ScheduledEmail.objects.create(function_name='send_reminder_grade_lesson',
+                                                  schedule=lesson.scheduled_datetime + timezone.timedelta(minutes=30),
+                                                  parameters={'lesson_id': lesson.id})
+                    ScheduledEmail.objects.create(function_name='send_lesson_reminder',
+                                                  schedule=lesson.scheduled_datetime + timezone.timedelta(minutes=30),
+                                                  parameters={'lesson_id': lesson.id, 'user_id': lr.user.id})
 
             ser = sers.LessonSerializer(lesson, context={'user': request.user})
             task_log = TaskLog.objects.create(task_name='send_trial_confirm', args={'lesson_id': lesson.id})
