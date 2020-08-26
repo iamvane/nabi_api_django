@@ -139,6 +139,7 @@ HUBSPOT_TEMPLATE_IDS = {
     'password_reset': '27908644852',
     'referral_email': '27965493956',
     'reminder_grade_lesson': '33862645099',
+    'reschedule_lesson': '33901672785',
     'reset_password': '29982554190',   # when user is crated via admin
     'trial_confirmation': '33858534253',
 }

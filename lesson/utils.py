@@ -404,6 +404,45 @@ def send_lesson_reminder(lesson_id, user_id):
         return None
 
 
+def send_reschedule_lesson(lesson, user, prev_datetime):
+    """Send parent/student an email when a lesson is rescheduled"""
+    from accounts.models import get_account
+    target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
+    account = get_account(user)
+    if account.timezone:
+        time_zone = account.timezone
+    else:
+        time_zone = account.get_timezone_from_location_zipcode()
+    prev_sch_date, prev_sch_time = get_date_time_from_datetime_timezone(prev_datetime,
+                                                                        time_zone,
+                                                                        date_format='%A %-d, %Y',
+                                                                        time_format='%-I:%M %p')
+    sch_date, sch_time = get_date_time_from_datetime_timezone(prev_datetime,
+                                                              time_zone,
+                                                              date_format='%A %-d, %Y',
+                                                              time_format='%-I:%M %p')
+    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['reschedule_lesson'],
+            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.booking.user.email},
+            "customProperties": [
+                {"name": "first_name", "value": user.first_name},
+                {"name": "previous_date", "value": f'{prev_sch_date} {prev_sch_time} ({time_zone})'},
+                {"name": "current_date", "value": f'{sch_date} {sch_time} ({time_zone})'},
+            ]
+            }
+    resp = requests.post(target_url, json=data)
+    if resp.status_code != 200:
+        send_admin_email("[INFO] Info about a rescheduled lesson could not be send",
+                         """An email about a rescheduled lesson could not be send to email {}, lesson id {}.
+
+                         The status_code for API's response was {} and content: {}""".format(
+                             user.email,
+                             lesson.id,
+                             resp.status_code,
+                             resp.content.decode())
+                         )
+        return None
+
+
 def get_benefit_to_redeem(user):
     """Return a dict for existing benefit that can be used in lesson booking"""
     data = {'free_lesson': False, 'discount': 0, 'amount': 0, 'source': ''}

@@ -34,7 +34,7 @@ from .models import Application, InstructorAcceptanceLessonRequest, LessonBookin
 from .tasks import (send_application_alert, send_alert_admin_request_closed, send_alert_request_compatible_instructors,
                     send_booking_alert, send_booking_invoice, send_info_grade_lesson,
                     send_request_alert_instructors, send_lesson_info_student_parent, send_instructor_grade_lesson,
-                    send_trial_confirm)
+                    send_lesson_reschedule, send_trial_confirm)
 from .utils import get_benefit_to_redeem, get_booking_data, get_booking_data_v2, PACKAGES
 
 User = get_user_model()
@@ -601,6 +601,7 @@ class LessonView(views.APIView):
         except Lesson.DoesNotExist:
             return Response({'message': 'There is not Lesson with provided id'},
                             status=status.HTTP_400_BAD_REQUEST)
+        previous_datetime = lesson.scheduled_datetime
         ser_data = sers.UpdateLessonSerializer(data=request.data, instance=lesson, partial=True)
         if ser_data.is_valid():
             lesson = ser_data.save()
@@ -611,6 +612,10 @@ class LessonView(views.APIView):
                 send_info_grade_lesson.delay(lesson.id, task_log.id)
                 task_log = TaskLog.objects.create(task_name='send_instructor_grade_lesson', args={'lessons_id': lesson.id})
                 send_instructor_grade_lesson.delay(lesson.id, task_log.id)
+            elif request.data.get('date'):
+                task_log = TaskLog.objects.create(task_name='send_lesson_reschedule',
+                                                  args={'lesson_id': lesson.id, 'previous_datetime': previous_datetime})
+                send_lesson_reschedule.delay(lesson.id, task_log.id, previous_datetime)
             return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response(ser_data.errors, status=status.HTTP_400_BAD_REQUEST)

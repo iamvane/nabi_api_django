@@ -17,7 +17,7 @@ from .models import Application, Lesson, LessonBooking, LessonRequest
 from .utils import (send_alert_application, send_alert_booking, send_alert_request_instructor, send_info_lesson_graded,
                     send_info_lesson_student_parent, send_info_lesson_instructor,
                     send_info_request_available, send_invoice_booking, send_instructor_lesson_graded,
-                    send_trial_confirmation)
+                    send_reschedule_lesson, send_trial_confirmation)
 
 
 @app.task
@@ -210,3 +210,12 @@ def send_scheduled_email():
         func(**sch_email.parameters)
         sch_email.executed = True
         sch_email.save()
+
+
+@app.task
+def send_lesson_reschedule(lesson_id, task_log_id, prev_datetime):
+    lesson = Lesson.objects.get(id=lesson_id)
+    send_reschedule_lesson(lesson, lesson.booking.user, prev_datetime)
+    if lesson.instructor:
+        send_reschedule_lesson(lesson, lesson.instructor.user, prev_datetime)
+    TaskLog.objects.filter(id=task_log_id).delete()
