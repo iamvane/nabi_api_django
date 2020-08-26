@@ -584,7 +584,7 @@ class LessonCreateView(views.APIView):
                                                   schedule=lesson.scheduled_datetime + timezone.timedelta(minutes=30),
                                                   parameters={'lesson_id': lesson.id})
                     ScheduledEmail.objects.create(function_name='send_lesson_reminder',
-                                                  schedule=lesson.scheduled_datetime + timezone.timedelta(minutes=30),
+                                                  schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=30),
                                                   parameters={'lesson_id': lesson.id, 'user_id': lr.user.id})
 
             ser = sers.LessonSerializer(lesson, context={'user': request.user})
@@ -613,6 +613,12 @@ class LessonView(views.APIView):
                 task_log = TaskLog.objects.create(task_name='send_instructor_grade_lesson', args={'lessons_id': lesson.id})
                 send_instructor_grade_lesson.delay(lesson.id, task_log.id)
             elif request.data.get('date'):
+                ScheduledEmail.objects.filter(function_name='send_reminder_grade_lesson',
+                                              parameters={'lesson': lesson.id})\
+                    .update(schedule=lesson.scheduled_datetime + timezone.timedelta(minutes=30))
+                ScheduledEmail.objects.filter(function_name='send_lesson_reminder',
+                                              parameters={'lesson': lesson.id}) \
+                    .update(schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=30))
                 task_log = TaskLog.objects.create(task_name='send_lesson_reschedule',
                                                   args={'lesson_id': lesson.id, 'previous_datetime': previous_datetime})
                 send_lesson_reschedule.delay(lesson.id, task_log.id, previous_datetime)
