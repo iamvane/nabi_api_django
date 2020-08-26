@@ -578,6 +578,8 @@ class LessonCreateView(views.APIView):
                     task_log = TaskLog.objects.create(task_name='send_alert_request_compatible_instructors',
                                                       args={'request_id': lr.id})
                     send_alert_request_compatible_instructors.delay(lr.id, task_log.id)
+                    task_log = TaskLog.objects.create(task_name='send_trial_confirm', args={'lesson_id': lesson.id})
+                    send_trial_confirm.delay(lesson.id, task_log.id)
                     ScheduledEmail.objects.create(function_name='send_reminder_grade_lesson',
                                                   schedule=lesson.scheduled_datetime + timezone.timedelta(minutes=30),
                                                   parameters={'lesson_id': lesson.id})
@@ -586,8 +588,6 @@ class LessonCreateView(views.APIView):
                                                   parameters={'lesson_id': lesson.id, 'user_id': lr.user.id})
 
             ser = sers.LessonSerializer(lesson, context={'user': request.user})
-            task_log = TaskLog.objects.create(task_name='send_trial_confirm', args={'lesson_id': lesson.id})
-            send_trial_confirm.delay(lesson.id, task_log.id)
             return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
