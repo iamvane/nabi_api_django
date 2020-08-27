@@ -614,13 +614,28 @@ class LessonView(views.APIView):
                 send_instructor_grade_lesson.delay(lesson.id, task_log.id)
             elif request.data.get('date'):
                 ScheduledEmail.objects.filter(function_name='send_reminder_grade_lesson',
-                                              parameters={'lesson': lesson.id})\
-                    .update(schedule=lesson.scheduled_datetime + timezone.timedelta(minutes=30))
+                                              parameters={'lesson': lesson.id},
+                                              executed=False)\
+                        .update(schedule=lesson.scheduled_datetime + timezone.timedelta(minutes=30))
+                if not ScheduledEmail.objects.filter(function_name='send_reminder_grade_lesson',
+                                                     parameters={'lesson': lesson.id},
+                                                     executed=False).exists():
+                    ScheduledEmail.objects.create(function_name='send_reminder_grade_lesson',
+                                                  schedule=lesson.scheduled_datetime + timezone.timedelta(minutes=30),
+                                                  parameters={'lesson_id': lesson.id})
                 ScheduledEmail.objects.filter(function_name='send_lesson_reminder',
-                                              parameters={'lesson': lesson.id}) \
+                                              parameters={'lesson': lesson.id},
+                                              executed=False) \
                     .update(schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=30))
+                if not ScheduledEmail.objects.filter(function_name='send_lesson_reminder',
+                                                     parameters={'lesson': lesson.id},
+                                                     executed=False).exists():
+                    ScheduledEmail.objects.create(function_name='send_lesson_reminder',
+                                                  schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=30),
+                                                  parameters={'lesson_id': lesson.id, 'user_id': lesson.booking.user.id})
                 task_log = TaskLog.objects.create(task_name='send_lesson_reschedule',
-                                                  args={'lesson_id': lesson.id, 'previous_datetime': previous_datetime})
+                                                  args={'lesson_id': lesson.id,
+                                                        'previous_datetime': previous_datetime.strftime('%Y-%m-%d %I:%M %p')})
                 send_lesson_reschedule.delay(lesson.id, task_log.id, previous_datetime)
             return Response(ser.data, status=status.HTTP_200_OK)
         else:
