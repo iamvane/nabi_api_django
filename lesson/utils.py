@@ -383,7 +383,7 @@ def send_lesson_reminder(lesson_id, user_id):
                                                               date_format='%A %-d, %Y',
                                                               time_format='%I:%M %p')
     target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
-    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['reminder_grade_lesson'],
+    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['reminder_lesson'],
             "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": user.email},
             "customProperties": [
                 {"name": "first_name", "value": user.first_name},
