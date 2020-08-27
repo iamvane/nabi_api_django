@@ -658,7 +658,8 @@ class LessonView(views.APIView):
         ser = sers.LessonSerializer(lesson, context={'user': request.user})
         return Response(ser.data, status=status.HTTP_200_OK)                             
 
-                                 class LessonConfirmationView(views.APIView):
+
+class LessonConfirmationView(views.APIView):
 
     def put(self, request, lesson_id):
         try:
