@@ -13,7 +13,8 @@ from payments.models import Payment
 
 from .models import Application, InstructorAcceptanceLessonRequest, Lesson, LessonBooking, LessonRequest
 from .tasks import (send_application_alert, send_booking_alert, send_booking_invoice, send_info_grade_lesson,
-                    send_request_alert_instructors, send_lesson_info_student_parent, send_lesson_info_instructor, 
+                    send_lesson_reschedule, send_request_alert_instructors, send_lesson_info_student_parent,
+                    send_lesson_info_instructor,
                     send_instructor_grade_lesson)
 
 User = get_user_model()
@@ -279,6 +280,33 @@ class LessonAdmin(admin.ModelAdmin):
                 send_info_grade_lesson.delay(obj.id, task_log.id)
                 task_log = TaskLog.objects.create(task_name='send_instructor_grade_lesson', args={'lesson_id': obj.id})
                 send_instructor_grade_lesson.delay(obj.id, task_log.id)    
+            if 'scheduled_datetime' in form.changed_data:
+                ScheduledEmail.objects.filter(function_name='send_reminder_grade_lesson',
+                                              parameters={'lesson_id': obj.id},
+                                              executed=False) \
+                    .update(schedule=obj.scheduled_datetime + timezone.timedelta(minutes=30))
+                if not ScheduledEmail.objects.filter(function_name='send_reminder_grade_lesson',
+                                                     parameters={'lesson_id': obj.id},
+                                                     executed=False).exists():
+                    ScheduledEmail.objects.create(function_name='send_reminder_grade_lesson',
+                                                  schedule=obj.scheduled_datetime + timezone.timedelta(minutes=30),
+                                                  parameters={'lesson_id': obj.id})
+                ScheduledEmail.objects.filter(function_name='send_lesson_reminder',
+                                              parameters={'lesson_id': obj.id},
+                                              executed=False) \
+                    .update(schedule=obj.scheduled_datetime - timezone.timedelta(minutes=30))
+                if not ScheduledEmail.objects.filter(function_name='send_lesson_reminder',
+                                                     parameters={'lesson_id': obj.id},
+                                                     executed=False).exists():
+                    ScheduledEmail.objects.create(function_name='send_lesson_reminder',
+                                                  schedule=obj.scheduled_datetime - timezone.timedelta(minutes=30),
+                                                  parameters={'lesson_id': obj.id,
+                                                              'user_id': obj.booking.user.id})
+                task_log = TaskLog.objects.create(task_name='send_lesson_reschedule',
+                                                  args={'lesson_id': obj.id,
+                                                        'previous_datetime': form.initial['scheduled_datetime'].strftime(
+                                                            '%Y-%m-%d %I:%M %p')})
+                send_lesson_reschedule.delay(obj.id, task_log.id, form.initial['scheduled_datetime'])
 
 
 admin.site.register(Application, ApplicationAdmin)
