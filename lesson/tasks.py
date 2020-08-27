@@ -84,7 +84,7 @@ def send_info_grade_lesson(lesson_id, task_log_id):
 
 @app.task
 def send_instructor_grade_lesson(lesson_id, task_log_id):
-    """Send an email to student or parent when a lesson is graded"""
+    """Send confirmation email to instructor when a lesson is graded"""
     lesson = Lesson.objects.get(id=lesson_id)
     send_instructor_lesson_graded(lesson)
     TaskLog.objects.filter(id=task_log_id).delete()
