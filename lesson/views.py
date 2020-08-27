@@ -34,6 +34,7 @@ from .models import Application, InstructorAcceptanceLessonRequest, LessonBookin
 from .tasks import (send_alert_admin_request_closed, send_alert_request_compatible_instructors,
                     send_booking_alert, send_booking_invoice, send_info_grade_lesson, send_instructor_grade_lesson,
                     send_lesson_reschedule, send_request_alert_instructors, send_trial_confirm)
+
 from .utils import get_benefit_to_redeem, get_booking_data, get_booking_data_v2, PACKAGES
 
 User = get_user_model()
@@ -656,6 +657,76 @@ class LessonView(views.APIView):
                             status=status.HTTP_400_BAD_REQUEST)
         ser = sers.LessonSerializer(lesson, context={'user': request.user})
         return Response(ser.data, status=status.HTTP_200_OK)                             
+
+                                 class LessonConfirmationView(views.APIView):
+
+    def put(self, request, lesson_id):
+        try:
+            lesson = Lesson.objects.get(id=lesson_id)
+        except Lesson.DoesNotExist:
+            return Response({'message': 'There is no Lesson with provided id'},
+                            status=status.HTTP_400_BAD_REQUESTION)
+        previous_datetime = lesson.scheduled_datetime
+        ser_data = sers.UpdateLessonSerializer(
+            data=request.data, instance=lesson, partial=True)
+
+        ser_data = sers.UpdateLessonSerializer(
+            data=request.data, instance=lesson, partial=True)
+
+        if ser_data.is_valid():
+            lesson = ser_data.save()
+            # to avoid scheduled_datetime as string, and get it as datetime
+            lesson.refresh_from_db()
+            ser = sers.LessonSerilizer(
+                lesson, context={'instructor': request.instructor})
+            if request.data.get('grade'):
+                task_log = TaskLog.objects.create(
+                    task_name='send_instructor_grade_lesson', args={'lesson_id': lesson.id})
+                send_instructor_grade_lesson.delay(
+                    lesson.id, task_log.id, previous_datetime)
+            elif request.data.get('date'):
+                task_log = TaskLog.objects.create(
+                    task_name='send_instructor_grade_lesson', args={'lesson_id': lesson.id})
+                send_instructor_grade_lesson.delay(lesson.id, task_log.id)
+
+            return Response(ser.data, status=status.HTTP_200_OK)
+
+        else:
+            return Response(ser_data.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request, lesson_id):
+        try:
+            lesson = Lesson.objects.get(id=lesson_id)
+        except Lesson.DoesNotExist:
+            return Response({'message': 'There is no Lesson with provided id'},
+                            status=status.HTTP_400_BAD_REQUEST)
+            ser = sers.LessonSerializer(lesson, context={'user': request.user})
+            return Response(ser.data, status=status.HTTP_200_OK)
+
+
+class AcceptLessonRequestView(views.APIView):
+    permission_classes = (AllowAny, )
+
+    def post(self, request):
+        if isinstance(request.user, AnonymousUser):
+            try:
+                user = User.objects.get(id=request.data.get('userId'))
+            except User.DoesNotExist:
+                return Response({'message': 'There is not User with provided id'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            user = request.user
+        try:
+            lr = LessonRequest.objects.get(id=request.data.get('requestId'))
+        except LessonRequest.DoesNotExist:
+            return Response({'message': 'There is not LessonRequest with provided id'}, status=status.HTTP_400_BAD_REQUEST)
+        decision = request.data.get('accept')
+        if decision is None:
+            return Response({'message': 'Value of accept (true/false) is missing'}, status=status.HTTP_400_BAD_REQUEST)
+        if not user.is_instructor():
+            return Response({'message': 'You must be an instructor'}, status=status.HTTP_400_BAD_REQUEST)
+        InstructorAcceptanceLessonRequest.objects.create(
+            instructor=user.instructor, request=lr, accept=decision)
+        return Response({'message': 'Decision registered'}, status=status.HTTP_200_OK)
 
 
 class AcceptLessonRequestView(views.APIView):
