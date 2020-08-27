@@ -273,9 +273,7 @@ class LessonAdmin(admin.ModelAdmin):
             if 'grade' in form.changed_data:
                 task_log = TaskLog.objects.create(task_name='send_info_grade_lesson', args={'lesson_id': obj.id})
                 send_info_grade_lesson.delay(obj.id, task_log.id)
-            elif 'grade' in form.changed_data:
-                task_log = TaskLog.objects.create(
-                    task_name='send_instructor_grade_lesson', args={'lesson_id': obj.id})
+                task_log = TaskLog.objects.create(task_name='send_instructor_grade_lesson', args={'lesson_id': obj.id})
                 send_instructor_grade_lesson.delay(obj.id, task_log.id)    
 
 
