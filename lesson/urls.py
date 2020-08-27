@@ -17,6 +17,6 @@ urlpatterns = [
     path('accept-request/', views.AcceptLessonRequestView.as_view()),
     path('lessons/', views.LessonCreateView.as_view()),
     path('lessons/<int:lesson_id>/', views.LessonView.as_view()),
-        path('lessons/<str:email>/<int:instructor_id>/', views.LessonConfirmationView.as_view()),
+    path('lessons/<str:email>/<int:instructor_id>/', views.LessonConfirmationView.as_view()),
     path('lessons/<str:email>/', views.LessonConfirmationView.as_view())
 ]
