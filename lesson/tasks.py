@@ -213,8 +213,10 @@ def send_scheduled_email():
 
 
 @app.task
-def send_lesson_reschedule(lesson_id, task_log_id, prev_datetime):
+def send_lesson_reschedule(lesson_id, task_log_id, prev_datetime_str):
     lesson = Lesson.objects.get(id=lesson_id)
+    prev_datetime = timezone.datetime.strptime(prev_datetime_str, '%Y-%m-%dT%H:%M:%S%Z')
+    prev_datetime = prev_datetime.astimezone(timezone.pytz.UTC)
     send_reschedule_lesson(lesson, lesson.booking.user, prev_datetime)
     if lesson.instructor:
         send_reschedule_lesson(lesson, lesson.instructor.user, prev_datetime)
