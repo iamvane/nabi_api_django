@@ -187,7 +187,7 @@ class InstructorProfileSerializer(serializers.Serializer):
         return instance
 
     def validate_zoom_link(self, value):
-        if re.match(r'^https://.+\.zoom\.us/j/[\d]+.*', value):
+        if re.match(r'^https://.*zoom\.us/j/[\d]{3,}.*', value):
             return value
         else:
             raise serializers.ValidationError("Does not look like a valid Zoom meeting link")
