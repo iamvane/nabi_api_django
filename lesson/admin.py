@@ -306,7 +306,8 @@ class LessonAdmin(admin.ModelAdmin):
                                                   args={'lesson_id': obj.id,
                                                         'previous_datetime': form.initial['scheduled_datetime'].strftime(
                                                             '%Y-%m-%d %I:%M %p')})
-                send_lesson_reschedule.delay(obj.id, task_log.id, form.initial['scheduled_datetime'])
+                send_lesson_reschedule.delay(obj.id, task_log.id,
+                                             form.initial['scheduled_datetime'].astimezone(timezone.utc).strftime('%Y-%m-%d %H:%M:%S'))
 
 
 admin.site.register(Application, ApplicationAdmin)

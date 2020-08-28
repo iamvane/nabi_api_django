@@ -636,7 +636,8 @@ class LessonView(views.APIView):
                 task_log = TaskLog.objects.create(task_name='send_lesson_reschedule',
                                                   args={'lesson_id': lesson.id,
                                                         'previous_datetime': previous_datetime.strftime('%Y-%m-%d %I:%M %p')})
-                send_lesson_reschedule.delay(lesson.id, task_log.id, previous_datetime)
+                send_lesson_reschedule.delay(lesson.id, task_log.id,
+                                             previous_datetime.astimezone(timezone.utc).strftime('%Y-%m-%d %H:%M:%S'))
             return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response(ser_data.errors, status=status.HTTP_400_BAD_REQUEST)
