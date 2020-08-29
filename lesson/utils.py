@@ -272,6 +272,7 @@ def send_instructor_lesson_graded(lesson):
                          )
         return None
 
+
 def send_info_request_available(lesson_request, instructor, scheduled_datetime):
     """Send email to instructor about a request available, which match his data"""
     target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
