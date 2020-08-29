@@ -616,6 +616,8 @@ class LessonView(views.APIView):
             if request.data.get('grade'):
                 task_log = TaskLog.objects.create(task_name='send_info_grade_lesson', args={'lesson_id': lesson.id})
                 send_info_grade_lesson.delay(lesson.id, task_log.id)
+                task_log = TaskLog.objects.create(task_name='send_instructor_grade_lesson', args={'lessons_id': lesson.id})
+                send_instructor_grade_lesson.delay(lesson.id, task_log.id)
             return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response(ser_data.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -627,50 +629,7 @@ class LessonView(views.APIView):
             return Response({'message': 'There is not Lesson with provided id'},
                             status=status.HTTP_400_BAD_REQUEST)
         ser = sers.LessonSerializer(lesson, context={'user': request.user})
-        return Response(ser.data, status=status.HTTP_200_OK)
-
-
-class LessonConfirmationView(views.APIView):
-
-    def put(self, request, lesson_id):
-        try:
-            lesson = Lesson.objects.get(id=lesson_id)
-        except Lesson.DoesNotExist:
-            return Response({'message': 'There is no Lesson with provided id'},
-                            status=status.HTTP_400_BAD_REQUESTION)
-        previous_datetime = lesson.scheduled_datetime
-        ser_data = sers.UpdateLessonSerializer(
-            data=request.data, instance=lesson, partial=True)
-        if ser_data.is_valid():
-            lesson = ser_data.save()
-            # to avoid scheduled_datetime as string, and get it as datetime
-            lesson.refresh_from_db()
-            ser = sers.LessonSerializer(
-                lesson, context={'instructor': request.instructor})
-            if request.data.get('grade'):
-                task_log = TaskLog.objects.create(
-                    task_name='send_instructor_grade_lesson', args={'lesson_id': lesson.id})
-                send_instructor_grade_lesson.delay(
-                    lesson.id, task_log.id, previous_datetime)
-            elif request.data.get('date'):
-                task_log = TaskLog.objects.create(
-                    task_name='send_instructor_grade_lesson', args={'lesson_id': lesson.id})
-                send_instructor_grade_lesson.delay(lesson.id, task_log.id)
-
-            return Response(ser.data, status=status.HTTP_200_OK)
-
-        else:
-            return Response(ser_data.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def get(self, request, lesson_id):
-        try:
-            lesson = Lesson.objects.get(id=lesson_id)
-        except Lesson.DoesNotExist:
-            return Response({'message': 'There is no Lesson with provided id'},
-                            status=status.HTTP_400_BAD_REQUEST)
-            ser = sers.LessonSerializer(lesson, context={'user': request.user})
-            return Response(ser.data, status=status.HTTP_200_OK)
-                                 
+        return Response(ser.data, status=status.HTTP_200_OK)                             
 
 class AcceptLessonRequestView(views.APIView):
     permission_classes = (AllowAny, )
