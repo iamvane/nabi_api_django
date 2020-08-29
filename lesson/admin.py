@@ -12,7 +12,8 @@ from payments.models import Payment
 
 from .models import Application, InstructorAcceptanceLessonRequest, Lesson, LessonBooking, LessonRequest
 from .tasks import (send_application_alert, send_booking_alert, send_booking_invoice, send_info_grade_lesson,
-                    send_request_alert_instructors, send_lesson_info_student_parent, send_lesson_info_instructor)
+                    send_request_alert_instructors, send_lesson_info_student_parent, send_lesson_info_instructor, 
+                    send_instructor_grade_lesson)
 
 User = get_user_model()
 
@@ -272,6 +273,8 @@ class LessonAdmin(admin.ModelAdmin):
             if 'grade' in form.changed_data:
                 task_log = TaskLog.objects.create(task_name='send_info_grade_lesson', args={'lesson_id': obj.id})
                 send_info_grade_lesson.delay(obj.id, task_log.id)
+                task_log = TaskLog.objects.create(task_name='send_instructor_grade_lesson', args={'lesson_id': obj.id})
+                send_instructor_grade_lesson.delay(obj.id, task_log.id)    
 
 
 admin.site.register(Application, ApplicationAdmin)

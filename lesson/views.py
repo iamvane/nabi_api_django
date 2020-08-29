@@ -32,7 +32,7 @@ from . import serializers as sers
 from .models import Application, InstructorAcceptanceLessonRequest, LessonBooking, LessonRequest, Lesson
 from .tasks import (send_application_alert, send_alert_admin_request_closed, send_alert_request_compatible_instructors,
                     send_booking_alert, send_booking_invoice, send_info_grade_lesson,
-                    send_request_alert_instructors, send_lesson_info_student_parent)
+                    send_request_alert_instructors, send_lesson_info_student_parent, send_instructor_grade_lesson)
 from .utils import get_benefit_to_redeem, get_booking_data, get_booking_data_v2, PACKAGES
 
 User = get_user_model()
@@ -616,6 +616,8 @@ class LessonView(views.APIView):
             if request.data.get('grade'):
                 task_log = TaskLog.objects.create(task_name='send_info_grade_lesson', args={'lesson_id': lesson.id})
                 send_info_grade_lesson.delay(lesson.id, task_log.id)
+                task_log = TaskLog.objects.create(task_name='send_instructor_grade_lesson', args={'lessons_id': lesson.id})
+                send_instructor_grade_lesson.delay(lesson.id, task_log.id)
             return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response(ser_data.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -627,8 +629,7 @@ class LessonView(views.APIView):
             return Response({'message': 'There is not Lesson with provided id'},
                             status=status.HTTP_400_BAD_REQUEST)
         ser = sers.LessonSerializer(lesson, context={'user': request.user})
-        return Response(ser.data, status=status.HTTP_200_OK)
-
+        return Response(ser.data, status=status.HTTP_200_OK)                             
 
 class AcceptLessonRequestView(views.APIView):
     permission_classes = (AllowAny, )
