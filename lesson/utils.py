@@ -269,6 +269,7 @@ def send_instructor_lesson_graded(lesson):
                                                                                              resp.content.decode())
                          )
         return None
+      
               
 def send_info_request_available(lesson_request, instructor, scheduled_datetime):
     """Send email to instructor about a request available, which match his data"""
