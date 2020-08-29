@@ -900,3 +900,10 @@ class InstructorReviews(views.APIView):
             return Response(ser_data.data, status=status.HTTP_200_OK)
         else:
             return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request, pk):
+        try:
+            instructor = Instructor.objects.get(id=pk)
+        except Instructor.DoesNotExist:
+            return Response({'message': 'There is not instructor with provided id'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'instructorName': instructor.display_name}, status=status.HTTP_200_OK)
