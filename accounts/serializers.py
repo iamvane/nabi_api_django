@@ -1252,10 +1252,11 @@ class StudentDashboardSerializer(serializers.ModelSerializer):
     instrument = serializers.SerializerMethodField()
     lessons = serializers.SerializerMethodField()
     nextLesson = serializers.SerializerMethodField()
+    missingReviews = serializers.SerializerMethodField()
 
     class Meta:
         model = Student
-        fields = ['id', 'name', 'instrument', 'nextLesson', 'lessons']
+        fields = ['id', 'name', 'instrument', 'nextLesson', 'lessons', 'missingReviews']
 
     def get_instrument(self, instance):
         student_details = instance.user.student_details.first()
@@ -1275,16 +1276,31 @@ class StudentDashboardSerializer(serializers.ModelSerializer):
         ser = LessonDataSerializer(instance.get_lessons(), many=True, context={'user': instance.user})
         return ser.data
 
+    def get_missingReviews(self, instance):
+        data = []
+        ins_ant = 0
+        student_details = {}
+        for lesson in instance.get_lessons().filter(status=Lesson.SCHEDULED, scheduled_datetime__lt=timezone.now()) \
+                .order_by('instructor_id').all():
+            if not student_details:
+                student_details = lesson.booking.student_details()
+            if ins_ant != lesson.instructor_id:
+                data.append({'instructorId': lesson.instructor.id, 'instructorName': lesson.instructor.display_name,
+                             'studentName': student_details.get('name')})
+                ins_ant = lesson.instructor_id
+        return data
+
 
 class TiedStudentParentDashboardSerializer(serializers.ModelSerializer):
     """To return data from Parent model"""
     instrument = serializers.SerializerMethodField()
     lessons = serializers.SerializerMethodField()
     nextLesson = serializers.SerializerMethodField()
+    missingReviews = serializers.SerializerMethodField()
 
     class Meta:
         model = TiedStudent
-        fields = ['id', 'name', 'instrument', 'nextLesson', 'lessons', ]
+        fields = ['id', 'name', 'instrument', 'nextLesson', 'lessons', 'missingReviews', ]
 
     def get_instrument(self, instance):
         if hasattr(instance, 'tied_student_details') and instance.tied_student_details.instrument:
@@ -1302,6 +1318,20 @@ class TiedStudentParentDashboardSerializer(serializers.ModelSerializer):
         from lesson.serializers import LessonDataSerializer
         ser = LessonDataSerializer(instance.get_lessons(), many=True, context={'user': instance.parent.user})
         return ser.data
+
+    def get_missingReviews(self, instance):
+        data = []
+        ins_ant = 0
+        student_details = {}
+        for lesson in instance.get_lessons().filter(status=Lesson.SCHEDULED, scheduled_datetime__lt=timezone.now())\
+                .order_by('instructor_id').all():
+            if not student_details:
+                student_details = lesson.booking.student_details()
+            if ins_ant != lesson.instructor_id:
+                data.append({'instructorId': lesson.instructor.id, 'instructorName': lesson.instructor.display_name,
+                             'studentName': student_details.get('name')})
+                ins_ant = lesson.instructor_id
+        return data
 
 
 class CreateInstructorReviewSerializer(serializers.ModelSerializer):
