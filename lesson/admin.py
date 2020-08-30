@@ -12,10 +12,9 @@ from lesson.models import Instrument
 from payments.models import Payment
 
 from .models import Application, InstructorAcceptanceLessonRequest, Lesson, LessonBooking, LessonRequest
-from .tasks import (send_application_alert, send_booking_alert, send_booking_invoice, send_info_grade_lesson,
-                    send_lesson_reschedule, send_request_alert_instructors, send_lesson_info_student_parent,
-                    send_lesson_info_instructor,
-                    send_instructor_grade_lesson)
+from .tasks import (send_booking_alert, send_booking_invoice, send_info_grade_lesson,
+                    send_instructor_grade_lesson, send_lesson_reschedule, send_lesson_info_instructor,
+                    send_lesson_info_student_parent, send_request_alert_instructors)
 
 User = get_user_model()
 
