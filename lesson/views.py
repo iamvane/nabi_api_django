@@ -655,6 +655,7 @@ class LessonView(views.APIView):
         ser = sers.LessonSerializer(lesson, context={'user': request.user})
         return Response(ser.data, status=status.HTTP_200_OK)                             
 
+
 class AcceptLessonRequestView(views.APIView):
     permission_classes = (AllowAny, )
 
