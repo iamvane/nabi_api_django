@@ -423,7 +423,7 @@ def send_reschedule_lesson(lesson, user, prev_datetime):
                                                               date_format='%A %b %-d, %Y',
                                                               time_format='%-I:%M %p')
     data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['reschedule_lesson'],
-            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.booking.user.email},
+            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": user.email},
             "customProperties": [
                 {"name": "first_name", "value": user.first_name},
                 {"name": "previous_date", "value": f'{prev_sch_date} {prev_sch_time} ({time_zone})'},
