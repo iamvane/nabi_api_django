@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from accounts.models import Instructor, Parent, Student, TiedStudent
 from core.constants import *
+from core.models import ScheduledEmail
 from payments.models import Payment
 
 from lesson.utils import get_date_time_from_datetime_timezone, get_next_date_same_weekday
@@ -169,12 +170,22 @@ class LessonBooking(models.Model):
         next_datetime = dt.datetime.combine(next_date, last_lesson.scheduled_datetime.time(),
                                             tzinfo=last_lesson.scheduled_datetime.tzinfo)
         for i in range(self.quantity):
-            Lesson.objects.create(booking=self,
-                                  scheduled_datetime=next_datetime,
-                                  scheduled_timezone=last_lesson.scheduled_timezone,
-                                  instructor=self.instructor,
-                                  rate=self.rate,
-                                  status=Lesson.SCHEDULED)
+            lesson = Lesson.objects.create(booking=self,
+                                           scheduled_datetime=next_datetime,
+                                           scheduled_timezone=last_lesson.scheduled_timezone,
+                                           instructor=self.instructor,
+                                           rate=self.rate,
+                                           status=Lesson.SCHEDULED)
+            ScheduledEmail.objects.create(function_name='send_reminder_grade_lesson',
+                                          schedule=lesson.scheduled_datetime + timezone.timedelta(minutes=30),
+                                          parameters={'lesson_id': lesson.id})
+            ScheduledEmail.objects.create(function_name='send_lesson_reminder',
+                                          schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=60),
+                                          parameters={'lesson_id': lesson.id, 'user_id': lesson.booking.user.id})
+            if lesson.instructor:
+                ScheduledEmail.objects.create(function_name='send_lesson_reminder',
+                                              schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=60),
+                                              parameters={'lesson_id': lesson.id, 'user_id': lesson.instructor.user.id})
             next_date = next_date + dt.timedelta(days=7)
             next_datetime = dt.datetime.combine(next_date, last_lesson.scheduled_datetime.time(),
                                                 tzinfo=last_lesson.scheduled_datetime.tzinfo)
