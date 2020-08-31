@@ -320,7 +320,7 @@ def send_trial_confirmation(lesson):
     student_details = lesson.booking.student_details()
     sch_date, sch_time = get_date_time_from_datetime_timezone(lesson.scheduled_datetime,
                                                               time_zone,
-                                                              date_format='%A %b %-dth',
+                                                              date_format='%A %b %-d',
                                                               time_format='%-I:%M %p')
     data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['trial_confirmation'],
             "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.booking.user.email},
