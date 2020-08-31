@@ -248,6 +248,7 @@ def send_info_lesson_graded(lesson):
                          )
         return None
 
+
 def send_instructor_lesson_graded(lesson):
     """Send email notification to instructor once lesson is graded"""
     target_url = 'https://api.hubapi.com/email/public/v1singleEmail/send?hapikey={}'.format(
@@ -415,11 +416,11 @@ def send_reschedule_lesson(lesson, user, prev_datetime):
         time_zone = account.get_timezone_from_location_zipcode()
     prev_sch_date, prev_sch_time = get_date_time_from_datetime_timezone(prev_datetime,
                                                                         time_zone,
-                                                                        date_format='%A %-d, %Y',
+                                                                        date_format='%A %b %-d, %Y',
                                                                         time_format='%-I:%M %p')
     sch_date, sch_time = get_date_time_from_datetime_timezone(lesson.scheduled_datetime,
                                                               time_zone,
-                                                              date_format='%A %-d, %Y',
+                                                              date_format='%A %b %-d, %Y',
                                                               time_format='%-I:%M %p')
     data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['reschedule_lesson'],
             "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.booking.user.email},
