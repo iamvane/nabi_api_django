@@ -417,7 +417,7 @@ def send_reschedule_lesson(lesson, user, prev_datetime):
                                                                         time_zone,
                                                                         date_format='%A %-d, %Y',
                                                                         time_format='%-I:%M %p')
-    sch_date, sch_time = get_date_time_from_datetime_timezone(prev_datetime,
+    sch_date, sch_time = get_date_time_from_datetime_timezone(lesson.scheduled_datetime,
                                                               time_zone,
                                                               date_format='%A %-d, %Y',
                                                               time_format='%-I:%M %p')
