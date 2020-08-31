@@ -173,7 +173,7 @@ class InstructorAdmin(admin.ModelAdmin):
                 raise Exception(e.status, e.response)
             obj.coordinates = Point(results[0].coordinates[1], results[0].coordinates[0], srid=4326)
         if 'zoom_link' in form.changed_data:
-            if re.match(r'^https://.+\.zoom\.us/j/[\d]+.*', obj.zoom_link) is None:
+            if re.match(r'^https://.*zoom\.us/j/[\d]{3,}.*', obj.zoom_link) is None:
                 raise Exception('Wrong Zoom meeting link')
         super().save_model(request, obj, form, change)
 
