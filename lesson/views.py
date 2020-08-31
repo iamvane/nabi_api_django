@@ -581,8 +581,11 @@ class LessonCreateView(views.APIView):
                                                   schedule=lesson.scheduled_datetime + timezone.timedelta(minutes=30),
                                                   parameters={'lesson_id': lesson.id})
                     ScheduledEmail.objects.create(function_name='send_lesson_reminder',
-                                                  schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=30),
+                                                  schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=60),
                                                   parameters={'lesson_id': lesson.id, 'user_id': lr.user.id})
+                    ScheduledEmail.objects.create(function_name='send_lesson_reminder',
+                                                  schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=60),
+                                                  parameters={'lesson_id': lesson.id, 'user_id': lesson.instructor.user.id})
 
             ser = sers.LessonSerializer(lesson, context={'user': request.user})
             return Response(ser.data, status=status.HTTP_200_OK)
@@ -623,13 +626,17 @@ class LessonView(views.APIView):
                 ScheduledEmail.objects.filter(function_name='send_lesson_reminder',
                                               parameters={'lesson_id': lesson.id},
                                               executed=False) \
-                    .update(schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=30))
+                    .update(schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=60))
                 if not ScheduledEmail.objects.filter(function_name='send_lesson_reminder',
                                                      parameters={'lesson_id': lesson.id},
                                                      executed=False).exists():
                     ScheduledEmail.objects.create(function_name='send_lesson_reminder',
-                                                  schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=30),
+                                                  schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=60),
                                                   parameters={'lesson_id': lesson.id, 'user_id': lesson.booking.user.id})
+                    ScheduledEmail.objects.create(function_name='send_lesson_reminder',
+                                                  schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=60),
+                                                  parameters={'lesson_id': lesson.id,
+                                                              'user_id': lesson.instructor.user.id})
                 task_log = TaskLog.objects.create(task_name='send_lesson_reschedule',
                                                   args={'lesson_id': lesson.id,
                                                         'previous_datetime': previous_datetime.strftime('%Y-%m-%d %I:%M %p')})
