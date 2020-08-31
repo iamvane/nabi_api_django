@@ -301,6 +301,11 @@ class LessonAdmin(admin.ModelAdmin):
                                                   schedule=obj.scheduled_datetime - timezone.timedelta(minutes=30),
                                                   parameters={'lesson_id': obj.id,
                                                               'user_id': obj.booking.user.id})
+                    if obj.instructor:
+                        ScheduledEmail.objects.create(function_name='send_lesson_reminder',
+                                                      schedule=obj.scheduled_datetime - timezone.timedelta(minutes=30),
+                                                      parameters={'lesson_id': obj.id,
+                                                                  'user_id': obj.instructor.user.id})
                 task_log = TaskLog.objects.create(task_name='send_lesson_reschedule',
                                                   args={'lesson_id': obj.id,
                                                         'previous_datetime': form.initial['scheduled_datetime'].strftime(
