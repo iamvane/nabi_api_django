@@ -12,6 +12,7 @@ from django.db import transaction
 from django.db.models import Case, F, ObjectDoesNotExist, Q, When
 from django.db.models.functions import Cast
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 
 from rest_framework import status, views
 from rest_framework.pagination import PageNumberPagination
@@ -22,7 +23,7 @@ from accounts.models import TiedStudent, get_account
 from accounts.serializers import MinimalTiedStudentSerializer
 from accounts.utils import get_stripe_customer_id, add_to_email_list_v2
 from core.constants import *
-from core.models import TaskLog, UserBenefits
+from core.models import ScheduledEmail, TaskLog, UserBenefits
 from core.permissions import AccessForInstructor, AccessForParentOrStudent
 from core.utils import send_admin_email
 from payments.models import Payment
@@ -30,9 +31,9 @@ from payments.serializers import GetPaymentMethodSerializer
 
 from . import serializers as sers
 from .models import Application, InstructorAcceptanceLessonRequest, LessonBooking, LessonRequest, Lesson
-from .tasks import (send_application_alert, send_alert_admin_request_closed, send_alert_request_compatible_instructors,
-                    send_booking_alert, send_booking_invoice, send_info_grade_lesson,
-                    send_request_alert_instructors, send_lesson_info_student_parent, send_instructor_grade_lesson)
+from .tasks import (send_alert_admin_request_closed, send_alert_request_compatible_instructors,
+                    send_booking_alert, send_booking_invoice, send_info_grade_lesson, send_instructor_grade_lesson,
+                    send_lesson_reschedule, send_request_alert_instructors, send_trial_confirm)
 from .utils import get_benefit_to_redeem, get_booking_data, get_booking_data_v2, PACKAGES
 
 User = get_user_model()
@@ -54,24 +55,10 @@ class LessonRequestView(views.APIView):
         if ser.is_valid():
             obj = ser.save()
             obj.refresh_from_db()  # to avoid trial_proposed_datetime as string, and get it as datetime
-            lesson = None
-            if request.user.lesson_bookings.count() == 0:
-                lb = LessonBooking.objects.create(user=request.user, quantity=1, total_amount=0, request=obj,
-                                                  description='Package trial', status=LessonBooking.TRIAL)
-                lesson = Lesson.objects.create(booking=lb,
-                                               scheduled_datetime=obj.trial_proposed_datetime,
-                                               scheduled_timezone=obj.trial_proposed_timezone,
-                                               )
             task_log = TaskLog.objects.create(task_name='send_request_alert_instructors',
                                               args={'request_id': obj.id})
             send_request_alert_instructors.delay(obj.id, task_log.id)
-            if lesson:
-                task_log = TaskLog.objects.create(task_name='send_lesson_info_student_parent',
-                                                  args={'lesson_id': lesson.id})
-                send_lesson_info_student_parent.delay(lesson.id, task_log.id)
-                add_to_email_list_v2(request.user, ['trial_to_booking'], ['customer_to_request'])
-            else:
-                add_to_email_list_v2(request.user, [], ['trial_to_booking'])
+            add_to_email_list_v2(request.user, [], ['trial_to_booking'])
             ser = sers.LessonRequestDetailSerializer(obj, context={'user': request.user})
             return Response(ser.data, status=status.HTTP_200_OK)
         else:
@@ -230,8 +217,6 @@ class ApplicationView(views.APIView):
         if ser.is_valid():
             obj = ser.save()
             ser_data = sers.ApplicationListSerializer(obj, many=False)
-            # task_log = TaskLog.objects.create(task_name='send_application_alert', args={'application_id': obj.id})
-            # send_application_alert.delay(obj.id, task_log.id)
             if Application.objects.filter(request=obj.request).count() == 7:
                 obj.request.status = LESSON_REQUEST_CLOSED
                 obj.request.save()
@@ -590,11 +575,20 @@ class LessonCreateView(views.APIView):
                     task_log = TaskLog.objects.create(task_name='send_alert_request_compatible_instructors',
                                                       args={'request_id': lr.id})
                     send_alert_request_compatible_instructors.delay(lr.id, task_log.id)
+                    task_log = TaskLog.objects.create(task_name='send_trial_confirm', args={'lesson_id': lesson.id})
+                    send_trial_confirm.delay(lesson.id, task_log.id)
+                    ScheduledEmail.objects.create(function_name='send_reminder_grade_lesson',
+                                                  schedule=lesson.scheduled_datetime + timezone.timedelta(minutes=30),
+                                                  parameters={'lesson_id': lesson.id})
+                    ScheduledEmail.objects.create(function_name='send_lesson_reminder',
+                                                  schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=60),
+                                                  parameters={'lesson_id': lesson.id, 'user_id': lr.user.id})
+                    if lesson.instructor:
+                        ScheduledEmail.objects.create(function_name='send_lesson_reminder',
+                                                      schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=60),
+                                                      parameters={'lesson_id': lesson.id, 'user_id': lesson.instructor.user.id})
 
             ser = sers.LessonSerializer(lesson, context={'user': request.user})
-            # task_log = TaskLog.objects.create(task_name='send_lesson_info_student_parent',
-            #                                   args={'lesson_id': lesson.id})
-            # send_lesson_info_student_parent.delay(lesson.id, task_log.id)
             return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -608,6 +602,7 @@ class LessonView(views.APIView):
         except Lesson.DoesNotExist:
             return Response({'message': 'There is not Lesson with provided id'},
                             status=status.HTTP_400_BAD_REQUEST)
+        previous_datetime = lesson.scheduled_datetime
         ser_data = sers.UpdateLessonSerializer(data=request.data, instance=lesson, partial=True)
         if ser_data.is_valid():
             lesson = ser_data.save()
@@ -618,6 +613,37 @@ class LessonView(views.APIView):
                 send_info_grade_lesson.delay(lesson.id, task_log.id)
                 task_log = TaskLog.objects.create(task_name='send_instructor_grade_lesson', args={'lessons_id': lesson.id})
                 send_instructor_grade_lesson.delay(lesson.id, task_log.id)
+            elif request.data.get('date'):
+                ScheduledEmail.objects.filter(function_name='send_reminder_grade_lesson',
+                                              parameters={'lesson_id': lesson.id},
+                                              executed=False)\
+                        .update(schedule=lesson.scheduled_datetime + timezone.timedelta(minutes=30))
+                if not ScheduledEmail.objects.filter(function_name='send_reminder_grade_lesson',
+                                                     parameters={'lesson_id': lesson.id},
+                                                     executed=False).exists():
+                    ScheduledEmail.objects.create(function_name='send_reminder_grade_lesson',
+                                                  schedule=lesson.scheduled_datetime + timezone.timedelta(minutes=30),
+                                                  parameters={'lesson_id': lesson.id})
+                ScheduledEmail.objects.filter(function_name='send_lesson_reminder',
+                                              parameters={'lesson_id': lesson.id},
+                                              executed=False) \
+                    .update(schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=60))
+                if not ScheduledEmail.objects.filter(function_name='send_lesson_reminder',
+                                                     parameters={'lesson_id': lesson.id},
+                                                     executed=False).exists():
+                    ScheduledEmail.objects.create(function_name='send_lesson_reminder',
+                                                  schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=60),
+                                                  parameters={'lesson_id': lesson.id, 'user_id': lesson.booking.user.id})
+                    if lesson.instructor:
+                        ScheduledEmail.objects.create(function_name='send_lesson_reminder',
+                                                      schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=60),
+                                                      parameters={'lesson_id': lesson.id,
+                                                                  'user_id': lesson.instructor.user.id})
+                task_log = TaskLog.objects.create(task_name='send_lesson_reschedule',
+                                                  args={'lesson_id': lesson.id,
+                                                        'previous_datetime': previous_datetime.strftime('%Y-%m-%d %I:%M %p')})
+                send_lesson_reschedule.delay(lesson.id, task_log.id,
+                                             previous_datetime.astimezone(timezone.utc).strftime('%Y-%m-%d %H:%M:%S'))
             return Response(ser.data, status=status.HTTP_200_OK)
         else:
             return Response(ser_data.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -630,6 +656,7 @@ class LessonView(views.APIView):
                             status=status.HTTP_400_BAD_REQUEST)
         ser = sers.LessonSerializer(lesson, context={'user': request.user})
         return Response(ser.data, status=status.HTTP_200_OK)                             
+
 
 class AcceptLessonRequestView(views.APIView):
     permission_classes = (AllowAny, )

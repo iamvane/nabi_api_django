@@ -189,3 +189,11 @@ class TaskLog(models.Model):
     task_name = models.CharField(max_length=200)
     args = JSONField()
     registered_at = models.DateTimeField(auto_now_add=True)
+
+
+class ScheduledEmail(models.Model):
+    """To store info about email to send at specific datetime"""
+    function_name = models.CharField(max_length=150)
+    schedule = models.DateTimeField()
+    executed = models.BooleanField(blank=True, default=False)
+    parameters = JSONField(blank=True, default=dict)
