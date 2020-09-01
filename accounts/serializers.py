@@ -1280,7 +1280,9 @@ class StudentDashboardSerializer(serializers.ModelSerializer):
         data = []
         ins_ant = 0
         student_details = {}
-        for lesson in instance.get_lessons().filter(status=Lesson.SCHEDULED, scheduled_datetime__lt=timezone.now()) \
+        for lesson in instance.get_lessons().filter(status=Lesson.SCHEDULED,
+                                                    scheduled_datetime__lt=timezone.now(),
+                                                    instructor__isnull=False) \
                 .order_by('instructor_id').all():
             if not student_details:
                 student_details = lesson.booking.student_details()
@@ -1323,7 +1325,9 @@ class TiedStudentParentDashboardSerializer(serializers.ModelSerializer):
         data = []
         ins_ant = 0
         student_details = {}
-        for lesson in instance.get_lessons().filter(status=Lesson.SCHEDULED, scheduled_datetime__lt=timezone.now())\
+        for lesson in instance.get_lessons().filter(status=Lesson.SCHEDULED,
+                                                    scheduled_datetime__lt=timezone.now(),
+                                                    instructor__isnull=False)\
                 .order_by('instructor_id').all():
             if not student_details:
                 student_details = lesson.booking.student_details()
