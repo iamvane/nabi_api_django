@@ -144,9 +144,12 @@ class LessonBookingAdmin(admin.ModelAdmin):
                         task_log = TaskLog.objects.create(task_name='send_lesson_info_instructor',
                                                           args={'lesson_id': lesson.id})
                         send_lesson_info_instructor.delay(lesson.id, task_log.id)
+                        ScheduledEmail.objects.create(function_name='send_reminder_grade_lesson',
+                                                      schedule=lesson.scheduled_datetime + timezone.timedelta(minutes=30),
+                                                      parameters={'lesson_id': lesson.id})
                         ScheduledEmail.objects.create(function_name='send_lesson_reminder',
                                                       schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=30),
-                                                      parameters={'lesson_id': lesson.id, 'user_id': obj.instructor.user.id})
+                                                      parameters={'lesson_id': lesson.id, 'user_id': lesson.instructor.user.id})
 
 
 def close_lesson_request(model_admin, request, queryset):
@@ -299,7 +302,7 @@ class LessonAdmin(admin.ModelAdmin):
                     .update(schedule=obj.scheduled_datetime + timezone.timedelta(minutes=30))
                 if not ScheduledEmail.objects.filter(function_name='send_reminder_grade_lesson',
                                                      parameters={'lesson_id': obj.id},
-                                                     executed=False).exists():
+                                                     executed=False).exists() and obj.instructor:
                     ScheduledEmail.objects.create(function_name='send_reminder_grade_lesson',
                                                   schedule=obj.scheduled_datetime + timezone.timedelta(minutes=30),
                                                   parameters={'lesson_id': obj.id})

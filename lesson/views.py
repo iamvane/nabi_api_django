@@ -577,9 +577,6 @@ class LessonCreateView(views.APIView):
                     send_alert_request_compatible_instructors.delay(lr.id, task_log.id)
                     task_log = TaskLog.objects.create(task_name='send_trial_confirm', args={'lesson_id': lesson.id})
                     send_trial_confirm.delay(lesson.id, task_log.id)
-                    ScheduledEmail.objects.create(function_name='send_reminder_grade_lesson',
-                                                  schedule=lesson.scheduled_datetime + timezone.timedelta(minutes=30),
-                                                  parameters={'lesson_id': lesson.id})
                     ScheduledEmail.objects.create(function_name='send_lesson_reminder',
                                                   schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=60),
                                                   parameters={'lesson_id': lesson.id, 'user_id': lr.user.id})
@@ -587,6 +584,9 @@ class LessonCreateView(views.APIView):
                         ScheduledEmail.objects.create(function_name='send_lesson_reminder',
                                                       schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=60),
                                                       parameters={'lesson_id': lesson.id, 'user_id': lesson.instructor.user.id})
+                        ScheduledEmail.objects.create(function_name='send_reminder_grade_lesson',
+                                                      schedule=lesson.scheduled_datetime + timezone.timedelta(minutes=30),
+                                                      parameters={'lesson_id': lesson.id})
 
             ser = sers.LessonSerializer(lesson, context={'user': request.user})
             return Response(ser.data, status=status.HTTP_200_OK)
@@ -620,7 +620,7 @@ class LessonView(views.APIView):
                         .update(schedule=lesson.scheduled_datetime + timezone.timedelta(minutes=30))
                 if not ScheduledEmail.objects.filter(function_name='send_reminder_grade_lesson',
                                                      parameters={'lesson_id': lesson.id},
-                                                     executed=False).exists():
+                                                     executed=False).exists() and lesson.instructor:
                     ScheduledEmail.objects.create(function_name='send_reminder_grade_lesson',
                                                   schedule=lesson.scheduled_datetime + timezone.timedelta(minutes=30),
                                                   parameters={'lesson_id': lesson.id})

@@ -176,13 +176,13 @@ class LessonBooking(models.Model):
                                            instructor=self.instructor,
                                            rate=self.rate,
                                            status=Lesson.SCHEDULED)
-            ScheduledEmail.objects.create(function_name='send_reminder_grade_lesson',
-                                          schedule=lesson.scheduled_datetime + timezone.timedelta(minutes=30),
-                                          parameters={'lesson_id': lesson.id})
             ScheduledEmail.objects.create(function_name='send_lesson_reminder',
                                           schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=60),
                                           parameters={'lesson_id': lesson.id, 'user_id': lesson.booking.user.id})
             if lesson.instructor:
+                ScheduledEmail.objects.create(function_name='send_reminder_grade_lesson',
+                                              schedule=lesson.scheduled_datetime + timezone.timedelta(minutes=30),
+                                              parameters={'lesson_id': lesson.id})
                 ScheduledEmail.objects.create(function_name='send_lesson_reminder',
                                               schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=60),
                                               parameters={'lesson_id': lesson.id, 'user_id': lesson.instructor.user.id})
