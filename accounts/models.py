@@ -282,9 +282,9 @@ class Instructor(IUserAccount):
             return False
         if not self.bio_title or not self.bio_description:
             return False
-        if self.instruments.count() == 0 or self.instructorlessonsize_set.count() == 0 \
-                or self.instructoragegroup_set.count() == 0 or self.instructorlessonrate_set.count() == 0 \
-                or not hasattr(self, 'availability') or self.employment.count() == 0 or self.education.count() == 0:
+        if self.instruments.count() == 0 or self.instructoragegroup_set.count() == 0 \
+                or self.instructorlessonrate_set.count() == 0 or not hasattr(self, 'availability') \
+                or self.employment.count() == 0 or self.education.count() == 0:
             return False
         return True
 
