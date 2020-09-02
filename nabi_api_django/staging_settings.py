@@ -4,6 +4,7 @@ import sentry_sdk
 from celery.schedules import crontab
 from datetime import timedelta
 from sentry_sdk.integrations.django import DjangoIntegration
+from django.core.exceptions import DisallowedHost
 
 ALLOWED_HOSTS = [
     'localhost',
@@ -75,8 +76,9 @@ DEFAULT_FILE_STORAGE = 'core.storage_backends.MediaStorage'
 
 def omit_invalid_hostname(event, hint):
     """Don't log django.DisallowedHost errors in Sentry"""
-    if 'log_record' in hint:
-        if hint['log_record'].name == 'django.security.DisallowedHost':
+    if 'exc_info' in hint:
+        exc_type, exc_value, tb = hint['exc_info']
+        if isinstance(exc_value, DisallowedHost):
             return None
     return event
 
@@ -89,14 +91,15 @@ sentry_sdk.init(
 
 # # # Celery configuration # # #
 CELERY_BEAT_SCHEDULE = {
+    # Note: here, hours are taken in UTC
     # 'send-reminder-request': {
     #     'task': 'lesson.tasks.update_list_users_without_request',
     #     'schedule': crontab(hour='9'),
     # },
-    'alert-user-without-coordinates-location': {
-        'task': 'accounts.tasks.alert_user_without_location_coordinates',
-        'schedule': crontab(hour='7', minute='0'),
-    },
+    # 'alert-user-without-coordinates-location': {
+    #     'task': 'accounts.tasks.alert_user_without_location_coordinates',
+    #     'schedule': crontab(hour='7', minute='0'),
+    # },
     'send-lesson-scheduled-emails': {
         'task': 'lesson.tasks.send_scheduled_email',
         'schedule': crontab(minute='*/5'),
