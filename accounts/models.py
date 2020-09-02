@@ -282,9 +282,9 @@ class Instructor(IUserAccount):
             return False
         if not self.bio_title or not self.bio_description:
             return False
-        if self.instruments.count() == 0 or self.instructorlessonsize_set.count() == 0 \
-                or self.instructoragegroup_set.count() == 0 or self.instructorlessonrate_set.count() == 0 \
-                or not hasattr(self, 'availability') or self.employment.count() == 0 or self.education.count() == 0:
+        if self.instruments.count() == 0 or self.instructoragegroup_set.count() == 0 \
+                or self.instructorlessonrate_set.count() == 0 or not hasattr(self, 'availability') \
+                or self.employment.count() == 0 or self.education.count() == 0:
             return False
         return True
 
@@ -311,8 +311,6 @@ class Instructor(IUserAccount):
             list_fields.append('location')
         if not self.avatar:
             list_fields.append('avatar')
-        if not self.video:
-            list_fields.append('video')
         if self.user.reference_requests.count() == 0:
             list_fields.append('references')
         try:
@@ -328,8 +326,6 @@ class Instructor(IUserAccount):
             list_fields.append('bio_description')
         if self.instruments.count() == 0:
             list_fields.append('instruments')
-        if self.instructorlessonsize_set.count() == 0:
-            list_fields.append('lesson_size')
         if self.instructoragegroup_set.count() == 0:
             list_fields.append('age_group')
         if self.instructorlessonrate_set.count() == 0:
@@ -368,8 +364,6 @@ class Instructor(IUserAccount):
             list_fields.append('location')
         if not self.avatar:
             list_fields.append('avatar')
-        if not self.video:
-            list_fields.append('video')
         if self.user.reference_requests.count() == 0:
             list_fields.append('references')
         try:
@@ -385,8 +379,6 @@ class Instructor(IUserAccount):
             list_fields.append('bioDescription')
         if self.instruments.count() == 0:
             list_fields.append('instruments')
-        if self.instructorlessonsize_set.count() == 0:
-            list_fields.append('lessonSize')
         if self.instructoragegroup_set.count() == 0:
             list_fields.append('ageGroup')
         if self.instructorlessonrate_set.count() == 0:
