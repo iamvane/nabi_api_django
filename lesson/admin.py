@@ -158,6 +158,9 @@ class LessonRequestAdmin(admin.ModelAdmin):
     list_display = ('pk', 'get_user_email',  'title', 'get_instrument', 'status')
     list_filter = ('status', 'skill_level', 'place_for_lessons', 'lessons_duration', )
     list_select_related = ('user', 'instrument', )
+    readonly_fields = ('get_timezone', )
+    fields = ('user', 'title', 'message', 'instrument', 'skill_level', 'place_for_lessons', 'lessons_duration',
+              'travel_distance', 'trial_proposed_datetime', 'get_timezone', 'students', 'status', )
     filter_horizontal = ('students', )
     search_fields = ('user__email', 'instrument__name', )
     actions = [close_lesson_request, ]
@@ -173,6 +176,10 @@ class LessonRequestAdmin(admin.ModelAdmin):
         return obj.instrument.name
     get_instrument.short_description = 'instrument'
     get_instrument.admin_order_field = 'instrument__name'
+
+    def get_timezone(self, obj):
+        return 'US/Eastern'
+    get_timezone.short_description = 'timezone'
 
     def change_view(self, request, object_id, form_url='', extra_context=None):
         self.object_id = object_id
@@ -203,6 +210,7 @@ class LessonRequestAdmin(admin.ModelAdmin):
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
     def save_model(self, request, obj, form, change):
+        obj.trial_proposed_timezone = 'US/Eastern'
         super().save_model(request, obj, form, change)
         if not change:
             lesson = None
@@ -232,9 +240,9 @@ class LessonRequestAdmin(admin.ModelAdmin):
 
 
 class LessonAdmin(admin.ModelAdmin):
-    fields = ('booking', 'student_details', 'scheduled_datetime', 'scheduled_timezone',
+    fields = ('booking', 'student_details', 'scheduled_datetime', 'get_timezone',
               'instructor', 'rate', 'grade', 'comment', 'status')
-    readonly_fields = ('student_details', )
+    readonly_fields = ('student_details', 'get_timezone', )
     list_display = ('pk', 'get_booking_id', 'get_user_email', 'get_instructor', 'scheduled_datetime')
     list_filter = ('status', )
     search_fields = ('booking__user__email', 'instructor__user__email')
@@ -251,6 +259,10 @@ class LessonAdmin(admin.ModelAdmin):
         else:
             return f'{obj.instructor.display_name} ({obj.instructor.user.email})'
 
+    def get_timezone(self, obj):
+        return 'US/Eastern'
+    get_timezone.short_description = 'timezone'
+
     get_user_email.short_description = 'user email'
     get_user_email.admin_order_field = 'booking__user__email'
     get_booking_id.short_description = 'booking id'
@@ -266,6 +278,7 @@ class LessonAdmin(admin.ModelAdmin):
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def save_model(self, request, obj, form, change):
+        obj.scheduled_timezone = 'US/Eastern'
         if not change and (obj.booking.quantity - obj.booking.lessons.count()) == 0:
             raise Exception('There is not available lessons for selected booking')
         super().save_model(request, obj, form, change)
