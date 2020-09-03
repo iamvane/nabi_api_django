@@ -203,8 +203,8 @@ class IUserAccount(models.Model):
         data = []
         ins_ant = 0
         stu_name = ''
-        for lesson in self.get_trial_lessons().filter(status=Lesson.COMPLETE,
-                                                      instructor__isnull=False).order_by('instructor_id').all():
+        for lesson in self.get_lessons().filter(status=Lesson.COMPLETE,
+                                                instructor__isnull=False).order_by('instructor_id').all():
             if InstructorReview.objects.filter(user=self.user, instructor=lesson.instructor).exists():
                 continue
             student_details = lesson.booking.student_details()
