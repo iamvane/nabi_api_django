@@ -146,4 +146,5 @@ HUBSPOT_TEMPLATE_IDS = {
     'reschedule_lesson': '33901672785',
     'reset_password': '29982554190',   # when user is crated via admin
     'trial_confirmation': '33858534253',
+    'instructor_lesson_completed: 33722126483' # when instructor has graded a lesson
 }
