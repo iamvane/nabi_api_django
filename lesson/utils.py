@@ -247,12 +247,13 @@ def send_info_lesson_graded(lesson):
                                                                                              resp.content.decode())
                          )
         return None
+              
 
-def send_instructor_lesson_graded(lesson):
+def send_instructor_lesson_completed(lesson):
     """Send email notification to instructor once lesson is graded"""
     target_url = 'https://api.hubapi.com/email/public/v1singleEmail/send?hapikey={}'.format(
         settings.HUBSPOT_API_KEY)
-    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['instructor_grade_confirmation'],
+    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['instructor_lesson_co'],
             "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.instructor.user.email},
             "customProperties": [
                 {"name": "instructor_name", "value": lesson.instructor.display_name},
