@@ -460,7 +460,7 @@ class LessonRequestListItemSerializer(serializers.ModelSerializer):
 
     def get_applied(self, instance):
         if self.context.get('user') and self.context.get('user').is_instructor():
-            return Application.objects.filter(request=instance, instructor=self.context.get('user').instructor).exists()
+            return instance.acceptances.filter(instructor=self.context.get('user').instructor).exists()
         return False
 
     def get_displayName(self, instance):
