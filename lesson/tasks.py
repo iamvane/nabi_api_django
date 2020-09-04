@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from accounts.models import get_account, Instructor, InstructorInstruments
 from accounts.utils import add_to_email_list, get_availaibility_field_name_from_dt, remove_contact_from_email_list
-from core.constants import PLACE_FOR_LESSONS_ONLINE
+from core.constants import PLACE_FOR_LESSONS_ONLINE, SKILL_LEVEL_BEGINNER, SKILL_LEVEL_INTERMEDIATE, SKILL_LEVEL_ADVANCED
 from core.models import TaskLog, User
 from core.utils import send_admin_email
 from nabi_api_django.celery_config import app
@@ -184,8 +184,14 @@ def send_admin_assign_instructor(request_id):
 @app.task
 def send_alert_request_compatible_instructors(request_id, task_log_id):
     l_req = LessonRequest.objects.get(id=request_id)
+    if l_req.skill_level == SKILL_LEVEL_BEGINNER:
+        req_levels = [SKILL_LEVEL_BEGINNER, SKILL_LEVEL_INTERMEDIATE, SKILL_LEVEL_ADVANCED]
+    elif l_req.skill_level == SKILL_LEVEL_INTERMEDIATE:
+        req_levels = [SKILL_LEVEL_INTERMEDIATE, SKILL_LEVEL_ADVANCED]
+    else:
+        req_levels = [SKILL_LEVEL_ADVANCED]
     instructors_instrument = InstructorInstruments.objects.filter(instrument_id=l_req.instrument_id,
-                                                                  skill_level=l_req.skill_level)\
+                                                                  skill_level__in=req_levels)\
         .values_list('instructor_id', flat=True)
     instructor_ids = []
     next_lesson = Lesson.get_next_lesson(l_req.user, l_req.students.first())
