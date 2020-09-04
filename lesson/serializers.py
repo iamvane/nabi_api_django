@@ -440,7 +440,7 @@ class LessonRequestListItemSerializer(serializers.ModelSerializer):
         model = LessonRequest
         fields = ('id', 'avatar', 'displayName', 'instrument',  'lessonDuration', 'location', 'requestMessage',
                   'placeForLessons', 'skillLevel', 'studentDetails', 'requestTitle', 'application', 'applied',
-                  'date', 'time', 'timezone')
+                  'status', 'date', 'time', 'timezone')
 
     def get_avatar(self, instance):
         account = get_account(instance.user)
