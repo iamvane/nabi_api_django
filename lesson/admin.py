@@ -12,9 +12,9 @@ from lesson.models import Instrument
 from payments.models import Payment
 
 from .models import Application, InstructorAcceptanceLessonRequest, Lesson, LessonBooking, LessonRequest
-from .tasks import (send_booking_alert, send_booking_invoice, send_info_grade_lesson,
-                    send_instructor_grade_lesson, send_lesson_reschedule, send_lesson_info_instructor,
-                    send_lesson_info_student_parent, send_request_alert_instructors)
+from .tasks import (send_alert_request_compatible_instructors, send_booking_alert, send_booking_invoice,
+                    send_info_grade_lesson, send_instructor_grade_lesson, send_lesson_reschedule,
+                    send_lesson_info_instructor, send_lesson_info_student_parent, send_request_alert_instructors)
 
 User = get_user_model()
 
@@ -235,8 +235,11 @@ class LessonRequestAdmin(admin.ModelAdmin):
             if lesson:
                 task_log = TaskLog.objects.create(task_name='send_lesson_info_student_parent', args={'lesson_id': lesson.id})
                 send_lesson_info_student_parent.delay(lesson.id, task_log.id)
-            task_log = TaskLog.objects.create(task_name='send_request_alert_instructors', args={'request_id': obj.id})
-            send_request_alert_instructors.delay(obj.id, task_log.id)
+                task_log = TaskLog.objects.create(task_name='send_alert_request_compatible_instructors',
+                                                  args={'request_id': obj.id})
+                send_alert_request_compatible_instructors.delay(obj.id, task_log.id)
+            # task_log = TaskLog.objects.create(task_name='send_request_alert_instructors', args={'request_id': obj.id})
+            # send_request_alert_instructors.delay(obj.id, task_log.id)
 
 
 class LessonAdmin(admin.ModelAdmin):

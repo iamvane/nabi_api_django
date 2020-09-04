@@ -194,17 +194,20 @@ def send_alert_request_compatible_instructors(request_id, task_log_id):
                                                                   skill_level__in=req_levels)\
         .values_list('instructor_id', flat=True)
     instructor_ids = []
-    next_lesson = Lesson.get_next_lesson(l_req.user, l_req.students.first())
-    for instructor in Instructor.objects.filter(id__in=instructors_instrument, complete=True):
-        if hasattr(instructor, 'availability'):
-            field_name = get_availaibility_field_name_from_dt(next_lesson.scheduled_datetime,
-                                                              instructor.timezone)
-            if getattr(instructor.availability, field_name):
-                instructor_ids.append(instructor.id)
-    for ins_id in instructor_ids:
-        send_info_request_available(l_req, Instructor.objects.get(id=ins_id), next_lesson.scheduled_datetime)
+    lesson = l_req.get_first_lesson()
+    if lesson is None:
+        send_admin_email('No lesson in booking', f"The lesson request {l_req.id} has not booking with a lesson registered,"
+                                                 f"then, check availability of instructor for lesson's date can't be done.")
+    else:
+        for instructor in Instructor.objects.filter(id__in=instructors_instrument, complete=True):
+            if hasattr(instructor, 'availability'):
+                field_name = get_availaibility_field_name_from_dt(lesson.scheduled_datetime, instructor.timezone)
+                if getattr(instructor.availability, field_name):
+                    instructor_ids.append(instructor.id)
+        for ins_id in instructor_ids:
+            send_info_request_available(l_req, Instructor.objects.get(id=ins_id), lesson.scheduled_datetime)
+        send_admin_assign_instructor.apply_async((l_req.id,), countdown=3600)
     TaskLog.objects.filter(id=task_log_id).delete()
-    send_admin_assign_instructor.apply_async((l_req.id, ), countdown=3600)
 
 
 @app.task
