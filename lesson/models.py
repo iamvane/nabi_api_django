@@ -57,6 +57,13 @@ class LessonRequest(models.Model):
         else:
             return min_age <= self.user.student.age <= max_age
 
+    def get_first_lesson(self):
+        """Get first """
+        if self.booking and self.booking.lessons:
+            return self.booking.lessons.order_by('scheduled_datetime').first()
+        else:
+            return None
+
 
 class Application(models.Model):
     request = models.ForeignKey(LessonRequest, related_name='applications', on_delete=models.PROTECT)
