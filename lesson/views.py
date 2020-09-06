@@ -35,7 +35,7 @@ from .tasks import (send_alert_admin_request_closed, send_alert_request_compatib
                     send_booking_alert, send_booking_invoice, send_info_grade_lesson,
                     send_lesson_reschedule, send_request_alert_instructors, send_trial_confirm,
                     send_lesson_info_student_parent, send_instructor_complete_lesson,
-                    send_instructor_complete_lesson)
+                    send_instructor_complete_lesson, send_admin_completed_instructor)
 from .utils import get_benefit_to_redeem, get_booking_data, get_booking_data_v2, PACKAGES
 
 User = get_user_model()
@@ -613,10 +613,9 @@ class LessonView(views.APIView):
             if request.data.get('grade'):
                 task_log = TaskLog.objects.create(task_name='send_info_grade_lesson', args={'lesson_id': lesson.id})
                 send_info_grade_lesson.delay(lesson.id, task_log.id)
-                task_log = TaskLog.objects.create(task_name='send_instructor_complete_lesson', args={'lessons_id': lesson.id})
+                task_log = TaskLog.objects.create(task_name='send_instructor_complete_lesson', args={'lesson_id': lesson.id})
                 send_instructor_complete_lesson.delay(lesson.id, task_log.id)
-                task_log = TaskLog.objects.create(task_name='send_admin_complete_instructor', args={'lesson_id': lesson.id})
-                send_instructor_complete_lesson.delay(lesson.id, task_log.id)
+                send_admin_completed_instructor.delay(lesson.id)
             elif request.data.get('date'):
                 ScheduledEmail.objects.filter(function_name='send_reminder_grade_lesson',
                                               parameters={'lesson_id': lesson.id},
