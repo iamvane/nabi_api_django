@@ -253,7 +253,7 @@ def send_instructor_lesson_completed(lesson):
     """Send email notification to instructor once lesson is graded"""
     target_url = 'https://api.hubapi.com/email/public/v1singleEmail/send?hapikey={}'.format(
         settings.HUBSPOT_API_KEY)
-    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['instructor_lesson_co'],
+    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['instructor_lesson_completed'],
             "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.instructor.user.email},
             "customProperties": [
                 {"name": "instructor_name", "value": lesson.instructor.display_name},
@@ -262,7 +262,7 @@ def send_instructor_lesson_completed(lesson):
     ]
     }
     resp = requests.post(target_url, json=data)
-    if resp.status.code != 200:
+    if resp.status_code != 200:
         send_admin_email("[INFO] Info about graded lesson email could not be sent",
                          """An email to info about a graded lesson could not be send to email {}, lesson id {}.
                          
