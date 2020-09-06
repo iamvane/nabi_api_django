@@ -292,12 +292,10 @@ class LessonAdmin(admin.ModelAdmin):
             send_lesson_info_student_parent.delay(obj.id, task_log.id)
         else:
             if 'grade' in form.changed_data:
-                if obj.student:
-                   task_log = TaskLog.objects.create(task_name='send_info_grade_lesson', args={'lesson_id': obj.id})
-                   send_info_grade_lesson.delay(obj.id, task_log.id)
-                elif obj.instructor:
-                   task_log = TaskLog.objects.create(task_name='send_instructor_lesson_complete', args={'lesson_id': obj.id})
-                   send_instructor_lesson_complete.delay(obj.id, task_log.id)
+                task_log = TaskLog.objects.create(task_name='send_info_grade_lesson', args={'lesson_id': obj.id})
+                send_info_grade_lesson.delay(obj.id, task_log.id)
+                task_log = TaskLog.objects.create(task_name='send_instructor_lesson_complete', args={'lesson_id': obj.id})
+                send_instructor_lesson_complete.delay(obj.id, task_log.id)
             if 'scheduled_datetime' in form.changed_data:
                 ScheduledEmail.objects.filter(function_name='send_reminder_grade_lesson',
                                               parameters={'lesson_id': obj.id},
