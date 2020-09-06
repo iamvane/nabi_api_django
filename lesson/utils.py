@@ -257,8 +257,6 @@ def send_instructor_lesson_completed(lesson):
             "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.instructor.user.email},
             "customProperties": [
                 {"name": "instructor_name", "value": lesson.instructor.display_name},
-                {"name": "grade", "value": lesson.grade},
-                {"name": "grade_comment", "value": lesson.comment},
     ]
     }
     resp = requests.post(target_url, json=data)
