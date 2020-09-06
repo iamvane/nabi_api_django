@@ -611,14 +611,12 @@ class LessonView(views.APIView):
             lesson.refresh_from_db()  # to avoid scheduled_datetime as string, and get it as datetime
             ser = sers.LessonSerializer(lesson, context={'user': request.user})
             if request.data.get('grade'):
-                if user.is_student:
-                   task_log = TaskLog.objects.create(task_name='send_info_grade_lesson', args={'lesson_id': lesson.id})
-                   send_info_grade_lesson.delay(lesson.id, task_log.id)
-                elif user.is_instructor:
-                   task_log = TaskLog.objects.create(task_name='send_instructor_complete_lesson', args={'lessons_id': lesson.id})
-                   send_instructor_complete_lesson.delay(lesson.id, task_log.id)
-                   task_log = TaskLog.objexts.create(task_name='send_admin_complete_instructor', args={'lesson_id': lesson.id})
-                   send_admin_complete_instructor.delay(lesson.id, task_log.id)
+                task_log = TaskLog.objects.create(task_name='send_info_grade_lesson', args={'lesson_id': lesson.id})
+                send_info_grade_lesson.delay(lesson.id, task_log.id)
+                task_log = TaskLog.objects.create(task_name='send_instructor_complete_lesson', args={'lessons_id': lesson.id})
+                send_instructor_complete_lesson.delay(lesson.id, task_log.id)
+                task_log = TaskLog.objects.create(task_name='send_admin_complete_instructor', args={'lesson_id': lesson.id})
+                send_admin_complete_instructor.delay(lesson.id, task_log.id)
             elif request.data.get('date'):
                 ScheduledEmail.objects.filter(function_name='send_reminder_grade_lesson',
                                               parameters={'lesson_id': lesson.id},
