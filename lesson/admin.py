@@ -13,9 +13,9 @@ from payments.models import Payment
 
 from .models import Application, InstructorAcceptanceLessonRequest, Lesson, LessonBooking, LessonRequest
 from .tasks import (send_alert_request_compatible_instructors, send_booking_alert, send_booking_invoice,
-                    send_info_grade_lesson, send_instructor_grade_lesson, send_lesson_reschedule,
+                    send_info_grade_lesson, send_lesson_reschedule,
                     send_lesson_info_instructor, send_lesson_info_student_parent, send_request_alert_instructors,
-                    send_instructor_lesson_complete)
+                    send_instructor_complete_lesson)
 
 User = get_user_model()
 
@@ -295,7 +295,7 @@ class LessonAdmin(admin.ModelAdmin):
                 task_log = TaskLog.objects.create(task_name='send_info_grade_lesson', args={'lesson_id': obj.id})
                 send_info_grade_lesson.delay(obj.id, task_log.id)
                 task_log = TaskLog.objects.create(task_name='send_instructor_lesson_complete', args={'lesson_id': obj.id})
-                send_instructor_lesson_complete.delay(obj.id, task_log.id)
+                send_instructor_complete_lesson.delay(obj.id, task_log.id)
             if 'scheduled_datetime' in form.changed_data:
                 ScheduledEmail.objects.filter(function_name='send_reminder_grade_lesson',
                                               parameters={'lesson_id': obj.id},
