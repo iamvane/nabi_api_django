@@ -16,8 +16,7 @@ from core.models import ScheduledEmail
 from .models import Application, Lesson, LessonBooking, LessonRequest
 from .utils import (send_alert_application, send_alert_booking, send_alert_request_instructor, send_info_lesson_graded,
                     send_info_lesson_student_parent, send_info_lesson_instructor,
-                    send_info_request_available, send_invoice_booking, send_instructor_lesson_graded,
-                    send_reschedule_lesson, send_trial_confirmation,
+                    send_info_request_available, send_invoice_booking, send_reschedule_lesson, send_trial_confirmation,
                     send_instructor_lesson_completed, )
 
 
@@ -86,12 +85,14 @@ def send_info_grade_lesson(lesson_id, task_log_id):
     send_info_lesson_graded(lesson)
     TaskLog.objects.filter(id=task_log_id).delete()
 
+
 @app.task
 def send_instructor_complete_lesson(lesson_id, task_log_id):
     """Send confirmation email to instructor when a lesson is graded"""
     lesson = Lesson.objects.get(id=lesson_id)
     send_instructor_lesson_completed(lesson)
     TaskLog.objects.filter(id=task_log_id).delete()
+
 
 @app.task
 def send_trial_confirm(lesson_id, task_log_id):
