@@ -678,5 +678,7 @@ class AcceptLessonRequestView(views.APIView):
             return Response({'message': 'Value of accept (true/false) is missing'}, status=status.HTTP_400_BAD_REQUEST)
         if not user.is_instructor():
             return Response({'message': 'You must be an instructor'}, status=status.HTTP_400_BAD_REQUEST)
+        if InstructorAcceptanceLessonRequest.objects.filter(instructor=user.instructor, request=lr).exists():
+            return Response({'message': 'You already applied to this request.'}, status=status.HTTP_400_BAD_REQUEST)
         InstructorAcceptanceLessonRequest.objects.create(instructor=user.instructor, request=lr, accept=decision)
         return Response({'message': 'Decision registered'}, status=status.HTTP_200_OK)
