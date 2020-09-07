@@ -188,6 +188,33 @@ class IUserAccount(models.Model):
             self.user.referral_token = token
             self.user.save()
 
+    def get_lessons(self):
+        from lesson.models import Lesson, LessonBooking
+        return Lesson.objects.filter(booking__in=LessonBooking.objects.filter(user=self.user).order_by('-id'))
+
+    def get_trial_lessons(self):
+        from lesson.models import Lesson, LessonBooking
+        return Lesson.objects.filter(booking__in=LessonBooking.objects.filter(user=self.user,
+                                                                              status=LessonBooking.TRIAL
+                                                                              ).order_by('-id'))
+
+    def get_missing_reviews(self):
+        from lesson.models import Lesson
+        data = []
+        ins_ant = 0
+        stu_name = ''
+        for lesson in self.get_lessons().filter(status=Lesson.COMPLETE,
+                                                instructor__isnull=False).order_by('instructor_id').all():
+            if InstructorReview.objects.filter(user=self.user, instructor=lesson.instructor).exists():
+                continue
+            student_details = lesson.booking.student_details()
+            if ins_ant != lesson.instructor_id or stu_name != student_details.get('name'):
+                data.append({'instructorId': lesson.instructor.id, 'instructorName': lesson.instructor.display_name,
+                             'studentName': student_details.get('name')})
+                ins_ant = lesson.instructor_id
+                stu_name = student_details.get('name')
+        return data
+
 
 class PhoneNumber(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -556,10 +583,6 @@ class Student(IUserAccount):
     @property
     def role(self):
         return 'Student'
-
-    def get_lessons(self):
-        from lesson.models import Lesson, LessonBooking
-        return Lesson.objects.filter(booking__in=LessonBooking.objects.filter(user=self.user).order_by('-id'))
 
 
 class TiedStudent(models.Model):

@@ -792,10 +792,10 @@ class DashboardView(views.APIView):
             data.update({'nextLesson': ser.data})
         elif request.user.is_parent():
             ser = sers.TiedStudentParentDashboardSerializer(request.user.parent.tied_students, many=True)
-            data = {'students': ser.data}
+            data = {'students': ser.data, 'missingFields': request.user.parent.get_missing_reviews()}
         elif request.user.is_student():
             ser = sers.StudentDashboardSerializer(request.user.student)
-            data = {'students': [ser.data]}
+            data = {'students': [ser.data], 'missingFields': request.user.student.get_missing_reviews()}
         else:
             return Response({}, status=status.HTTP_200_OK)
         return Response(data, status=status.HTTP_200_OK)
@@ -900,3 +900,10 @@ class InstructorReviews(views.APIView):
             return Response(ser_data.data, status=status.HTTP_200_OK)
         else:
             return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request, pk):
+        try:
+            instructor = Instructor.objects.get(id=pk)
+        except Instructor.DoesNotExist:
+            return Response({'message': 'There is not instructor with provided id'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'instructorName': instructor.display_name}, status=status.HTTP_200_OK)

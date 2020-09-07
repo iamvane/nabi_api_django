@@ -1255,7 +1255,7 @@ class StudentDashboardSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Student
-        fields = ['id', 'name', 'instrument', 'nextLesson', 'lessons']
+        fields = ['id', 'name', 'instrument', 'nextLesson', 'lessons', ]
 
     def get_instrument(self, instance):
         student_details = instance.user.student_details.first()
