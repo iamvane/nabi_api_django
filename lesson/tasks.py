@@ -16,8 +16,8 @@ from core.models import ScheduledEmail
 from .models import Application, Lesson, LessonBooking, LessonRequest
 from .utils import (send_alert_application, send_alert_booking, send_alert_request_instructor, send_info_lesson_graded,
                     send_info_lesson_student_parent, send_info_lesson_instructor,
-                    send_info_request_available, send_invoice_booking, send_instructor_lesson_graded,
-                    send_reschedule_lesson, send_trial_confirmation)
+                    send_info_request_available, send_invoice_booking, send_reschedule_lesson, send_trial_confirmation,
+                    send_instructor_lesson_completed, )
 
 
 @app.task
@@ -85,12 +85,14 @@ def send_info_grade_lesson(lesson_id, task_log_id):
     send_info_lesson_graded(lesson)
     TaskLog.objects.filter(id=task_log_id).delete()
 
+
 @app.task
-def send_instructor_grade_lesson(lesson_id, task_log_id):
+def send_instructor_complete_lesson(lesson_id, task_log_id):
     """Send confirmation email to instructor when a lesson is graded"""
     lesson = Lesson.objects.get(id=lesson_id)
-    send_instructor_lesson_graded(lesson)
+    send_instructor_lesson_completed(lesson)
     TaskLog.objects.filter(id=task_log_id).delete()
+
 
 @app.task
 def send_trial_confirm(lesson_id, task_log_id):
@@ -181,6 +183,14 @@ def send_admin_assign_instructor(request_id):
                      "review and assign it an instructor.""")
 
 
+@app.task
+def send_admin_completed_instructor(lesson_id):
+    lesson = Lesson.objects.get(id=lesson_id)
+    send_admin_email('An instructor has completed and graded a lesson', 
+                     f"Lesson with id {lesson_id} ({lesson.title}) has been completed, "
+                     "review and close this lesson.""")
+    
+    
 @app.task
 def send_alert_request_compatible_instructors(request_id, task_log_id):
     l_req = LessonRequest.objects.get(id=request_id)
