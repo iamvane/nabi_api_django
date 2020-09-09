@@ -217,7 +217,6 @@ class LessonRequestAdmin(admin.ModelAdmin):
         obj.trial_proposed_timezone = 'US/Eastern'
         super().save_model(request, obj, form, change)
         if not change:
-            lesson = None
             is_trial = False
             if obj.user.is_parent() and form.cleaned_data.get('students'):
                 if not obj.user.parent.tied_students.filter(id=form.cleaned_data['students'][0].id).exists():
@@ -230,20 +229,14 @@ class LessonRequestAdmin(admin.ModelAdmin):
                 with transaction.atomic():
                     lb = LessonBooking.objects.create(user=obj.user, quantity=1, total_amount=0, request=obj,
                                                       description='Package trial', status=LessonBooking.TRIAL)
-                    obj.save()
-                    lesson = Lesson.objects.create(booking=lb,
-                                                   scheduled_datetime=obj.trial_proposed_datetime,
-                                                   scheduled_timezone=obj.trial_proposed_timezone,
-                                                   )
-                add_to_email_list_v2(request.user, ['trial_to_booking'], ['customer_to_request'])
-            if lesson:
-                task_log = TaskLog.objects.create(task_name='send_lesson_info_student_parent', args={'lesson_id': lesson.id})
+                    lesson = Lesson.objects.create(booking=lb, status=Lesson.PENDING)
+                add_to_email_list_v2(request.user, [], ['trial_to_booking'])
+                task_log = TaskLog.objects.create(task_name='send_lesson_info_student_parent',
+                                                  args={'lesson_id': lesson.id})
                 send_lesson_info_student_parent.delay(lesson.id, task_log.id)
                 task_log = TaskLog.objects.create(task_name='send_alert_request_compatible_instructors',
                                                   args={'request_id': obj.id})
                 send_alert_request_compatible_instructors.delay(obj.id, task_log.id)
-            # task_log = TaskLog.objects.create(task_name='send_request_alert_instructors', args={'request_id': obj.id})
-            # send_request_alert_instructors.delay(obj.id, task_log.id)
 
 
 class LessonAdmin(admin.ModelAdmin):
