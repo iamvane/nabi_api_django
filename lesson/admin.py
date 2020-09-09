@@ -13,9 +13,8 @@ from payments.models import Payment
 
 from .models import Application, InstructorAcceptanceLessonRequest, Lesson, LessonBooking, LessonRequest
 from .tasks import (send_alert_request_compatible_instructors, send_booking_alert, send_booking_invoice,
-                    send_info_grade_lesson, send_lesson_reschedule,
-                    send_lesson_info_instructor, send_lesson_info_student_parent, send_request_alert_instructors,
-                    send_instructor_complete_lesson)
+                    send_info_grade_lesson, send_lesson_info_instructor, send_lesson_info_student_parent,
+                    send_instructor_complete_lesson, send_lesson_reschedule, send_trial_confirm)
 
 User = get_user_model()
 
@@ -231,9 +230,8 @@ class LessonRequestAdmin(admin.ModelAdmin):
                                                       description='Package trial', status=LessonBooking.TRIAL)
                     lesson = Lesson.objects.create(booking=lb, status=Lesson.PENDING)
                 add_to_email_list_v2(request.user, [], ['trial_to_booking'])
-                task_log = TaskLog.objects.create(task_name='send_lesson_info_student_parent',
-                                                  args={'lesson_id': lesson.id})
-                send_lesson_info_student_parent.delay(lesson.id, task_log.id)
+                task_log = TaskLog.objects.create(task_name='send_trial_confirm', args={'lesson_id': lesson.id})
+                send_trial_confirm.delay(lesson.id, task_log.id)
                 task_log = TaskLog.objects.create(task_name='send_alert_request_compatible_instructors',
                                                   args={'request_id': obj.id})
                 send_alert_request_compatible_instructors.delay(obj.id, task_log.id)

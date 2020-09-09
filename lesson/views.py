@@ -56,8 +56,10 @@ class LessonRequestView(views.APIView):
             if not LessonBooking.objects.filter(user=request.user, tied_student=obj.students.first()).exists():
                 lb = LessonBooking.objects.create(user=obj.user, quantity=1, total_amount=0, request=obj,
                                                   description='Package trial', status=LessonBooking.TRIAL)
-                Lesson.objects.create(booking=lb, status=Lesson.PENDING)
+                lesson = Lesson.objects.create(booking=lb, status=Lesson.PENDING)
                 add_to_email_list_v2(request.user, [], ['trial_to_booking'])
+                task_log = TaskLog.objects.create(task_name='send_trial_confirm', args={'lesson_id': lesson.id})
+                send_trial_confirm.delay(lesson.id, task_log.id)
                 task_log = TaskLog.objects.create(task_name='send_alert_request_compatible_instructors',
                                                   args={'request_id': obj.id})
                 send_alert_request_compatible_instructors.delay(obj.id, task_log.id)
