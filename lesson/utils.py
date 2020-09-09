@@ -20,6 +20,8 @@ PACKAGES = {
     PACKAGE_VIRTUOSO: {'lesson_qty': 12, 'discount': 5},
     PACKAGE_TRIAL: {'lesson_qty': 1, 'discount': 0},
 }
+RANGE_HOURS_CONV = {'early-morning': '8to10', 'late-morning': '10to12', 'early-afternoon': '12to3',
+                    'late-afternoon': '3to6', 'evening': '6to9'}
 
 
 def send_alert_request_instructor_ant(instructor, lesson_request, requestor_account):
@@ -272,25 +274,14 @@ def send_instructor_lesson_completed(lesson):
         return None
 
 
-def send_info_request_available(lesson_request, instructor, scheduled_datetime):
+def send_info_request_available(lesson_request, instructor):
     """Send email to instructor about a request available, which match his data"""
     target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
-    if instructor.timezone:
-        sch_date, sch_time = get_date_time_from_datetime_timezone(scheduled_datetime,
-                                                                  instructor.timezone,
-                                                                  date_format='%m/%d/%Y',
-                                                                  time_format='%I:%M %p')
-    else:
-        sch_date, sch_time = get_date_time_from_datetime_timezone(scheduled_datetime,
-                                                                  instructor.get_timezone_from_location_zipcode(),
-                                                                  date_format='%m/%d/%Y',
-                                                                  time_format='%I:%M %p')
     data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['info_new_request'],
             "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": instructor.user.email},
             "customProperties": [
                 {"name": "instrument", "value": lesson_request.instrument.name},
                 {"name": "first_name", "value": instructor.user.first_name},
-                {"name": "lesson_date_subject", "value": f'{sch_date} {sch_time}'},
                 {"name": "request_url", "value": f'{settings.HOSTNAME_PROTOCOL}/new-request/{lesson_request.id}/?userId={instructor.user.id}'},
             ]
             }
@@ -571,3 +562,11 @@ def get_next_date_same_weekday(previous_date):
         return hoy + dt.timedelta(days=(next_week_day - today_week_day))
     else:
         return hoy + dt.timedelta(days=(next_week_day + (7 - today_week_day)))
+
+
+def get_availability_field_names_from_availability_json(json_data):
+    resp_list = []
+    for item in json_data:
+        field_name = item.get('day') + RANGE_HOURS_CONV.get(item.get('timeframe'))
+        resp_list.append(field_name)
+    return resp_list
