@@ -15,7 +15,7 @@ from accounts.utils import get_stripe_customer_id
 from core.constants import *
 
 from .models import Application, Instrument, Lesson, LessonBooking, LessonRequest
-from .utils import INITIAL_DAYS, PACKAGES, RANGE_HOURS_CONV, get_date_time_from_datetime_timezone
+from .utils import ABREV_DAYS, PACKAGES, RANGE_HOURS_CONV, get_date_time_from_datetime_timezone
 
 User = get_user_model()
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -233,7 +233,7 @@ class LessonRequestCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError('Availability value must be a dictionary')
             if 'day' not in item.keys() or 'timeframe' not in item.keys():
                 raise serializers.ValidationError('Dictionaries in availability must include day and timeframe keys')
-            if item.get('day') not in INITIAL_DAYS:
+            if item.get('day') not in ABREV_DAYS:
                 raise serializers.ValidationError('An invalid value of day was provided')
             if not RANGE_HOURS_CONV.get(item.get('timeframe', '--')):
                 raise serializers.ValidationError('An invalid value of timeframe was provided')
