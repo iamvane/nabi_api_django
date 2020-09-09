@@ -500,15 +500,13 @@ class LessonRequestListItemSerializer(serializers.ModelSerializer):
     studentDetails = serializers.SerializerMethodField()
     application = serializers.SerializerMethodField()
     applied = serializers.SerializerMethodField()
-    date = serializers.CharField(max_length=10, required=False)
-    time = serializers.CharField(max_length=5, required=False)
-    timezone = serializers.CharField(max_length=50, required=False)
+    availability = serializers.JSONField(source='trial_availability_schedule')
 
     class Meta:
         model = LessonRequest
         fields = ('id', 'avatar', 'displayName', 'instrument',  'lessonDuration', 'location', 'requestMessage',
                   'placeForLessons', 'skillLevel', 'studentDetails', 'requestTitle', 'application', 'applied',
-                  'status', 'date', 'time', 'timezone')
+                  'status', 'availability')
 
     def get_avatar(self, instance):
         account = get_account(instance.user)
@@ -554,21 +552,6 @@ class LessonRequestListItemSerializer(serializers.ModelSerializer):
             return student_list
         else:
             return [{'name': instance.user.first_name, 'age': instance.user.student.age}]
-
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        if instance.trial_proposed_datetime:
-            if self.context.get('user'):
-                account = get_account(self.context['user'])
-                if account.timezone:
-                    data['timezone'] = account.timezone
-                else:
-                    data['timezone'] = account.get_timezone_from_location_zipcode()
-            else:
-                data['timezone'] = 'US/Eastern'
-            data['date'], data['time'] = get_date_time_from_datetime_timezone(instance.trial_proposed_datetime,
-                                                                              data['timezone'])
-        return data
 
 
 class LessonBookingRegisterSerializer(serializers.Serializer):
