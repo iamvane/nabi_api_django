@@ -22,6 +22,7 @@ PACKAGES = {
 }
 RANGE_HOURS_CONV = {'early-morning': '8to10', 'late-morning': '10to12', 'early-afternoon': '12to3',
                     'late-afternoon': '3to6', 'evening': '6to9'}
+INITIAL_DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
 
 
 def send_alert_request_instructor_ant(instructor, lesson_request, requestor_account):
