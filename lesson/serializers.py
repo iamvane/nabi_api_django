@@ -201,6 +201,60 @@ class LessonRequestDetailSerializer(serializers.ModelSerializer):
         return data
 
 
+class LessonRequestCreateSerializer(serializers.ModelSerializer):
+    """Serializer for create a lesson request"""
+    requestTitle = serializers.CharField(max_length=100, source='title')
+    requestMessage = serializers.CharField(max_length=100, source='message')
+    instrument = serializers.CharField(max_length=250, required=False)
+    skillLevel = serializers.CharField(source='skill_level', required=False)
+    studentName = serializers.CharField(max_length=250, required=False)
+    availability = serializers.JSONField(source='trial_availability_schedule', required=True)
+    placeForLessons = serializers.CharField(max_length=100, source='place_for_lessons',
+                                            required=False, default=PLACE_FOR_LESSONS_ONLINE)
+    lessonsDuration = serializers.CharField(max_length=100, source='lessons_duration',
+                                            required=False, default=LESSON_DURATION_30)
+
+    class Meta:
+        model = LessonRequest
+        fields = ('user', 'requestTitle', 'requestMessage', 'instrument', 'skillLevel',
+                  'studentName', 'availability', 'placeForLessons', 'lessonsDuration')
+
+    def validate_studentName(self, value):
+        if not TiedStudent.objects.filter(parent__user_id=self.initial_data['user'], name=value).exists():
+            raise serializers.ValidationError('This parent has not student with provided name')
+        else:
+            return value
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        if not self.instance:   # when calls to create (POST)
+            if attrs.get('user').is_parent() and not attrs.get('studentName'):
+                raise serializers.ValidationError('Student name must be provided')
+            if ('instrument' in attrs.keys()) ^ ('skill_level' in attrs.keys()):
+                raise serializers.ValidationError('Inconsistent: instrument and skillLevel should be provided together or not provided')
+        return attrs
+
+    def create(self, validated_data):
+        if validated_data.get('instrument'):
+            instrument, _ = Instrument.objects.get_or_create(name=validated_data.pop('instrument'))
+            validated_data['instrument'] = instrument
+        if validated_data['user'].is_parent():
+            tied_student = TiedStudent.objects.filter(parent=validated_data['user'].parent,
+                                                      name=validated_data.pop('studentName')).first()
+            if not validated_data.get('instrument'):
+                validated_data['instrument'] = tied_student.tied_student_details.instrument
+                validated_data['skill_level'] = tied_student.tied_student_details.skill_level
+            res = super().create(validated_data)
+            res.students.add(tied_student)
+            return res
+        else:
+            student_details = validated_data['user'].student_details.first()
+            if not validated_data.get('instrument'):
+                validated_data['instrument'] = student_details.instrument
+                validated_data['skill_level'] = student_details.skill_level
+            return super().create(validated_data)
+
+
 class ApplicationCreateSerializer(serializers.ModelSerializer):
     """Serializer for creation of application"""
     instructor_id = serializers.IntegerField()
