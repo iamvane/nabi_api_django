@@ -39,7 +39,7 @@ class LessonRequest(models.Model):
     students = models.ManyToManyField(TiedStudent, blank=True)
     status = models.CharField(max_length=100, choices=LESSON_REQUEST_STATUSES,
                               blank=True, default=LESSON_REQUEST_ACTIVE)
-
+    trial_availability_schedule = JSONField(blank=True, default=dict)
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
 
