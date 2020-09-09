@@ -570,28 +570,6 @@ class LessonCreateView(views.APIView):
         ser = sers.CreateLessonSerializer(data=request.data)
         if ser.is_valid():
             lesson = ser.save()
-            lesson.refresh_from_db()  # to avoid scheduled_datetime as string, and get it as datetime
-
-            # create Lesson Request when Trial Booking
-            if lesson.booking.status == LessonBooking.TRIAL:
-                lr = lesson.booking.create_lesson_request(lesson)
-                if lr:
-                    task_log = TaskLog.objects.create(task_name='send_alert_request_compatible_instructors',
-                                                      args={'request_id': lr.id})
-                    send_alert_request_compatible_instructors.delay(lr.id, task_log.id)
-                    task_log = TaskLog.objects.create(task_name='send_trial_confirm', args={'lesson_id': lesson.id})
-                    send_trial_confirm.delay(lesson.id, task_log.id)
-                    ScheduledEmail.objects.create(function_name='send_lesson_reminder',
-                                                  schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=60),
-                                                  parameters={'lesson_id': lesson.id, 'user_id': lr.user.id})
-                    if lesson.instructor:
-                        ScheduledEmail.objects.create(function_name='send_lesson_reminder',
-                                                      schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=60),
-                                                      parameters={'lesson_id': lesson.id, 'user_id': lesson.instructor.user.id})
-                        ScheduledEmail.objects.create(function_name='send_reminder_grade_lesson',
-                                                      schedule=lesson.scheduled_datetime + timezone.timedelta(minutes=30),
-                                                      parameters={'lesson_id': lesson.id})
-
             ser = sers.LessonSerializer(lesson, context={'user': request.user})
             return Response(ser.data, status=status.HTTP_200_OK)
         else:
