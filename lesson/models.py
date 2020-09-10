@@ -27,7 +27,7 @@ class Instrument(models.Model):
 class LessonRequest(models.Model):
     # user making the request, can be Parent or Student
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='lesson_requests')
-    title = models.CharField(max_length=100)
+    title = models.CharField(max_length=100, blank=True, default='')
     message = models.TextField(blank=True, default='')
     instrument = models.ForeignKey(Instrument, on_delete=models.PROTECT)
     skill_level = models.CharField(max_length=100, choices=SKILL_LEVEL_CHOICES)
