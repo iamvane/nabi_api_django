@@ -203,11 +203,9 @@ class LessonRequestDetailSerializer(serializers.ModelSerializer):
 
 class LessonRequestCreateSerializer(serializers.ModelSerializer):
     """Serializer for create a lesson request"""
-    requestTitle = serializers.CharField(max_length=100, source='title')
-    requestMessage = serializers.CharField(max_length=100, source='message')
     instrument = serializers.CharField(max_length=250, required=False)
     skillLevel = serializers.CharField(source='skill_level', required=False)
-    studentName = serializers.CharField(max_length=250, required=False)
+    studentId = serializers.CharField(max_length=250, required=False)
     availability = serializers.JSONField(source='trial_availability_schedule', required=True)
     placeForLessons = serializers.CharField(max_length=100, source='place_for_lessons',
                                             required=False, default=PLACE_FOR_LESSONS_ONLINE)
@@ -216,12 +214,11 @@ class LessonRequestCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LessonRequest
-        fields = ('user', 'requestTitle', 'requestMessage', 'instrument', 'skillLevel',
-                  'studentName', 'availability', 'placeForLessons', 'lessonsDuration')
+        fields = ('user', 'instrument', 'skillLevel', 'studentId', 'availability', 'placeForLessons', 'lessonsDuration')
 
-    def validate_studentName(self, value):
-        if not TiedStudent.objects.filter(parent__user_id=self.initial_data['user'], name=value).exists():
-            raise serializers.ValidationError('This parent has not student with provided name')
+    def validate_studentId(self, value):
+        if not TiedStudent.objects.filter(parent__user_id=self.initial_data['user'], id=value).exists():
+            raise serializers.ValidationError('This parent has not student with provided id')
         else:
             return value
 
@@ -242,8 +239,8 @@ class LessonRequestCreateSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         attrs = super().validate(attrs)
         if not self.instance:   # when calls to create (POST)
-            if attrs.get('user').is_parent() and not attrs.get('studentName'):
-                raise serializers.ValidationError('Student name must be provided')
+            if attrs.get('user').is_parent() and not attrs.get('studentId'):
+                raise serializers.ValidationError('Student id must be provided')
             if ('instrument' in attrs.keys()) ^ ('skill_level' in attrs.keys()):
                 raise serializers.ValidationError('Inconsistent: instrument and skillLevel should be provided together or not provided')
         return attrs
@@ -254,7 +251,7 @@ class LessonRequestCreateSerializer(serializers.ModelSerializer):
             validated_data['instrument'] = instrument
         if validated_data['user'].is_parent():
             tied_student = TiedStudent.objects.filter(parent=validated_data['user'].parent,
-                                                      name=validated_data.pop('studentName')).first()
+                                                      id=validated_data.pop('studentId')).first()
             if not validated_data.get('instrument'):
                 validated_data['instrument'] = tied_student.tied_student_details.instrument
                 validated_data['skill_level'] = tied_student.tied_student_details.skill_level
