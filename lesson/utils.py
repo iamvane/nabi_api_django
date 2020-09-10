@@ -370,14 +370,28 @@ def send_lesson_reminder(lesson_id, user_id):
                                                               time_zone,
                                                               date_format='%A %-d, %Y',
                                                               time_format='%I:%M %p')
+    instrument_name = skill_level = ''
+    if lesson.booking.request:
+        instrument_name = lesson.booking.request.instrument.name
+        skill_level = lesson.booking.request.skill_level
+    else:
+        if lesson.booking.user.is_parent():
+            stu_details = lesson.booking.user.student_details.first()
+            if stu_details and stu_details.instrument:
+                instrument_name = stu_details.instrument.name
+                skill_level = stu_details.skill_level
+        else:
+            if lesson.booking.tied_student.tied_student_details and lesson.booking.tied_student.tied_student_details.instrument:
+                instrument_name = lesson.booking.tied_student.tied_student_details.instrument.name
+                skill_level = lesson.booking.tied_student.tied_student_details.skill_level
     target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
     data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['reminder_lesson'],
             "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": user.email},
             "customProperties": [
                 {"name": "first_name", "value": user.first_name},
                 {"name": "student_name", "value": student_details.get('name')},
-                {"name": "instrument", "value": lesson.booking.request.instrument.name},
-                {"name": "student_details", "value": f"{student_details.get('age')} years old, {lesson.booking.request.skill_level}"},
+                {"name": "instrument", "value": instrument_name},
+                {"name": "student_details", "value": f"{student_details.get('age')} years old, {skill_level}"},
                 {"name": "lesson_date_time", "value": f'{sch_date} at {sch_time} ({time_zone})'},
                 {"name": "zoom_link", "value": lesson.booking.instructor.zoom_link},
             ]
