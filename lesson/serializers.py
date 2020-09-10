@@ -177,11 +177,12 @@ class LessonRequestDetailSerializer(serializers.ModelSerializer):
     date = serializers.CharField(max_length=10, required=False)
     time = serializers.CharField(max_length=5, required=False)
     timezone = serializers.CharField(max_length=50, required=False)
+    availability = serializers.JSONField(source='trial_availability_schedule')
 
     class Meta:
         model = LessonRequest
         fields = ('id', 'instrument', 'requestMessage', 'requestTitle', 'lessonDuration', 'travelDistance',
-                  'placeForLessons', 'skillLevel', 'status', 'students', 'date', 'time', 'timezone')
+                  'placeForLessons', 'skillLevel', 'status', 'students', 'date', 'time', 'timezone', 'availability')
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
