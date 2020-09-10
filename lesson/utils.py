@@ -22,7 +22,14 @@ PACKAGES = {
 }
 RANGE_HOURS_CONV = {'early-morning': '8to10', 'late-morning': '10to12', 'early-afternoon': '12to3',
                     'late-afternoon': '3to6', 'evening': '6to9'}
-INITIAL_DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+TIMEFRAME_TO_STRING = {'early-morning': 'early morning (8am-10am)',
+                       'late-morning': 'late morning (10am-12pm)',
+                       'early-afternoon': 'early afternoon (12pm-3pm)',
+                       'late-afternoon': 'late afternoon (3pm-6pm)',
+                       'evening': 'evening (6pm-9pm)'}
+ABREV_DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+ABREV_DAY_TO_STRING = {'mon': 'Monday', 'tue': 'Tuesday', 'wed': 'Wednesday', 'thu': 'Thursday',
+                       'fri': 'Friday', 'sat': 'Saturday', 'sun': 'Sunday'}
 
 
 def send_alert_request_instructor_ant(instructor, lesson_request, requestor_account):
@@ -301,25 +308,15 @@ def send_info_request_available(lesson_request, instructor):
 
 def send_trial_confirmation(lesson):
     """Send email to parent/student, when a Trial Lesson is created"""
-    from accounts.models import get_account
     target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
-    account = get_account(lesson.booking.user)
-    if account.timezone:
-        time_zone = account.timezone
-    else:
-        time_zone = account.get_timezone_from_location_zipcode()
     student_details = lesson.booking.student_details()
-    sch_date, sch_time = get_date_time_from_datetime_timezone(lesson.scheduled_datetime,
-                                                              time_zone,
-                                                              date_format='%A %b %-d',
-                                                              time_format='%-I:%M %p')
     data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['trial_confirmation'],
             "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.booking.user.email},
             "customProperties": [
                 {"name": "student_name", "value": student_details.get('name')},
                 {"name": "first_name", "value": lesson.booking.user.first_name},
                 {"name": "instrument", "value": lesson.booking.request.instrument.name},
-                {"name": "lesson_date_time", "value": f'{sch_date} at {sch_time} ({time_zone})'},
+                {"name": "lesson_availability", "value": lesson.booking.request.availability_as_string()},
             ]
             }
     resp = requests.post(target_url, json=data)

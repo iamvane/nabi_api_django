@@ -10,7 +10,7 @@ from core.constants import *
 from core.models import ScheduledEmail
 from payments.models import Payment
 
-from lesson.utils import day_abrev_to_string, get_next_date_same_weekday, TIMEFRAME_TO_STRING
+from lesson.utils import get_next_date_same_weekday, ABREV_DAY_TO_STRING, TIMEFRAME_TO_STRING
 
 User = get_user_model()
 
@@ -67,7 +67,7 @@ class LessonRequest(models.Model):
     def availability_as_string(self):
         resp_list = []
         for item in self.trial_availability_schedule:
-            text = day_abrev_to_string(item.get('day')) + ' ' + TIMEFRAME_TO_STRING.get(item.get('timeframe'))
+            text = ABREV_DAY_TO_STRING.get(item.get('day')) + ' ' + TIMEFRAME_TO_STRING.get(item.get('timeframe'))
             resp_list.append(text)
         return ', '.join(resp_list)
 
