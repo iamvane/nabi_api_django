@@ -127,6 +127,8 @@ class LessonBookingAdmin(admin.ModelAdmin):
                 with transaction.atomic():
                     if 'rate' not in form.changed_data:
                         rate_obj = obj.instructor.instructorlessonrate_set.last()
+                        if rate_obj is None:
+                            raise Exception('Selected instructor has not rate for 30 mins lesson')
                         obj.rate = rate_obj.mins30
                         obj.save()
                         obj.refresh_from_db()
