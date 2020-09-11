@@ -298,7 +298,7 @@ def send_info_request_available(lesson_request, instructor):
         send_admin_email("[INFO] Info about a new created lesson request could not be send",
                          """An email about a new created lesson request could not be send to email {}, lesson request id {}.
 
-                         The status_code for API's response was {} and content: {}""".format(lesson_request.instructor.user.email,
+                         The status_code for API's response was {} and content: {}""".format(instructor.user.email,
                                                                                              lesson_request.id,
                                                                                              resp.status_code,
                                                                                              resp.content.decode())
