@@ -55,6 +55,7 @@ class LessonRequestView(views.APIView):
             obj = ser.save()
             if not LessonBooking.objects.filter(user=request.user, tied_student=obj.students.first()).exists():
                 lb = LessonBooking.objects.create(user=obj.user, quantity=1, total_amount=0, request=obj,
+                                                  tied_student=obj.students.first(),
                                                   description='Package trial', status=LessonBooking.TRIAL)
                 lesson = Lesson.objects.create(booking=lb, status=Lesson.PENDING)
                 add_to_email_list_v2(request.user, [], ['trial_to_booking'])
