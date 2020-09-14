@@ -236,7 +236,12 @@ class LessonRequestAdmin(admin.ModelAdmin):
                 is_trial = True
             if is_trial:
                 with transaction.atomic():
+                    if form.cleaned_data['students']:
+                        tied_student = form.cleaned_data['students'].first()
+                    else:
+                        tied_student = None
                     lb = LessonBooking.objects.create(user=obj.user, quantity=1, total_amount=0, request=obj,
+                                                      tied_student=tied_student,
                                                       description='Package trial', status=LessonBooking.TRIAL)
                     lesson = Lesson.objects.create(booking=lb, status=Lesson.PENDING)
                 add_to_email_list_v2(request.user, [], ['trial_to_booking'])
