@@ -166,16 +166,15 @@ class InstructorAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         if 'location' in form.changed_data:
-            geocoder = Geocoder(api_key=settings.GOOGLE_MAPS_API_KEY)
-            try:
-                results = geocoder.geocode(obj.location)
-            except GeocoderError as e:
-                raise Exception(e.status, e.response)
-            obj.coordinates = Point(results[0].coordinates[1], results[0].coordinates[0], srid=4326)
+            obj.coordinates = get_geopoint_from_location(obj.location)
         if 'zoom_link' in form.changed_data:
             if re.match(r'^https://.*zoom\.us/j/[\d]{3,}.*', obj.zoom_link) is None:
                 raise Exception('Wrong Zoom meeting link')
         super().save_model(request, obj, form, change)
+        if 'location' in form.changed_data:
+            time_zone = obj.get_timezone_from_location_zipcode()
+            obj.timezone = time_zone
+            obj.save()
 
 
 class TiedStudentAdmin(admin.ModelAdmin):
@@ -218,6 +217,9 @@ class StudentAdmin(admin.ModelAdmin):
         if 'location' in form.changed_data:
             obj.coordinates = get_geopoint_from_location(obj.location)
         super().save_model(request, obj, form, change)
+        time_zone = obj.get_timezone_from_location_zipcode()
+        obj.timezone = time_zone
+        obj.save()
 
 
 class TiedStudentInline(admin.TabularInline):
@@ -259,6 +261,9 @@ class ParentAdmin(admin.ModelAdmin):
         if 'location' in form.changed_data:
             obj.coordinates = get_geopoint_from_location(obj.location)
         super().save_model(request, obj, form, change)
+        time_zone = obj.get_timezone_from_location_zipcode()
+        obj.timezone = time_zone
+        obj.save()
 
 
 class InstructorReviewAdmin(admin.ModelAdmin):
