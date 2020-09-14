@@ -20,6 +20,16 @@ PACKAGES = {
     PACKAGE_VIRTUOSO: {'lesson_qty': 12, 'discount': 5},
     PACKAGE_TRIAL: {'lesson_qty': 1, 'discount': 0},
 }
+RANGE_HOURS_CONV = {'early-morning': '8to10', 'late-morning': '10to12', 'early-afternoon': '12to3',
+                    'late-afternoon': '3to6', 'evening': '6to9'}
+TIMEFRAME_TO_STRING = {'early-morning': 'early morning (8am-10am)',
+                       'late-morning': 'late morning (10am-12pm)',
+                       'early-afternoon': 'early afternoon (12pm-3pm)',
+                       'late-afternoon': 'late afternoon (3pm-6pm)',
+                       'evening': 'evening (6pm-9pm)'}
+ABREV_DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+ABREV_DAY_TO_STRING = {'mon': 'Monday', 'tue': 'Tuesday', 'wed': 'Wednesday', 'thu': 'Thursday',
+                       'fri': 'Friday', 'sat': 'Saturday', 'sun': 'Sunday'}
 
 
 def send_alert_request_instructor_ant(instructor, lesson_request, requestor_account):
@@ -272,25 +282,14 @@ def send_instructor_lesson_completed(lesson):
         return None
 
 
-def send_info_request_available(lesson_request, instructor, scheduled_datetime):
+def send_info_request_available(lesson_request, instructor):
     """Send email to instructor about a request available, which match his data"""
     target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
-    if instructor.timezone:
-        sch_date, sch_time = get_date_time_from_datetime_timezone(scheduled_datetime,
-                                                                  instructor.timezone,
-                                                                  date_format='%m/%d/%Y',
-                                                                  time_format='%I:%M %p')
-    else:
-        sch_date, sch_time = get_date_time_from_datetime_timezone(scheduled_datetime,
-                                                                  instructor.get_timezone_from_location_zipcode(),
-                                                                  date_format='%m/%d/%Y',
-                                                                  time_format='%I:%M %p')
     data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['info_new_request'],
             "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": instructor.user.email},
             "customProperties": [
                 {"name": "instrument", "value": lesson_request.instrument.name},
                 {"name": "first_name", "value": instructor.user.first_name},
-                {"name": "lesson_date_subject", "value": f'{sch_date} {sch_time}'},
                 {"name": "request_url", "value": f'{settings.HOSTNAME_PROTOCOL}/new-request/{lesson_request.id}/?userId={instructor.user.id}'},
             ]
             }
@@ -299,7 +298,7 @@ def send_info_request_available(lesson_request, instructor, scheduled_datetime):
         send_admin_email("[INFO] Info about a new created lesson request could not be send",
                          """An email about a new created lesson request could not be send to email {}, lesson request id {}.
 
-                         The status_code for API's response was {} and content: {}""".format(lesson_request.instructor.user.email,
+                         The status_code for API's response was {} and content: {}""".format(instructor.user.email,
                                                                                              lesson_request.id,
                                                                                              resp.status_code,
                                                                                              resp.content.decode())
@@ -309,25 +308,15 @@ def send_info_request_available(lesson_request, instructor, scheduled_datetime):
 
 def send_trial_confirmation(lesson):
     """Send email to parent/student, when a Trial Lesson is created"""
-    from accounts.models import get_account
     target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
-    account = get_account(lesson.booking.user)
-    if account.timezone:
-        time_zone = account.timezone
-    else:
-        time_zone = account.get_timezone_from_location_zipcode()
     student_details = lesson.booking.student_details()
-    sch_date, sch_time = get_date_time_from_datetime_timezone(lesson.scheduled_datetime,
-                                                              time_zone,
-                                                              date_format='%A %b %-d',
-                                                              time_format='%-I:%M %p')
     data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['trial_confirmation'],
             "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.booking.user.email},
             "customProperties": [
                 {"name": "student_name", "value": student_details.get('name')},
                 {"name": "first_name", "value": lesson.booking.user.first_name},
                 {"name": "instrument", "value": lesson.booking.request.instrument.name},
-                {"name": "lesson_date_time", "value": f'{sch_date} at {sch_time} ({time_zone})'},
+                {"name": "lesson_availability", "value": lesson.booking.request.availability_as_string()},
             ]
             }
     resp = requests.post(target_url, json=data)
@@ -381,14 +370,28 @@ def send_lesson_reminder(lesson_id, user_id):
                                                               time_zone,
                                                               date_format='%A %-d, %Y',
                                                               time_format='%I:%M %p')
+    instrument_name = skill_level = ''
+    if lesson.booking.request:
+        instrument_name = lesson.booking.request.instrument.name
+        skill_level = lesson.booking.request.skill_level
+    else:
+        if lesson.booking.user.is_parent():
+            stu_details = lesson.booking.user.student_details.first()
+            if stu_details and stu_details.instrument:
+                instrument_name = stu_details.instrument.name
+                skill_level = stu_details.skill_level
+        else:
+            if lesson.booking.tied_student.tied_student_details and lesson.booking.tied_student.tied_student_details.instrument:
+                instrument_name = lesson.booking.tied_student.tied_student_details.instrument.name
+                skill_level = lesson.booking.tied_student.tied_student_details.skill_level
     target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
     data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['reminder_lesson'],
             "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": user.email},
             "customProperties": [
                 {"name": "first_name", "value": user.first_name},
                 {"name": "student_name", "value": student_details.get('name')},
-                {"name": "instrument", "value": lesson.booking.request.instrument.name},
-                {"name": "student_details", "value": f"{student_details.get('age')} years old, {lesson.booking.request.skill_level}"},
+                {"name": "instrument", "value": instrument_name},
+                {"name": "student_details", "value": f"{student_details.get('age')} years old, {skill_level}"},
                 {"name": "lesson_date_time", "value": f'{sch_date} at {sch_time} ({time_zone})'},
                 {"name": "zoom_link", "value": lesson.booking.instructor.zoom_link},
             ]
@@ -571,3 +574,11 @@ def get_next_date_same_weekday(previous_date):
         return hoy + dt.timedelta(days=(next_week_day - today_week_day))
     else:
         return hoy + dt.timedelta(days=(next_week_day + (7 - today_week_day)))
+
+
+def get_availability_field_names_from_availability_json(json_data):
+    resp_list = []
+    for item in json_data:
+        field_name = item.get('day') + RANGE_HOURS_CONV.get(item.get('timeframe'))
+        resp_list.append(field_name)
+    return resp_list

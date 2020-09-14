@@ -10,7 +10,7 @@ from core.constants import *
 from core.models import ScheduledEmail
 from payments.models import Payment
 
-from lesson.utils import get_date_time_from_datetime_timezone, get_next_date_same_weekday
+from lesson.utils import get_next_date_same_weekday, ABREV_DAY_TO_STRING, TIMEFRAME_TO_STRING
 
 User = get_user_model()
 
@@ -27,7 +27,7 @@ class Instrument(models.Model):
 class LessonRequest(models.Model):
     # user making the request, can be Parent or Student
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='lesson_requests')
-    title = models.CharField(max_length=100)
+    title = models.CharField(max_length=100, blank=True, default='')
     message = models.TextField(blank=True, default='')
     instrument = models.ForeignKey(Instrument, on_delete=models.PROTECT)
     skill_level = models.CharField(max_length=100, choices=SKILL_LEVEL_CHOICES)
@@ -39,7 +39,7 @@ class LessonRequest(models.Model):
     students = models.ManyToManyField(TiedStudent, blank=True)
     status = models.CharField(max_length=100, choices=LESSON_REQUEST_STATUSES,
                               blank=True, default=LESSON_REQUEST_ACTIVE)
-
+    trial_availability_schedule = JSONField(blank=True, default=dict)
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
 
@@ -63,6 +63,13 @@ class LessonRequest(models.Model):
             return self.booking.lessons.order_by('scheduled_datetime').first()
         else:
             return None
+
+    def availability_as_string(self):
+        resp_list = []
+        for item in self.trial_availability_schedule:
+            text = ABREV_DAY_TO_STRING.get(item.get('day')) + ' ' + TIMEFRAME_TO_STRING.get(item.get('timeframe'))
+            resp_list.append(text)
+        return ', '.join(resp_list)
 
 
 class Application(models.Model):

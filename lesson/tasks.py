@@ -14,7 +14,8 @@ from nabi_api_django.celery_config import app
 
 from core.models import ScheduledEmail
 from .models import Application, Lesson, LessonBooking, LessonRequest
-from .utils import (send_alert_application, send_alert_booking, send_alert_request_instructor, send_info_lesson_graded,
+from .utils import (get_availability_field_names_from_availability_json,
+                    send_alert_application, send_alert_booking, send_alert_request_instructor, send_info_lesson_graded,
                     send_info_lesson_student_parent, send_info_lesson_instructor,
                     send_info_request_available, send_invoice_booking, send_reschedule_lesson, send_trial_confirmation,
                     send_instructor_lesson_completed, )
@@ -211,11 +212,13 @@ def send_alert_request_compatible_instructors(request_id, task_log_id):
     else:
         for instructor in Instructor.objects.filter(id__in=instructors_instrument, complete=True):
             if hasattr(instructor, 'availability'):
-                field_name = get_availaibility_field_name_from_dt(lesson.scheduled_datetime, instructor.timezone)
-                if getattr(instructor.availability, field_name):
-                    instructor_ids.append(instructor.id)
+                field_names = get_availability_field_names_from_availability_json(l_req.trial_availability_schedule)
+                for field_name in field_names:
+                    if getattr(instructor.availability, field_name):
+                        instructor_ids.append(instructor.id)
+                        break
         for ins_id in instructor_ids:
-            send_info_request_available(l_req, Instructor.objects.get(id=ins_id), lesson.scheduled_datetime)
+            send_info_request_available(l_req, Instructor.objects.get(id=ins_id))
         send_admin_assign_instructor.apply_async((l_req.id,), countdown=3600)
     TaskLog.objects.filter(id=task_log_id).delete()
 

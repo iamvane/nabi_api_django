@@ -15,7 +15,7 @@ from accounts.utils import get_stripe_customer_id
 from core.constants import *
 
 from .models import Application, Instrument, Lesson, LessonBooking, LessonRequest
-from .utils import PACKAGES, get_date_time_from_datetime_timezone
+from .utils import ABREV_DAYS, PACKAGES, RANGE_HOURS_CONV, get_date_time_from_datetime_timezone
 
 User = get_user_model()
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -177,11 +177,12 @@ class LessonRequestDetailSerializer(serializers.ModelSerializer):
     date = serializers.CharField(max_length=10, required=False)
     time = serializers.CharField(max_length=5, required=False)
     timezone = serializers.CharField(max_length=50, required=False)
+    availability = serializers.JSONField(source='trial_availability_schedule')
 
     class Meta:
         model = LessonRequest
         fields = ('id', 'instrument', 'requestMessage', 'requestTitle', 'lessonDuration', 'travelDistance',
-                  'placeForLessons', 'skillLevel', 'status', 'students', 'date', 'time', 'timezone')
+                  'placeForLessons', 'skillLevel', 'status', 'students', 'date', 'time', 'timezone', 'availability')
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -199,6 +200,71 @@ class LessonRequestDetailSerializer(serializers.ModelSerializer):
             data['date'], data['time'] = get_date_time_from_datetime_timezone(instance.trial_proposed_datetime,
                                                                               data['timezone'])
         return data
+
+
+class LessonRequestCreateSerializer(serializers.ModelSerializer):
+    """Serializer for create a lesson request"""
+    instrument = serializers.CharField(max_length=250, required=False)
+    skillLevel = serializers.CharField(source='skill_level', required=False)
+    studentId = serializers.CharField(max_length=250, required=False)
+    availability = serializers.JSONField(source='trial_availability_schedule', required=True)
+    placeForLessons = serializers.CharField(max_length=100, source='place_for_lessons',
+                                            required=False, default=PLACE_FOR_LESSONS_ONLINE)
+    lessonsDuration = serializers.CharField(max_length=100, source='lessons_duration',
+                                            required=False, default=LESSON_DURATION_30)
+
+    class Meta:
+        model = LessonRequest
+        fields = ('user', 'instrument', 'skillLevel', 'studentId', 'availability', 'placeForLessons', 'lessonsDuration')
+
+    def validate_studentId(self, value):
+        if not TiedStudent.objects.filter(parent__user_id=self.initial_data['user'], id=value).exists():
+            raise serializers.ValidationError('This parent has not student with provided id')
+        else:
+            return value
+
+    def validate_availability(self, value):
+        if not isinstance(value, list):
+            raise serializers.ValidationError('Availability value must be a list')
+        for item in value:
+            if not isinstance(item, dict):
+                raise serializers.ValidationError('Availability value must be a dictionary')
+            if 'day' not in item.keys() or 'timeframe' not in item.keys():
+                raise serializers.ValidationError('Dictionaries in availability must include day and timeframe keys')
+            if item.get('day') not in ABREV_DAYS:
+                raise serializers.ValidationError('An invalid value of day was provided')
+            if not RANGE_HOURS_CONV.get(item.get('timeframe', '--')):
+                raise serializers.ValidationError('An invalid value of timeframe was provided')
+        return value
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        if not self.instance:   # when calls to create (POST)
+            if attrs.get('user').is_parent() and not attrs.get('studentId'):
+                raise serializers.ValidationError('Student id must be provided')
+            if ('instrument' in attrs.keys()) ^ ('skill_level' in attrs.keys()):
+                raise serializers.ValidationError('Inconsistent: instrument and skillLevel should be provided together or not provided')
+        return attrs
+
+    def create(self, validated_data):
+        if validated_data.get('instrument'):
+            instrument, _ = Instrument.objects.get_or_create(name=validated_data.pop('instrument'))
+            validated_data['instrument'] = instrument
+        if validated_data['user'].is_parent():
+            tied_student = TiedStudent.objects.filter(parent=validated_data['user'].parent,
+                                                      id=validated_data.pop('studentId')).first()
+            if not validated_data.get('instrument'):
+                validated_data['instrument'] = tied_student.tied_student_details.instrument
+                validated_data['skill_level'] = tied_student.tied_student_details.skill_level
+            res = super().create(validated_data)
+            res.students.add(tied_student)
+            return res
+        else:
+            student_details = validated_data['user'].student_details.first()
+            if not validated_data.get('instrument'):
+                validated_data['instrument'] = student_details.instrument
+                validated_data['skill_level'] = student_details.skill_level
+            return super().create(validated_data)
 
 
 class ApplicationCreateSerializer(serializers.ModelSerializer):
@@ -432,15 +498,13 @@ class LessonRequestListItemSerializer(serializers.ModelSerializer):
     studentDetails = serializers.SerializerMethodField()
     application = serializers.SerializerMethodField()
     applied = serializers.SerializerMethodField()
-    date = serializers.CharField(max_length=10, required=False)
-    time = serializers.CharField(max_length=5, required=False)
-    timezone = serializers.CharField(max_length=50, required=False)
+    availability = serializers.JSONField(source='trial_availability_schedule')
 
     class Meta:
         model = LessonRequest
         fields = ('id', 'avatar', 'displayName', 'instrument',  'lessonDuration', 'location', 'requestMessage',
                   'placeForLessons', 'skillLevel', 'studentDetails', 'requestTitle', 'application', 'applied',
-                  'status', 'date', 'time', 'timezone')
+                  'status', 'availability')
 
     def get_avatar(self, instance):
         account = get_account(instance.user)
@@ -486,21 +550,6 @@ class LessonRequestListItemSerializer(serializers.ModelSerializer):
             return student_list
         else:
             return [{'name': instance.user.first_name, 'age': instance.user.student.age}]
-
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        if instance.trial_proposed_datetime:
-            if self.context.get('user'):
-                account = get_account(self.context['user'])
-                if account.timezone:
-                    data['timezone'] = account.timezone
-                else:
-                    data['timezone'] = account.get_timezone_from_location_zipcode()
-            else:
-                data['timezone'] = 'US/Eastern'
-            data['date'], data['time'] = get_date_time_from_datetime_timezone(instance.trial_proposed_datetime,
-                                                                              data['timezone'])
-        return data
 
 
 class LessonBookingRegisterSerializer(serializers.Serializer):

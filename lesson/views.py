@@ -49,18 +49,21 @@ class LessonRequestView(views.APIView):
     def post(self, request):
         """Register a lesson request."""
         data = request.data.copy()
-        data['user_id'] = request.user.id
-        if request.user.is_parent():
-            ser = sers.LessonRequestSerializer(data=data, context={'is_parent': True})
-        else:
-            ser = sers.LessonRequestSerializer(data=data, context={'is_parent': False})
+        data['user'] = request.user.id
+        ser = sers.LessonRequestCreateSerializer(data=data)
         if ser.is_valid():
             obj = ser.save()
-            obj.refresh_from_db()  # to avoid trial_proposed_datetime as string, and get it as datetime
-            task_log = TaskLog.objects.create(task_name='send_request_alert_instructors',
-                                              args={'request_id': obj.id})
-            send_request_alert_instructors.delay(obj.id, task_log.id)
-            add_to_email_list_v2(request.user, [], ['trial_to_booking'])
+            if not LessonBooking.objects.filter(user=request.user, tied_student=obj.students.first()).exists():
+                lb = LessonBooking.objects.create(user=obj.user, quantity=1, total_amount=0, request=obj,
+                                                  tied_student=obj.students.first(),
+                                                  description='Package trial', status=LessonBooking.TRIAL)
+                lesson = Lesson.objects.create(booking=lb, status=Lesson.PENDING)
+                add_to_email_list_v2(request.user, [], ['trial_to_booking'])
+                task_log = TaskLog.objects.create(task_name='send_trial_confirm', args={'lesson_id': lesson.id})
+                send_trial_confirm.delay(lesson.id, task_log.id)
+                task_log = TaskLog.objects.create(task_name='send_alert_request_compatible_instructors',
+                                                  args={'request_id': obj.id})
+                send_alert_request_compatible_instructors.delay(obj.id, task_log.id)
             ser = sers.LessonRequestDetailSerializer(obj, context={'user': request.user})
             return Response(ser.data, status=status.HTTP_200_OK)
         else:
@@ -568,28 +571,6 @@ class LessonCreateView(views.APIView):
         ser = sers.CreateLessonSerializer(data=request.data)
         if ser.is_valid():
             lesson = ser.save()
-            lesson.refresh_from_db()  # to avoid scheduled_datetime as string, and get it as datetime
-
-            # create Lesson Request when Trial Booking
-            if lesson.booking.status == LessonBooking.TRIAL:
-                lr = lesson.booking.create_lesson_request(lesson)
-                if lr:
-                    task_log = TaskLog.objects.create(task_name='send_alert_request_compatible_instructors',
-                                                      args={'request_id': lr.id})
-                    send_alert_request_compatible_instructors.delay(lr.id, task_log.id)
-                    task_log = TaskLog.objects.create(task_name='send_trial_confirm', args={'lesson_id': lesson.id})
-                    send_trial_confirm.delay(lesson.id, task_log.id)
-                    ScheduledEmail.objects.create(function_name='send_lesson_reminder',
-                                                  schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=60),
-                                                  parameters={'lesson_id': lesson.id, 'user_id': lr.user.id})
-                    if lesson.instructor:
-                        ScheduledEmail.objects.create(function_name='send_lesson_reminder',
-                                                      schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=60),
-                                                      parameters={'lesson_id': lesson.id, 'user_id': lesson.instructor.user.id})
-                        ScheduledEmail.objects.create(function_name='send_reminder_grade_lesson',
-                                                      schedule=lesson.scheduled_datetime + timezone.timedelta(minutes=30),
-                                                      parameters={'lesson_id': lesson.id})
-
             ser = sers.LessonSerializer(lesson, context={'user': request.user})
             return Response(ser.data, status=status.HTTP_200_OK)
         else:

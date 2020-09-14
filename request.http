@@ -422,44 +422,83 @@ Content-Type: application/json
 {
   "requestTitle": "Guitar Instructor needed in Boston MA",
   "instrument": "guitar",
-  "placeForLessons": "home",
   "skillLevel": "beginner",
-  "lessonDuration": "45mins",
   "requestMessage": "Hello I am looking for a guitar instructor",
-  "maxTravelDistance": 100
+  "availability": [
+        {
+            "day": "mon",
+            "timeframe": "early-morning"
+        },
+        {
+            "day": "fri",
+            "timeframe": "evening"
+        },
+        {
+            "day": "sat",
+            "timeframe": "early-afternoon"
+        }
+    ]
 }
 or
 {
-  "requestTitle": "Guitar Instructor needed in Boston MA",
-  "instrument": "guitar",
-  "placeForLessons": "home",
-  "skillLevel": "beginner",
-  "lessonDuration": "45mins",
-  "requestMessage": "Hello I am looking for a guitar instructor",
-  "maxTravelDistance": 100,
-  "date": "2020-05-22",
-  "time": "09:30",
-  "timezone": "America/New_York"
+  "requestTitle": "Instructor needed in Boston MA",
+  "requestMessage": "Hello I am looking for an instructor",
+  "availability": [
+        {
+            "day": "mon",
+            "timeframe": "early-morning"
+        },
+        {
+            "day": "fri",
+            "timeframe": "evening"
+        },
+        {
+            "day": "sat",
+            "timeframe": "early-afternoon"
+        }
+    ]
 }
 or
 {
-  "students": [
-    {
-      "name": "Santiago",
-      "age": 9
-    },
-    {
-      "name": "Teresa",
-      "age": 7
-    }
-  ],
+  "studentName": "name": "Santiago",
+  "requestTitle": "Instructor needed in Boston MA",
+  "requestMessage": "My child want to take some lessons",
+  "availability": [
+        {
+            "day": "mon",
+            "timeframe": "early-morning"
+        },
+        {
+            "day": "fri",
+            "timeframe": "evening"
+        },
+        {
+            "day": "sat",
+            "timeframe": "early-afternoon"
+        }
+    ]
+}
+or
+{
+  "studentName": "name": "Santiago",
   "requestTitle": "Piano Instructor needed in Boston MA",
   "instrument": "piano",
-  "placeForLessons": "home",
   "skillLevel": "beginner",
-  "lessonDuration": "60mins",
-  "requestMessage": "My twins want to take piano lessons together",
-  "maxTravelDistance": 100
+  "requestMessage": "My child want to take some piano lessons",
+  "availability": [
+        {
+            "day": "mon",
+            "timeframe": "early-morning"
+        },
+        {
+            "day": "fri",
+            "timeframe": "evening"
+        },
+        {
+            "day": "sat",
+            "timeframe": "early-afternoon"
+        }
+    ]
 }
 
 ###
