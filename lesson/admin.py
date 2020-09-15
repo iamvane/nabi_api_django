@@ -235,7 +235,7 @@ class LessonRequestAdmin(admin.ModelAdmin):
                     raise ValueError("Selected TiedStudent don't belong to this parent")
                 if obj.user.lesson_bookings.filter(tied_student=form.cleaned_data['students'][0]).count() == 0:
                     is_trial = True
-            elif obj.user.is_student and obj.user.lesson_bookings.count() == 0:
+            elif obj.user.is_student() and obj.user.lesson_bookings.count() == 0:
                 is_trial = True
             if is_trial:
                 with transaction.atomic():
