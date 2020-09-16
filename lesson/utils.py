@@ -376,14 +376,14 @@ def send_lesson_reminder(lesson_id, user_id):
         skill_level = lesson.booking.request.skill_level
     else:
         if lesson.booking.user.is_parent():
+            if lesson.booking.tied_student.tied_student_details and lesson.booking.tied_student.tied_student_details.instrument:
+                instrument_name = lesson.booking.tied_student.tied_student_details.instrument.name
+                skill_level = lesson.booking.tied_student.tied_student_details.skill_level
+        else:
             stu_details = lesson.booking.user.student_details.first()
             if stu_details and stu_details.instrument:
                 instrument_name = stu_details.instrument.name
                 skill_level = stu_details.skill_level
-        else:
-            if lesson.booking.tied_student.tied_student_details and lesson.booking.tied_student.tied_student_details.instrument:
-                instrument_name = lesson.booking.tied_student.tied_student_details.instrument.name
-                skill_level = lesson.booking.tied_student.tied_student_details.skill_level
     target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
     data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['reminder_lesson'],
             "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": user.email},
