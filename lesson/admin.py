@@ -310,21 +310,21 @@ class LessonAdmin(admin.ModelAdmin):
                 send_instructor_complete_lesson.delay(obj.id, task_log.id)
             if 'scheduled_datetime' in form.changed_data and obj.scheduled_datetime:
                 ScheduledEmail.objects.filter(function_name='send_reminder_grade_lesson',
-                                              parameters={'lesson_id': obj.id},
+                                              parameters__lesson_id=obj.id,
                                               executed=False) \
                     .update(schedule=obj.scheduled_datetime + timezone.timedelta(minutes=30))
                 if not ScheduledEmail.objects.filter(function_name='send_reminder_grade_lesson',
-                                                     parameters={'lesson_id': obj.id},
+                                                     parameters__lesson_id=obj.id,
                                                      executed=False).exists() and obj.instructor:
                     ScheduledEmail.objects.create(function_name='send_reminder_grade_lesson',
                                                   schedule=obj.scheduled_datetime + timezone.timedelta(minutes=30),
                                                   parameters={'lesson_id': obj.id})
                 ScheduledEmail.objects.filter(function_name='send_lesson_reminder',
-                                              parameters={'lesson_id': obj.id},
+                                              parameters__lesson_id=obj.id,
                                               executed=False) \
                     .update(schedule=obj.scheduled_datetime - timezone.timedelta(minutes=30))
                 if not ScheduledEmail.objects.filter(function_name='send_lesson_reminder',
-                                                     parameters={'lesson_id': obj.id},
+                                                     parameters__lesson_id=obj.id,
                                                      executed=False).exists():
                     ScheduledEmail.objects.create(function_name='send_lesson_reminder',
                                                   schedule=obj.scheduled_datetime - timezone.timedelta(minutes=30),
