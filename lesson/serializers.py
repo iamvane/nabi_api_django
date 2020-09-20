@@ -794,12 +794,16 @@ class InstructorDashboardSerializer(serializers.ModelSerializer):
 
     backgroundCheckStatus = serializers.CharField(max_length=100, source='bg_status', read_only=True)
     missingFields = serializers.ListField(source='missing_fields_camelcase')
-    lessons = serializers.ListField(child=LessonBookingSerializer(), source='lesson_bookings')
+    lessons = serializers.SerializerMethodField()
     zoomLink = serializers.URLField(source='zoom_link')
 
     class Meta:
         model = Instructor
         fields = ('id', 'backgroundCheckStatus', 'complete', 'missingFields', 'zoomLink', 'lessons', )
+
+    def get_lessons(self, instance):
+        ser = self.LessonBookingSerializer(instance.bookings.last())
+        return [ser.data]
 
 
 class LessonRequestInstructorDashboardSerializer(serializers.ModelSerializer):
