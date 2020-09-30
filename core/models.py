@@ -195,5 +195,6 @@ class ScheduledTask(models.Model):
     """To store info about a task to execute at specific datetime"""
     function_name = models.CharField(max_length=150)
     schedule = models.DateTimeField()
+    limit_execution = models.DateTimeField(blank=True, null=True)
     executed = models.BooleanField(blank=True, default=False)
     parameters = JSONField(blank=True, default=dict)

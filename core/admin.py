@@ -136,7 +136,7 @@ class UserBenefitsAdmin(admin.ModelAdmin):
 
 class ScheduledTaskAdmin(admin.ModelAdmin):
     list_display = ('function_name', 'schedule', 'executed', )
-    fields = ('function_name', 'schedule', 'parameters', 'executed', )
+    fields = ('function_name', 'schedule', 'limit_execution', 'parameters', 'executed', )
     list_filter = ('executed', )
     search_fields = ('function_name', )
 
