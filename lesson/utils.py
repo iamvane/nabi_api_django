@@ -464,11 +464,11 @@ def send_sms_reminder_lesson(lesson_id):
                                                               time_zone,
                                                               '%m/%d/%Y',
                                                               '%I:%M %p')
-    client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_ACCOUNT_TOKEN)
+    client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
     try:
         client.messages.create(to=lesson.booking.user.phonenumber.number, from_=settings.TWILIO_FROM_NUMBER,
                                body=f'Reminder: a lesson is scheduled for {date_str} at {time_str}')
-    except TwilioRestException as e:
+    except Exception as e:
         send_admin_email("[INFO] A reminder lesson sms could not be sent to user",
                          f'A reminder lesson sms could not be sent to number {lesson.booking.user.phonenumber.number} ({lesson.booking.user.email}), lesson id {lesson_id}.'
                          f'Error obtained: {e}'
@@ -484,11 +484,11 @@ def send_sms_reminder_lesson(lesson_id):
                                                               time_zone,
                                                               '%m/%d/%Y',
                                                               '%I:%M %p')
-    client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_ACCOUNT_TOKEN)
+    client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
     try:
         client.messages.create(to=lesson.instructor.user.phonenumber.number, from_=settings.TWILIO_FROM_NUMBER,
                                body=f'Reminder: a lesson is scheduled for {date_str} at {time_str}')
-    except TwilioRestException as e:
+    except Exception as e:
         send_admin_email("[INFO] A reminder lesson sms could not be sent to instructor",
                          f'A reminder lesson sms could not be sent to number {lesson.instructor.user.phonenumber.number} ({lesson.instructor.user.email}), lesson id {lesson_id}.'
                          f'Error obtained: {e}'
