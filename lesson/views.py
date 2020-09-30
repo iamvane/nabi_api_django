@@ -623,6 +623,22 @@ class LessonView(views.APIView):
                                                       schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=60),
                                                       parameters={'lesson_id': lesson.id,
                                                                   'user_id': lesson.instructor.user.id})
+
+                sch_time = lesson.scheduled_datetime.time()
+                minutes_before = 10 if sch_time.minute % 5 == 0 else 15
+                ScheduledEmail.objects.filter(function_name='send_sms_reminder_lesson',
+                                              parameters__lesson_id=lesson.id,
+                                              executed=False)\
+                    .update(schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=minutes_before))
+                if not ScheduledEmail.objects.filter(function_name='send_sms_reminder_lesson',
+                                                     parameters__lesson_id=lesson.id,
+                                                     executed=False).exists():
+                    ScheduledEmail.objects.create(
+                        function_name='send_sms_reminder_lesson',
+                        schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=minutes_before),
+                        parameters={'lesson_id': lesson.id}
+                    )
+
                 task_log = TaskLog.objects.create(task_name='send_lesson_reschedule',
                                                   args={'lesson_id': lesson.id,
                                                         'previous_datetime': previous_datetime.strftime('%Y-%m-%d %I:%M %p')})

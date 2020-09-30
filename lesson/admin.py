@@ -162,6 +162,13 @@ class LessonBookingAdmin(admin.ModelAdmin):
                                     schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=30),
                                     parameters={'lesson_id': lesson.id, 'user_id': lesson.instructor.user.id}
                                 )
+                                sch_time = lesson.scheduled_datetime.time()
+                                minutes_before = 10 if sch_time.minute % 5 == 0 else 15
+                                ScheduledEmail.objects.create(
+                                    function_name='send_sms_reminder_lesson',
+                                    schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=minutes_before),
+                                    parameters={'lesson_id': lesson.id}
+                                )
 
 
 def close_lesson_request(model_admin, request, queryset):
@@ -335,6 +342,20 @@ class LessonAdmin(admin.ModelAdmin):
                                                       schedule=obj.scheduled_datetime - timezone.timedelta(minutes=30),
                                                       parameters={'lesson_id': obj.id,
                                                                   'user_id': obj.instructor.user.id})
+                sch_time = obj.scheduled_datetime.time()
+                minutes_before = 10 if sch_time.minute % 5 == 0 else 15
+                ScheduledEmail.objects.filter(function_name='send_sms_reminder_lesson',
+                                              parameters__lesson_id=obj.id,
+                                              executed=False) \
+                    .update(schedule=obj.scheduled_datetime - timezone.timedelta(minutes=minutes_before))
+                if not ScheduledEmail.objects.filter(function_name='send_sms_reminder_lesson',
+                                                     parameters__lesson_id=obj.id,
+                                                     executed=False).exists():
+                    ScheduledEmail.objects.create(
+                        function_name='send_sms_reminder_lesson',
+                        schedule=obj.scheduled_datetime - timezone.timedelta(minutes=minutes_before),
+                        parameters={'lesson_id': obj.id}
+                    )
                 if form.initial['scheduled_datetime'] and obj.scheduled_datetime:
                     task_log = TaskLog.objects.create(task_name='send_lesson_reschedule',
                                                       args={'lesson_id': obj.id,
