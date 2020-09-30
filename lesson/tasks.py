@@ -224,14 +224,19 @@ def send_alert_request_compatible_instructors(request_id, task_log_id):
 
 
 @app.task
-def send_scheduled_email():
-    """Search for scheduled emails to be send"""
+def execute_scheduled_task():
+    """Search for scheduled tasks to be executed"""
     import lesson.utils
     for sch_task in ScheduledTask.objects.filter(schedule__lte=timezone.now(), executed=False):
-        func = getattr(lesson.utils, sch_task.function_name)
-        func(**sch_task.parameters)
-        sch_task.executed = True
-        sch_task.save()
+        try:
+            func = getattr(lesson.utils, sch_task.function_name)
+            func(**sch_task.parameters)
+        except Exception as e:
+            send_admin_email('Error executing scheduled tasks',
+                             f'Executing function {sch_task.function_name} (register id: {sch_task.id}) the following error was obtained: {e}')
+        else:
+            sch_task.executed = True
+            sch_task.save()
 
 
 @app.task
