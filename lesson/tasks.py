@@ -227,7 +227,10 @@ def send_alert_request_compatible_instructors(request_id, task_log_id):
 def execute_scheduled_task():
     """Search for scheduled tasks to be executed"""
     import lesson.utils
-    for sch_task in ScheduledTask.objects.filter(schedule__lte=timezone.now(), executed=False):
+    dt_now = timezone.now()
+    for sch_task in ScheduledTask.objects.filter(schedule__lte=dt_now, executed=False):
+        if sch_task.limit_execution < dt_now:
+            continue
         try:
             func = getattr(lesson.utils, sch_task.function_name)
             func(**sch_task.parameters)
