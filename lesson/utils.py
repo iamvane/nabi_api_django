@@ -454,8 +454,11 @@ def send_sms_reminder_lesson(lesson_id):
         lesson = Lesson.objects.get(id=lesson_id)
     except Lesson.DoesNotExist:
         return None
+    lb = lesson.booking
+    stu_details = lb.student_details()
+    stu_name = stu_details.get('name')
     # send sms to user of lesson
-    account = get_account(lesson.booking.user)
+    account = get_account(lb.user)
     if account.timezone:
         time_zone = account.timezone
     else:
@@ -466,8 +469,8 @@ def send_sms_reminder_lesson(lesson_id):
                                                               '%I:%M %p')
     client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
     try:
-        client.messages.create(to=lesson.booking.user.phonenumber.number, from_=settings.TWILIO_FROM_NUMBER,
-                               body=f'Reminder: a lesson is scheduled for {date_str} at {time_str}')
+        client.messages.create(to=lb.user.phonenumber.number, from_=settings.TWILIO_FROM_NUMBER,
+                               body=f'\u23f0 Lesson reminder from Nabi Music: {stu_name} music lesson is coming up at {time_str} ({time_zone}). Please get ready and have a great lesson!')
     except Exception as e:
         send_admin_email("[INFO] A reminder lesson sms could not be sent to user",
                          f'A reminder lesson sms could not be sent to number {lesson.booking.user.phonenumber.number} ({lesson.booking.user.email}), lesson id {lesson_id}.'
@@ -487,7 +490,7 @@ def send_sms_reminder_lesson(lesson_id):
     client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
     try:
         client.messages.create(to=lesson.instructor.user.phonenumber.number, from_=settings.TWILIO_FROM_NUMBER,
-                               body=f'Reminder: a lesson is scheduled for {date_str} at {time_str}')
+                               body=f'\u23f0 Lesson reminder from Nabi Music: {stu_name} music lesson is coming up at {time_str} ({time_zone}). Please get ready and have a great lesson!')
     except Exception as e:
         send_admin_email("[INFO] A reminder lesson sms could not be sent to instructor",
                          f'A reminder lesson sms could not be sent to number {lesson.instructor.user.phonenumber.number} ({lesson.instructor.user.email}), lesson id {lesson_id}.'
