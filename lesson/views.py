@@ -629,13 +629,15 @@ class LessonView(views.APIView):
                 ScheduledTask.objects.filter(function_name='send_sms_reminder_lesson',
                                              parameters__lesson_id=lesson.id,
                                              executed=False)\
-                    .update(schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=minutes_before))
+                    .update(schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=minutes_before),
+                            limit_execution=lesson.scheduled_datetime + timezone.timedelta(minutes=10))
                 if not ScheduledTask.objects.filter(function_name='send_sms_reminder_lesson',
                                                     parameters__lesson_id=lesson.id,
                                                     executed=False).exists():
                     ScheduledTask.objects.create(
                         function_name='send_sms_reminder_lesson',
                         schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=minutes_before),
+                        limit_execution=lesson.scheduled_datetime + timezone.timedelta(minutes=10),
                         parameters={'lesson_id': lesson.id}
                     )
 

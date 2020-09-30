@@ -197,6 +197,7 @@ class LessonBooking(models.Model):
             minutes_before = 10 if sch_time.minute % 5 == 0 else 15
             ScheduledTask.objects.create(function_name='send_sms_reminder_lesson',
                                          schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=minutes_before),
+                                         limit_execution=lesson.scheduled_datetime + timezone.timedelta(minutes=10),
                                          parameters={'lesson_id': lesson.id})
             if lesson.instructor:
                 ScheduledTask.objects.create(function_name='send_reminder_grade_lesson',

@@ -340,13 +340,15 @@ class LessonAdmin(admin.ModelAdmin):
                 ScheduledTask.objects.filter(function_name='send_sms_reminder_lesson',
                                              parameters__lesson_id=obj.id,
                                              executed=False) \
-                    .update(schedule=obj.scheduled_datetime - timezone.timedelta(minutes=minutes_before))
+                    .update(schedule=obj.scheduled_datetime - timezone.timedelta(minutes=minutes_before),
+                            limit_execution=obj.scheduled_datetime + timezone.timedelta(minutes=10))
                 if not ScheduledTask.objects.filter(function_name='send_sms_reminder_lesson',
                                                     parameters__lesson_id=obj.id,
                                                     executed=False).exists():
                     ScheduledTask.objects.create(
                         function_name='send_sms_reminder_lesson',
                         schedule=obj.scheduled_datetime - timezone.timedelta(minutes=minutes_before),
+                        limit_execution=obj.scheduled_datetime + timezone.timedelta(minutes=10),
                         parameters={'lesson_id': obj.id}
                     )
                 if form.initial['scheduled_datetime'] and obj.scheduled_datetime:
