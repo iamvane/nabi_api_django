@@ -191,8 +191,8 @@ class TaskLog(models.Model):
     registered_at = models.DateTimeField(auto_now_add=True)
 
 
-class ScheduledEmail(models.Model):
-    """To store info about email to send at specific datetime"""
+class ScheduledTask(models.Model):
+    """To store info about a task to execute at specific datetime"""
     function_name = models.CharField(max_length=150)
     schedule = models.DateTimeField()
     executed = models.BooleanField(blank=True, default=False)

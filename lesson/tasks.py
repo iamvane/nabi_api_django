@@ -12,7 +12,7 @@ from core.models import TaskLog, User
 from core.utils import send_admin_email
 from nabi_api_django.celery_config import app
 
-from core.models import ScheduledEmail
+from core.models import ScheduledTask
 from .models import Application, Lesson, LessonBooking, LessonRequest
 from .utils import (get_availability_field_names_from_availability_json,
                     send_alert_application, send_alert_booking, send_alert_request_instructor, send_info_lesson_graded,
@@ -227,11 +227,11 @@ def send_alert_request_compatible_instructors(request_id, task_log_id):
 def send_scheduled_email():
     """Search for scheduled emails to be send"""
     import lesson.utils
-    for sch_email in ScheduledEmail.objects.filter(schedule__lte=timezone.now(), executed=False):
-        func = getattr(lesson.utils, sch_email.function_name)
-        func(**sch_email.parameters)
-        sch_email.executed = True
-        sch_email.save()
+    for sch_task in ScheduledTask.objects.filter(schedule__lte=timezone.now(), executed=False):
+        func = getattr(lesson.utils, sch_task.function_name)
+        func(**sch_task.parameters)
+        sch_task.executed = True
+        sch_task.save()
 
 
 @app.task

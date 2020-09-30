@@ -7,7 +7,7 @@ from django.utils import timezone
 from accounts.models import Instructor, TiedStudent
 from accounts.utils import add_to_email_list_v2
 from core.constants import LESSON_REQUEST_ACTIVE, LESSON_REQUEST_CLOSED, PY_APPLIED
-from core.models import ScheduledEmail, TaskLog, UserBenefits
+from core.models import ScheduledTask, TaskLog, UserBenefits
 from lesson.models import Instrument
 from payments.models import Payment
 
@@ -152,22 +152,15 @@ class LessonBookingAdmin(admin.ModelAdmin):
                                                                   args={'lesson_id': lesson.id})
                                 send_lesson_info_instructor.delay(lesson.id, task_log.id)
                             if lesson.scheduled_datetime:
-                                ScheduledEmail.objects.create(
+                                ScheduledTask.objects.create(
                                     function_name='send_reminder_grade_lesson',
                                     schedule=lesson.scheduled_datetime + timezone.timedelta(minutes=30),
                                     parameters={'lesson_id': lesson.id}
                                 )
-                                ScheduledEmail.objects.create(
+                                ScheduledTask.objects.create(
                                     function_name='send_lesson_reminder',
                                     schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=30),
                                     parameters={'lesson_id': lesson.id, 'user_id': lesson.instructor.user.id}
-                                )
-                                sch_time = lesson.scheduled_datetime.time()
-                                minutes_before = 10 if sch_time.minute % 5 == 0 else 15
-                                ScheduledEmail.objects.create(
-                                    function_name='send_sms_reminder_lesson',
-                                    schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=minutes_before),
-                                    parameters={'lesson_id': lesson.id}
                                 )
 
 
@@ -316,42 +309,42 @@ class LessonAdmin(admin.ModelAdmin):
                 task_log = TaskLog.objects.create(task_name='send_instructor_lesson_complete', args={'lesson_id': obj.id})
                 send_instructor_complete_lesson.delay(obj.id, task_log.id)
             if 'scheduled_datetime' in form.changed_data and obj.scheduled_datetime:
-                ScheduledEmail.objects.filter(function_name='send_reminder_grade_lesson',
-                                              parameters__lesson_id=obj.id,
-                                              executed=False) \
+                ScheduledTask.objects.filter(function_name='send_reminder_grade_lesson',
+                                             parameters__lesson_id=obj.id,
+                                             executed=False) \
                     .update(schedule=obj.scheduled_datetime + timezone.timedelta(minutes=30))
-                if not ScheduledEmail.objects.filter(function_name='send_reminder_grade_lesson',
-                                                     parameters__lesson_id=obj.id,
-                                                     executed=False).exists() and obj.instructor:
-                    ScheduledEmail.objects.create(function_name='send_reminder_grade_lesson',
-                                                  schedule=obj.scheduled_datetime + timezone.timedelta(minutes=30),
-                                                  parameters={'lesson_id': obj.id})
-                ScheduledEmail.objects.filter(function_name='send_lesson_reminder',
-                                              parameters__lesson_id=obj.id,
-                                              executed=False) \
+                if not ScheduledTask.objects.filter(function_name='send_reminder_grade_lesson',
+                                                    parameters__lesson_id=obj.id,
+                                                    executed=False).exists() and obj.instructor:
+                    ScheduledTask.objects.create(function_name='send_reminder_grade_lesson',
+                                                 schedule=obj.scheduled_datetime + timezone.timedelta(minutes=30),
+                                                 parameters={'lesson_id': obj.id})
+                ScheduledTask.objects.filter(function_name='send_lesson_reminder',
+                                             parameters__lesson_id=obj.id,
+                                             executed=False) \
                     .update(schedule=obj.scheduled_datetime - timezone.timedelta(minutes=30))
-                if not ScheduledEmail.objects.filter(function_name='send_lesson_reminder',
-                                                     parameters__lesson_id=obj.id,
-                                                     executed=False).exists():
-                    ScheduledEmail.objects.create(function_name='send_lesson_reminder',
-                                                  schedule=obj.scheduled_datetime - timezone.timedelta(minutes=30),
-                                                  parameters={'lesson_id': obj.id,
+                if not ScheduledTask.objects.filter(function_name='send_lesson_reminder',
+                                                    parameters__lesson_id=obj.id,
+                                                    executed=False).exists():
+                    ScheduledTask.objects.create(function_name='send_lesson_reminder',
+                                                 schedule=obj.scheduled_datetime - timezone.timedelta(minutes=30),
+                                                 parameters={'lesson_id': obj.id,
                                                               'user_id': obj.booking.user.id})
                     if obj.instructor:
-                        ScheduledEmail.objects.create(function_name='send_lesson_reminder',
-                                                      schedule=obj.scheduled_datetime - timezone.timedelta(minutes=30),
-                                                      parameters={'lesson_id': obj.id,
+                        ScheduledTask.objects.create(function_name='send_lesson_reminder',
+                                                     schedule=obj.scheduled_datetime - timezone.timedelta(minutes=30),
+                                                     parameters={'lesson_id': obj.id,
                                                                   'user_id': obj.instructor.user.id})
                 sch_time = obj.scheduled_datetime.time()
                 minutes_before = 10 if sch_time.minute % 5 == 0 else 15
-                ScheduledEmail.objects.filter(function_name='send_sms_reminder_lesson',
-                                              parameters__lesson_id=obj.id,
-                                              executed=False) \
+                ScheduledTask.objects.filter(function_name='send_sms_reminder_lesson',
+                                             parameters__lesson_id=obj.id,
+                                             executed=False) \
                     .update(schedule=obj.scheduled_datetime - timezone.timedelta(minutes=minutes_before))
-                if not ScheduledEmail.objects.filter(function_name='send_sms_reminder_lesson',
-                                                     parameters__lesson_id=obj.id,
-                                                     executed=False).exists():
-                    ScheduledEmail.objects.create(
+                if not ScheduledTask.objects.filter(function_name='send_sms_reminder_lesson',
+                                                    parameters__lesson_id=obj.id,
+                                                    executed=False).exists():
+                    ScheduledTask.objects.create(
                         function_name='send_sms_reminder_lesson',
                         schedule=obj.scheduled_datetime - timezone.timedelta(minutes=minutes_before),
                         parameters={'lesson_id': obj.id}
