@@ -3,6 +3,8 @@ import json
 import re
 import requests
 from decimal import Decimal
+from twilio.base.exceptions import TwilioRestException
+from twilio.rest import Client
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -443,6 +445,57 @@ def send_reschedule_lesson(lesson, user, prev_datetime):
                              resp.content.decode())
                          )
         return None
+
+
+def send_sms_reminder_lesson(lesson_id):
+    from accounts.models import get_account
+    from lesson.models import Lesson
+    try:
+        lesson = Lesson.objects.get(id=lesson_id)
+    except Lesson.DoesNotExist:
+        return None
+    lb = lesson.booking
+    stu_details = lb.student_details()
+    stu_name = stu_details.get('name')
+    # send sms to user of lesson
+    account = get_account(lb.user)
+    if account.timezone:
+        time_zone = account.timezone
+    else:
+        time_zone = account.get_timezone_from_location_zipcode()
+    date_str, time_str = get_date_time_from_datetime_timezone(lesson.scheduled_datetime,
+                                                              time_zone,
+                                                              '%m/%d/%Y',
+                                                              '%I:%M %p')
+    client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+    try:
+        client.messages.create(to=lb.user.phonenumber.number, from_=settings.TWILIO_FROM_NUMBER,
+                               body=f'\u23f0 Lesson reminder from Nabi Music: {stu_name} music lesson is coming up at {time_str} ({time_zone}). Please get ready and have a great lesson!')
+    except Exception as e:
+        send_admin_email("[INFO] A reminder lesson sms could not be sent to user",
+                         f'A reminder lesson sms could not be sent to number {lesson.booking.user.phonenumber.number} ({lesson.booking.user.email}), lesson id {lesson_id}.'
+                         f'Error obtained: {e}'
+                         )
+    # send sms to instructor of lesson
+    if not lesson.instructor:
+        return None
+    if lesson.instructor.timezone:
+        time_zone = lesson.instructor.timezone
+    else:
+        time_zone = lesson.instructor.get_timezone_from_location_zipcode()
+    date_str, time_str = get_date_time_from_datetime_timezone(lesson.scheduled_datetime,
+                                                              time_zone,
+                                                              '%m/%d/%Y',
+                                                              '%I:%M %p')
+    client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+    try:
+        client.messages.create(to=lesson.instructor.user.phonenumber.number, from_=settings.TWILIO_FROM_NUMBER,
+                               body=f'\u23f0 Lesson reminder from Nabi Music: {stu_name} music lesson is coming up at {time_str} ({time_zone}). Please get ready and have a great lesson!')
+    except Exception as e:
+        send_admin_email("[INFO] A reminder lesson sms could not be sent to instructor",
+                         f'A reminder lesson sms could not be sent to number {lesson.instructor.user.phonenumber.number} ({lesson.instructor.user.email}), lesson id {lesson_id}.'
+                         f'Error obtained: {e}'
+                         )
 
 
 def get_benefit_to_redeem(user):

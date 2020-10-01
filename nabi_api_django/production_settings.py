@@ -100,8 +100,8 @@ CELERY_BEAT_SCHEDULE = {
     #     'task': 'accounts.tasks.alert_user_without_location_coordinates',
     #     'schedule': crontab(hour='7', minute='0'),
     # },
-    'send-lesson-scheduled-emails': {
-        'task': 'lesson.tasks.send_scheduled_email',
+    'execute-scheduled-tasks': {
+        'task': 'lesson.tasks.execute_scheduled_task',
         'schedule': crontab(minute='*/5'),
     },
 }
