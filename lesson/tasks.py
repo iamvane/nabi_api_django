@@ -229,7 +229,7 @@ def execute_scheduled_task():
     import lesson.utils
     dt_now = timezone.now()
     for sch_task in ScheduledTask.objects.filter(schedule__lte=dt_now, executed=False):
-        if sch_task.limit_execution < dt_now:
+        if sch_task.limit_execution is not None and sch_task.limit_execution < dt_now:
             continue
         try:
             func = getattr(lesson.utils, sch_task.function_name)
