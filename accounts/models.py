@@ -609,6 +609,7 @@ class StudentDetails(models.Model):
     skill_level = models.CharField(max_length=50, choices=SKILL_LEVEL_CHOICES)
     lesson_place = models.CharField(max_length=50, choices=PLACE_FOR_LESSONS_CHOICES)
     lesson_duration = models.CharField(max_length=50, choices=LESSON_DURATION_CHOICES)
+    notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -616,6 +617,16 @@ class StudentDetails(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['user', 'tied_student'], name='unique_student')
         ]
+
+
+class SpecialNeeds(models.Model):
+    student_details = models.ForeignKey(StudentDetails, related_name='special_needs', on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
 
 
 class Affiliate(models.Model):
