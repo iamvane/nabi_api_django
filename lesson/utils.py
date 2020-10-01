@@ -457,6 +457,19 @@ def send_sms_reminder_lesson(lesson_id):
     lb = lesson.booking
     stu_details = lb.student_details()
     stu_name = stu_details.get('name')
+    if stu_name[-1] == 's' or stu_name[-1] == 'S':
+        stu_name = stu_name + "'"
+    else:
+        stu_name = stu_name + "'s"
+    instrument_name = 'music'
+    if lb.user.is_parent():
+        if lb.tied_student and lb.tied_student.tied_student_details and lb.tied_student.tied_student_details.instrument:
+            instrument_name = lb.tied_student.tied_student_details.instrument.name
+    else:
+        if lb.user.student_details.count():
+            details = lb.user.student_details.last()
+            if details and details.instrument:
+                instrument_name = details.instrument.name
     # send sms to user of lesson
     account = get_account(lb.user)
     if account.timezone:
@@ -470,7 +483,7 @@ def send_sms_reminder_lesson(lesson_id):
     client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
     try:
         client.messages.create(to=lb.user.phonenumber.number, from_=settings.TWILIO_FROM_NUMBER,
-                               body=f'\u23f0 Lesson reminder from Nabi Music: {stu_name} music lesson is coming up at {time_str} ({time_zone}). Please get ready and have a great lesson!')
+                               body=f'\u23f0 Lesson reminder from Nabi Music: {stu_name} {instrument_name} lesson is coming up at {time_str} ({time_zone}). Please get ready and have a great lesson!')
     except Exception as e:
         send_admin_email("[INFO] A reminder lesson sms could not be sent to user",
                          f'A reminder lesson sms could not be sent to number {lesson.booking.user.phonenumber.number} ({lesson.booking.user.email}), lesson id {lesson_id}.'
@@ -490,7 +503,7 @@ def send_sms_reminder_lesson(lesson_id):
     client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
     try:
         client.messages.create(to=lesson.instructor.user.phonenumber.number, from_=settings.TWILIO_FROM_NUMBER,
-                               body=f'\u23f0 Lesson reminder from Nabi Music: {stu_name} music lesson is coming up at {time_str} ({time_zone}). Please get ready and have a great lesson!')
+                               body=f'\u23f0 Lesson reminder from Nabi Music: {stu_name} {instrument_name} lesson is coming up at {time_str} ({time_zone}). Please get ready and have a great lesson!')
     except Exception as e:
         send_admin_email("[INFO] A reminder lesson sms could not be sent to instructor",
                          f'A reminder lesson sms could not be sent to number {lesson.instructor.user.phonenumber.number} ({lesson.instructor.user.email}), lesson id {lesson_id}.'
