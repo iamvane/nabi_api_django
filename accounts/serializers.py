@@ -23,7 +23,7 @@ from .models import (
     Affiliate, Availability, Education, Employment, Instructor, InstructorAdditionalQualifications,
     InstructorAgeGroup, InstructorInstruments,
     InstructorPlaceForLessons, InstructorLessonRate, InstructorLessonSize, InstructorReview, Parent, PhoneNumber,
-    Student, StudentDetails, TiedStudent, get_account,
+    SpecialNeeds, Student, StudentDetails, TiedStudent, get_account,
 )
 from .utils import add_to_email_list, add_to_email_list_v2, init_kwargs
 
@@ -632,14 +632,19 @@ class AvatarStudentSerializer(serializers.ModelSerializer):
 class StudentDetailsSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True, source='pk')
     instrument = serializers.CharField(max_length=250, source='instrument.name')   # instrument name
+    specialNeeds = serializers.ListField(child=serializers.CharField(max_length=100), required=False)
 
     class Meta:
         model = StudentDetails
-        fields = ['id', 'user', 'instrument', 'skill_level', 'lesson_place', 'lesson_duration', ]
+        fields = ['id', 'user', 'instrument', 'skill_level', 'lesson_place', 'lesson_duration', 'notes', 'specialNeeds', ]
 
     def create(self, validated_data):
         validated_data['instrument'], _ = Instrument.objects.get_or_create(name=validated_data['instrument']['name'])
-        return StudentDetails.objects.create(**validated_data)
+        special_needs = validated_data.pop('specialNeeds', [])
+        instance = StudentDetails.objects.create(**validated_data)
+        for item in special_needs:
+            SpecialNeeds.objects.get_or_create(name=item, student_details=instance)
+        return instance
 
     def update(self, instance, validated_data):
         if validated_data.get('instrument') is not None:
@@ -666,6 +671,10 @@ class StudentDetailsSerializer(serializers.ModelSerializer):
             new_data['lesson_place'] = data['lessonPlace']
         if keys.get('lessonDuration'):
             new_data['lesson_duration'] = data['lessonDuration']
+        if keys.get('notes'):
+            new_data['notes'] = data['notes']
+        if keys.get('specialNeeds'):
+            new_data['specialNeeds'] = data.pop('specialNeeds')
         return super().to_internal_value(new_data)
 
 
@@ -676,10 +685,11 @@ class StudentSerializer(serializers.ModelSerializer):
     instrument = serializers.CharField(max_length=250, source='instrument.name')   # instrument name
     studentId = serializers.IntegerField(read_only=True)
     skillLevel = serializers.CharField(max_length=50, source='skill_level')
+    specialNeeds = serializers.ListField(child=serializers.CharField(max_length=100), required=False)
 
     class Meta:
         model = StudentDetails
-        fields = ['user', 'name', 'age', 'instrument', 'skillLevel', 'studentId', ]
+        fields = ['user', 'name', 'age', 'instrument', 'skillLevel', 'notes', 'studentId', 'specialNeeds', ]
 
     def validate(self, attrs):
         if attrs['user'].is_parent():
@@ -702,7 +712,10 @@ class StudentSerializer(serializers.ModelSerializer):
                 validated_data['tied_student'] = tied_student
             validated_data.pop('name', '')
             validated_data.pop('age', '')
+            special_needs = validated_data.pop('specialNeeds', [])
             student_details = StudentDetails.objects.create(**validated_data)
+            for item in special_needs:
+                SpecialNeeds.objects.get_or_create(name=item, student_details=student_details)
         return student_details
 
     def to_representation(self, instance):
@@ -712,10 +725,12 @@ class StudentSerializer(serializers.ModelSerializer):
             data['name'] = instance.tied_student.name
             data['age'] = instance.tied_student.age
             data['studentId'] = instance.tied_student.id
+            data['specialNeeds'] = [item.name for item in instance.special_needs.all()]
         else:
             data['name'] = instance.user.first_name
             data['age'] = instance.user.student.age
             data['studentId'] = instance.user.student.id
+            data['specialNeeds'] = [item.name for item in instance.special_needs.all()]
         dict_data.update(data)
         return dict_data
 
@@ -736,10 +751,12 @@ class TiedStudentSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=250, source='tied_student.name')
     age = serializers.IntegerField(source='tied_student.age')
     instrument = serializers.CharField(max_length=250, source='instrument.name')   # instrument name
+    specialNeeds = serializers.ListField(child=serializers.CharField(max_length=100), required=False)
 
     class Meta:
         model = StudentDetails
-        fields = ['id', 'user', 'name', 'age', 'instrument', 'skill_level', 'lesson_place', 'lesson_duration', ]
+        fields = ['id', 'user', 'name', 'age', 'instrument', 'skill_level', 'lesson_place', 'lesson_duration',
+                  'notes', 'specialNeeds', ]
 
     def create(self, validated_data):
         parent = Parent.objects.get(user_id=validated_data['user'])
@@ -747,7 +764,11 @@ class TiedStudentSerializer(serializers.ModelSerializer):
                                                   age=validated_data['tied_student']['age'])
         validated_data['tied_student'] = tied_student
         validated_data['instrument'], _ = Instrument.objects.get_or_create(name=validated_data['instrument']['name'])
-        return super().create(validated_data)
+        special_needs = validated_data.pop('specialNeeds', [])
+        instance = super().create(validated_data)
+        for item in special_needs:
+            SpecialNeeds.objects.get_or_create(name=item, student_details=instance)
+        return instance
 
     def to_representation(self, instance):
         dict_data = super().to_representation(instance)
@@ -772,14 +793,20 @@ class TiedStudentItemSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=250, source='tied_student.name')
     age = serializers.IntegerField(source='tied_student.age')
     instrument = serializers.CharField(max_length=250, source='instrument.name')   # instrument name
+    specialNeeds = serializers.ListField(child=serializers.CharField(max_length=100), required=False)
 
     class Meta:
         model = StudentDetails
-        fields = ['id', 'name', 'age', 'instrument', 'skill_level', 'lesson_place', 'lesson_duration', ]
+        fields = ['id', 'name', 'age', 'instrument', 'skill_level', 'lesson_place', 'lesson_duration',
+                  'notes', 'specialNeeds']
 
     def update(self, instance, validated_data):
         if validated_data.get('instrument') is not None:
             validated_data['instrument'], _ = Instrument.objects.get_or_create(name=validated_data['instrument']['name'])
+        if validated_data.get('specialNeeds'):
+            special_needs = validated_data.pop('specialNeeds', [])
+            for item in special_needs:
+                SpecialNeeds.objects.get_or_create(name=item, student_details=instance)
         if validated_data.get('tied_student') is not None:
             if validated_data['tied_student'].get('age') is not None:
                 instance.tied_student.age = validated_data['tied_student']['age']
@@ -798,6 +825,10 @@ class TiedStudentItemSerializer(serializers.ModelSerializer):
             new_data['lesson_place'] = data.pop('lessonPlace')
         if keys.get('lessonDuration'):
             new_data['lesson_duration'] = data.pop('lessonDuration')
+        if keys.get('notes'):
+            new_data['notes'] = data.pop('notes')
+        if keys.get('specialNeeds'):
+            new_data['specialNeeds'] = data.pop('specialNeeds')
         return super().to_internal_value(new_data)
 
     def to_representation(self, instance):
