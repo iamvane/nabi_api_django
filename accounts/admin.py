@@ -13,7 +13,8 @@ from django.db.models.functions import Cast
 
 from accounts.models import (Availability, Education, Employment, Instructor, InstructorAdditionalQualifications,
                              InstructorAgeGroup, InstructorInstruments, InstructorLessonRate, InstructorLessonSize,
-                             InstructorPlaceForLessons, InstructorReview, Parent, Student, StudentDetails, TiedStudent)
+                             InstructorPlaceForLessons, InstructorReview, Parent, Student,
+                             SpecialNeeds, StudentDetails, TiedStudent)
 from accounts.utils import get_geopoint_from_location
 
 User = get_user_model()
@@ -227,10 +228,16 @@ class TiedStudentInline(admin.TabularInline):
     extra = 1
 
 
+class SpecialNeedsAdmin(admin.TabularInline):
+    model = SpecialNeeds
+    extra = 1
+
+
 class StudentDetailsAdmin(admin.ModelAdmin):
     list_display = ('get_user_email', 'get_tied_student_name')
     list_filter = ('instrument', )
-    fields = ('user', 'tied_student', 'instrument', 'skill_level', 'lesson_place', 'lesson_duration', )
+    fields = ('user', 'tied_student', 'instrument', 'skill_level', 'lesson_place', 'lesson_duration', 'notes', )
+    inlines = [SpecialNeedsAdmin, ]
 
     def get_user_email(self, instance):
         return instance.user.email
