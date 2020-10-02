@@ -225,10 +225,12 @@ Cookie: sessionid=9396ti9t47fzumbr3kp67l9l1x96rzsv
 X-CSRFToken: yfmsbIDJlhHYk4m1kQh8r445PNfrBVPekzW0OtFAWkl0rLn1go7uQ4Wdj4KNughA
 
 {
-    "name": "Joseph",
+    "name": "Luigi",
     "age": 31,
-    "instrument": "flaute",
+    "instrument": "piano",
     "skillLevel": "intermediate",
+    "specialNeeds": ["adhd"],
+	  "notes": "Luigi is Mario's brother!"
 }
 or
 {
