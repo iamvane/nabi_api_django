@@ -215,7 +215,8 @@ class LessonRequestCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LessonRequest
-        fields = ('user', 'instrument', 'skillLevel', 'studentId', 'availability', 'placeForLessons', 'lessonsDuration')
+        fields = ('user', 'instrument', 'skillLevel', 'studentId', 'availability', 'placeForLessons', 'lessonsDuration',
+                  'gender', 'language')
 
     def validate_studentId(self, value):
         if not TiedStudent.objects.filter(parent__user_id=self.initial_data['user'], id=value).exists():
