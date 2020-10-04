@@ -37,6 +37,8 @@ class LessonRequest(models.Model):
     trial_proposed_datetime = models.DateTimeField(blank=True, null=True)
     trial_proposed_timezone = models.CharField(max_length=50, blank=True)
     students = models.ManyToManyField(TiedStudent, blank=True)
+    gender = models.CharField(max_length=50, blank=True, null=True, choices=GENDER_CHOICES)
+    language = models.CharField(max_length=100, blank=True)
     status = models.CharField(max_length=100, choices=LESSON_REQUEST_STATUSES,
                               blank=True, default=LESSON_REQUEST_ACTIVE)
     trial_availability_schedule = JSONField(blank=True, default=dict)
