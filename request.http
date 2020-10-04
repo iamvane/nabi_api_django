@@ -430,6 +430,8 @@ Content-Type: application/json
   "instrument": "guitar",
   "skillLevel": "beginner",
   "requestMessage": "Hello I am looking for a guitar instructor",
+  "gender": "female",
+  "language": "English",
   "availability": [
         {
             "day": "mon",
@@ -469,6 +471,8 @@ or
   "studentName": "name": "Santiago",
   "requestTitle": "Instructor needed in Boston MA",
   "requestMessage": "My child want to take some lessons",
+  "gender": "male",
+  "language": "English",
   "availability": [
         {
             "day": "mon",
@@ -490,6 +494,8 @@ or
   "requestTitle": "Piano Instructor needed in Boston MA",
   "instrument": "piano",
   "skillLevel": "beginner",
+  "gender": "male",
+  "language": "English",
   "requestMessage": "My child want to take some piano lessons",
   "availability": [
         {
