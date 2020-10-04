@@ -210,7 +210,9 @@ X-CSRFToken: yfmsbIDJlhHYk4m1kQh8r445PNfrBVPekzW0OtFAWkl0rLn1go7uQ4Wdj4KNughA
   "instrument": "flaute",
   "skillLevel": "basic",
   "lessonPlace": "home",
-  "lessonDuration": "90 mins"
+  "lessonDuration": "90 mins",
+  "notes": "My child requires much attention",
+  "specialNeeds": ["something"]
 }
 
 ###
@@ -255,7 +257,9 @@ X-CSRFToken: yfmsbIDJlhHYk4m1kQh8r445PNfrBVPekzW0OtFAWkl0rLn1go7uQ4Wdj4KNughA
   "instrument": "flaute",
   "skillLevel": "basic",
   "lessonPlace": "online",
-  "lessonDuration": "60 mins"
+  "lessonDuration": "60 mins",
+  "notes": "My child requires much attention",
+  "specialNeeds": ["something"]
 }
 
 ###
