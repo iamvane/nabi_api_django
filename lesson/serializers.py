@@ -53,7 +53,7 @@ class LessonRequestSerializer(serializers.ModelSerializer):
         model = LessonRequest
         fields = ('user_id', 'title', 'message', 'instrument', 'lessons_duration', 'travel_distance',
                   'place_for_lessons', 'skill_level', 'students', 'date', 'time', 'timezone',
-                  'trial_proposed_datetime', 'trial_proposed_timezone')
+                  'gender', 'language', 'trial_proposed_datetime', 'trial_proposed_timezone')
 
     def to_internal_value(self, data):
         keys = dict.fromkeys(data, 1)
@@ -82,6 +82,10 @@ class LessonRequestSerializer(serializers.ModelSerializer):
             new_data['time'] = data.get('time')
         if keys.get('timezone'):
             new_data['timezone'] = data.get('timezone')
+        if keys.get('gender'):
+            new_data['gender'] = data.get('gender')
+        if keys.get('language'):
+            new_data['language'] = data.get('language')
         return super().to_internal_value(new_data)
 
     def validate(self, attrs):
@@ -182,7 +186,8 @@ class LessonRequestDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = LessonRequest
         fields = ('id', 'instrument', 'requestMessage', 'requestTitle', 'lessonDuration', 'travelDistance',
-                  'placeForLessons', 'skillLevel', 'status', 'students', 'date', 'time', 'timezone', 'availability')
+                  'placeForLessons', 'skillLevel', 'status', 'students', 'date', 'time', 'timezone', 'availability',
+                  'gender', 'language')
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -386,7 +391,7 @@ class LessonRequestItemSerializer(serializers.ModelSerializer):
         model = LessonRequest
         fields = ('avatar', 'created_at', 'display_name', 'distance', 'id', 'instrument',  'lessons_duration',
                   'location', 'message', 'place_for_lessons', 'role', 'skill_level', 'students', 'title',
-                  'applications_received', 'applied', 'date', 'time', 'timezone')
+                  'gender', 'language', 'applications_received', 'applied', 'date', 'time', 'timezone')
 
     def get_applications_received(self, instance):
         return instance.applications.count()
@@ -412,6 +417,8 @@ class LessonRequestItemSerializer(serializers.ModelSerializer):
                     'id': data.get('id'),
                     'instrument': data.get('instrument'),
                     'lessonDuration': data.get('lessons_duration'),
+                    'gender': data.get('gender'),
+                    'language': data.get('language'),
                     'requestMessage': data.get('message'),
                     'placeForLessons': data.get('place_for_lessons'),
                     'skillLevel': data.get('skill_level'),
@@ -505,7 +512,7 @@ class LessonRequestListItemSerializer(serializers.ModelSerializer):
         model = LessonRequest
         fields = ('id', 'avatar', 'displayName', 'instrument',  'lessonDuration', 'location', 'requestMessage',
                   'placeForLessons', 'skillLevel', 'studentDetails', 'requestTitle', 'application', 'applied',
-                  'status', 'availability')
+                  'gender', 'language', 'status', 'availability')
 
     def get_avatar(self, instance):
         account = get_account(instance.user)
