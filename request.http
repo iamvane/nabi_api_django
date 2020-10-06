@@ -210,7 +210,9 @@ X-CSRFToken: yfmsbIDJlhHYk4m1kQh8r445PNfrBVPekzW0OtFAWkl0rLn1go7uQ4Wdj4KNughA
   "instrument": "flaute",
   "skillLevel": "basic",
   "lessonPlace": "home",
-  "lessonDuration": "90 mins"
+  "lessonDuration": "90 mins",
+  "notes": "My child requires much attention",
+  "specialNeeds": ["something"]
 }
 
 ###
@@ -255,7 +257,9 @@ X-CSRFToken: yfmsbIDJlhHYk4m1kQh8r445PNfrBVPekzW0OtFAWkl0rLn1go7uQ4Wdj4KNughA
   "instrument": "flaute",
   "skillLevel": "basic",
   "lessonPlace": "online",
-  "lessonDuration": "60 mins"
+  "lessonDuration": "60 mins",
+  "notes": "My child requires much attention",
+  "specialNeeds": ["something"]
 }
 
 ###
@@ -426,6 +430,8 @@ Content-Type: application/json
   "instrument": "guitar",
   "skillLevel": "beginner",
   "requestMessage": "Hello I am looking for a guitar instructor",
+  "gender": "female",
+  "language": "English",
   "availability": [
         {
             "day": "mon",
@@ -465,6 +471,8 @@ or
   "studentName": "name": "Santiago",
   "requestTitle": "Instructor needed in Boston MA",
   "requestMessage": "My child want to take some lessons",
+  "gender": "male",
+  "language": "English",
   "availability": [
         {
             "day": "mon",
@@ -486,6 +494,8 @@ or
   "requestTitle": "Piano Instructor needed in Boston MA",
   "instrument": "piano",
   "skillLevel": "beginner",
+  "gender": "male",
+  "language": "English",
   "requestMessage": "My child want to take some piano lessons",
   "availability": [
         {

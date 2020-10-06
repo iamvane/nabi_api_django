@@ -176,7 +176,7 @@ class LessonRequestAdmin(admin.ModelAdmin):
     readonly_fields = ('get_timezone', )
     fields = ('user', 'title', 'message', 'instrument', 'skill_level', 'place_for_lessons', 'lessons_duration',
               'travel_distance', 'trial_proposed_datetime', 'get_timezone', 'trial_availability_schedule',
-              'students', 'status', )
+              'gender', 'language', 'students', 'status', )
     filter_horizontal = ('students', )
     search_fields = ('user__email', 'instrument__name', )
     actions = [close_lesson_request, ]
