@@ -507,12 +507,14 @@ class LessonRequestListItemSerializer(serializers.ModelSerializer):
     application = serializers.SerializerMethodField()
     applied = serializers.SerializerMethodField()
     availability = serializers.JSONField(source='trial_availability_schedule')
+    timezone = serializers.SerializerMethodField()
+    additionalNotes = serializers.SerializerMethodField()
 
     class Meta:
         model = LessonRequest
         fields = ('id', 'avatar', 'displayName', 'instrument',  'lessonDuration', 'location', 'requestMessage',
                   'placeForLessons', 'skillLevel', 'studentDetails', 'requestTitle', 'application', 'applied',
-                  'gender', 'language', 'status', 'availability')
+                  'gender', 'language', 'status', 'availability', 'timezone', 'additionalNotes')
 
     def get_avatar(self, instance):
         account = get_account(instance.user)
@@ -558,6 +560,24 @@ class LessonRequestListItemSerializer(serializers.ModelSerializer):
             return student_list
         else:
             return [{'name': instance.user.first_name, 'age': instance.user.student.age}]
+
+    def get_timezone(self, instance):
+        account = get_account(instance.user)
+        if account:
+            if account.timezone:
+                return account.timezone
+            else:
+                return account.get_timezone_from_location_zipcode()
+        else:
+            return ''
+
+    def get_additionalNotes(self, instance):
+        if instance.user.is_parent():
+            stu = instance.students.last()
+            stu_details = stu.tied_student_details
+        else:
+            stu_details = instance.user.student_details.last()
+        return stu_details.notes
 
 
 class LessonBookingRegisterSerializer(serializers.Serializer):
