@@ -25,7 +25,7 @@ from accounts.utils import get_stripe_customer_id, add_to_email_list_v2
 from core.constants import *
 from core.models import ScheduledTask, TaskLog, UserBenefits
 from core.permissions import AccessForInstructor, AccessForParentOrStudent
-from core.utils import send_admin_email
+from core.utils import build_error_dict, send_admin_email
 from payments.models import Payment
 from payments.serializers import GetPaymentMethodSerializer
 
@@ -65,15 +65,16 @@ class LessonRequestView(views.APIView):
                                                   args={'request_id': obj.id})
                 send_alert_request_compatible_instructors.delay(obj.id, task_log.id)
             ser = sers.LessonRequestDetailSerializer(obj, context={'user': request.user})
-            return Response(ser.data, status=status.HTTP_200_OK)
+            return Response(ser.data)
         else:
-            return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+            result = build_error_dict(ser.errors)
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, request):
         """Get a list of lesson requests, registered by current user"""
         ser = sers.LessonRequestDetailSerializer(request.user.lesson_requests.exclude(status=LESSON_REQUEST_CLOSED),
                                                  many=True, context={'user': request.user})
-        return Response(ser.data, status=status.HTTP_200_OK)
+        return Response(ser.data)
 
 
 class LessonRequestItemView(views.APIView):
@@ -85,7 +86,7 @@ class LessonRequestItemView(views.APIView):
         try:
             instance = LessonRequest.objects.get(id=pk)
         except ObjectDoesNotExist:
-            return Response({'message': 'There is not lesson request with provided id'},
+            return Response({'detail': 'There is not lesson request with provided id'},
                             status=status.HTTP_400_BAD_REQUEST)
         data = request.data.copy()
         data['user_id'] = request.user.id
@@ -96,31 +97,32 @@ class LessonRequestItemView(views.APIView):
         if ser.is_valid():
             obj = ser.save()
             ser = sers.LessonRequestDetailSerializer(obj, context={'user': request.user})
-            return Response(ser.data, status=status.HTTP_200_OK)
+            return Response(ser.data)
         else:
-            return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+            result = build_error_dict(ser.errors)
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
         """Delete an existing lesson request"""
         try:
             lesson_request = LessonRequest.objects.get(pk=pk)
         except ObjectDoesNotExist:
-            return Response({'message': 'There is not lesson request with provided id'},
+            return Response({'detail': 'There is not lesson request with provided id'},
                             status=status.HTTP_400_BAD_REQUEST)
         ser = sers.LessonRequestDetailSerializer(lesson_request, context={'user': request.user})
         data = ser.data
         lesson_request.delete()
-        return Response(data, status=status.HTTP_200_OK)
+        return Response(data)
 
     def get(self, request, pk):
         """Get data from existing lesson request"""
         try:
             lesson_request = LessonRequest.objects.get(pk=pk)
         except ObjectDoesNotExist:
-            return Response({'message': 'There is not lesson request with provided id'},
+            return Response({'detail': 'There is not lesson request with provided id'},
                             status=status.HTTP_400_BAD_REQUEST)
         ser = sers.LessonRequestDetailSerializer(lesson_request, context={'user': request.user})
-        return Response(ser.data, status=status.HTTP_200_OK)
+        return Response(ser.data)
 
 
 class LessonRequestListView(views.APIView):
@@ -179,7 +181,8 @@ class LessonRequestListView(views.APIView):
                     min_age, max_age = 65, 150
                 qs = [item for item in qs.all() if item.has_accepted_age(min_age=min_age, max_age=max_age)]
         else:
-            return Response(query_ser.errors, status=status.HTTP_400_BAD_REQUEST)
+            result = build_error_dict(query_ser.errors)
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
         # return data with pagination
         paginator = PageNumberPagination()
@@ -199,13 +202,13 @@ class LessonRequestItemListView(views.APIView):
         try:
             lesson_request = LessonRequest.objects.get(id=pk)
         except ObjectDoesNotExist:
-            return Response({'message': 'There is not lesson request with provider id'},
+            return Response({'detail': 'There is not lesson request with provider id'},
                             status=status.HTTP_400_BAD_REQUEST)
         if not isinstance(request.user, AnonymousUser):
             serializer = sers.LessonRequestListItemSerializer(lesson_request, context={'user': request.user})
         else:
             serializer = sers.LessonRequestListItemSerializer(lesson_request)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.data)
 
 
 class ApplicationView(views.APIView):
@@ -226,13 +229,14 @@ class ApplicationView(views.APIView):
                 obj.request.status = LESSON_REQUEST_CLOSED
                 obj.request.save()
                 send_alert_admin_request_closed.delay(obj.request.id)
-            return Response(ser_data.data, status=status.HTTP_200_OK)
+            return Response(ser_data.data)
         else:
-            return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+            result = build_error_dict(ser.errors)
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, request):
         ser = sers.ApplicationListSerializer(Application.objects.filter(instructor=request.user.instructor), many=True)
-        return Response(ser.data, status=status.HTTP_200_OK)
+        return Response(ser.data)
 
 
 class ApplicationListView(views.APIView):
@@ -242,10 +246,10 @@ class ApplicationListView(views.APIView):
         try:
             lesson_request = LessonRequest.objects.get(id=lesson_req_id)
         except ObjectDoesNotExist:
-            return Response({'message': "There is no lesson request with provided id"},
+            return Response({'detail': "There is no lesson request with provided id"},
                             status=status.HTTP_400_BAD_REQUEST)
         serializer = sers.LessonRequestApplicationsSerializer(lesson_request)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.data)
 
 
 class LessonBookingRegisterView(views.APIView):
@@ -257,7 +261,7 @@ class LessonBookingRegisterView(views.APIView):
             try:
                 user = User.objects.get(email=request.data.get('email'))
             except User.DoesNotExist:
-                return Response({'message': 'Does not exist use with provided id'},
+                return Response({'detail': 'Does not exist use with provided id'},
                                 status=status.HTTP_400_BAD_REQUEST)
         else:
             user = request.user
@@ -270,7 +274,7 @@ class LessonBookingRegisterView(views.APIView):
                     try:
                         tied_student = TiedStudent.objects.get(id=request.data.pop('studentId'), parent=user.parent)
                     except TiedStudent.DoesNotExist:
-                        return Response({'message': 'There is not student with provided id'},
+                        return Response({'detail': 'There is not student with provided id'},
                                         status=status.HTTP_400_BAD_REQUEST)
                 else:
                     tied_student = user.parent.tied_students.first()
@@ -279,7 +283,7 @@ class LessonBookingRegisterView(views.APIView):
                 request.data.pop('studentId', '')
             last_lesson = Lesson.get_last_lesson(user=user, tied_student=tied_student)
             if not last_lesson:
-                return Response({'message': 'Looks like you should create a Trial Lesson first'},
+                return Response({'detail': 'Looks like you should create a Trial Lesson first'},
                                 status=status.HTTP_400_BAD_REQUEST)
             booking_values_data = get_booking_data_v2(user, package_name, last_lesson)
             # create/get booking instance
@@ -304,7 +308,7 @@ class LessonBookingRegisterView(views.APIView):
                                                             f'Lesson booking with package {package_name.capitalize()}',
                                                             serializer.validated_data['paymentMethodCode'])
             if pym_status == 'error':
-                return Response({'message': pym_obj}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                return Response({'detail': pym_obj}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             # set status and info for booking and payment instances
             with transaction.atomic():
                 for k, v in booking_values_data.items():
@@ -332,9 +336,10 @@ class LessonBookingRegisterView(views.APIView):
                 task_log = TaskLog.objects.create(task_name='send_booking_alert', args={'booking_id': booking.id})
                 send_booking_alert.delay(booking.id, task_log.id)
             return Response({'message': 'Lesson(s) booked successfully.',
-                             'booking_id': booking.id}, status=status.HTTP_200_OK)
+                             'booking_id': booking.id})
         else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            result = build_error_dict(serializer.errors)
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
 
 class AmountsForBookingView(views.APIView):
@@ -347,16 +352,16 @@ class AmountsForBookingView(views.APIView):
             try:
                 tied_student = TiedStudent.objects.get(id=student_id)
             except TiedStudent.DoesNotExist:
-                return Response({'message': 'There is not student with provided id'},
+                return Response({'detail': 'There is not student with provided id'},
                                 status=status.HTTP_400_BAD_REQUEST)
         else:
             tied_student = None
         last_lesson = Lesson.get_last_lesson(user=request.user, tied_student=tied_student)
         if not last_lesson or not last_lesson.rate:
-            return Response({'message': 'Error getting rate from last lesson'},
+            return Response({'detail': 'Error getting rate from last lesson'},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         if package not in [PACKAGE_ARTIST, PACKAGE_MAESTRO, PACKAGE_TRIAL, PACKAGE_VIRTUOSO]:
-            return Response({'message': 'Wrong package value'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'detail': 'Wrong package value'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         data = get_booking_data_v2(request.user, package, last_lesson)
         account = get_account(request.user)
         if not account.stripe_customer_id:
@@ -393,7 +398,7 @@ class AmountsForBookingView(views.APIView):
             try:
                 stripe_customer = stripe.Customer.create(email=request.user.email, name=account.display_name)
             except Exception as e:
-                return Response({'message': f'Error creating Customer in Stripe:\n {str(e)}'},
+                return Response({'detail': f'Error creating Customer in Stripe:\n {str(e)}'},
                                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             account.stripe_customer_id = stripe_customer.get('id')
             account.save()
@@ -401,7 +406,7 @@ class AmountsForBookingView(views.APIView):
         try:
             intent = stripe.SetupIntent.create(customer=account.stripe_customer_id)
         except Exception as e:
-            return Response({'message': f'Error creating Intent in Stripe:\n {str(e)}'},
+            return Response({'detail': f'Error creating Intent in Stripe:\n {str(e)}'},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         data['clientSecret'] = intent.client_secret
         if last_lesson.instructor:
@@ -432,21 +437,21 @@ class AmountsForBookingView(views.APIView):
         if isinstance(resp, Response):
             return resp
         else:   # then, its data, not Response
-            return Response(resp, status=status.HTTP_200_OK)
+            return Response(resp)
 
     def post(self, request, student_id):
         """Receiving package name"""
         if not request.data.get('package'):
-            return Response({'message': 'Package value is required'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'Package value is required'}, status=status.HTTP_400_BAD_REQUEST)
         else:
             package = request.data.get('package')
         if not PACKAGES.get(package):
-            return Response({'message': 'Package value is invalid'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'Package value is invalid'}, status=status.HTTP_400_BAD_REQUEST)
         resp = self.common(request, student_id, package)
         if isinstance(resp, Response):
             return resp
         else:   # then, its data, not Response
-            return Response(resp, status=status.HTTP_200_OK)
+            return Response(resp)
 
 
 class DataForBookingView(views.APIView):
@@ -459,7 +464,7 @@ class DataForBookingView(views.APIView):
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            return Response({'message': 'Does not exist user with provided id'},
+            return Response({'detail': 'Does not exist user with provided id'},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         if user.is_parent():
             if user.parent.tied_students.count() > 1:
@@ -467,23 +472,23 @@ class DataForBookingView(views.APIView):
                     tied_student = TiedStudent.objects.get(id=student_id, parent=user.parent)
                 except TiedStudent.DoesNotExist:
                     ser = MinimalTiedStudentSerializer(user.parent.tied_students.all(), many=True)
-                    return Response(ser.data, status=status.HTTP_200_OK)
+                    return Response(ser.data)
             else:
                 tied_student = user.parent.tied_students.first()
         else:
             tied_student = None
         last_lesson = Lesson.get_last_lesson(user=user, tied_student=tied_student)
         if not last_lesson or not last_lesson.rate:
-            return Response({'message': 'Error getting rate from last lesson'},
+            return Response({'detail': 'Error getting rate from last lesson'},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         if package not in [PACKAGE_ARTIST, PACKAGE_MAESTRO, PACKAGE_TRIAL, PACKAGE_VIRTUOSO]:
-            return Response({'message': 'Wrong package value'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'detail': 'Wrong package value'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         data = get_booking_data_v2(user, package, last_lesson)
         account = get_account(user)
         try:
             stripe_customer = stripe.Customer.create(email=user.email, name=account.display_name)
         except Exception as e:
-            return Response({'message': f'Error creating Customer in Stripe:\n {str(e)}'},
+            return Response({'detail': f'Error creating Customer in Stripe:\n {str(e)}'},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         account.stripe_customer_id = stripe_customer.get('id')
         account.save()
@@ -491,7 +496,7 @@ class DataForBookingView(views.APIView):
         try:
             intent = stripe.SetupIntent.create(customer=account.stripe_customer_id)
         except Exception as e:
-            return Response({'message': f'Error creating Intent in Stripe:\n {str(e)}'},
+            return Response({'detail': f'Error creating Intent in Stripe:\n {str(e)}'},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         data['clientSecret'] = intent.client_secret
         if last_lesson.instructor:
@@ -522,21 +527,21 @@ class DataForBookingView(views.APIView):
         if isinstance(resp, Response):
             return resp
         else:   # then, its data, not Response
-            return Response(resp, status=status.HTTP_200_OK)
+            return Response(resp)
 
     def post(self, request, email, student_id=None):
         """Receiving package name"""
         if not request.data.get('package'):
-            return Response({'message': 'Package value is required'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'Package value is required'}, status=status.HTTP_400_BAD_REQUEST)
         else:
             package = request.data.get('package')
         if not PACKAGES.get(package):
-            return Response({'message': 'Package value is invalid'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'Package value is invalid'}, status=status.HTTP_400_BAD_REQUEST)
         resp = self.common(email, student_id, package)
         if isinstance(resp, Response):
             return resp
         else:   # then, its data, not Response
-            return Response(resp, status=status.HTTP_200_OK)
+            return Response(resp)
 
 
 class LessonCreateView(views.APIView):
@@ -550,7 +555,7 @@ class LessonCreateView(views.APIView):
                 try:
                     tied_student = TiedStudent.objects.get(id=request.data.get('studentId'))
                 except TiedStudent.DoesNotExist:
-                    return Response({'message': 'There is not student with provided id'}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({'detail': 'There is not student with provided id'}, status=status.HTTP_400_BAD_REQUEST)
                 if LessonBooking.objects.filter(user=request.user, tied_student=tied_student).count() == 0:
                     create_trial_lesson = True
                     lb = LessonBooking.objects.create(user=request.user, tied_student=tied_student, quantity=1,
@@ -563,18 +568,19 @@ class LessonCreateView(views.APIView):
             if lb:
                 request.data['bookingId'] = lb.id
             elif create_trial_lesson:
-                return Response({'message': 'No Booking for Trial Lession could be created'},
+                return Response({'detail': 'No Booking for Trial Lesson could be created'},
                                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             else:
-                return Response({'message': 'No BookingId was provided and trial lesson is not allowed'},
+                return Response({'detail': 'No BookingId was provided and trial lesson is not allowed'},
                                 status=status.HTTP_400_BAD_REQUEST)
         ser = sers.CreateLessonSerializer(data=request.data)
         if ser.is_valid():
             lesson = ser.save()
             ser = sers.LessonSerializer(lesson, context={'user': request.user})
-            return Response(ser.data, status=status.HTTP_200_OK)
+            return Response(ser.data)
         else:
-            return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+            result = build_error_dict(ser.errors)
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LessonView(views.APIView):
@@ -583,7 +589,7 @@ class LessonView(views.APIView):
         try:
             lesson = Lesson.objects.get(id=lesson_id)
         except Lesson.DoesNotExist:
-            return Response({'message': 'There is not Lesson with provided id'},
+            return Response({'detail': 'There is not Lesson with provided id'},
                             status=status.HTTP_400_BAD_REQUEST)
         previous_datetime = lesson.scheduled_datetime
         ser_data = sers.UpdateLessonSerializer(data=request.data, instance=lesson, partial=True)
@@ -646,18 +652,19 @@ class LessonView(views.APIView):
                                                         'previous_datetime': previous_datetime.strftime('%Y-%m-%d %I:%M %p')})
                 send_lesson_reschedule.delay(lesson.id, task_log.id,
                                              previous_datetime.astimezone(timezone.utc).strftime('%Y-%m-%d %H:%M:%S'))
-            return Response(ser.data, status=status.HTTP_200_OK)
+            return Response(ser.data)
         else:
-            return Response(ser_data.errors, status=status.HTTP_400_BAD_REQUEST)
+            result = build_error_dict(ser_data.errors)
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, request, lesson_id):
         try:
             lesson = Lesson.objects.get(id=lesson_id)
         except Lesson.DoesNotExist:
-            return Response({'message': 'There is not Lesson with provided id'},
+            return Response({'detail': 'There is not Lesson with provided id'},
                             status=status.HTTP_400_BAD_REQUEST)
         ser = sers.LessonSerializer(lesson, context={'user': request.user})
-        return Response(ser.data, status=status.HTTP_200_OK)                             
+        return Response(ser.data)
 
 
 class AcceptLessonRequestView(views.APIView):
@@ -668,19 +675,19 @@ class AcceptLessonRequestView(views.APIView):
             try:
                 user = User.objects.get(id=request.data.get('userId'))
             except User.DoesNotExist:
-                return Response({'message': 'There is not User with provided id'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'detail': 'There is not User with provided id'}, status=status.HTTP_400_BAD_REQUEST)
         else:
             user = request.user
         try:
             lr = LessonRequest.objects.get(id=request.data.get('requestId'))
         except LessonRequest.DoesNotExist:
-            return Response({'message': 'There is not LessonRequest with provided id'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'There is not LessonRequest with provided id'}, status=status.HTTP_400_BAD_REQUEST)
         decision = request.data.get('accept')
         if decision is None:
-            return Response({'message': 'Value of accept (true/false) is missing'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'Value of accept (true/false) is missing'}, status=status.HTTP_400_BAD_REQUEST)
         if not user.is_instructor():
             return Response({'message': 'You must be an instructor'}, status=status.HTTP_400_BAD_REQUEST)
         if InstructorAcceptanceLessonRequest.objects.filter(instructor=user.instructor, request=lr).exists():
             return Response({'message': 'You already applied to this request.'}, status=status.HTTP_400_BAD_REQUEST)
         InstructorAcceptanceLessonRequest.objects.create(instructor=user.instructor, request=lr, accept=decision)
-        return Response({'message': 'Decision registered'}, status=status.HTTP_200_OK)
+        return Response({'message': 'Decision registered'})
