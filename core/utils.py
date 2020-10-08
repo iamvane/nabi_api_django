@@ -165,20 +165,20 @@ def build_error_dict(errors):
     for k, v in errors.items():
         if k in ['non_field_errors', '__all__']:
             if isinstance(v, list):
-                err_list = [str(item) for item in v if isinstance(item, str) or item.code != 'message']
+                err_list = [str(item) for item in v if not hasattr(item, 'code') or item.code != 'message']
                 if err_list:
                     non_field_err = non_field_err + ' '.join(err_list)
-                err_msg_list = [str(item) for item in v if not isinstance(item, str) and item.code == 'message']
+                err_msg_list = [str(item) for item in v if hasattr(item, 'code') and item.code == 'message']
                 if err_msg_list:
                     msg_err = msg_err + ' '.join(err_msg_list)
             else:
                 non_field_err = non_field_err + str(v)
         else:
             if isinstance(v, list):
-                err_list = [str(item) for item in v if isinstance(item, str) or item.code != 'message']
+                err_list = [str(item) for item in v if not hasattr(item, 'code') or item.code != 'message']
                 if err_list:
                     field_errs[k] = ' '.join(err_list)
-                err_msg_list = [str(item) for item in v if not isinstance(item, str) and item.code == 'message']
+                err_msg_list = [str(item) for item in v if hasattr(item, 'code') and item.code == 'message']
                 if err_msg_list:
                     msg_err = msg_err + ' '.join(err_msg_list)
             else:
