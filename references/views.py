@@ -3,7 +3,7 @@ from django.conf import settings
 from rest_framework import status, views
 from rest_framework.response import Response
 
-from core.utils import send_email
+from core.utils import build_error_dict, send_email
 
 from .models import ReferenceRequest
 from .serializers import RegisterRequestReferenceSerializer
@@ -29,9 +29,10 @@ class RegisterRequestReferenceView(views.APIView):
                 list_emails = [item.email for item in qs]
             else:
                 list_emails = []
-            return Response({'emails': list_emails}, status=status.HTTP_200_OK)
+            return Response({'emails': list_emails})
         else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            result = build_error_dict(serializer.errors)
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
 
 class RequestReferencesListView(views.APIView):
@@ -43,4 +44,4 @@ class RequestReferencesListView(views.APIView):
             list_emails = [item.email for item in qs]
         else:
             list_emails = []
-        return Response({'emails': list_emails}, status=status.HTTP_200_OK)
+        return Response({'emails': list_emails})
