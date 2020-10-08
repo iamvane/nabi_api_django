@@ -48,12 +48,12 @@ class BaseCreateAccountSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if User.objects.filter(email=attrs.get('email')).count() > 0:
-            raise validators.ValidationError('Email already registered.')
+            raise validators.ValidationError('Email already registered.', code='message')
         return attrs
 
     def validate_referringCode(self, value):
         if value and User.get_user_from_refer_code(value) is None:
-            raise validators.ValidationError('Wrong referring code value')
+            raise validators.ValidationError('Wrong referring code value', code='message')
         else:
             return value
 
@@ -190,7 +190,7 @@ class InstructorProfileSerializer(serializers.Serializer):
         if re.match(r'^https://.*zoom\.us/j/[\d]{3,}.*', value):
             return value
         else:
-            raise serializers.ValidationError("Does not look like a valid Zoom meeting link")
+            raise serializers.ValidationError("Does not look like a valid Zoom meeting link", code="message")
 
     def to_internal_value(self, data):
         keys = dict.fromkeys(data, 1)
@@ -587,7 +587,7 @@ class UserEmailSerializer(serializers.Serializer):
         if User.objects.filter(email=value).exists():
             return value
         else:
-            raise validators.ValidationError("Email isn't registered")
+            raise validators.ValidationError("Email is not registered", code="message")
 
 
 class GuestEmailSerializer(serializers.Serializer):
@@ -596,7 +596,7 @@ class GuestEmailSerializer(serializers.Serializer):
 
     def validate_email(self, value):
         if User.objects.filter(email=value).exists():
-            raise validators.ValidationError("Email is already registered.")
+            raise validators.ValidationError("Email is already registered.", code="message")
         else:
             return value
 
@@ -914,14 +914,16 @@ class InstructorEmploymentSerializer(serializers.ModelSerializer):
                 still_work_here = False
             if still_work_here:
                 if data.get('to_year') or data.get('to_month'):
-                    raise serializers.ValidationError('If you work here currently, final date should not be provided')
+                    raise serializers.ValidationError('If you work here currently, final date should not be provided',
+                                                      code='message')
             else:
                 if not (data.get('to_year') and data.get('to_month')):
-                    raise serializers.ValidationError('If you not work here currently, final date should be provided')
+                    raise serializers.ValidationError('If you not work here currently, final date should be provided',
+                                                      code='message')
             if data.get('to_month') and not data.get('to_year'):
-                raise serializers.ValidationError('Year of final date should be provided')
+                raise serializers.ValidationError('Year of final date should be provided', code='message')
             if data.get('from_month') and not data.get('from_year'):
-                raise serializers.ValidationError('Year of initial date should be provided')
+                raise serializers.ValidationError('Year of initial date should be provided', code='message')
             return data
 
 

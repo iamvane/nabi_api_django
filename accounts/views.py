@@ -35,7 +35,7 @@ from core import constants as const
 from core.constants import *
 from core.models import UserBenefits, UserToken
 from core.permissions import AccessForInstructor
-from core.utils import generate_hash, generate_token_reset_password, get_date_a_month_later
+from core.utils import build_error_dict, generate_hash, generate_token_reset_password, get_date_a_month_later
 from lesson.models import Application, Instrument, Lesson, LessonBooking, LessonRequest
 from lesson.serializers import (LessonBookingParentDashboardSerializer, LessonBookingStudentDashboardSerializer,
                                 LessonRequestParentDashboardSerializer, LessonRequestStudentDashboardSerializer,
@@ -107,18 +107,19 @@ class CreateAccount(views.APIView):
     @transaction.atomic()
     def post(self, request):
         if 'role' not in request.data:
-            return Response({'message': 'role is required'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'Role is required'}, status=status.HTTP_400_BAD_REQUEST)
         account_serializer = self.get_serializer_class(request)
+        if account_serializer is None:
+            return Response({'detail': 'Provided role is not valid'}, status=status.HTTP_400_BAD_REQUEST)
         serializer = account_serializer(data=request.data)
-        if serializer is None:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
         if serializer.is_valid():
             account = serializer.save()
             user_response = get_user_response(account)
             user_response['token'] = get_tokens_for_user(account.user)
-            return Response(user_response, status=status.HTTP_200_OK)
+            return Response(user_response)
         else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            result = build_error_dict(serializer.errors)
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
     def get_serializer_class(self, request):
         if request.data['role'] == 'parent':
@@ -134,15 +135,18 @@ class LoginView(views.APIView):
 
     def post(self, request):
         form = AuthenticationForm(data={
-            'username': request.data['email'],
-            'password': request.data['password'],
+            'username': request.data.get('email'),
+            'password': request.data.get('password'),
         })
         if form.is_valid():
             user = authenticate(username=form.cleaned_data['username'], password=form.cleaned_data['password'])
             login(request, user)
             return Response(get_user_response(get_account(user)))
         else:
-            return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
+            result = build_error_dict(form.errors)
+            if result.get('detail') == "Please enter a correct email address and password. Note that both fields may be case-sensitive.":
+                result['message'] = result.pop('detail')
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ResetPasswordView(views.APIView):
@@ -157,7 +161,10 @@ class ResetPasswordView(views.APIView):
             token = generate_token_reset_password(user)
             if not send_reset_password_email(email, token):
                 return Response({'message': "Error sending email"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        return Response({'message': 'Check your email to set a new password.'}, status=status.HTTP_200_OK)
+            return Response({'message': 'Check your email to set a new password.'})
+        else:
+            result = build_error_dict(serializer.errors)
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request):
         serializer = sers.UserPasswordSerializer(data=request.data)
@@ -167,24 +174,25 @@ class ResetPasswordView(views.APIView):
                 try:
                     user_token = UserToken.objects.get(token=token)
                 except ObjectDoesNotExist:
-                    return Response({'message': 'Wrong token value'}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({'detail': 'Wrong token value'}, status=status.HTTP_400_BAD_REQUEST)
                 if user_token.expired_at < timezone.now():
-                    return Response({'message': 'Wrong token value'}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({'detail': 'Wrong token value'}, status=status.HTTP_400_BAD_REQUEST)
                 passw = serializer.data['password']
                 user_token.user.set_password(passw)
                 user_token.user.save()
                 user_token.delete()
-                return Response({'message': 'Password set successfully. Please log in.'}, status=status.HTTP_200_OK)
+                return Response({'message': 'Password set successfully. Please log in.'})
             else:
-                return Response({'message': 'Token value is missing'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'detail': 'Token value is missing'}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            result = build_error_dict(serializer.errors)
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LogoutView(views.APIView):
     def get(self, request):
         logout(request)
-        return Response({'message': "You have successfully logged out."}, status=status.HTTP_200_OK)
+        return Response({'message': "You have successfully logged out."})
 
 
 class CsrfTokenView(views.APIView):
@@ -372,9 +380,10 @@ class UpdateProfileView(views.APIView):
         if serializer.is_valid():
             serializer.save()
             ser = sers.InstructorProfileSerializer(Instructor.objects.get(user=request.user))
-            return Response(ser.data, status=status.HTTP_200_OK)
+            return Response(ser.data)
         else:
-            return Response({'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+            result = build_error_dict(serializer.errors)
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UpdateUserInfoView(views.APIView):
@@ -383,9 +392,10 @@ class UpdateUserInfoView(views.APIView):
         if serializer.is_valid():
             serializer.save()
             ser = sers.UserInfoUpdateSerializer(request.user)
-            return Response(ser.data, status=status.HTTP_200_OK)
+            return Response(ser.data)
         else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            result = build_error_dict(serializer.errors)
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
 
 class VerifyPhoneView(views.APIView):
@@ -419,10 +429,10 @@ class VerifyPhoneView(views.APIView):
         if approved:
             phone.verified_at = timezone.now()
             phone.save()
-        return Response({'status': verification_check.status, "phoneId": phone.id, "phoneNumber": phone.number,
-                         'message': 'Phone validation was successful.' if approved else 'Failed phone validation.'},
-                        status=status.HTTP_200_OK if approved else status.HTTP_400_BAD_REQUEST
-                        )
+            return Response({'status': verification_check.status, "phoneId": phone.id, "phoneNumber": phone.number})
+        else:
+            return Response({'message': f'Failed phone validation ({phone.number}).'},
+                            status=status.HTTP_400_BAD_REQUEST)
 
 
 class InstructorBuildJobPreferences(views.APIView):
@@ -432,7 +442,9 @@ class InstructorBuildJobPreferences(views.APIView):
         if serializer.is_valid():
             serializer.save()
             return Response(request.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            result = build_error_dict(serializer.errors)
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
 
 class InstructorEducationView(views.APIView):
@@ -443,16 +455,17 @@ class InstructorEducationView(views.APIView):
         if serializer.is_valid():
             obj = serializer.save()
             ser = sers.InstructorEducationSerializer(obj)
-            return Response(ser.data, status=status.HTTP_200_OK)
+            return Response(ser.data)
         else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            result = build_error_dict(serializer.errors)
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, request):
         if hasattr(request.user.instructor, 'education'):
             serializer = sers.InstructorEducationSerializer(request.user.instructor.education, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.data)
         else:
-            return Response([], status=status.HTTP_200_OK)
+            return Response([])
 
 
 class InstructorEducationItemView(views.APIView):
@@ -462,24 +475,25 @@ class InstructorEducationItemView(views.APIView):
         try:
             educ_instance = Education.objects.get(pk=pk)
         except ObjectDoesNotExist:
-            return Response({"error": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
         serializer = sers.InstructorEducationSerializer(instance=educ_instance, data=data, partial=True)
         if serializer.is_valid():
             obj = serializer.save()
             ser = sers.InstructorEducationSerializer(obj)
-            return Response(ser.data, status=status.HTTP_200_OK)
+            return Response(ser.data)
         else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            result = build_error_dict(serializer.errors)
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
         try:
             educ_instance = Education.objects.get(pk=pk)
         except ObjectDoesNotExist:
-            return Response({"error": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
         ser = sers.InstructorEducationSerializer(educ_instance)
         data = ser.data
         educ_instance.delete()
-        return Response(data, status=status.HTTP_200_OK)
+        return Response(data)
 
 
 class InstructorDetailView(views.APIView):
@@ -496,7 +510,7 @@ class InstructorDetailView(views.APIView):
         resp_data = serializer.data.copy()
         if total_rating:
             resp_data.update({'ratings': total_rating.get('rating'), 'count': total_rating.get('quantity')})
-        return Response(resp_data, status=status.HTTP_200_OK)
+        return Response(resp_data)
 
 
 class UploadAvatarView(views.APIView):
@@ -509,9 +523,10 @@ class UploadAvatarView(views.APIView):
         if serializer.is_valid():
             obj = serializer.save()
             ser = serializer_class(obj)
-            return Response(ser.data, status=status.HTTP_200_OK)
+            return Response(ser.data)
         else:
-            return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+            result = build_error_dict(serializer.errors)
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
     def get_serializer_class(self, request):
         role = request.user.get_role()
@@ -530,11 +545,12 @@ class ReferralInvitation(views.APIView):
             user = request.user
             email = request.data['email']
             if send_referral_invitation_email(user, email):
-                return Response({"message": 'Invitation sent successfully.'}, status=status.HTTP_200_OK)
+                return Response({"message": 'Invitation sent successfully.'})
             else:
                 return Response({"message": 'Email could not be send.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         else:
-            return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+            result = build_error_dict(serializer.errors)
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
 
 class StudentDetailView(views.APIView):
@@ -552,16 +568,17 @@ class StudentDetailView(views.APIView):
             else:
                 serializer.create(serializer.validated_data)
             ser = sers.StudentDetailsSerializer(request.user.student_details.fist())
-            return Response(ser.data, status=status.HTTP_200_OK)
+            return Response(ser.data)
         else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            result = build_error_dict(serializer.errors)
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, request):
         if request.user.student_details.count():
             serializer = sers.StudentDetailsSerializer(request.user.student_details.first())
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.data)
         else:
-            return Response({}, status=status.HTTP_200_OK)
+            return Response({})
 
 
 class StudentView(views.APIView):
@@ -573,9 +590,10 @@ class StudentView(views.APIView):
         if serializer.is_valid():
             student_details = serializer.save()
             ser = sers.StudentSerializer(student_details)
-            return Response(ser.data, status=status.HTTP_200_OK)
+            return Response(ser.data)
         else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            result = build_error_dict(serializer.errors)
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, request):
         serializer = sers.StudentSerializer(StudentDetails.objects.filter(user__id=request.user.pk), many=True)
@@ -587,24 +605,25 @@ class TiedStudentItemView(views.APIView):
         try:
             instance = StudentDetails.objects.get(pk=pk)
         except ObjectDoesNotExist:
-            return Response({"error": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
         serializer = sers.TiedStudentItemSerializer(instance=instance, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.data)
         else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            result = build_error_dict(serializer.errors)
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
         try:
             instance = StudentDetails.objects.get(pk=pk)
         except ObjectDoesNotExist:
-            return Response({"error": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
         ser = sers.TiedStudentItemSerializer(instance)
         data = ser.data
         instance.tied_student.delete()
         instance.delete()
-        return Response(data, status=status.HTTP_200_OK)
+        return Response(data)
 
 
 class InstructorEmploymentView(views.APIView):
@@ -613,16 +632,17 @@ class InstructorEmploymentView(views.APIView):
         if serializer.is_valid():
             obj = serializer.save()
             ser = sers.InstructorEmploymentSerializer(obj)
-            return Response(ser.data, status=status.HTTP_200_OK)
+            return Response(ser.data)
         else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            result = build_error_dict(serializer.errors)
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, request):
         if hasattr(request.user.instructor, 'employment'):
             serializer = sers.InstructorEmploymentSerializer(request.user.instructor.employment, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.data)
         else:
-            return Response([], status=status.HTTP_200_OK)
+            return Response([])
 
 
 class InstructorEmploymentItemView(views.APIView):
@@ -630,26 +650,27 @@ class InstructorEmploymentItemView(views.APIView):
         try:
             instance = Employment.objects.get(pk=pk)
         except ObjectDoesNotExist:
-            return Response({"error": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Does not exist an object with provided id"}, status=status.HTTP_400_BAD_REQUEST)
         serializer = sers.InstructorEmploymentSerializer(instance=instance, data=request.data,
-                                                    context={'user': request.user}, partial=True)
+                                                         context={'user': request.user}, partial=True)
         if serializer.is_valid():
             obj = serializer.save()
             ser = sers.InstructorEmploymentSerializer(obj)
-            return Response(ser.data, status=status.HTTP_200_OK)
+            return Response(ser.data)
         else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            result = build_error_dict(serializer.errors)
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
         try:
             instance = Employment.objects.get(pk=pk)
         except ObjectDoesNotExist:
-            return Response({"error": "Does not exist an object with provided id"},
+            return Response({"detail": "Does not exist an object with provided id"},
                             status=status.HTTP_400_BAD_REQUEST)
         ser = sers.InstructorEmploymentSerializer(instance)
         data = ser.data
         instance.delete()
-        return Response(data, status=status.HTTP_200_OK)
+        return Response(data)
 
 
 class InstructorListView(views.APIView):
@@ -756,7 +777,8 @@ class InstructorListView(views.APIView):
             serializer = sers.InstructorDataSerializer(result_page, many=True, context={'request': request})
             return paginator.get_paginated_response(serializer.data)
         else:
-            return Response(query_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            result = build_error_dict(query_serializer.errors)
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
 
 class MinimalLessonRateView(views.APIView):
@@ -764,7 +786,7 @@ class MinimalLessonRateView(views.APIView):
 
     def get(self, request):
         res = InstructorLessonRate.objects.aggregate(min_rate=Min('mins30'))
-        return Response({'minRate': res['min_rate']}, status=status.HTTP_200_OK)
+        return Response({'minRate': res['min_rate']})
 
 
 class AffiliateRegisterView(views.APIView):
@@ -775,9 +797,10 @@ class AffiliateRegisterView(views.APIView):
         if serializer.is_valid():
             user = serializer.save()
             ser = sers.AffiliateRegisterSerializer(user)
-            return Response(ser.data, status=status.HTTP_200_OK)
+            return Response(ser.data)
         else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            result = build_error_dict(serializer.errors)
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
 
 class DashboardView(views.APIView):
@@ -797,8 +820,8 @@ class DashboardView(views.APIView):
             ser = sers.StudentDashboardSerializer(request.user.student)
             data = {'students': [ser.data], 'missingFields': [{'reviews': request.user.student.get_missing_reviews()}]}
         else:
-            return Response({}, status=status.HTTP_200_OK)
-        return Response(data, status=status.HTTP_200_OK)
+            return Response({})
+        return Response(data)
 
 
 class ReferralInfoView(views.APIView):
@@ -809,7 +832,7 @@ class ReferralInfoView(views.APIView):
         try:
             user = User.objects.get(referral_token=token)
         except ObjectDoesNotExist:
-            return Response({'message': 'There is no user for provided token'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'There is no user for provided token'}, status=status.HTTP_400_BAD_REQUEST)
         data = {'displayName': '', 'avatar': ''}
         account = get_account(user)
         if account:
@@ -817,7 +840,7 @@ class ReferralInfoView(views.APIView):
                 data['displayName'] = account.display_name
             if account.avatar:
                 data['avatar'] = account.avatar.url
-        return Response(data, status=status.HTTP_200_OK)
+        return Response(data)
 
 
 class ReferralDashboardView(views.APIView):
@@ -829,7 +852,7 @@ class ReferralDashboardView(views.APIView):
         total = qs.aggregate(total=Sum('benefit_qty'))
         if total['total'] is None:
             total['total'] = 0
-        return Response({'totalAmount': total['total'], 'providerList': response_data}, status=status.HTTP_200_OK)
+        return Response({'totalAmount': total['total'], 'providerList': response_data})
 
 
 class UploadVideoProfileView(views.APIView):
@@ -841,9 +864,10 @@ class UploadVideoProfileView(views.APIView):
         if serializer.is_valid():
             obj = serializer.save()
             ser = sers.VideoInstructorSerializer(obj)
-            return Response(ser.data, status=status.HTTP_200_OK)
+            return Response(ser.data)
         else:
-            return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+            result = build_error_dict(serializer.errors)
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
 
 class S3SignatureFile(views.APIView):
@@ -886,24 +910,25 @@ class InstructorReviews(views.APIView):
             try:
                 user = User.objects.get(email=email)
             except User.DoesNotExist:
-                return Response({'message': 'There is not user with provided email'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'detail': 'There is not user with provided email'}, status=status.HTTP_400_BAD_REQUEST)
             request.data['user'] = user.id
         else:
             if isinstance(request.user, AnonymousUser):
-                return Response({'message': "Can't register a review without user"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'detail': "Can't register a review without user"}, status=status.HTTP_400_BAD_REQUEST)
             request.data['user'] = request.user.id
         request.data['instructor'] = pk
         ser = sers.CreateInstructorReviewSerializer(data=request.data)
         if ser.is_valid():
             obj = ser.save()
             ser_data = sers.ReturnCreateInstructorReviewSerializer(obj)
-            return Response(ser_data.data, status=status.HTTP_200_OK)
+            return Response(ser_data.data)
         else:
-            return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+            result = build_error_dict(ser.errors)
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, request, pk):
         try:
             instructor = Instructor.objects.get(id=pk)
         except Instructor.DoesNotExist:
-            return Response({'message': 'There is not instructor with provided id'}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({'instructorName': instructor.display_name}, status=status.HTTP_200_OK)
+            return Response({'detail': 'There is not instructor with provided id'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'instructorName': instructor.display_name})
