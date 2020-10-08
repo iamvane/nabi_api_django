@@ -10,7 +10,7 @@ from rest_framework.response import Response
 
 from accounts.models import Instructor
 from core.constants import *
-from core.utils import send_admin_email
+from core.utils import build_error_dict, send_admin_email
 from payments.models import Payment
 
 from . import serializers as sers
@@ -51,11 +51,12 @@ class BackgroundCheckRequestView(views.APIView):
             else:
                 instructor = request.user.instructor
         else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            result = build_error_dict(serializer.errors)
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
         # then, check if instructor has location
         res_location = instructor.get_location(result_type='tuple')
         if not res_location:
-            return Response({'message': 'Instructor must be a location value'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'Instructor must have a location value'}, status=status.HTTP_400_BAD_REQUEST)
 
         resource_id = None
         # check if pending background check exists
@@ -74,13 +75,13 @@ class BackgroundCheckRequestView(views.APIView):
                     dname=instructor.display_name, inst_id=instructor.id, email=request.user.email)
             )
         except stripe.error.InvalidRequestError as error:
-            return Response({'stripeToken': [error.user_message, ]}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': ['stripeToken ' + error.user_message, ]}, status=status.HTTP_400_BAD_REQUEST)
         except stripe.error.CardError as ce:
-            return Response({'message': ce.user_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'detail': ce.user_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except stripe.error.StripeError as error:
-            return Response({'message': error.user_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'detail': error.user_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except Exception as ex:
-            return Response({'message': str(ex)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'detail': str(ex)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         # register the charge done and service request
         payment = Payment.objects.create(
             user=request.user,
@@ -118,7 +119,7 @@ class BackgroundCheckRequestView(views.APIView):
                                                     error_code=error, error_info=json.dumps(resp_dict)
                                                     )
                                      )
-                    return Response({'message': 'registered'}, status=status.HTTP_200_OK)
+                    return Response({'detail': 'registered'})
                 bg_step = BackgroundCheckStep.objects.get(id=resp_dict['bg_step_id'])
             else:
                 resource_id = bg_step.resource_id
@@ -136,7 +137,7 @@ class BackgroundCheckRequestView(views.APIView):
                                                 error_code=error, error_info=json.dumps(resp_dict)
                                                 ),
                                  )
-                return Response({'message': 'registered'}, status=status.HTTP_200_OK)
+                return Response({'detail': 'registered'})
             bg_step = BackgroundCheckStep.objects.get(id=resp_dict['bg_step_id'])
 
         provider_client = AccurateApiClient('order')
@@ -154,12 +155,12 @@ class BackgroundCheckRequestView(views.APIView):
                                             error_code=error, error_info=json.dumps(resp_dict)
                                             ),
                              )
-            return Response({'message': 'registered'}, status=status.HTTP_200_OK)
+            return Response({'detail': 'registered'})
         else:   # error == 0, no error
             # update payment data
             payment.status = PY_PROCESSED
             payment.save()
-            return Response({'message': 'success'}, status=status.HTTP_200_OK)
+            return Response({'detail': 'success'})
 
     def get(self, request):
         """Get stored data from last registered background check request for an instructor"""
@@ -168,19 +169,20 @@ class BackgroundCheckRequestView(views.APIView):
             if serializer.is_valid():
                 instructor = Instructor.objects.get(id=serializer.data['instructor_id'])
             else:
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                result = build_error_dict(serializer.errors)
+                return Response(result, status=status.HTTP_400_BAD_REQUEST)
         else:
             try:
                 instructor = request.user.instructor
             except ObjectDoesNotExist:
-                return Response({'message': 'User should be instructor or provide an instructorId'},
+                return Response({'detail': 'User should be instructor or provide an instructorId'},
                                 status=status.HTTP_400_BAD_REQUEST)
         bg_request = BackgroundCheckRequest.objects.filter(instructor=instructor).last()
         serializer = sers.BGCheckRequestModelSerializer(bg_request)
         if bg_request:
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.data)
         else:
-            return Response({'error': 'No background check request for this instructor'},
+            return Response({'message': 'No background check request for this instructor'},
                             status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -195,7 +197,8 @@ class BackgroundCheckStatusView(views.APIView):
             if serializer.is_valid():
                 instructor = Instructor.objects.get(id=serializer.data['instructor_id'])
             else:
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                result = build_error_dict(serializer.errors)
+                return Response(result, status=status.HTTP_400_BAD_REQUEST)
         else:
             instructor = request.user.instructor
         bg_request = BackgroundCheckRequest.objects.filter(instructor=instructor).last()
@@ -205,8 +208,8 @@ class BackgroundCheckStatusView(views.APIView):
                 return Response({'requestId': bg_request.id, 'status': bg_request.status.upper(),
                                  'result': bg_request.provider_results.get('result'),
                                  'observation': bg_request.observation,
-                                 'createdAt': bg_request.created_at.strftime('%Y-%m-%d %H:%M:%S')},
-                                status=status.HTTP_200_OK)
+                                 'createdAt': bg_request.created_at.strftime('%Y-%m-%d %H:%M:%S')}
+                                )
             else:
                 provider_client = AccurateApiClient('order')
                 resp_dict = provider_client.check_order(instructor.user)
@@ -219,8 +222,8 @@ class BackgroundCheckStatusView(views.APIView):
                                      'result': resp_dict['msg']['result'],
                                      'observation': bg_request.observation,
                                      'percentageComplete': resp_dict['msg']['percentageComplete'],
-                                     'createdAt': bg_request.created_at.strftime('%Y-%m-%d %H:%M:%S')},
-                                    status=status.HTTP_200_OK)
+                                     'createdAt': bg_request.created_at.strftime('%Y-%m-%d %H:%M:%S')}
+                                    )
         else:
-            return Response({'error': 'No background check request for this instructor'},
+            return Response({'message': 'No background check request for this instructor'},
                             status=status.HTTP_400_BAD_REQUEST)
