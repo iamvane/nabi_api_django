@@ -1038,7 +1038,7 @@ class InstructorDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = Instructor
         fields = ('id', 'display_name', 'avatar', 'age', 'gender', 'bio_title', 'bio_description', 'languages',
-                  'bg_status', 'distance', 'reviews', 'location', 'interviewed', 'instruments', 'rates', 'availability',
+                  'bg_status', 'distance', 'reviews', 'location', 'screened', 'instruments', 'rates', 'availability',
                   'place_for_lessons', 'years_of_experience', 'qualifications', 'lessons_taught', 'student_ages',
                   'last_login', 'member_since', 'video',)
 
@@ -1088,7 +1088,7 @@ class InstructorDataSerializer(serializers.ModelSerializer):
                     'backgroundCheckStatus': data.get('bg_status'), 'distance': data.get('distance'),
                     'bioTitle': data.get('bio_title'), 'bioDescription': data.get('bio_description'),
                     'gender': data.get('gender'), 'reviews': data.get('reviews'), 'location': data.get('location'),
-                    'qualifications': data.get('qualifications'), 'interviewed': data.get('interviewed'),
+                    'qualifications': data.get('qualifications'), 'screened': data.get('screened'),
                     'lessonsTaught': data.get('lessons_taught'), 'instruments': data.get('instruments'),
                     'rates': data.get('rates'), 'placeForLessons': data.get('place_for_lessons'),
                     'availability': data.get('availability'), 'student_ages': data.get('student_ages'),
@@ -1155,7 +1155,7 @@ class InstructorDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Instructor
         fields = ['id', 'user_id', 'display_name', 'age', 'member_since', 'bg_status', 'bio_title', 'bio_description',
-                  'interviewed', 'location', 'distance', 'music', 'instruments', 'lesson_size', 'age_group', 'rates',
+                  'screened', 'location', 'distance', 'music', 'instruments', 'lesson_size', 'age_group', 'rates',
                   'place_for_lessons', 'availability', 'reviews', 'qualifications', 'languages', 'studio_address',
                   'travel_distance', 'lessons_taught', 'education', 'employment', 'years_of_experience', 'avatar', 'video']
 
