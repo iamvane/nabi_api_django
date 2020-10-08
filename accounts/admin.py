@@ -75,10 +75,10 @@ class InstructorPlaceForLessonsAdmin(admin.TabularInline):
 
 class InstructorAdmin(admin.ModelAdmin):
     fields = ('user', 'display_name', 'age', 'avatar', 'bio_title', 'bio_description', 'bg_status', 'location', 'timezone',
-              'music', 'interviewed', 'languages', 'studio_address', 'travel_distance', 'years_of_experience', 'video',
+              'music', 'screened', 'languages', 'studio_address', 'travel_distance', 'years_of_experience', 'video',
               'zoom_link')
     list_display = ('pk', 'user', 'display_name', 'distance', )
-    list_filter = ('interviewed', 'complete', )
+    list_filter = ('screened', 'complete', )
     list_select_related = ('user', )
     search_fields = ('user__email', 'display_name', 'instruments__name')
     location_search_values = {}
