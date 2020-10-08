@@ -153,3 +153,41 @@ def send_email_template(email, template_name, email_params=None):
                          )
         return False
     return True
+
+
+def build_error_dict(errors):
+    """Build dictionary data to return when serializer's result is error.
+    errors should be serializer.errors ; key_non_fields is key's name for errors not related to a field"""
+    field_errs = {}
+    msg_err = ''
+    non_field_err = ''
+    result = {}
+    for k, v in errors.items():
+        if k in ['non_field_errors', '__all__']:
+            if isinstance(v, list):
+                err_list = [str(item) for item in v if isinstance(item, str) or item.code != 'message']
+                if err_list:
+                    non_field_err = non_field_err + ' '.join(err_list)
+                err_msg_list = [str(item) for item in v if not isinstance(item, str) and item.code == 'message']
+                if err_msg_list:
+                    msg_err = msg_err + ' '.join(err_msg_list)
+            else:
+                non_field_err = non_field_err + str(v)
+        else:
+            if isinstance(v, list):
+                err_list = [str(item) for item in v if isinstance(item, str) or item.code != 'message']
+                if err_list:
+                    field_errs[k] = ' '.join(err_list)
+                err_msg_list = [str(item) for item in v if not isinstance(item, str) and item.code == 'message']
+                if err_msg_list:
+                    msg_err = msg_err + ' '.join(err_msg_list)
+            else:
+                field_errs[k] = str(v)
+
+    if msg_err.strip():
+        result['message'] = msg_err.strip()
+    if field_errs:
+        result['fields'] = field_errs
+    if non_field_err:
+        result['detail'] = non_field_err
+    return result
