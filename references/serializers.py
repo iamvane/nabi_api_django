@@ -18,5 +18,5 @@ class RegisterRequestReferenceSerializer(serializers.Serializer):
             if not ReferenceRequest.objects.filter(email=email, user=self.context['user']).exists():
                 new_list.append(email)
         if not new_list:
-            raise serializers.ValidationError('This reference already exists.')
+            raise serializers.ValidationError('This reference already exists.', code='message')
         return {'emails': new_list}
