@@ -750,3 +750,23 @@ or
 }
 
 ###
+
+POST localhost:8000/v1/availability/
+
+{
+    "dates": ["2020-10-21", "2020-10-22"],
+    "intervals": [
+        {"beginTime": "08:00", "endTime": "10:00", "available": true},
+        {"beginTime": "12:00", "endTime": "14:00", "available": false}
+    ]
+}
+or
+{
+    "weekDays": ["monday"],
+    "intervals": [
+        {"beginTime": "08:00", "endTime": "10:00", "available": true},
+        {"beginTime": "12:00", "endTime": "14:00", "available": false}
+    ]
+}
+
+###
