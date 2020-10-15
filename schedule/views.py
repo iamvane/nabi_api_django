@@ -1,6 +1,8 @@
 from rest_framework import status, views
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from core.permissions import AccessForInstructor
 from core.utils import build_error_dict, DayChoices
 
 from .models import InstructorParticularAvailability, InstructorRegularAvailability
@@ -8,6 +10,7 @@ from .serializers import InstructorAvailabilitySerializer
 
 
 class Availability(views.APIView):
+    permission_classes = (IsAuthenticated, AccessForInstructor)
 
     def post(self, request):
         ser = InstructorAvailabilitySerializer(data=request.data)
