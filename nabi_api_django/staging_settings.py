@@ -83,7 +83,7 @@ def omit_invalid_hostname(event, hint):
     return event
 
 sentry_sdk.init(
-    dsn="https://e7aee34ab87d4e62ac4570f9c384436c@sentry.io/1774495",
+    dsn=os.environ['SENTRY_DSN'],
     integrations=[DjangoIntegration()],
     before_send=omit_invalid_hostname,
 )
