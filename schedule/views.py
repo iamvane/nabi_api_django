@@ -1,3 +1,5 @@
+from django.utils import timezone
+
 from rest_framework import status, views
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -5,8 +7,9 @@ from rest_framework.response import Response
 from core.permissions import AccessForInstructor
 from core.utils import build_error_dict, DayChoices
 
-from .models import InstructorParticularAvailability, InstructorRegularAvailability
+from .models import InstructorParticularAvailability, InstructorRegularAvailability, get_instructor_schedule
 from .serializers import InstructorAvailabilitySerializer
+from .utils import compose_schedule_data
 
 
 class Availability(views.APIView):
@@ -41,3 +44,25 @@ class Availability(views.APIView):
         else:
             result = build_error_dict(ser.errors)
             return Response(result, status=status.HTTP_400_BAD_REQUEST)
+
+
+class Schedule(views.APIView):
+    permission_classes = (IsAuthenticated, AccessForInstructor)
+
+    def get(self, request):
+        days_to_add = 0
+        if request.query_params.get('step'):
+            try:
+                days_to_add = 7 * int(request.query_params.get('step'))
+            except ValueError:
+                pass
+        today = timezone.datetime.now()
+        this_date = today - timezone.timedelta(days=today.weekday()) + timezone.timedelta(days=days_to_add)
+        end_date = this_date + timezone.timedelta(days=13)
+        data = []
+        while this_date <= end_date:
+            schedule = get_instructor_schedule(request.user.instructor, this_date.date())
+            sch_data = compose_schedule_data(request.user.instructor, this_date.date(), schedule)
+            data.append({'date': this_date.strftime('%Y-%m-%d'), 'schedule': sch_data})
+            this_date = this_date + timezone.timedelta(days=1)
+        return Response(data)
