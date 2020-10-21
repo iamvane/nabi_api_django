@@ -770,3 +770,15 @@ or
 }
 
 ###
+
+GET localhost:8000/v1/schedule/
+
+or
+
+GET localhost:8000/v1/schedule/?step=2
+
+or
+
+GET localhost:8000/v1/schedule/?step=-1
+
+###
