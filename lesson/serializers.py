@@ -802,8 +802,16 @@ class InstructorDashboardSerializer(serializers.ModelSerializer):
         fields = ('id', 'backgroundCheckStatus', 'complete', 'missingFields', 'zoomLink', 'lessons', )
 
     def get_lessons(self, instance):
-        ser = self.LessonBookingSerializer(instance.bookings.last())
-        return [ser.data]
+        list_bookings = []
+        user_id_ant = student_id_ant = 0
+        for booking in instance.bookings.filter(status__in=[LessonBooking.PAID, LessonBooking.TRIAL])\
+                .order_by('user', 'tied_student', '-id'):
+            if booking.user_id != user_id_ant or booking.tied_student_id != student_id_ant:
+                list_bookings.append(booking)
+                user_id_ant = booking.user_id
+                student_id_ant = booking.tied_student_id
+        ser = self.LessonBookingSerializer(list_bookings, many=True)
+        return ser.data
 
 
 class LessonRequestInstructorDashboardSerializer(serializers.ModelSerializer):
