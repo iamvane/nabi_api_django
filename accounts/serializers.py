@@ -1027,7 +1027,6 @@ class InstructorDataSerializer(serializers.ModelSerializer):
     availability = AvailavilitySerializer(default={})
     distance = serializers.FloatField(source='distance.mi', read_only=True)
     instruments = serializers.SerializerMethodField()
-    lessons_taught = serializers.IntegerField(default=0, read_only=True)
     location = serializers.SerializerMethodField()
     place_for_lessons = serializers.SerializerMethodField()
     rates = serializers.SerializerMethodField()
