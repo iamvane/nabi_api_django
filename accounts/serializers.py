@@ -1148,7 +1148,6 @@ class InstructorDetailSerializer(serializers.ModelSerializer):
     availability = AvailavilitySerializer(read_only=True)
     qualifications = AdditionalQualifications(source='instructoradditionalqualifications_set', many=True, read_only=True)
     languages = serializers.ListField(child=serializers.CharField(), read_only=True)
-    lessons_taught = serializers.IntegerField(default=0)
     education = InstructorEducationSerializer(many=True, read_only=True)
     employment = InstructorEmploymentSerializer(many=True, read_only=True)
     reviews = GetInstructorReviewSerializer(many=True)
