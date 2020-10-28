@@ -24,8 +24,23 @@ from .utils import (get_availability_field_names_from_availability_json,
 @app.task
 def send_request_alert_instructors(request_id, task_log_id):
     """Send an email to instructors in a place near to 50 miles from lesson request location"""
-    request = LessonRequest.objects.get(id=request_id)
+    try:
+        request = LessonRequest.objects.get(id=request_id)
+    except LessonRequest.DoesNotExist:
+        send_admin_email(
+            'Error executing send_request_alert_instructors task',
+            f'Executing task send_request_alert_instructors (params: request_id {request_id}, task_log_id {task_log_id}) '
+            f'LessonRequest DoesNotExist error is raised'
+        )
+        return None
     account = get_account(request.user)
+    if account is None:
+        send_admin_email(
+            'Error executing send_request_alert_instructors task',
+            f'Executing task send_request_alert_instructors (params: request_id {request_id}, task_log_id {task_log_id}) '
+            f'no account was obtained for user {request.user.id} ({request.user.email})'
+        )
+        return None
     if request.place_for_lessons == PLACE_FOR_LESSONS_ONLINE:
         for instructor in Instructor.objects.filter(instruments__name=request.instrument.name):
             send_alert_request_instructor(instructor, request, account)
@@ -40,7 +55,15 @@ def send_request_alert_instructors(request_id, task_log_id):
 @app.task
 def send_lesson_info_student_parent(lesson_id, task_log_id):
     """Send an email to student or parent when a lesson is created"""
-    lesson = Lesson.objects.get(id=lesson_id)
+    try:
+        lesson = Lesson.objects.get(id=lesson_id)
+    except Lesson.DoesNotExist:
+        send_admin_email(
+            'Error executing send_lesson_info_student_parent task',
+            f'Executing task send_lesson_info_student_parent (params: lesson_id {lesson_id}, task_log_id {task_log_id}) '
+            f'Lesson DoesNotExist error is raised'
+        )
+        return None
     send_info_lesson_student_parent(lesson)
     TaskLog.objects.filter(id=task_log_id).delete()
 
@@ -48,7 +71,15 @@ def send_lesson_info_student_parent(lesson_id, task_log_id):
 @app.task
 def send_lesson_info_instructor(lesson_id, task_log_id):
     """Send an email to instructor when is assigned to a lesson. Used for trial lesson only."""
-    lesson = Lesson.objects.get(id=lesson_id)
+    try:
+        lesson = Lesson.objects.get(id=lesson_id)
+    except Lesson.DoesNotExist:
+        send_admin_email(
+            'Error executing send_lesson_info_instructor task',
+            f'Executing task send_lesson_info_instructor (params: lesson_id {lesson_id}, task_log_id {task_log_id}) '
+            f'Lesson DoesNotExist error is raised'
+        )
+        return None
     send_info_lesson_instructor(lesson)
     TaskLog.objects.filter(id=task_log_id).delete()
 
@@ -56,8 +87,24 @@ def send_lesson_info_instructor(lesson_id, task_log_id):
 @app.task
 def send_application_alert(application_id, task_log_id):
     """Send an email to student or parent, about a new application placed by an instructor"""
-    application = Application.objects.get(id=application_id)
+    try:
+        application = Application.objects.get(id=application_id)
+    except Application.DoesNotExist:
+        send_admin_email(
+            'Error executing send_application_alert task',
+            f'Executing task send_application_alert (params: application_id {application_id}, task_log_id {task_log_id}) '
+            f'Application DoesNotExist error is raised'
+        )
+        return None
     account = get_account(application.request.user)
+    if account is None:
+        if account is None:
+            send_admin_email(
+                'Error executing send_application_alert task',
+                f'Executing task send_application_alert (params: application_id {application_id}, task_log_id {task_log_id}) '
+                f'no account was obtained for user {application.request.user.id} ({application.request.user.email})'
+            )
+            return None
     send_alert_application(application, application.instructor, account)
     TaskLog.objects.filter(id=task_log_id).delete()
 
@@ -65,7 +112,15 @@ def send_application_alert(application_id, task_log_id):
 @app.task
 def send_booking_invoice(booking_id, task_log_id):
     """Send an email to student or parent (lesson request creator) containing an invoice of booking lesson"""
-    booking = LessonBooking.objects.get(id=booking_id)
+    try:
+        booking = LessonBooking.objects.get(id=booking_id)
+    except LessonBooking.DoesNotExist:
+        send_admin_email(
+            'Error executing send_booking_invoice task',
+            f'Executing task send_booking_invoice (params: booking_id {booking_id}, task_log_id {task_log_id}) '
+            f'LessonBooking DoesNotExist error is raised'
+        )
+        return None
     send_invoice_booking(booking, booking.payment)
     TaskLog.objects.filter(id=task_log_id).delete()
 
@@ -73,8 +128,24 @@ def send_booking_invoice(booking_id, task_log_id):
 @app.task
 def send_booking_alert(booking_id, task_log_id):
     """Send email to instructor which application was booked by a student/parent. And send email to administrator too"""
-    booking = LessonBooking.objects.get(id=booking_id)
+    try:
+        booking = LessonBooking.objects.get(id=booking_id)
+    except LessonBooking.DoesNotExist:
+        send_admin_email(
+            'Error executing send_booking_alert task',
+            f'Executing task send_booking_alert (params: booking_id {booking_id}, task_log_id {task_log_id}) '
+            f'LessonBooking DoesNotExist error is raised'
+        )
+        return None
     account = get_account(booking.user)
+    if account is None:
+        if account is None:
+            send_admin_email(
+                'Error executing send_booking_alert task',
+                f'Executing task send_booking_alert (params: booking_id {booking_id}, task_log_id {task_log_id}) '
+                f'no account was obtained for user {booking.user.id} ({booking.user.email})'
+            )
+            return None
     send_alert_booking(booking, booking.application.instructor, account)
     TaskLog.objects.filter(id=task_log_id).delete()
 
@@ -82,7 +153,15 @@ def send_booking_alert(booking_id, task_log_id):
 @app.task
 def send_info_grade_lesson(lesson_id, task_log_id):
     """Send an email to student or parent when a lesson is graded"""
-    lesson = Lesson.objects.get(id=lesson_id)
+    try:
+        lesson = Lesson.objects.get(id=lesson_id)
+    except Lesson.DoesNotExist:
+        send_admin_email(
+            'Error executing send_info_grade_lesson task',
+            f'Executing task send_info_grade_lesson (params: lesson_id {lesson_id}, task_log_id {task_log_id}) '
+            f'Lesson DoesNotExist error is raised'
+        )
+        return None
     send_info_lesson_graded(lesson)
     TaskLog.objects.filter(id=task_log_id).delete()
 
@@ -90,14 +169,30 @@ def send_info_grade_lesson(lesson_id, task_log_id):
 @app.task
 def send_instructor_complete_lesson(lesson_id, task_log_id):
     """Send confirmation email to instructor when a lesson is graded"""
-    lesson = Lesson.objects.get(id=lesson_id)
+    try:
+        lesson = Lesson.objects.get(id=lesson_id)
+    except Lesson.DoesNotExist:
+        send_admin_email(
+            'Error executing send_instructor_complete_lesson task',
+            f'Executing task send_instructor_complete_lesson (params: lesson_id {lesson_id}, task_log_id {task_log_id}) '
+            f'Lesson DoesNotExist error is raised'
+        )
+        return None
     send_instructor_lesson_completed(lesson)
     TaskLog.objects.filter(id=task_log_id).delete()
 
 
 @app.task
 def send_trial_confirm(lesson_id, task_log_id):
-    lesson = Lesson.objects.get(id=lesson_id)
+    try:
+        lesson = Lesson.objects.get(id=lesson_id)
+    except Lesson.DoesNotExist:
+        send_admin_email(
+            'Error executing send_trial_confirm task',
+            f'Executing task send_trial_confirm (params: lesson_id {lesson_id}, task_log_id {task_log_id}) '
+            f'Lesson DoesNotExist error is raised'
+        )
+        return None
     send_trial_confirmation(lesson)
     TaskLog.objects.filter(id=task_log_id).delete()
 
@@ -170,7 +265,15 @@ def update_list_users_without_request():
 
 @app.task
 def send_alert_admin_request_closed(request_id):
-    lesson_request = LessonRequest.objects.get(id=request_id)
+    try:
+        lesson_request = LessonRequest.objects.get(id=request_id)
+    except LessonRequest.DoesNotExist:
+        send_admin_email(
+            'Error executing send_alert_admin_request_closed task',
+            f'Executing task send_alert_admin_request_closed (params: request_id {request_id}) '
+            f'LessonRequest DoesNotExist error is raised'
+        )
+        return None
     send_admin_email('Lesson Request had get 7 applications',
                      f"The Lesson Request with id {request_id} ({lesson_request.title}) "
                      "has 7 applications now and it's closed.""")
@@ -178,7 +281,15 @@ def send_alert_admin_request_closed(request_id):
 
 @app.task
 def send_admin_assign_instructor(request_id):
-    lesson_request = LessonRequest.objects.get(id=request_id)
+    try:
+        lesson_request = LessonRequest.objects.get(id=request_id)
+    except LessonRequest.DoesNotExist:
+        send_admin_email(
+            'Error executing send_admin_assign_instructor task',
+            f'Executing task send_admin_assign_instructor (params: request_id {request_id}) '
+            f'LessonRequest DoesNotExist error is raised'
+        )
+        return None
     send_admin_email('A Lesson Request was created',
                      f"Lesson Request with id {request_id} ({lesson_request.title}) was created, "
                      "review and assign it an instructor.""")
@@ -186,15 +297,31 @@ def send_admin_assign_instructor(request_id):
 
 @app.task
 def send_admin_completed_instructor(lesson_id):
-    lesson = Lesson.objects.get(id=lesson_id)
+    try:
+        lesson = Lesson.objects.get(id=lesson_id)
+    except Lesson.DoesNotExist:
+        send_admin_email(
+            'Error executing send_admin_completed_instructor task',
+            f'Executing task send_admin_completed_instructor (params: lesson_id {lesson_id}) '
+            f'Lesson DoesNotExist error is raised'
+        )
+        return None
     send_admin_email('An instructor has completed and graded a lesson', 
                      f"Lesson with id {lesson_id} ({lesson.title}) has been completed, "
                      "review and close this lesson.""")
     
-    
+
 @app.task
 def send_alert_request_compatible_instructors(request_id, task_log_id):
-    l_req = LessonRequest.objects.get(id=request_id)
+    try:
+        l_req = LessonRequest.objects.get(id=request_id)
+    except LessonRequest.DoesNotExist:
+        send_admin_email(
+            'Error executing send_alert_request_compatible_instructors task',
+            f'Executing task send_alert_request_compatible_instructors (params: request_id {request_id}, task_log_id {task_log_id}) '
+            f'LessonRequest DoesNotExist error is raised'
+        )
+        return None
     if l_req.skill_level == SKILL_LEVEL_BEGINNER:
         req_levels = [SKILL_LEVEL_BEGINNER, SKILL_LEVEL_INTERMEDIATE, SKILL_LEVEL_ADVANCED]
     elif l_req.skill_level == SKILL_LEVEL_INTERMEDIATE:
@@ -244,7 +371,15 @@ def execute_scheduled_task():
 
 @app.task
 def send_lesson_reschedule(lesson_id, task_log_id, prev_datetime_str):
-    lesson = Lesson.objects.get(id=lesson_id)
+    try:
+        lesson = Lesson.objects.get(id=lesson_id)
+    except Lesson.DoesNotExist:
+        send_admin_email(
+            'Error executing send_lesson_reschedule task',
+            f'Executing task send_lesson_reschedule (params: lesson_id {lesson_id}, task_log_id {task_log_id}, '
+            f'prev_datetime_str {prev_datetime_str}) Lesson DoesNotExist error is raised'
+        )
+        return None
     prev_datetime = timezone.datetime.strptime(prev_datetime_str, '%Y-%m-%d %H:%M:%S')
     prev_datetime = prev_datetime.astimezone(timezone.utc)
     send_reschedule_lesson(lesson, lesson.booking.user, prev_datetime)

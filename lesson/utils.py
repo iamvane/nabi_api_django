@@ -263,8 +263,7 @@ def send_info_lesson_graded(lesson):
 
 def send_instructor_lesson_completed(lesson):
     """Send email notification to instructor once lesson is graded"""
-    target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(
-        settings.HUBSPOT_API_KEY)
+    target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
     data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['instructor_lesson_completed'],
             "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.instructor.user.email},
             "customProperties": [
@@ -413,6 +412,10 @@ def send_reschedule_lesson(lesson, user, prev_datetime):
     from accounts.models import get_account
     target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
     account = get_account(user)
+    if account is None:
+        send_admin_email("[INFO] Info about a rescheduled lesson could not be send",
+                         f"User {user.id} ({user.email}) in lesson {lesson.id} has not account.")
+        return None
     if account.timezone:
         time_zone = account.timezone
     else:
