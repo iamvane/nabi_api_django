@@ -444,6 +444,10 @@ class Instructor(IUserAccount):
         else:
             return {}
 
+    def lessons_taught(self):
+        from lesson.models import Lesson
+        return self.lessons.filter(status=Lesson.COMPLETE).count()
+
 
 class Education(models.Model):
     instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE, related_name='education')
