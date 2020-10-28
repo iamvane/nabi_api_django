@@ -794,12 +794,24 @@ class InstructorDashboardSerializer(serializers.ModelSerializer):
 
     backgroundCheckStatus = serializers.CharField(max_length=100, source='bg_status', read_only=True)
     missingFields = serializers.ListField(source='missing_fields_camelcase')
-    lessons = serializers.ListField(child=LessonBookingSerializer(), source='lesson_bookings')
+    lessons = serializers.SerializerMethodField()
     zoomLink = serializers.URLField(source='zoom_link')
 
     class Meta:
         model = Instructor
         fields = ('id', 'backgroundCheckStatus', 'complete', 'missingFields', 'zoomLink', 'lessons', )
+
+    def get_lessons(self, instance):
+        list_bookings = []
+        user_id_ant = student_id_ant = 0
+        for booking in instance.bookings.filter(status__in=[LessonBooking.PAID, LessonBooking.TRIAL])\
+                .order_by('user', 'tied_student', '-id'):
+            if booking.user_id != user_id_ant or booking.tied_student_id != student_id_ant:
+                list_bookings.append(booking)
+                user_id_ant = booking.user_id
+                student_id_ant = booking.tied_student_id
+        ser = self.LessonBookingSerializer(list_bookings, many=True)
+        return ser.data
 
 
 class LessonRequestInstructorDashboardSerializer(serializers.ModelSerializer):
