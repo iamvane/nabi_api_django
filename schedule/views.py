@@ -53,11 +53,12 @@ class Schedule(views.APIView):
         days_to_add = 0
         if request.query_params.get('step'):
             try:
-                days_to_add = 7 * int(request.query_params.get('step'))
+                days_to_add = 14 * int(request.query_params.get('step'))
             except ValueError:
                 pass
         today = timezone.datetime.now()
-        this_date = today - timezone.timedelta(days=today.weekday()) + timezone.timedelta(days=days_to_add)
+        this_date = today - timezone.timedelta(days=(today.weekday() + 1)) \
+            + timezone.timedelta(days=days_to_add)
         end_date = this_date + timezone.timedelta(days=13)
         data = []
         while this_date <= end_date:
