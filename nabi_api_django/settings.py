@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'notices',
     'references.apps.ReferencesConfig',
     'background_checks.apps.BackgroundChecksConfig',
+    'schedule',
 
     'drf_yasg',
     'corsheaders',

@@ -4,6 +4,7 @@ import string
 
 from datetime import datetime, timedelta
 from dateutil import relativedelta
+from djchoices import ChoiceItem, DjangoChoices
 from hashlib import sha1
 
 from django.conf import settings
@@ -14,8 +15,19 @@ from django.utils import timezone
 from django.utils.html import strip_tags
 from django.template import loader
 
-from core.constants import MONTH_CHOICES
+from core.constants import (DAY_MONDAY, DAY_TUESDAY, DAY_WEDNESDAY, DAY_THURSDAY, DAY_FRIDAY, DAY_SATURDAY, DAY_SUNDAY,
+                            MONTH_CHOICES)
 from core.models import UserToken
+
+
+class DayChoices(DjangoChoices):
+    monday = ChoiceItem(0, DAY_MONDAY)
+    tuesday = ChoiceItem(1, DAY_TUESDAY)
+    wednesday = ChoiceItem(2, DAY_WEDNESDAY)
+    thursday = ChoiceItem(3, DAY_THURSDAY)
+    friday = ChoiceItem(4, DAY_FRIDAY)
+    saturday = ChoiceItem(5, DAY_SATURDAY)
+    sunday = ChoiceItem(6, DAY_SUNDAY)
 
 
 def update_model(instance, **kwargs):
