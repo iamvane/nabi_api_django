@@ -749,11 +749,15 @@ class BestInstructorMatchView(views.APIView):
                             status=status.HTTP_400_BAD_REQUEST)
         ser_params = sers.GetParamsInstructorMatchSerializer(instance=request)
         instructor_list = get_matching_instructors(request, ser_params)
-        max_index = math.ceil(0.25 * len(instructor_list))
-        select_inst = random.choice(instructor_list[:max_index])
-        instructor = Instructor.objects.get(id=select_inst.get('id'))
-        ser = sers.BestInstructorMatchSerializer(instructor)
-        return Response(ser.data)
+        if instructor_list:
+            max_index = math.ceil(0.25 * len(instructor_list))
+            select_inst = random.choice(instructor_list[:max_index])
+            instructor = Instructor.objects.get(id=select_inst.get('id'))
+            ser = sers.BestInstructorMatchSerializer(instructor)
+            data = ser.data
+        else:
+            data = {}
+        return Response(data)
 
 
 class InstructorsMatchView(views.APIView):
