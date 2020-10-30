@@ -1143,3 +1143,29 @@ class BestInstructorMatchSerializer(serializers.ModelSerializer):
         res2 = instance.bookings.filter(application__isnull=False, application__request__isnull=False)\
             .distinct('application__request__skill_level').values_list('application__request__skill_level', flat=True)
         return list(set(res1.union(res2)))
+
+
+class InstructorMatchSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source='display_name')
+    reviews = serializers.SerializerMethodField()
+    instruments = serializers.SerializerMethodField()
+    rate = serializers.SerializerMethodField()
+    timezone = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Instructor
+        fields = ('id', 'name', 'reviews', 'instruments', 'rate', 'timezone', )
+
+    def get_reviews(self, instance):
+        reviews_data = instance.get_review_dict()
+        return reviews_data
+
+    def get_instruments(self, instance):
+        return [instrument.name for instrument in instance.instruments.all()]
+
+    def get_rate(self, instance):
+        item = instance.instructorlessonrate_set.first()
+        return item.mins30 if item else item
+
+    def get_timezone(self, instance):
+        return instance.timezone if instance.timezone else instance.get_timezone_from_location_zipcode()

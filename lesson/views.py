@@ -767,24 +767,24 @@ class InstructorsMatchView(views.APIView):
         ser_params = sers.GetParamsInstructorMatchSerializer(instance=request)
         instructor_list = get_matching_instructors(request, ser_params)
         max_index = math.ceil(0.5 * len(instructor_list))
-        selected_instructors = []
+        selected_instructor_ids = set()
         population = instructor_list[:max_index]
         qty_cycles = 0
-        while len(selected_instructors) < 2 and qty_cycles < 100 and population:
+        while len(selected_instructor_ids) < 2 and qty_cycles < 100 and population:
             qty_cycles += 1
             inst = random.choice(population)
             if inst.get('id') == instructor_id:
                 continue
             else:
-                selected_instructors.append(Instructor.objects.get(id=inst.get('id')))
+                selected_instructor_ids.add(inst.get('id'))
         population = instructor_list[max_index:]
         qty_cycles = 0
-        while len(selected_instructors) < 2 and qty_cycles < 100 and population:
+        while len(selected_instructor_ids) < 2 and qty_cycles < 100 and population:
             qty_cycles += 1
             inst = random.choice(population)
             if inst.get('id') == instructor_id:
                 continue
             else:
-                selected_instructors.append(Instructor.objects.get(id=inst.get('id')))
-        ser = sers.InstructorMatchSerializer(selected_instructors, many=True)
+                selected_instructor_ids.add(inst.get('id'))
+        ser = sers.InstructorMatchSerializer(Instructor.objects.filter(id__in=selected_instructor_ids), many=True)
         return Response(ser.data)
