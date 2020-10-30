@@ -749,4 +749,5 @@ class BestInstructorMatchView(views.APIView):
         max_index = math.ceil(0.25 * len(instructor_list))
         select_inst = random.choice(instructor_list[:max_index])
         instructor = Instructor.objects.get(id=select_inst.get('id'))
-        return Response({'id': instructor.id, 'name': instructor.user.display_name()})
+        ser = sers.InstructorMatchSerializer(instructor)
+        return Response(ser.data)

@@ -1091,3 +1091,55 @@ class GetParamsInstructorMatchSerializer(serializers.ModelSerializer):
     class Meta:
         model = LessonRequest
         fields = ('instrument', 'availability', 'language', 'gender', 'skill_level', )
+
+
+class InstructorMatchSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source='display_name')
+    reviews = serializers.SerializerMethodField()
+    instruments = serializers.SerializerMethodField()
+    rate = serializers.SerializerMethodField()
+    timezone = serializers.SerializerMethodField()
+    bioTitle = serializers.CharField(source='bio_title')
+    bioDescription = serializers.CharField(source='bio_description')
+    yearsOfExperience = serializers.IntegerField(source='years_of_experience')
+    tutoredStudents = serializers.SerializerMethodField()
+    levelsTaught = serializers.SerializerMethodField()
+    lessonsTaught = serializers.IntegerField(source='lessons_taught')
+
+    class Meta:
+        model = Instructor
+        fields = ('name', 'reviews', 'instruments', 'rate', 'timezone',
+                  'bioTitle', 'bioDescription', 'yearsOfExperience', 'tutoredStudents', 'languages',
+                  'levelsTaught', 'lessonsTaught')
+
+    def get_reviews(self, instance):
+        reviews_data = instance.get_review_dict()
+        review_list = []
+        for review in instance.reviews.all().order_by('-id'):
+            review_list.append({'date': review.reported_at.strftime('%m/%d/%Y'), 'rating': review.rating,
+                                'comment': review.comment, 'user': review.user.get_full_name()})
+        reviews_data['items'] = review_list
+        return reviews_data
+
+    def get_instruments(self, instance):
+        return [instrument.name for instrument in instance.instruments.all()]
+
+    def get_rate(self, instance):
+        item = instance.instructorlessonrate_set.first()
+        return item.mins30 if item else item
+
+    def get_timezone(self, instance):
+        return instance.timezone if instance.timezone else instance.get_timezone_from_location_zipcode()
+
+    def get_tutoredStudents(self, instance):
+        set_stu = set()
+        for item in instance.bookings.all():
+            set_stu.add(item.student_details)
+        return len(set_stu)
+
+    def get_levelsTaught(self, instance):
+        res1 = instance.bookings.filter(request__isnull=False).distinct('request__skill_level')\
+            .values_list('request__skill_level', flat=True)
+        res2 = instance.bookings.filter(application__isnull=False, application__request__isnull=False)\
+            .distinct('application__request__skill_level').values_list('application__request__skill_level', flat=True)
+        return list(set(res1.union(res2)))
