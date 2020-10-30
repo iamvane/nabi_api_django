@@ -1093,7 +1093,7 @@ class GetParamsInstructorMatchSerializer(serializers.ModelSerializer):
         fields = ('instrument', 'availability', 'language', 'gender', 'skill_level', )
 
 
-class InstructorMatchSerializer(serializers.ModelSerializer):
+class BestInstructorMatchSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source='display_name')
     reviews = serializers.SerializerMethodField()
     instruments = serializers.SerializerMethodField()
