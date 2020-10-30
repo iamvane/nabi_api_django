@@ -1108,7 +1108,7 @@ class InstructorMatchSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Instructor
-        fields = ('name', 'reviews', 'instruments', 'rate', 'timezone',
+        fields = ('id', 'name', 'reviews', 'instruments', 'rate', 'timezone',
                   'bioTitle', 'bioDescription', 'yearsOfExperience', 'tutoredStudents', 'languages',
                   'levelsTaught', 'lessonsTaught')
 
