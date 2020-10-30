@@ -1083,3 +1083,11 @@ class LessonDataSerializer(serializers.ModelSerializer):
         else:
             time_zone = account.get_timezone_from_location_zipcode()
         return time_zone
+
+
+class GetParamsInstructorMatchSerializer(serializers.ModelSerializer):
+    availability = serializers.JSONField(source='trial_availability_schedule')
+
+    class Meta:
+        model = LessonRequest
+        fields = ('instrument', 'availability', 'language', 'gender', 'skill_level', )

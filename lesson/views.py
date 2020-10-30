@@ -1,3 +1,5 @@
+import math
+import random
 import stripe
 from functools import reduce
 
@@ -19,13 +21,14 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from accounts.models import TiedStudent, get_account
+from accounts.models import Instructor, InstructorInstruments, TiedStudent, get_account
 from accounts.serializers import MinimalTiedStudentSerializer
 from accounts.utils import get_stripe_customer_id, add_to_email_list_v2
 from core.constants import *
 from core.models import ScheduledTask, TaskLog, UserBenefits
 from core.permissions import AccessForInstructor, AccessForParentOrStudent
 from core.utils import build_error_dict, send_admin_email
+from lesson.utils import get_availability_field_names_from_availability_json
 from payments.models import Payment
 from payments.serializers import GetPaymentMethodSerializer
 
@@ -691,3 +694,59 @@ class AcceptLessonRequestView(views.APIView):
             return Response({'message': 'You already applied to this request.'}, status=status.HTTP_400_BAD_REQUEST)
         InstructorAcceptanceLessonRequest.objects.create(instructor=user.instructor, request=lr, accept=decision)
         return Response({'message': 'Decision registered'})
+
+
+class BestInstructorMatchView(views.APIView):
+
+    def get(self, request, request_id):
+        try:
+            request = LessonRequest.objects.get(id=request_id)
+        except LessonRequest.DoesNotExist:
+            return Response({'detail': 'There is not LessonRequest with provided id'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        ser_params = sers.GetParamsInstructorMatchSerializer(instance=request)
+        if request.skill_level == SKILL_LEVEL_BEGINNER:
+            req_levels = [SKILL_LEVEL_BEGINNER, SKILL_LEVEL_INTERMEDIATE, SKILL_LEVEL_ADVANCED]
+        elif request.skill_level == SKILL_LEVEL_INTERMEDIATE:
+            req_levels = [SKILL_LEVEL_INTERMEDIATE, SKILL_LEVEL_ADVANCED]
+        else:
+            req_levels = [SKILL_LEVEL_ADVANCED]
+        instructors_instrument = InstructorInstruments.objects.filter(instrument_id=request.instrument_id,
+                                                                      skill_level__in=req_levels) \
+            .values_list('instructor_id', flat=True)
+        instructors = Instructor.objects.filter(id__in=instructors_instrument,
+                                                languages__icontains=ser_params.data.get('language'),
+                                                complete=True,
+                                                screened=True,
+                                                )
+        instructor_list = []
+        max_rating = 0.0
+        for instructor in instructors:
+            if hasattr(instructor, 'availability'):
+                field_names = get_availability_field_names_from_availability_json(request.trial_availability_schedule)
+                available = False
+                for field_name in field_names:
+                    if getattr(instructor.availability, field_name):
+                        available = True
+                        break
+                if not available:
+                    continue
+                reviews = instructor.get_review_dict()
+                rating = float(reviews.get('rating', '0'))
+                if rating > max_rating:
+                    max_rating = rating
+                gender_points = 10 if instructor.gender == ser_params.data.get('gender') else 7
+                elapsed = timezone.now() - instructor.user.date_joined
+                login_points = ((100 - elapsed.days) / 100) * 10
+                if login_points < -7:
+                    login_points = -7
+                instructor_list.append({'id': instructor.id, 'rating': rating, 'points': gender_points + login_points})
+        if max_rating == 0.0:
+            max_rating = 1.0
+        instructor_list = sorted(instructor_list,
+                                 key=lambda data: data.get('points') + ((data.get('rating') / max_rating) * 10),
+                                 reverse=True)
+        max_index = math.ceil(0.25 * len(instructor_list))
+        select_inst = random.choice(instructor_list[:max_index])
+        instructor = Instructor.objects.get(id=select_inst.get('id'))
+        return Response({'id': instructor.id, 'name': instructor.user.display_name()})
