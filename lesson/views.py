@@ -794,3 +794,26 @@ class InstructorsMatchView(views.APIView):
         ser2 = sers.InstructorMatchSerializer(Instructor.objects.get(id=instructor_id))
         data = [ser2.data] + ser.data
         return Response(data)
+
+
+class AssignInstructorView(views.APIView):
+
+    def post(self, request):
+        ser = sers.AssignInstructorDataSerializer(data=request.data, context={'user': request.user})
+        if ser.is_valid():
+            instructor = Instructor.objects.get(id=ser.validated_data.get('instructorId'))
+            rate_obj = instructor.instructorlessonrate_set.first()
+            rate_value = rate_obj.mins30 if rate_obj else None
+            booking = LessonBooking.objects.get(id=ser.validated_data.get('bookingId'))
+            with transaction.atomic():
+                booking.instructor=instructor
+                booking.rate = rate_value
+                booking.save()
+                for lesson in booking.lessons.all():
+                    lesson.instructor = instructor
+                    lesson.rate = rate_value
+                    lesson.save()
+            return Response({'message': 'Instructor assigned successfully'})
+        else:
+            result = build_error_dict(ser.errors)
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
