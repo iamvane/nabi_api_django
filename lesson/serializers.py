@@ -1099,17 +1099,18 @@ class BestInstructorMatchSerializer(serializers.ModelSerializer):
     instruments = serializers.SerializerMethodField()
     rate = serializers.SerializerMethodField()
     timezone = serializers.SerializerMethodField()
-    bioTitle = serializers.CharField(source='bio_title')
-    bioDescription = serializers.CharField(source='bio_description')
+    bioTitle = serializers.SerializerMethodField()
+    bioDescription = serializers.SerializerMethodField()
     yearsOfExperience = serializers.IntegerField(source='years_of_experience')
+    verified = serializers.SerializerMethodField()
     tutoredStudents = serializers.SerializerMethodField()
     levelsTaught = serializers.SerializerMethodField()
     lessonsTaught = serializers.IntegerField(source='lessons_taught')
 
     class Meta:
         model = Instructor
-        fields = ('id', 'name', 'reviews', 'instruments', 'rate', 'timezone',
-                  'bioTitle', 'bioDescription', 'yearsOfExperience', 'tutoredStudents', 'languages',
+        fields = ('id', 'name', 'avatar', 'reviews', 'instruments', 'rate', 'timezone',
+                  'bioTitle', 'bioDescription', 'yearsOfExperience', 'verified', 'tutoredStudents', 'languages',
                   'levelsTaught', 'lessonsTaught')
 
     def get_reviews(self, instance):
@@ -1118,6 +1119,9 @@ class BestInstructorMatchSerializer(serializers.ModelSerializer):
         for review in instance.reviews.all().order_by('-id'):
             review_list.append({'date': review.reported_at.strftime('%m/%d/%Y'), 'rating': review.rating,
                                 'comment': review.comment, 'user': review.user.get_full_name()})
+        if reviews_data == {}:
+            reviews_data['rating'] = 0
+            reviews_data['quantity'] = 0
         reviews_data['items'] = review_list
         return reviews_data
 
@@ -1131,10 +1135,20 @@ class BestInstructorMatchSerializer(serializers.ModelSerializer):
     def get_timezone(self, instance):
         return instance.timezone if instance.timezone else instance.get_timezone_from_location_zipcode()
 
+    def get_bioTitle(self, instance):
+        return instance.bio_title or ''
+
+    def get_bioDescription(self, instance):
+        return instance.bio_description or ''
+
+    def get_verified(self, instance):
+        return instance.bg_status
+
     def get_tutoredStudents(self, instance):
         set_stu = set()
-        for item in instance.bookings.all():
-            set_stu.add(item.student_details)
+        for booking in instance.bookings.all():
+            if booking.lessons.filter(status=Lesson.COMPLETE).exists():
+                set_stu.add(booking.student_details)
         return len(set_stu)
 
     def get_levelsTaught(self, instance):
@@ -1154,7 +1168,7 @@ class InstructorMatchSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Instructor
-        fields = ('id', 'name', 'reviews', 'instruments', 'rate', 'timezone', )
+        fields = ('id', 'name', 'avatar', 'reviews', 'instruments', 'rate', 'timezone', )
 
     def get_reviews(self, instance):
         reviews_data = instance.get_review_dict()
