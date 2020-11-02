@@ -804,9 +804,11 @@ class AssignInstructorView(views.APIView):
             instructor = Instructor.objects.get(id=ser.validated_data.get('instructorId'))
             rate_obj = instructor.instructorlessonrate_set.first()
             rate_value = rate_obj.mins30 if rate_obj else None
-            booking = LessonBooking.objects.get(id=ser.validated_data.get('bookingId'))
+            booking = LessonBooking.objects.filter(Q(request_id=ser.validated_data.get('requestId')) |
+                                                   Q(application__request_id=ser.validated_data.get('requestId')))\
+                .first()
             with transaction.atomic():
-                booking.instructor=instructor
+                booking.instructor = instructor
                 booking.rate = rate_value
                 booking.save()
                 for lesson in booking.lessons.all():
