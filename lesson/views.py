@@ -791,4 +791,6 @@ class InstructorsMatchView(views.APIView):
             else:
                 selected_instructor_ids.add(inst.get('id'))
         ser = sers.InstructorMatchSerializer(Instructor.objects.filter(id__in=selected_instructor_ids), many=True)
-        return Response(ser.data)
+        ser2 = sers.InstructorMatchSerializer(Instructor.objects.get(id=instructor_id))
+        data = [ser2.data] + ser.data
+        return Response(data)
