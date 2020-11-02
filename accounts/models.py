@@ -440,7 +440,7 @@ class Instructor(IUserAccount):
         Return empty dict when instructor has not reviews."""
         results = self.reviews.aggregate(mean=Avg('rating'), qty=Count('*'))
         if results.get('mean'):
-            return {'rating': f"{results.get('mean'):.2f}", 'quantity': results.get('qty')}
+            return {'rating': f"{results.get('mean'):.1f}", 'quantity': results.get('qty')}
         else:
             return {}
 

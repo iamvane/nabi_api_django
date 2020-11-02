@@ -16,5 +16,7 @@ urlpatterns = [
     path('confirm-booking/', views.LessonBookingRegisterView.as_view()),
     path('accept-request/', views.AcceptLessonRequestView.as_view()),
     path('lessons/', views.LessonCreateView.as_view()),
-    path('lessons/<int:lesson_id>/', views.LessonView.as_view())
+    path('lessons/<int:lesson_id>/', views.LessonView.as_view()),
+    path('best-instructor-match/<int:request_id>/', views.BestInstructorMatchView.as_view()),
+    path('instructors-match/<int:request_id>/<int:instructor_id>/', views.InstructorsMatchView.as_view()),
 ]

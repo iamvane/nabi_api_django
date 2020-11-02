@@ -782,3 +782,11 @@ or
 GET localhost:8000/v1/schedule/?step=-1
 
 ###
+
+GET localhost:8000/v1/best-instructor-match/<request_id>/
+
+###
+
+GET localhost:8000/v1/instructors-match/<request_id>/<instructor_id>/
+
+###

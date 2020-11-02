@@ -1083,3 +1083,103 @@ class LessonDataSerializer(serializers.ModelSerializer):
         else:
             time_zone = account.get_timezone_from_location_zipcode()
         return time_zone
+
+
+class GetParamsInstructorMatchSerializer(serializers.ModelSerializer):
+    availability = serializers.JSONField(source='trial_availability_schedule')
+
+    class Meta:
+        model = LessonRequest
+        fields = ('instrument', 'availability', 'language', 'gender', 'skill_level', )
+
+
+class BestInstructorMatchSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source='display_name')
+    reviews = serializers.SerializerMethodField()
+    instruments = serializers.SerializerMethodField()
+    rate = serializers.SerializerMethodField()
+    timezone = serializers.SerializerMethodField()
+    bioTitle = serializers.SerializerMethodField()
+    bioDescription = serializers.SerializerMethodField()
+    yearsOfExperience = serializers.IntegerField(source='years_of_experience')
+    verified = serializers.SerializerMethodField()
+    tutoredStudents = serializers.SerializerMethodField()
+    levelsTaught = serializers.SerializerMethodField()
+    lessonsTaught = serializers.IntegerField(source='lessons_taught')
+
+    class Meta:
+        model = Instructor
+        fields = ('id', 'name', 'avatar', 'reviews', 'instruments', 'rate', 'timezone',
+                  'bioTitle', 'bioDescription', 'yearsOfExperience', 'verified', 'tutoredStudents', 'languages',
+                  'levelsTaught', 'lessonsTaught')
+
+    def get_reviews(self, instance):
+        reviews_data = instance.get_review_dict()
+        review_list = []
+        for review in instance.reviews.all().order_by('-id'):
+            review_list.append({'date': review.reported_at.strftime('%m/%d/%Y'), 'rating': review.rating,
+                                'comment': review.comment, 'user': review.user.get_full_name()})
+        if reviews_data == {}:
+            reviews_data['rating'] = '0.0'
+            reviews_data['quantity'] = 0
+        reviews_data['items'] = review_list
+        return reviews_data
+
+    def get_instruments(self, instance):
+        return [instrument.name for instrument in instance.instruments.all()]
+
+    def get_rate(self, instance):
+        item = instance.instructorlessonrate_set.first()
+        return item.mins30 if item else item
+
+    def get_timezone(self, instance):
+        return instance.timezone if instance.timezone else instance.get_timezone_from_location_zipcode()
+
+    def get_bioTitle(self, instance):
+        return instance.bio_title or ''
+
+    def get_bioDescription(self, instance):
+        return instance.bio_description or ''
+
+    def get_verified(self, instance):
+        return 'Yes' if instance.bg_status == BG_STATUS_VERIFIED else 'No'
+
+    def get_tutoredStudents(self, instance):
+        set_stu = set()
+        for booking in instance.bookings.all():
+            if booking.lessons.filter(status=Lesson.COMPLETE).exists():
+                set_stu.add(booking.student_details)
+        return len(set_stu)
+
+    def get_levelsTaught(self, instance):
+        res1 = instance.bookings.filter(request__isnull=False).distinct('request__skill_level')\
+            .values_list('request__skill_level', flat=True)
+        res2 = instance.bookings.filter(application__isnull=False, application__request__isnull=False)\
+            .distinct('application__request__skill_level').values_list('application__request__skill_level', flat=True)
+        return list(set(res1.union(res2)))
+
+
+class InstructorMatchSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source='display_name')
+    reviews = serializers.SerializerMethodField()
+    instruments = serializers.SerializerMethodField()
+    rate = serializers.SerializerMethodField()
+    timezone = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Instructor
+        fields = ('id', 'name', 'avatar', 'reviews', 'instruments', 'rate', 'timezone', )
+
+    def get_reviews(self, instance):
+        reviews_data = instance.get_review_dict()
+        return reviews_data
+
+    def get_instruments(self, instance):
+        return [instrument.name for instrument in instance.instruments.all()]
+
+    def get_rate(self, instance):
+        item = instance.instructorlessonrate_set.first()
+        return item.mins30 if item else item
+
+    def get_timezone(self, instance):
+        return instance.timezone if instance.timezone else instance.get_timezone_from_location_zipcode()
