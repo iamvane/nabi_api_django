@@ -1120,7 +1120,7 @@ class BestInstructorMatchSerializer(serializers.ModelSerializer):
             review_list.append({'date': review.reported_at.strftime('%m/%d/%Y'), 'rating': review.rating,
                                 'comment': review.comment, 'user': review.user.get_full_name()})
         if reviews_data == {}:
-            reviews_data['rating'] = 0
+            reviews_data['rating'] = '0.0'
             reviews_data['quantity'] = 0
         reviews_data['items'] = review_list
         return reviews_data
@@ -1142,7 +1142,7 @@ class BestInstructorMatchSerializer(serializers.ModelSerializer):
         return instance.bio_description or ''
 
     def get_verified(self, instance):
-        return instance.bg_status
+        return 'Yes' if instance.bg_status == BG_STATUS_VERIFIED else 'No'
 
     def get_tutoredStudents(self, instance):
         set_stu = set()
