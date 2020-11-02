@@ -787,6 +787,6 @@ GET localhost:8000/v1/best-instructor-match/<request_id>/
 
 ###
 
-GET localhost:8000/v1/best-instructors-match/<request_id>/<instructor_id>/
+GET localhost:8000/v1/instructors-match/<request_id>/<instructor_id>/
 
 ###
