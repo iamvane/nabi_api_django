@@ -34,7 +34,7 @@ from payments.serializers import GetPaymentMethodSerializer
 
 from . import serializers as sers
 from .models import Application, InstructorAcceptanceLessonRequest, LessonBooking, LessonRequest, Lesson
-from .tasks import (send_alert_admin_request_closed, send_alert_request_compatible_instructors,
+from .tasks import (send_alert_admin_request_closed,
                     send_booking_alert, send_booking_invoice, send_info_grade_lesson,
                     send_lesson_reschedule, send_request_alert_instructors, send_trial_confirm,
                     send_lesson_info_student_parent, send_instructor_complete_lesson,
@@ -64,9 +64,6 @@ class LessonRequestView(views.APIView):
                 add_to_email_list_v2(request.user, [], ['trial_to_booking'])
                 task_log = TaskLog.objects.create(task_name='send_trial_confirm', args={'lesson_id': lesson.id})
                 send_trial_confirm.delay(lesson.id, task_log.id)
-                task_log = TaskLog.objects.create(task_name='send_alert_request_compatible_instructors',
-                                                  args={'request_id': obj.id})
-                send_alert_request_compatible_instructors.delay(obj.id, task_log.id)
             ser = sers.LessonRequestDetailSerializer(obj, context={'user': request.user})
             return Response(ser.data)
         else:
@@ -335,11 +332,7 @@ class LessonBookingRegisterView(views.APIView):
 
             task_log = TaskLog.objects.create(task_name='send_booking_invoice', args={'booking_id': booking.id})
             send_booking_invoice.delay(booking.id, task_log.id)
-            if booking.application:
-                task_log = TaskLog.objects.create(task_name='send_booking_alert', args={'booking_id': booking.id})
-                send_booking_alert.delay(booking.id, task_log.id)
-            return Response({'message': 'Lesson(s) booked successfully.',
-                             'booking_id': booking.id})
+            return Response({'message': 'Lesson(s) booked successfully.', 'booking_id': booking.id})
         else:
             result = build_error_dict(serializer.errors)
             return Response(result, status=status.HTTP_400_BAD_REQUEST)
