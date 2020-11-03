@@ -34,8 +34,8 @@ from payments.serializers import GetPaymentMethodSerializer
 
 from . import serializers as sers
 from .models import Application, InstructorAcceptanceLessonRequest, LessonBooking, LessonRequest, Lesson
-from .tasks import (send_alert_admin_request_closed,
-                    send_booking_alert, send_booking_invoice, send_info_grade_lesson,
+from .tasks import (send_alert_admin_request_closed, send_booking_alert, send_booking_invoice,
+                    send_email_assigned_instructor, send_info_grade_lesson,
                     send_lesson_reschedule, send_request_alert_instructors, send_trial_confirm,
                     send_lesson_info_student_parent, send_instructor_complete_lesson,
                     send_instructor_complete_lesson, send_admin_completed_instructor)
@@ -808,6 +808,9 @@ class AssignInstructorView(views.APIView):
                     lesson.instructor = instructor
                     lesson.rate = rate_value
                     lesson.save()
+            task_log = TaskLog.objects.create(task_name='send_email_assigned_instructor',
+                                              args={'booking_id': booking.id,})
+            send_email_assigned_instructor.delay(booking.id, task_log.id)
             return Response({'message': 'Instructor assigned successfully'})
         else:
             result = build_error_dict(ser.errors)
