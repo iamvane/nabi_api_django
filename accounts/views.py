@@ -37,7 +37,8 @@ from core.models import UserBenefits, UserToken
 from core.permissions import AccessForInstructor
 from core.utils import build_error_dict, generate_hash, generate_token_reset_password, get_date_a_month_later
 from lesson.models import Application, Instrument, Lesson, LessonBooking, LessonRequest
-from lesson.serializers import (LessonBookingParentDashboardSerializer, LessonBookingStudentDashboardSerializer,
+from lesson.serializers import (BestInstructorMatchSerializer,
+                                LessonBookingParentDashboardSerializer, LessonBookingStudentDashboardSerializer,
                                 LessonRequestParentDashboardSerializer, LessonRequestStudentDashboardSerializer,
                                 InstructorDashboardSerializer, LessonRequestInstructorDashboardSerializer,
                                 ScheduledLessonSerializer)
@@ -500,17 +501,12 @@ class InstructorDetailView(views.APIView):
     permission_classes = (AllowAny,)
 
     def get(self, request, pk):
-        instructor = get_object_or_404(Instructor, pk=pk)
-        if isinstance(request.user, AnonymousUser):
-            account = None
-        else:
-            account = get_account(request.user)
-        serializer = sers.InstructorDetailSerializer(instructor, context={'account': account})
-        total_rating = instructor.get_review_dict()
-        resp_data = serializer.data.copy()
-        if total_rating:
-            resp_data.update({'ratings': total_rating.get('rating'), 'count': total_rating.get('quantity')})
-        return Response(resp_data)
+        try:
+            instructor = Instructor.objects.get(pk=pk)
+        except Instructor.DoesNotExist:
+            return Response({'detail': 'There is not instructor with provider id'}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = BestInstructorMatchSerializer(instructor)
+        return Response(serializer.data)
 
 
 class UploadAvatarView(views.APIView):
