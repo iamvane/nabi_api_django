@@ -62,8 +62,12 @@ class Schedule(views.APIView):
         end_date = this_date + timezone.timedelta(days=13)
         data = []
         while this_date <= end_date:
+            pre_data = {'date': this_date.strftime('%Y-%m-%d'), 'available': [], 'lessons': []}
             schedule = get_instructor_schedule(request.user.instructor, this_date.date())
-            sch_data = compose_schedule_data(request.user.instructor, this_date.date(), schedule)
-            data.append({'date': this_date.strftime('%Y-%m-%d'), 'schedule': sch_data})
+            lessons_qs = request.user.instructor.lessons.filter(scheduled_datetime__date=this_date.date())\
+                .values('id', 'scheduled_datetime').order_by('scheduled_datetime')
+            sch_data = compose_schedule_data(schedule, lessons_qs)
+            pre_data.update(sch_data)
+            data.append(pre_data)
             this_date = this_date + timezone.timedelta(days=1)
         return Response(data)
