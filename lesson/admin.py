@@ -12,7 +12,7 @@ from lesson.models import Instrument
 from payments.models import Payment
 
 from .models import Application, InstructorAcceptanceLessonRequest, Lesson, LessonBooking, LessonRequest
-from .tasks import (send_alert_request_compatible_instructors, send_booking_alert, send_booking_invoice,
+from .tasks import (send_booking_alert, send_booking_invoice,
                     send_info_grade_lesson, send_lesson_info_instructor, send_lesson_info_student_parent,
                     send_instructor_complete_lesson, send_lesson_reschedule, send_trial_confirm)
 
@@ -122,9 +122,6 @@ class LessonBookingAdmin(admin.ModelAdmin):
                 if obj.payment:
                     task_log = TaskLog.objects.create(task_name='send_booking_invoice', args={'booking_id': obj.id})
                     send_booking_invoice.delay(obj.id, task_log.id)
-                if obj.application:
-                    task_log = TaskLog.objects.create(task_name='send_booking_alert', args={'booking_id': obj.id})
-                    send_booking_alert.delay(obj.id, task_log.id)
         elif 'instructor' in form.changed_data:
             if obj.instructor:
                 with transaction.atomic():
@@ -255,9 +252,6 @@ class LessonRequestAdmin(admin.ModelAdmin):
                 add_to_email_list_v2(request.user, [], ['trial_to_booking'])
                 task_log = TaskLog.objects.create(task_name='send_trial_confirm', args={'lesson_id': lesson.id})
                 send_trial_confirm.delay(lesson.id, task_log.id)
-                task_log = TaskLog.objects.create(task_name='send_alert_request_compatible_instructors',
-                                                  args={'request_id': obj.id})
-                send_alert_request_compatible_instructors.delay(obj.id, task_log.id)
 
 
 class LessonAdmin(admin.ModelAdmin):

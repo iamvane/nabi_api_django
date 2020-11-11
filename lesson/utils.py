@@ -651,3 +651,33 @@ def get_availability_field_names_from_availability_json(json_data):
         field_name = item.get('day') + RANGE_HOURS_CONV.get(item.get('timeframe'))
         resp_list.append(field_name)
     return resp_list
+
+
+def send_advice_assigned_instructor(booking):
+    """Send email to instructor, about assign him to a lesson/booking"""
+    target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
+    instrument_name = ''
+    if booking.request and booking.request.instrument:
+        instrument_name = booking.request.instrument.name
+    elif booking.application and booking.application.request and booking.application.request.instrument:
+        instrument_name = booking.application.request.instrument.name
+    student_details = booking.student_details()
+    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['assigned_booking'],
+            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": booking.instructor.user.email},
+            "customProperties": [
+                {"name": "firstName", "value": booking.instructor.user.first_name},
+                {"name": "instrument", "value": instrument_name},
+                {"name": "student_name", "value": student_details.get('name', '') if student_details else ''},
+            ]
+            }
+    resp = requests.post(target_url, json=data)
+    if resp.status_code != 200:
+        send_admin_email("[INFO] Advice instructor email for assignment could not be send",
+                         """An email to advice instructor about his assignation to booking could not be send to email {}, lesson booking id {}.
+
+                         The status_code for API's response was {} and content: {}""".format(booking.instructor.user.email,
+                                                                                             booking.id,
+                                                                                             resp.status_code,
+                                                                                             resp.content.decode())
+                         )
+        return None

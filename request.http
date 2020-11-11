@@ -790,3 +790,11 @@ GET localhost:8000/v1/best-instructor-match/<request_id>/
 GET localhost:8000/v1/instructors-match/<request_id>/<instructor_id>/
 
 ###
+
+POST localhost:8000/v1/instructor-assign/
+
+{
+   "instructorId": 3,
+   "requestId": 5
+}
+###

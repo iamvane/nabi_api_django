@@ -5,6 +5,7 @@ from dateutil import relativedelta
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
+from django.db.models import Q
 from django.utils import timezone
 
 from rest_framework import serializers
@@ -1183,3 +1184,22 @@ class InstructorMatchSerializer(serializers.ModelSerializer):
 
     def get_timezone(self, instance):
         return instance.timezone if instance.timezone else instance.get_timezone_from_location_zipcode()
+
+
+class AssignInstructorDataSerializer(serializers.Serializer):
+    requestId = serializers.IntegerField()
+    instructorId = serializers.IntegerField()
+
+    def validate_requestId(self, value):
+        if not LessonBooking.objects.filter(Q(request_id=value) | Q(application__request_id=value)).exists():
+            raise serializers.ValidationError(
+                'There is not LessonBooking with related LessonRequest which id was provided'
+            )
+        else:
+            return value
+
+    def validate_instructorId(self, value):
+        if not Instructor.objects.filter(id=value).exists():
+            raise serializers.ValidationError('There is not Instructor with provided id')
+        else:
+            return value

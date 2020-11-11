@@ -14,7 +14,7 @@ from nabi_api_django.celery_config import app
 
 from core.models import ScheduledTask
 from .models import Application, Lesson, LessonBooking, LessonRequest
-from .utils import (get_availability_field_names_from_availability_json,
+from .utils import (get_availability_field_names_from_availability_json, send_advice_assigned_instructor,
                     send_alert_application, send_alert_booking, send_alert_request_instructor, send_info_lesson_graded,
                     send_info_lesson_student_parent, send_info_lesson_instructor,
                     send_info_request_available, send_invoice_booking, send_reschedule_lesson, send_trial_confirmation,
@@ -385,4 +385,19 @@ def send_lesson_reschedule(lesson_id, task_log_id, prev_datetime_str):
     send_reschedule_lesson(lesson, lesson.booking.user, prev_datetime)
     if lesson.instructor:
         send_reschedule_lesson(lesson, lesson.instructor.user, prev_datetime)
+    TaskLog.objects.filter(id=task_log_id).delete()
+
+
+@app.task
+def send_email_assigned_instructor(booking_id, task_log_id):
+    try:
+        booking = LessonBooking.objects.get(id=booking_id)
+    except LessonBooking.DoesNotExist:
+        send_admin_email(
+            'Error executing send_email_assigned_instructor task',
+            f'Executing task send_email_assigned_instructor (params: booking_id {booking_id}) '
+            f'LessonBooking DoesNotExist error is raised'
+        )
+        return None
+    send_advice_assigned_instructor(booking)
     TaskLog.objects.filter(id=task_log_id).delete()
