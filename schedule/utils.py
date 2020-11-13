@@ -1,5 +1,7 @@
 from django.utils import timezone
 
+from lesson.utils import get_date_time_from_datetime_timezone
+
 
 def get_end_time_lesson(begin_time):
     """Return end_time for a lesson, calculating from begin_time
@@ -10,15 +12,20 @@ def get_end_time_lesson(begin_time):
     return dt.strftime('%H:%M')
 
 
-def compose_schedule_data(orig_data, lessons_qs):
+def compose_schedule_data(orig_data, lessons_qs, time_zone, this_date_str):
     res_data = {'available': []}
     if orig_data:
         # first, order received schedule data
         av_list = sorted(orig_data, key=lambda item: item.get('beginTime'))
     else:
         av_list = []
-    res_data['lessons'] = [{'id': item.get('id'), 'time': item.get('scheduled_datetime').strftime('%H:%M')}
-                           for item in lessons_qs.all()]
+    res_data['lessons'] = []
+    for item in lessons_qs.all():
+        date_str, time_str = get_date_time_from_datetime_timezone(item.get('scheduled_datetime'), time_zone)
+        if date_str != this_date_str:
+            continue
+        else:
+            res_data['lessons'].append({'id': item.get('id'), 'time': time_str})
     lesson_ind = 0
     qty_lesson = len(res_data['lessons'])
     for item in av_list:
