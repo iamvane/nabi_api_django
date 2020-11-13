@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.utils import timezone
 
 from rest_framework import status, views
@@ -62,11 +63,14 @@ class Schedule(views.APIView):
         end_date = this_date + timezone.timedelta(days=13)
         data = []
         while this_date <= end_date:
+            next_date = this_date + timezone.timedelta(days=1)
             pre_data = {'date': this_date.strftime('%Y-%m-%d'), 'available': [], 'lessons': []}
             schedule = get_instructor_schedule(request.user.instructor, this_date.date())
-            lessons_qs = request.user.instructor.lessons.filter(scheduled_datetime__date=this_date.date())\
+            lessons_qs = request.user.instructor.lessons\
+                .filter(Q(scheduled_datetime__date=this_date.date()) | Q(scheduled_datetime__date=next_date.date()))\
                 .values('id', 'scheduled_datetime').order_by('scheduled_datetime')
-            sch_data = compose_schedule_data(schedule, lessons_qs)
+            time_zone = request.user.instructor.timezone or request.user.instructor.get_timezone_from_location_zipcode()
+            sch_data = compose_schedule_data(schedule, lessons_qs, time_zone, this_date.strftime('%Y-%m-%d'))
             pre_data.update(sch_data)
             data.append(pre_data)
             this_date = this_date + timezone.timedelta(days=1)
