@@ -13,6 +13,7 @@ from payments.models import Payment
 from lesson.utils import get_next_date_same_weekday, ABREV_DAY_TO_STRING, TIMEFRAME_TO_STRING
 
 User = get_user_model()
+POPULAR_INSTRUMENTS = ['piano', 'guitar', 'singing', 'violin', 'drums', 'flute', 'ukulele', ]
 
 
 class Instrument(models.Model):

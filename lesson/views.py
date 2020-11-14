@@ -732,6 +732,37 @@ def get_matching_instructors(request, params):
                   reverse=True)
 
 
+def get_best_instructors():
+    instructor_list = []
+    max_rating = 0.0
+    for instructor in Instructor.objects.filter(complete=True, screened=True):
+        if hasattr(instructor, 'availability'):
+            reviews = instructor.get_review_dict()
+            rating = float(reviews.get('rating', '0'))
+            if rating > max_rating:
+                max_rating = rating
+            experience_points = instructor.years_of_experience if instructor.years_of_experience is not None else 0
+            elapsed = timezone.now() - instructor.user.date_joined
+            login_points = ((100 - elapsed.days) / 100) * 10
+            if login_points < -7:
+                login_points = -7
+            instructor_list.append({'id': instructor.id, 'rating': rating, 'points': experience_points + login_points})
+    if max_rating == 0.0:
+        max_rating = 1.0
+    return sorted(instructor_list, key=lambda data: data.get('points') + ((data.get('rating') / max_rating) * 10),
+                  reverse=True)
+
+
+class BestInstructorsView(views.APIView):
+    permission_classes = (AllowAny, )
+
+    def get(self, request):
+        instructors = get_best_instructors()
+        instructor_ids = [item.get('id') for item in instructors[:4]]
+        ser = sers.BestInstructorSerializer(Instructor.objects.filter(id__in=instructor_ids), many=True)
+        return Response(ser.data)
+
+
 class BestInstructorMatchView(views.APIView):
 
     def get(self, request, request_id):
