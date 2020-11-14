@@ -798,3 +798,7 @@ POST localhost:8000/v1/instructor-assign/
    "requestId": 5
 }
 ###
+
+GET localhost:8000/best-instructors/
+
+###
