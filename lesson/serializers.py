@@ -15,7 +15,7 @@ from accounts.serializers import AvailavilitySerializer
 from accounts.utils import get_stripe_customer_id
 from core.constants import *
 
-from .models import Application, Instrument, Lesson, LessonBooking, LessonRequest
+from .models import Application, Instrument, Lesson, LessonBooking, LessonRequest, POPULAR_INSTRUMENTS
 from .utils import ABREV_DAYS, PACKAGES, RANGE_HOURS_CONV, get_date_time_from_datetime_timezone
 
 User = get_user_model()
@@ -1092,6 +1092,46 @@ class GetParamsInstructorMatchSerializer(serializers.ModelSerializer):
     class Meta:
         model = LessonRequest
         fields = ('instrument', 'availability', 'language', 'gender', 'skill_level', )
+
+
+class BestInstructorSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source='display_name')
+    reviews = serializers.SerializerMethodField()
+    instruments = serializers.SerializerMethodField()
+    rate = serializers.SerializerMethodField()
+    lessonsTaught = serializers.IntegerField(source='lessons_taught')
+    verified = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Instructor
+        fields = ('id', 'name', 'avatar', 'reviews', 'instruments', 'rate', 'lessonsTaught', 'verified', )
+
+    def get_reviews(self, instance):
+        reviews_data = instance.get_review_dict()
+        return reviews_data
+
+    def get_instruments(self, instance):
+        popular_instruments = []
+        other_instruments = []
+        for instrument in instance.instruments.all():
+            if instrument.name in POPULAR_INSTRUMENTS:
+                popular_instruments.append(instrument.name)
+            else:
+                other_instruments.append(instrument.name)
+        if len(popular_instruments) >= 2:
+            instr_list = popular_instruments[:2]
+        elif len(popular_instruments) == 1:
+            instr_list = popular_instruments + other_instruments[:1]
+        else:
+            instr_list = other_instruments[:2]
+        return instr_list
+
+    def get_rate(self, instance):
+        item = instance.instructorlessonrate_set.first()
+        return item.mins30 if item else item
+
+    def get_verified(self, instance):
+        return 'Yes' if instance.bg_status == BG_STATUS_VERIFIED else 'No'
 
 
 class BestInstructorMatchSerializer(serializers.ModelSerializer):
