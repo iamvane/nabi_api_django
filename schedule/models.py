@@ -10,12 +10,18 @@ class InstructorRegularAvailability(models.Model):
     week_day = models.IntegerField(choices=DayChoices.choices)
     schedule = JSONField()
 
+    class Meta:
+        verbose_name_plural = 'Instructor Regular Availabilities'
+
 
 class InstructorParticularAvailability(models.Model):
     instructor = models.ForeignKey('accounts.Instructor', on_delete=models.CASCADE,
                                    related_name='particular_availability')
     date = models.DateField()
     schedule = JSONField()
+
+    class Meta:
+        verbose_name_plural = 'Instructor Particular Availabilities'
 
 
 def get_instructor_schedule(instructor, date):
