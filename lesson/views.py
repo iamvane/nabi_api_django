@@ -28,6 +28,7 @@ from core.constants import *
 from core.models import ScheduledTask, TaskLog, UserBenefits
 from core.permissions import AccessForInstructor, AccessForParentOrStudent
 from core.utils import build_error_dict, send_admin_email
+from lesson.models import Instrument
 from lesson.utils import get_availability_field_names_from_availability_json
 from payments.models import Payment
 from payments.serializers import GetPaymentMethodSerializer
@@ -732,10 +733,15 @@ def get_matching_instructors(request, params):
                   reverse=True)
 
 
-def get_best_instructors():
+def get_best_instructors(instrument_name=None):
     instructor_list = []
     max_rating = 0.0
-    for instructor in Instructor.objects.filter(complete=True, screened=True):
+    if instrument_name:
+        ins_qs = Instructor.objects.filter(complete=True, screened=True,
+                                           instruments__in=Instrument.objects.filter(name=instrument_name))
+    else:
+        ins_qs = Instructor.objects.filter(complete=True, screened=True)
+    for instructor in ins_qs:
         if hasattr(instructor, 'availability'):
             reviews = instructor.get_review_dict()
             rating = float(reviews.get('rating', '0'))
@@ -757,9 +763,14 @@ class BestInstructorsView(views.APIView):
     permission_classes = (AllowAny, )
 
     def get(self, request):
-        instructors = get_best_instructors()
-        instructor_ids = [item.get('id') for item in instructors[:4]]
-        ser = sers.BestInstructorSerializer(Instructor.objects.filter(id__in=instructor_ids), many=True)
+        if request.query_params.get('instrument'):
+            instructors = get_best_instructors(instrument_name=request.query_params.get('instrument'))
+            instructor_ids = [item.get('id') for item in instructors[:5]]
+            ser = sers.InstructorMatchSerializer(Instructor.objects.filter(id__in=instructor_ids), many=True)
+        else:
+            instructors = get_best_instructors()
+            instructor_ids = [item.get('id') for item in instructors[:4]]
+            ser = sers.BestInstructorSerializer(Instructor.objects.filter(id__in=instructor_ids), many=True)
         return Response(ser.data)
 
 

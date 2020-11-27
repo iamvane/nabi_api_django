@@ -801,4 +801,8 @@ POST localhost:8000/v1/instructor-assign/
 
 GET localhost:8000/best-instructors/
 
+or
+
+GET localhost:8000/best-instructors/?instrument=flute
+
 ###
