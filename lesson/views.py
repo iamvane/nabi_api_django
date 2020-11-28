@@ -61,10 +61,8 @@ class LessonRequestView(views.APIView):
                 lb = LessonBooking.objects.create(user=obj.user, quantity=1, total_amount=0, request=obj,
                                                   tied_student=obj.students.first(),
                                                   description='Package trial', status=LessonBooking.TRIAL)
-                lesson = Lesson.objects.create(booking=lb, status=Lesson.PENDING)
+                Lesson.objects.create(booking=lb, status=Lesson.PENDING)
                 add_to_email_list_v2(request.user, [], ['trial_to_booking'])
-                task_log = TaskLog.objects.create(task_name='send_trial_confirm', args={'lesson_id': lesson.id})
-                send_trial_confirm.delay(lesson.id, task_log.id)
             ser = sers.LessonRequestDetailSerializer(obj, context={'user': request.user})
             return Response(ser.data)
         else:
@@ -850,8 +848,12 @@ class AssignInstructorView(views.APIView):
                     lesson.instructor = instructor
                     lesson.rate = rate_value
                     lesson.save()
+            if booking.lessons.count():
+                lesson = booking.lessons.first()
+                task_log = TaskLog.objects.create(task_name='send_trial_confirm', args={'lesson_id': lesson.id})
+                send_trial_confirm.delay(lesson.id, task_log.id)
             task_log = TaskLog.objects.create(task_name='send_email_assigned_instructor',
-                                              args={'booking_id': booking.id,})
+                                              args={'booking_id': booking.id})
             send_email_assigned_instructor.delay(booking.id, task_log.id)
             return Response({'message': 'Instructor assigned successfully'})
         else:
