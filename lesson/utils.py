@@ -311,10 +311,11 @@ def send_trial_confirmation(lesson):
     """Send email to parent/student, when a Trial Lesson is created"""
     target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
     student_details = lesson.booking.student_details()
+    instructor_id = lesson.instructor.id if lesson.instructor else 0
     data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['trial_confirmation'],
             "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.booking.user.email},
             "customProperties": [
-                {"name": "profile_link", "value": ''},
+                {"name": "profile_link", "value": f"{settings.HOSTNAME_PROTOCOL}/profile/{instructor_id}"},
                 {"name": "instructor_name", "value": lesson.instructor.display_name if lesson.instructor else ''},
                 {"name": "student_name", "value": student_details.get('name')},
                 {"name": "first_name", "value": lesson.booking.user.first_name},
