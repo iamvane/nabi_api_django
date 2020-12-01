@@ -311,9 +311,12 @@ def send_trial_confirmation(lesson):
     """Send email to parent/student, when a Trial Lesson is created"""
     target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
     student_details = lesson.booking.student_details()
+    instructor_id = lesson.instructor.id if lesson.instructor else 0
     data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['trial_confirmation'],
             "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.booking.user.email},
             "customProperties": [
+                {"name": "profile_link", "value": f"{settings.HOSTNAME_PROTOCOL}/profile/{instructor_id}"},
+                {"name": "instructor_name", "value": lesson.instructor.display_name if lesson.instructor else ''},
                 {"name": "student_name", "value": student_details.get('name')},
                 {"name": "first_name", "value": lesson.booking.user.first_name},
                 {"name": "instrument", "value": lesson.booking.request.instrument.name},
@@ -656,18 +659,26 @@ def get_availability_field_names_from_availability_json(json_data):
 def send_advice_assigned_instructor(booking):
     """Send email to instructor, about assign him to a lesson/booking"""
     target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
-    instrument_name = ''
+    instrument_name = skill_level = ''
     if booking.request and booking.request.instrument:
         instrument_name = booking.request.instrument.name
     elif booking.application and booking.application.request and booking.application.request.instrument:
         instrument_name = booking.application.request.instrument.name
+    if booking.request and booking.request.skill_level:
+        skill_level = booking.request.skill_level
+    elif booking.application and booking.application.request and booking.application.request.skill_level:
+        skill_level = booking.application.request.skill_level
     student_details = booking.student_details()
+    lesson = booking.lessons.first()
     data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['assigned_booking'],
             "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": booking.instructor.user.email},
             "customProperties": [
-                {"name": "firstName", "value": booking.instructor.user.first_name},
+                {"name": "first_name", "value": booking.instructor.user.first_name},
                 {"name": "instrument", "value": instrument_name},
+                {"name": "skill_level", "value": skill_level},
                 {"name": "student_name", "value": student_details.get('name', '') if student_details else ''},
+                {"name": "age", "value": student_details.get('age', '') if student_details else ''},
+                {"name": "availability", "value": lesson.booking.request.availability_as_string() if lesson else ''},
             ]
             }
     resp = requests.post(target_url, json=data)
