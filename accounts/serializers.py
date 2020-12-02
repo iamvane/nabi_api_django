@@ -1259,24 +1259,6 @@ class ReferralDashboardSerializer(serializers.ModelSerializer):
         return account.display_name
 
 
-class VideoInstructorSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Instructor
-        fields = ['video', ]
-
-    def to_internal_value(self, data):
-        pattern = '(https://' + settings.AWS_S3_CUSTOM_DOMAIN + '/media/videos/user_\d+/)(.+)'
-        match = re.match(pattern, data['video'])
-        if match:
-            base_path = match.group(1)
-            file_name = parse.quote(match.group(2))
-            new_data = {'video': base_path + file_name}
-            return new_data
-        else:
-            return data
-
-
 class StudentDashboardSerializer(serializers.ModelSerializer):
     """To return data from Student model"""
     name = serializers.CharField(max_length=30, source='user.first_name')

@@ -713,14 +713,6 @@ Content-Type: application/json
 
 ###
 
-POST localhost:8000/v1/upload-video-profile/
-
-{
-"video": "https://nabi-test.s3.amazonaws.com/media/videos/user_5/video.flv"
-}
-
-###
-
 POST localhost:8000/v1/instructor-reviews/<instructor_id>/<email>/
 or
 POST localhost:8000/v1/instructor-reviews/<instructor_id>/

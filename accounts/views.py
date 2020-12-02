@@ -851,21 +851,6 @@ class ReferralDashboardView(views.APIView):
         return Response({'totalAmount': total['total'], 'providerList': response_data})
 
 
-class UploadVideoProfileView(views.APIView):
-    permission_classes = (IsAuthenticated, AccessForInstructor)
-
-    def post(self, request):
-        account = get_account(request.user)
-        serializer = sers.VideoInstructorSerializer(instance=account, data=request.data)
-        if serializer.is_valid():
-            obj = serializer.save()
-            ser = sers.VideoInstructorSerializer(obj)
-            return Response(ser.data)
-        else:
-            result = build_error_dict(serializer.errors)
-            return Response(result, status=status.HTTP_400_BAD_REQUEST)
-
-
 class S3SignatureFile(views.APIView):
     permission_classes = (AllowAny, )
 
