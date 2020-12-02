@@ -851,38 +851,6 @@ class ReferralDashboardView(views.APIView):
         return Response({'totalAmount': total['total'], 'providerList': response_data})
 
 
-class S3SignatureFile(views.APIView):
-    permission_classes = (AllowAny, )
-
-    def post(self, request):
-        data = json.loads(request.body)
-        user_id = data.get('user_id')
-        file_name = data.get('file_name')
-        file_type = data.get('file_type')
-        s3 = boto3.client('s3',
-                          aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                          aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-                          region_name=settings.AWS_REGION_NAME,
-                          )
-        file_path = f'media/videos/user_{user_id}/{file_name}'
-        presigned_post = s3.generate_presigned_post(
-            Bucket=settings.AWS_STORAGE_BUCKET_NAME,
-            Key=file_path,
-            Fields={"acl": "public-read", "Content-Type": file_type},
-            Conditions=[
-                {"acl": "public-read"},
-                {"Content-Type": file_type}
-            ],
-        )
-        return JsonResponse({'data': presigned_post,
-                             'url': f'https://{settings.AWS_S3_CUSTOM_DOMAIN}/{file_path}'}
-                            )
-
-    @csrf_exempt
-    def dispatch(self, request, *args, **kwargs):
-        return super().dispatch(request, *args, **kwargs)
-
-
 class InstructorReviews(views.APIView):
     permission_classes = (AllowAny, )
 
