@@ -5,8 +5,8 @@ from django.dispatch import receiver
 from core.constants import ROLE_INSTRUCTOR
 from references.models import ReferenceRequest
 
-from .models import Availability, Education, Employment, Instructor, InstructorInstruments, InstructorAgeGroup, \
-    InstructorLessonRate, InstructorLessonSize, PhoneNumber, get_account
+from .models import (Availability, Education, Employment, Instructor, InstructorInstruments, InstructorAgeGroup,
+                     InstructorLessonRate, InstructorLessonSize, PhoneNumber, get_account)
 
 User = get_user_model()
 

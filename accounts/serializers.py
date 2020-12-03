@@ -1,31 +1,24 @@
 import re
-from urllib import parse
 
-from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Point
 from django.db import transaction
-from django.db.models import ObjectDoesNotExist
 from django.utils import timezone
 
 from rest_framework import serializers, validators
 
 from core.constants import (
-    DAY_TUPLE, DEGREE_TYPE_CHOICES, GENDER_CHOICES, LESSON_DURATION_CHOICES, LESSON_DURATION_30, MONTH_CHOICES,
-    PLACE_FOR_LESSONS_CHOICES, PLACE_FOR_LESSONS_ONLINE, SKILL_LEVEL_CHOICES, PHONE_TYPE_MAIN,
+    DAY_TUPLE, GENDER_CHOICES, LESSON_DURATION_30, PLACE_FOR_LESSONS_ONLINE, SKILL_LEVEL_CHOICES, PHONE_TYPE_MAIN,
 )
 from core.models import UserBenefits
 from core.utils import update_model
 from lesson.models import Instrument, Lesson
 
-from .models import (
-    Affiliate, Availability, Education, Employment, Instructor, InstructorAdditionalQualifications,
-    InstructorAgeGroup, InstructorInstruments,
-    InstructorPlaceForLessons, InstructorLessonRate, InstructorLessonSize, InstructorReview, Parent, PhoneNumber,
-    SpecialNeeds, Student, StudentDetails, TiedStudent, get_account,
-)
-from .utils import add_to_email_list, add_to_email_list_v2, init_kwargs
+from .models import (Affiliate, Availability, Education, Employment, Instructor, InstructorAdditionalQualifications,
+                     InstructorAgeGroup, InstructorInstruments, InstructorPlaceForLessons, InstructorLessonRate,
+                     InstructorLessonSize, InstructorReview, Parent, PhoneNumber, SpecialNeeds, Student, StudentDetails,
+                     TiedStudent, get_account)
+from .utils import add_to_email_list_v2, init_kwargs
 
 User = get_user_model()
 

@@ -3,7 +3,6 @@ import json
 import re
 import requests
 from decimal import Decimal
-from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client
 
 from django.conf import settings

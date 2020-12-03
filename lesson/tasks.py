@@ -1,4 +1,3 @@
-import random
 import requests
 
 from django.conf import settings
@@ -6,14 +5,15 @@ from django.contrib.gis.measure import D
 from django.utils import timezone
 
 from accounts.models import get_account, Instructor, InstructorInstruments
-from accounts.utils import add_to_email_list, get_availaibility_field_name_from_dt, remove_contact_from_email_list
-from core.constants import PLACE_FOR_LESSONS_ONLINE, SKILL_LEVEL_BEGINNER, SKILL_LEVEL_INTERMEDIATE, SKILL_LEVEL_ADVANCED
+from accounts.utils import add_to_email_list, remove_contact_from_email_list
+from core.constants import (PLACE_FOR_LESSONS_ONLINE, SKILL_LEVEL_BEGINNER, SKILL_LEVEL_INTERMEDIATE,
+                            SKILL_LEVEL_ADVANCED)
 from core.models import TaskLog, User
 from core.utils import send_admin_email
 from nabi_api_django.celery_config import app
 
 from core.models import ScheduledTask
-from .models import Application, Lesson, LessonBooking, LessonRequest
+from .models import Lesson, LessonBooking, LessonRequest
 from .utils import (get_availability_field_names_from_availability_json, send_advice_assigned_instructor,
                     send_alert_booking, send_alert_request_instructor, send_info_lesson_graded,
                     send_info_lesson_student_parent, send_info_lesson_instructor,
