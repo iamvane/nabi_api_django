@@ -238,19 +238,6 @@ class ApplicationView(views.APIView):
         return Response(ser.data)
 
 
-class ApplicationListView(views.APIView):
-    """Get a list of applications made to a lesson request, called by student or parent"""
-
-    def get(self, request, lesson_req_id):
-        try:
-            lesson_request = LessonRequest.objects.get(id=lesson_req_id)
-        except ObjectDoesNotExist:
-            return Response({'detail': "There is no lesson request with provided id"},
-                            status=status.HTTP_400_BAD_REQUEST)
-        serializer = sers.LessonRequestApplicationsSerializer(lesson_request)
-        return Response(serializer.data)
-
-
 class LessonBookingRegisterView(views.APIView):
     """Register a booking for a lesson (or group of lessons) with an instructor"""
     permission_classes = (AllowAny, )

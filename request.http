@@ -586,12 +586,6 @@ GET localhost:8000/v1/background-check-status/?instructorId=1
 
 ###
 
-GET localhost:8000/v1/application-list/1/
-
-# Note: the id value is lesson_request_id
-
-###
-
 GET localhost:8000/v1/booking-data/7/
 
 # Note: the id value is student_id

@@ -149,34 +149,6 @@ def send_info_lesson_instructor(lesson):
         return None
 
 
-def send_alert_application(application, instructor, request_creator_account):
-    """Send advice of new application for a created lesson request"""
-    target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
-    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['alert_application'],
-            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": request_creator_account.user.email},
-            "customProperties": [
-                {"name": "request_title", "value": application.request.title},
-                {"name": "instructor_name", "value": instructor.display_name},
-                {"name": "first_name", "value": instructor.user.first_name},
-                {"name": "reference_url",
-                 "value": f'{settings.HOSTNAME_PROTOCOL}/application-list/{application.request.id}'},
-            ]
-            }
-    resp = requests.post(target_url, json=data)
-    if resp.status_code != 200:
-        send_admin_email("[INFO] Alert new application email could not be send",
-                         """An email for alert about a new application could not be send to email {}, lesson_request id {}.
-
-                         The status_code for API's response was {} and content: {}""".format(request_creator_account.user.email,
-                                                                                             application.request.id,
-                                                                                             resp.status_code,
-                                                                                             resp.content.decode()
-                                                                                             )
-                         )
-        return False
-    return True
-
-
 def send_invoice_booking(booking, payment):
     """Send email with invoice data for a lesson booking"""
     package_name = 'Unknown'

@@ -9,7 +9,6 @@ urlpatterns = [
     path('applications/', views.ApplicationView.as_view()),
     path('lesson-request-list/', views.LessonRequestListView.as_view()),
     path('lesson-request-item/<int:pk>/', views.LessonRequestItemListView.as_view(), name='lesson_request_item'),
-    path('application-list/<int:lesson_req_id>/', views.ApplicationListView.as_view()),
     path('booking-data/<int:student_id>/', views.AmountsForBookingView.as_view()),
     path('get-booking-data/<str:email>/<int:student_id>/', views.DataForBookingView.as_view()),
     path('get-booking-data/<str:email>/', views.DataForBookingView.as_view()),

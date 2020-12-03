@@ -354,24 +354,6 @@ class MinimalApplicationSerializer(serializers.ModelSerializer):
         fields = ('applicationId', 'applicationRate', 'displayName', 'requestId', )
 
 
-class LessonRequestApplicationsSerializer(serializers.ModelSerializer):
-    """Serializer to get data of applications made in a lesson request; called by a parent or student"""
-    requestTitle = serializers.CharField(max_length=100, source='title', read_only=True)
-    dateCreated = serializers.DateTimeField(source='created_at', format='%Y-%m-%d %H:%M:%S', read_only=True)
-    applications = ApplicationItemSerializer(many=True, read_only=True)
-    freeTrial = serializers.SerializerMethodField()
-
-    class Meta:
-        model = LessonRequest
-        fields = ('id', 'requestTitle', 'dateCreated', 'applications', 'freeTrial')
-
-    def get_freeTrial(self, instance):
-        if instance.user.lesson_bookings.count() == 0:
-            return True
-        else:
-            return False
-
-
 class LessonRequestItemSerializer(serializers.ModelSerializer):
     """Serializer for get data of a lesson request, to build a list; call made by an instructor mostly time."""
     avatar = serializers.CharField(max_length=500, source='*', read_only=True)
