@@ -152,11 +152,13 @@ class LessonBookingAdmin(admin.ModelAdmin):
                                 ScheduledTask.objects.create(
                                     function_name='send_reminder_grade_lesson',
                                     schedule=lesson.scheduled_datetime + timezone.timedelta(minutes=30),
+                                    limit_execution=lesson.scheduled_datetime + timezone.timedelta(minutes=60),
                                     parameters={'lesson_id': lesson.id}
                                 )
                                 ScheduledTask.objects.create(
                                     function_name='send_lesson_reminder',
                                     schedule=lesson.scheduled_datetime - timezone.timedelta(minutes=30),
+                                    limit_execution=lesson.scheduled_datetime + timezone.timedelta(minutes=60),
                                     parameters={'lesson_id': lesson.id, 'user_id': lesson.instructor.user.id}
                                 )
                     else:
@@ -305,27 +307,32 @@ class LessonAdmin(admin.ModelAdmin):
                 ScheduledTask.objects.filter(function_name='send_reminder_grade_lesson',
                                              parameters__lesson_id=obj.id,
                                              executed=False) \
-                    .update(schedule=obj.scheduled_datetime + timezone.timedelta(minutes=30))
+                    .update(schedule=obj.scheduled_datetime + timezone.timedelta(minutes=30),
+                            limit_execution=obj.scheduled_datetime + timezone.timedelta(minutes=60))
                 if not ScheduledTask.objects.filter(function_name='send_reminder_grade_lesson',
                                                     parameters__lesson_id=obj.id,
                                                     executed=False).exists() and obj.instructor:
                     ScheduledTask.objects.create(function_name='send_reminder_grade_lesson',
                                                  schedule=obj.scheduled_datetime + timezone.timedelta(minutes=30),
+                                                 limit_execution=obj.scheduled_datetime + timezone.timedelta(minutes=60),
                                                  parameters={'lesson_id': obj.id})
                 ScheduledTask.objects.filter(function_name='send_lesson_reminder',
                                              parameters__lesson_id=obj.id,
                                              executed=False) \
-                    .update(schedule=obj.scheduled_datetime - timezone.timedelta(minutes=30))
+                    .update(schedule=obj.scheduled_datetime - timezone.timedelta(minutes=30),
+                            limit_execution=obj.scheduled_datetime + timezone.timedelta(minutes=60))
                 if not ScheduledTask.objects.filter(function_name='send_lesson_reminder',
                                                     parameters__lesson_id=obj.id,
                                                     executed=False).exists():
                     ScheduledTask.objects.create(function_name='send_lesson_reminder',
                                                  schedule=obj.scheduled_datetime - timezone.timedelta(minutes=30),
+                                                 limit_execution=obj.scheduled_datetime + timezone.timedelta(minutes=60),
                                                  parameters={'lesson_id': obj.id,
                                                              'user_id': obj.booking.user.id})
                     if obj.instructor:
                         ScheduledTask.objects.create(function_name='send_lesson_reminder',
                                                      schedule=obj.scheduled_datetime - timezone.timedelta(minutes=30),
+                                                     limit_execution=obj.scheduled_datetime + timezone.timedelta(minutes=60),
                                                      parameters={'lesson_id': obj.id,
                                                                   'user_id': obj.instructor.user.id})
                 sch_time = obj.scheduled_datetime.time()
@@ -354,27 +361,32 @@ class LessonAdmin(admin.ModelAdmin):
                 ScheduledTask.objects.filter(function_name='send_reminder_grade_lesson',
                                              parameters__lesson_id=obj.id,
                                              executed=False) \
-                    .update(schedule=obj.scheduled_datetime + timezone.timedelta(minutes=30))
+                    .update(schedule=obj.scheduled_datetime + timezone.timedelta(minutes=30),
+                            limit_execution=obj.scheduled_datetime + timezone.timedelta(minutes=60))
                 if not ScheduledTask.objects.filter(function_name='send_reminder_grade_lesson',
                                                     parameters__lesson_id=obj.id,
                                                     executed=False).exists() and obj.instructor:
                     ScheduledTask.objects.create(function_name='send_reminder_grade_lesson',
                                                  schedule=obj.scheduled_datetime + timezone.timedelta(minutes=30),
+                                                 limit_execution=obj.scheduled_datetime + timezone.timedelta(minutes=60),
                                                  parameters={'lesson_id': obj.id})
                 ScheduledTask.objects.filter(function_name='send_lesson_reminder',
                                              parameters__lesson_id=obj.id,
                                              executed=False) \
-                    .update(schedule=obj.scheduled_datetime - timezone.timedelta(minutes=30))
+                    .update(schedule=obj.scheduled_datetime - timezone.timedelta(minutes=30),
+                            limit_execution=obj.scheduled_datetime + timezone.timedelta(minutes=60))
                 if not ScheduledTask.objects.filter(function_name='send_lesson_reminder',
                                                     parameters__lesson_id=obj.id,
                                                     executed=False).exists():
                     ScheduledTask.objects.create(function_name='send_lesson_reminder',
                                                  schedule=obj.scheduled_datetime - timezone.timedelta(minutes=30),
+                                                 limit_execution=obj.scheduled_datetime + timezone.timedelta(minutes=60),
                                                  parameters={'lesson_id': obj.id,
                                                               'user_id': obj.booking.user.id})
                     if obj.instructor:
                         ScheduledTask.objects.create(function_name='send_lesson_reminder',
                                                      schedule=obj.scheduled_datetime - timezone.timedelta(minutes=30),
+                                                     limit_execution=obj.scheduled_datetime + timezone.timedelta(minutes=60),
                                                      parameters={'lesson_id': obj.id,
                                                                   'user_id': obj.instructor.user.id})
                 sch_time = obj.scheduled_datetime.time()
