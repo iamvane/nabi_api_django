@@ -1,4 +1,3 @@
-import datetime
 import googlemaps
 import re
 from coolname import RandomGenerator
@@ -17,7 +16,7 @@ from django.utils import timezone
 from accounts.utils import add_to_email_list_v2
 
 from core.constants import *
-from core.utils import ElapsedTime, get_date_a_month_later, get_month_integer, send_admin_email
+from core.utils import send_admin_email
 
 User = get_user_model()
 coolname_config = load_config(path.join(settings.BASE_DIR, 'accounts', 'data'))

@@ -2,8 +2,8 @@ import re
 from pygeocoder import Geocoder, GeocoderError
 
 from django.conf import settings
-from django.contrib.auth import get_user_model
 from django.contrib import admin
+from django.contrib.auth import get_user_model
 from django.contrib.gis.db.models import PointField
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Point

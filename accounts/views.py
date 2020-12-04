@@ -1,6 +1,3 @@
-import boto3
-import json
-from datetime import timedelta
 from functools import reduce
 from logging import getLogger
 from twilio.rest import Client
@@ -13,35 +10,24 @@ from django.contrib.gis.db.models import PointField
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import D
-from django.core.mail import EmailMultiAlternatives
-from django.db import transaction, IntegrityError
-from django.db.models import Case, F, Min, ObjectDoesNotExist, Prefetch, Q, Sum, When
+from django.db import transaction
+from django.db.models import Min, ObjectDoesNotExist, Prefetch, Q, Sum
 from django.db.models.functions import Cast
-from django.http import JsonResponse
 from django.middleware.csrf import get_token
-from django.shortcuts import get_object_or_404
-from django.template import loader
-from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 
 from rest_framework import status, views
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import MultiPartParser
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from core import constants as const
 from core.constants import *
 from core.models import UserBenefits, UserToken
-from core.permissions import AccessForInstructor
-from core.utils import build_error_dict, generate_hash, generate_token_reset_password, get_date_a_month_later
-from lesson.models import Application, Instrument, Lesson, LessonBooking, LessonRequest
-from lesson.serializers import (BestInstructorMatchSerializer,
-                                LessonBookingParentDashboardSerializer, LessonBookingStudentDashboardSerializer,
-                                LessonRequestParentDashboardSerializer, LessonRequestStudentDashboardSerializer,
-                                InstructorDashboardSerializer, LessonRequestInstructorDashboardSerializer,
-                                ScheduledLessonSerializer)
+from core.utils import build_error_dict, generate_token_reset_password
+from lesson.models import Instrument, Lesson
+from lesson.serializers import BestInstructorMatchSerializer, InstructorDashboardSerializer, ScheduledLessonSerializer
 
 from . import serializers as sers
 from .models import (Availability, Education, Employment, Instructor, InstructorAgeGroup, InstructorInstruments,
@@ -679,20 +665,20 @@ class InstructorListView(views.APIView):
         if query_serializer.is_valid():
             keys = dict.fromkeys(query_serializer.validated_data, 1)
             if keys.get('availability'):
-                exp_dic = {const.DAY_MONDAY: (Q(mon8to10=True) | Q(mon10to12=True) | Q(mon12to3=True)
-                                              | Q(mon3to6=True) | Q(mon6to9=True)),
-                           const.DAY_TUESDAY: (Q(tue8to10=True) | Q(tue10to12=True) | Q(tue12to3=True)
-                                               | Q(tue3to6=True) | Q(tue6to9=True)),
-                           const.DAY_WEDNESDAY: (Q(wed8to10=True) | Q(wed10to12=True) | Q(wed12to3=True)
-                                                 | Q(wed3to6=True) | Q(wed6to9=True)),
-                           const.DAY_THURSDAY: (Q(thu8to10=True) | Q(thu10to12=True) | Q(thu12to3=True)
-                                                | Q(thu3to6=True) | Q(thu6to9=True)),
-                           const.DAY_FRIDAY: (Q(fri8to10=True) | Q(fri10to12=True) | Q(fri12to3=True)
-                                              | Q(fri3to6=True) | Q(fri6to9=True)),
-                           const.DAY_SATURDAY: (Q(sat8to10=True) | Q(sat10to12=True) | Q(sat12to3=True)
-                                                | Q(sat3to6=True) | Q(sat6to9=True)),
-                           const.DAY_SUNDAY: (Q(sun8to10=True) | Q(sun10to12=True) | Q(sun12to3=True)
-                                              | Q(sun3to6=True) | Q(sun6to9=True))
+                exp_dic = {DAY_MONDAY: (Q(mon8to10=True) | Q(mon10to12=True) | Q(mon12to3=True)
+                                        | Q(mon3to6=True) | Q(mon6to9=True)),
+                           DAY_TUESDAY: (Q(tue8to10=True) | Q(tue10to12=True) | Q(tue12to3=True)
+                                         | Q(tue3to6=True) | Q(tue6to9=True)),
+                           DAY_WEDNESDAY: (Q(wed8to10=True) | Q(wed10to12=True) | Q(wed12to3=True)
+                                           | Q(wed3to6=True) | Q(wed6to9=True)),
+                           DAY_THURSDAY: (Q(thu8to10=True) | Q(thu10to12=True) | Q(thu12to3=True)
+                                          | Q(thu3to6=True) | Q(thu6to9=True)),
+                           DAY_FRIDAY: (Q(fri8to10=True) | Q(fri10to12=True) | Q(fri12to3=True)
+                                        | Q(fri3to6=True) | Q(fri6to9=True)),
+                           DAY_SATURDAY: (Q(sat8to10=True) | Q(sat10to12=True) | Q(sat12to3=True)
+                                          | Q(sat3to6=True) | Q(sat6to9=True)),
+                           DAY_SUNDAY: (Q(sun8to10=True) | Q(sun10to12=True) | Q(sun12to3=True)
+                                        | Q(sun3to6=True) | Q(sun6to9=True))
                            }
                 filter_bool = reduce(lambda x, y: x | y, [exp_dic.get(item) for item in query_serializer
                                      .validated_data.get('availability').split(',')]
@@ -849,53 +835,6 @@ class ReferralDashboardView(views.APIView):
         if total['total'] is None:
             total['total'] = 0
         return Response({'totalAmount': total['total'], 'providerList': response_data})
-
-
-class UploadVideoProfileView(views.APIView):
-    permission_classes = (IsAuthenticated, AccessForInstructor)
-
-    def post(self, request):
-        account = get_account(request.user)
-        serializer = sers.VideoInstructorSerializer(instance=account, data=request.data)
-        if serializer.is_valid():
-            obj = serializer.save()
-            ser = sers.VideoInstructorSerializer(obj)
-            return Response(ser.data)
-        else:
-            result = build_error_dict(serializer.errors)
-            return Response(result, status=status.HTTP_400_BAD_REQUEST)
-
-
-class S3SignatureFile(views.APIView):
-    permission_classes = (AllowAny, )
-
-    def post(self, request):
-        data = json.loads(request.body)
-        user_id = data.get('user_id')
-        file_name = data.get('file_name')
-        file_type = data.get('file_type')
-        s3 = boto3.client('s3',
-                          aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                          aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-                          region_name=settings.AWS_REGION_NAME,
-                          )
-        file_path = f'media/videos/user_{user_id}/{file_name}'
-        presigned_post = s3.generate_presigned_post(
-            Bucket=settings.AWS_STORAGE_BUCKET_NAME,
-            Key=file_path,
-            Fields={"acl": "public-read", "Content-Type": file_type},
-            Conditions=[
-                {"acl": "public-read"},
-                {"Content-Type": file_type}
-            ],
-        )
-        return JsonResponse({'data': presigned_post,
-                             'url': f'https://{settings.AWS_S3_CUSTOM_DOMAIN}/{file_path}'}
-                            )
-
-    @csrf_exempt
-    def dispatch(self, request, *args, **kwargs):
-        return super().dispatch(request, *args, **kwargs)
 
 
 class InstructorReviews(views.APIView):

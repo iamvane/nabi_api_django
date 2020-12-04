@@ -13,7 +13,6 @@ from django.contrib.gis.measure import D
 from django.db import transaction
 from django.db.models import Case, F, ObjectDoesNotExist, Q, When
 from django.db.models.functions import Cast
-from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
 from rest_framework import status, views
@@ -23,7 +22,7 @@ from rest_framework.response import Response
 
 from accounts.models import Instructor, InstructorInstruments, TiedStudent, get_account
 from accounts.serializers import MinimalTiedStudentSerializer
-from accounts.utils import get_stripe_customer_id, add_to_email_list_v2
+from accounts.utils import add_to_email_list_v2
 from core.constants import *
 from core.models import ScheduledTask, TaskLog, UserBenefits
 from core.permissions import AccessForInstructor, AccessForParentOrStudent
@@ -35,12 +34,10 @@ from payments.serializers import GetPaymentMethodSerializer
 
 from . import serializers as sers
 from .models import Application, InstructorAcceptanceLessonRequest, LessonBooking, LessonRequest, Lesson
-from .tasks import (send_alert_admin_request_closed, send_booking_alert, send_booking_invoice,
-                    send_email_assigned_instructor, send_info_grade_lesson,
-                    send_lesson_reschedule, send_request_alert_instructors, send_trial_confirm,
-                    send_lesson_info_student_parent, send_instructor_complete_lesson,
+from .tasks import (send_alert_admin_request_closed, send_booking_invoice, send_email_assigned_instructor,
+                    send_info_grade_lesson, send_lesson_reschedule, send_trial_confirm,
                     send_instructor_complete_lesson, send_admin_completed_instructor)
-from .utils import get_benefit_to_redeem, get_booking_data, get_booking_data_v2, PACKAGES
+from .utils import get_booking_data_v2, PACKAGES
 
 User = get_user_model()
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -236,19 +233,6 @@ class ApplicationView(views.APIView):
     def get(self, request):
         ser = sers.ApplicationListSerializer(Application.objects.filter(instructor=request.user.instructor), many=True)
         return Response(ser.data)
-
-
-class ApplicationListView(views.APIView):
-    """Get a list of applications made to a lesson request, called by student or parent"""
-
-    def get(self, request, lesson_req_id):
-        try:
-            lesson_request = LessonRequest.objects.get(id=lesson_req_id)
-        except ObjectDoesNotExist:
-            return Response({'detail': "There is no lesson request with provided id"},
-                            status=status.HTTP_400_BAD_REQUEST)
-        serializer = sers.LessonRequestApplicationsSerializer(lesson_request)
-        return Response(serializer.data)
 
 
 class LessonBookingRegisterView(views.APIView):

@@ -3,12 +3,11 @@ from pygeocoder import Geocoder, GeocoderError
 
 from django.conf import settings
 from django.contrib.gis.geos import Point
-from django.template import loader
 from django.core.mail import EmailMultiAlternatives
+from django.template import loader
 from django.utils import timezone
 
-from core.utils import get_date_a_month_later, send_email, send_admin_email
-from core.constants import ROLE_INSTRUCTOR
+from core.utils import get_date_a_month_later, send_admin_email
 
 
 def init_kwargs(model, arg_dict):

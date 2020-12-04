@@ -10,10 +10,8 @@ from hashlib import sha1
 from django.conf import settings
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.db import IntegrityError
-from django.template.loader import render_to_string
-from django.utils import timezone
-from django.utils.html import strip_tags
 from django.template import loader
+from django.utils import timezone
 
 from core.constants import (DAY_MONDAY, DAY_TUESDAY, DAY_WEDNESDAY, DAY_THURSDAY, DAY_FRIDAY, DAY_SATURDAY, DAY_SUNDAY,
                             MONTH_CHOICES)

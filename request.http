@@ -560,38 +560,6 @@ GET localhost:8000/v1/lesson-request-item/1/
 
 ###
 
-POST localhost:8000/v1/background-check-request/
-
-{
-"instructorId": 2,
-"amount": 15.75,
-"stripeToken": "tok_1EpRgYK2gfFa5B9C2sn4L0kG"
-}
-
-# instructorId is optional, when is not provided, data is obtained from logged user
-
-###
-
-GET localhost:8000/v1/background-check-request/?instructorId=1
-
-# instructorId is optional, when is not provided, data is obtained from logged user
-# Note: this endpoint returns status from DB
-
-###
-
-GET localhost:8000/v1/background-check-status/?instructorId=1
-
-# instructorId parameter is optional, when is not provided, data is obtained from logged user
-# Note: this endpoint make a call to Provider API and change status in DB if required
-
-###
-
-GET localhost:8000/v1/application-list/1/
-
-# Note: the id value is lesson_request_id
-
-###
-
 GET localhost:8000/v1/booking-data/7/
 
 # Note: the id value is student_id
@@ -699,25 +667,6 @@ or
 ###
 
 GET localhost:8000/v1/lessons/<lesson_id>/
-
-###
-
-POST localhost:8000/v1/sign-file/
-Content-Type: application/json
-
-{
-	"user_id": 5,
-	"file_name": "video0.flv",
-	"file_type": "video/x-flv"
-}
-
-###
-
-POST localhost:8000/v1/upload-video-profile/
-
-{
-"video": "https://nabi-test.s3.amazonaws.com/media/videos/user_5/video.flv"
-}
 
 ###
 

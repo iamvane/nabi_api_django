@@ -1,7 +1,6 @@
 from django.template import Library
 from django.contrib.admin.views.main import SEARCH_VAR
 from django.contrib.admin.templatetags.base import InclusionAdminNode
-from django.contrib.admin.templatetags.admin_list import search_form
 
 register = Library()
 

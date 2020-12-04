@@ -4,7 +4,6 @@ from dateutil import relativedelta
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import AnonymousUser
 from django.db.models import Q
 from django.utils import timezone
 
@@ -352,24 +351,6 @@ class MinimalApplicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Application
         fields = ('applicationId', 'applicationRate', 'displayName', 'requestId', )
-
-
-class LessonRequestApplicationsSerializer(serializers.ModelSerializer):
-    """Serializer to get data of applications made in a lesson request; called by a parent or student"""
-    requestTitle = serializers.CharField(max_length=100, source='title', read_only=True)
-    dateCreated = serializers.DateTimeField(source='created_at', format='%Y-%m-%d %H:%M:%S', read_only=True)
-    applications = ApplicationItemSerializer(many=True, read_only=True)
-    freeTrial = serializers.SerializerMethodField()
-
-    class Meta:
-        model = LessonRequest
-        fields = ('id', 'requestTitle', 'dateCreated', 'applications', 'freeTrial')
-
-    def get_freeTrial(self, instance):
-        if instance.user.lesson_bookings.count() == 0:
-            return True
-        else:
-            return False
 
 
 class LessonRequestItemSerializer(serializers.ModelSerializer):
