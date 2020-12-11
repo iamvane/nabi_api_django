@@ -1174,11 +1174,8 @@ class BestInstructorMatchSerializer(serializers.ModelSerializer):
         return len(set_stu)
 
     def get_levelsTaught(self, instance):
-        res1 = instance.bookings.filter(request__isnull=False).distinct('request__skill_level')\
-            .values_list('request__skill_level', flat=True)
-        res2 = instance.bookings.filter(application__isnull=False, application__request__isnull=False)\
-            .distinct('application__request__skill_level').values_list('application__request__skill_level', flat=True)
-        return list(set(res1.union(res2)))
+        levels = {instrument.skill_level for instrument in instance.instructorinstruments_set.all()}
+        return list(levels)
 
 
 class InstructorMatchSerializer(serializers.ModelSerializer):
