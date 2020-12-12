@@ -571,6 +571,7 @@ class LessonView(views.APIView):
             return Response({'detail': 'There is not Lesson with provided id'},
                             status=status.HTTP_400_BAD_REQUEST)
         previous_datetime = lesson.scheduled_datetime
+        previous_datetime = previous_datetime.astimezone(timezone.utc)
         ser_data = sers.UpdateLessonSerializer(data=request.data, instance=lesson, partial=True)
         if ser_data.is_valid():
             lesson = ser_data.save()
@@ -636,9 +637,8 @@ class LessonView(views.APIView):
 
                 task_log = TaskLog.objects.create(task_name='send_lesson_reschedule',
                                                   args={'lesson_id': lesson.id,
-                                                        'previous_datetime': previous_datetime.strftime('%Y-%m-%d %I:%M %p')})
-                send_lesson_reschedule.delay(lesson.id, task_log.id,
-                                             previous_datetime.astimezone(timezone.utc).strftime('%Y-%m-%d %H:%M:%S'))
+                                                        'previous_datetime': previous_datetime.strftime('%Y-%m-%d %H:%M:%S')})
+                send_lesson_reschedule.delay(lesson.id, task_log.id, previous_datetime.strftime('%Y-%m-%d %H:%M:%S'))
             return Response(ser.data)
         else:
             result = build_error_dict(ser_data.errors)
