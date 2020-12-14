@@ -355,8 +355,7 @@ def send_lesson_reschedule(lesson_id, task_log_id, prev_datetime_str):
             f'prev_datetime_str {prev_datetime_str}) Lesson DoesNotExist error is raised'
         )
         return None
-    prev_datetime = timezone.datetime.strptime(prev_datetime_str, '%Y-%m-%d %H:%M:%S')
-    prev_datetime = prev_datetime.astimezone(timezone.utc)
+    prev_datetime = timezone.datetime.strptime(prev_datetime_str + '+00:00', '%Y-%m-%d %H:%M:%S%z')
     send_reschedule_lesson(lesson, lesson.booking.user, prev_datetime)
     if lesson.instructor:
         send_reschedule_lesson(lesson, lesson.instructor.user, prev_datetime)
