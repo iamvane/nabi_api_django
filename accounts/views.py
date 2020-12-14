@@ -24,7 +24,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from core.constants import *
-from core.models import UserBenefits, UserToken
+from core.models import TaskLog, UserBenefits, UserToken
 from core.utils import build_error_dict, generate_token_reset_password
 from lesson.models import Instrument, Lesson
 from lesson.serializers import BestInstructorMatchSerializer, InstructorDashboardSerializer, ScheduledLessonSerializer
@@ -33,6 +33,7 @@ from . import serializers as sers
 from .models import (Availability, Education, Employment, Instructor, InstructorAgeGroup, InstructorInstruments,
                      InstructorLessonRate, InstructorPlaceForLessons, InstructorAdditionalQualifications,
                      PhoneNumber, StudentDetails, TiedStudent, get_account, get_user_phone)
+from .tasks import info_instructor_review
 from .utils import send_referral_invitation_email, send_reset_password_email
 
 User = get_user_model()
@@ -855,6 +856,8 @@ class InstructorReviews(views.APIView):
         ser = sers.CreateInstructorReviewSerializer(data=request.data)
         if ser.is_valid():
             obj = ser.save()
+            task_log = TaskLog.objects.create(task_name='send_instructor_info_review', args={'obj_id': obj.id})
+            info_instructor_review.delay(obj.id, task_log.id)
             ser_data = sers.ReturnCreateInstructorReviewSerializer(obj)
             return Response(ser_data.data)
         else:

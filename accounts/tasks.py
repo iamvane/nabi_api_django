@@ -1,7 +1,11 @@
 from django.contrib.auth import get_user_model
 
+from core.models import TaskLog
 from core.utils import send_admin_email
 from nabi_api_django.celery_config import app
+
+from .models import InstructorReview
+from .utils import send_instructor_info_review
 
 User = get_user_model()
 
@@ -36,3 +40,17 @@ def alert_user_without_location_coordinates():
                 send_admin_email(f"{role.capitalize()} without location",
                                  f"""The {role} {user.email} (id {account.id}) has coordinates (lat: {account.coordinates.coords[1]}  long: {account.coordinates.coords[0]}), 
                                  but has not location stored.""")
+
+
+@app.task
+def info_instructor_review(obj_id, task_log_id):
+    try:
+        instructor_review = InstructorReview.objects.get(id=obj_id)
+    except InstructorReview.DoesNotExist:
+        send_admin_email(
+            'Error executing info_instructor_review task',
+            f'Executing task info_instructor_review (params: instructor_id {obj_id}) '
+            f'InstructorReview DoesNotExist error was raised'
+        )
+    send_instructor_info_review(instructor_review)
+    TaskLog.objects.filter(id=task_log_id).delete()

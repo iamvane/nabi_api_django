@@ -249,3 +249,31 @@ def get_availaibility_field_name_from_dt(datetime_obj, tz_target):
     else:
         return ''
     return field_name
+
+
+def send_instructor_info_review(instructor_review):
+    """Send email to instructor, about a review added"""
+    target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
+    reviewer_name = instructor_review.user.get_full_name()
+    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['instructor_info_review'],
+            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>',
+                        "to": instructor_review.instructor.user.email},
+            "customProperties": [
+                {"name": "reviewer_name", "value": reviewer_name},
+                {"name": "first_name", "value": instructor_review.instructor.user.first_name},
+                {"name": "rating", "value": instructor_review.rating},
+                {"name": "review_comment", "value": instructor_review.comment},
+            ]
+            }
+    resp = requests.post(target_url, json=data)
+    if resp.status_code != 200:
+        send_admin_email("[INFO] Info instructor email about added review could not be send",
+                         """An email to info instructor about an added review could not be send to email {}, instructor review id {}.
+
+                         The status_code for API's response was {} and content: {}""".format(
+                             instructor_review.instructor.user.email,
+                             instructor_review.id,
+                             resp.status_code,
+                             resp.content.decode())
+                         )
+        return None

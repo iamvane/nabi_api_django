@@ -148,4 +148,5 @@ HUBSPOT_TEMPLATE_IDS = {
     'trial_confirmation': '33858534253',
     'instructor_lesson_completed': '33722126483',   # when instructor has graded a lesson
     'assigned_booking': '36987478562',
+    'instructor_info_review': '34303391620',
 }
