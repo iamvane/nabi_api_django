@@ -719,7 +719,7 @@ class InstructorDashboardSerializer(serializers.ModelSerializer):
         bookingId = serializers.IntegerField(source='id', read_only=True)
         instrument = serializers.SerializerMethodField()
         lessonsBooked = serializers.IntegerField(source='quantity', read_only=True)
-        lessonsRemaining = serializers.IntegerField(source='remaining_lessons', read_only=True)
+        lessonsRemaining = serializers.SerializerMethodField()
         skillLevel = serializers.SerializerMethodField()
         studentName = serializers.CharField(max_length=30, required=False, read_only=True)
         age = serializers.IntegerField(required=False, read_only=True)
@@ -743,6 +743,14 @@ class InstructorDashboardSerializer(serializers.ModelSerializer):
                     return student_details.instrument.name
             return ''
 
+        def get_lessonsRemaining(self, instance):
+            return instance.remaining_lessons() \
+                   + Lesson.objects.filter(~Q(status=Lesson.COMPLETE),
+                                           booking__in=LessonBooking.objects.filter(user=instance.user,
+                                                                                    tied_student=instance.tied_student)
+                                           .exclude(id=instance.id)
+                                           ).count()
+
         def get_skillLevel(self, instance):
             if instance.tied_student:
                 if hasattr(instance.tied_student, 'tied_student_details'):
@@ -754,8 +762,10 @@ class InstructorDashboardSerializer(serializers.ModelSerializer):
             return None
 
         def get_lastLessonId(self, instance):
-            lesson = Lesson.objects.filter(booking=instance, status=Lesson.SCHEDULED,
-                                           scheduled_datetime__lt=timezone.now()).order_by('scheduled_datetime').last()
+            lesson = Lesson.objects.filter(booking__in=LessonBooking.objects.filter(user=instance.user,
+                                                                                    tied_student=instance.tied_student),
+                                           status=Lesson.SCHEDULED, scheduled_datetime__lt=timezone.now())\
+                .order_by('scheduled_datetime').first()
             if lesson:
                 return lesson.id
             else:
