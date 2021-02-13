@@ -666,7 +666,6 @@ def get_availability_field_names_from_availability_json(json_data):
 
 def send_advice_assigned_instructor(booking):
     """Send email to instructor, about assign him to a lesson/booking"""
-    target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
     instrument_name = skill_level = ''
     if booking.request and booking.request.instrument:
         instrument_name = booking.request.instrument.name
@@ -678,25 +677,29 @@ def send_advice_assigned_instructor(booking):
         skill_level = booking.application.request.skill_level
     student_details = booking.student_details()
     lesson = booking.lessons.first()
-    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['assigned_booking'],
-            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": booking.instructor.user.email},
-            "customProperties": [
-                {"name": "first_name", "value": booking.instructor.user.first_name},
-                {"name": "instrument", "value": instrument_name},
-                {"name": "skill_level", "value": skill_level},
-                {"name": "student_name", "value": student_details.get('name', '') if student_details else ''},
-                {"name": "age", "value": student_details.get('age', '') if student_details else ''},
-                {"name": "availability", "value": lesson.booking.request.availability_as_string() if lesson else ''},
-            ]
-            }
-    resp = requests.post(target_url, json=data)
-    if resp.status_code != 200:
+    params = {
+        'first_name': booking.instructor.user.first_name,
+        'instrument': instrument_name,
+        'skill_level': skill_level,
+        'student_name': student_details.get('name', '') if student_details else '',
+        'age': student_details.get('age', '') if student_details else '',
+        'availability': lesson.booking.request.availability_as_string() if lesson else '',
+    }
+    headers = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-Type': 'application/json'}
+    response = requests.post(settings.SENDGRID_API_BASE_URL + 'mail/send', headers=headers,
+                            data=json.dumps({"from": {"email": settings.DEFAULT_FROM_EMAIL, "name": 'Nabi Music'},
+                                              "template_id": settings.SENDGRID_EMAIL_TEMPLATES_INSTRUCTOR['new_trial_booking'],
+                                              "personalizations": [{"to": [{"email": booking.instructor.user.email}],
+                                                                    "dynamic_template_data": params}]
+                                            })
+                            )
+    if response.status_code != 202:
         send_admin_email("[INFO] Advice instructor email for assignment could not be send",
                          """An email to advice instructor about his assignation to booking could not be send to email {}, lesson booking id {}.
 
                          The status_code for API's response was {} and content: {}""".format(booking.instructor.user.email,
                                                                                              booking.id,
-                                                                                             resp.status_code,
-                                                                                             resp.content.decode())
+                                                                                             response.status_code,
+                                                                                             response.content.decode())
                          )
         return None
