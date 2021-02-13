@@ -224,10 +224,12 @@ def send_info_lesson_graded(lesson):
     }
     headers = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-Type': 'application/json'}
     response = requests.post(settings.SENDGRID_API_BASE_URL + 'mail/send', headers=headers,
-                             data=json.dumps({"from": {"email": settings.DEFAULT_FROM_EMAIL, "name": 'Nabi Music'},
+                            data=json.dumps({"from": {"email": settings.DEFAULT_FROM_EMAIL, "name": 'Nabi Music'},
                                               "template_id": settings.SENDGRID_EMAIL_TEMPLATES_PARENT_STUDENT['lesson_graded'],
                                               "personalizations": [{"to": [{"email": lesson.booking.user.email}],
                                                                     "dynamic_template_data": params}]
+                                            })
+                            )
 
 
     # target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
