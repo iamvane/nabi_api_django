@@ -123,6 +123,10 @@ SENDGRID_EMAIL_TEMPLATES_PARENT_STUDENT = {
     'meet_instructor': 'd-3f980e9d5e6044e88c40619091708635',
 }
 
+SENDGRID_EMAIL_TEMPLATES_INSTRUCTOR = {
+    'new_trial_scheduled': 'd-f5545406b8774196b7ce8b3ca4bdc236',
+}
+
 HUBSPOT_CONTACT_LIST_IDS = {
     'instructors': '3',
     'parents': '5',
@@ -139,7 +143,6 @@ HUBSPOT_TEMPLATE_IDS = {
     'alert_application': '27908927674',
     'alert_request': '27862630310',
     'info_request': '30861071713',
-    'info_lesson_user': '33815399510',
     'info_lesson_instructor': '33814822010',
     'info_graded_lesson': '31198639395',
     'info_new_request': '33651799070',
