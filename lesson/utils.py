@@ -244,22 +244,29 @@ def send_info_lesson_graded(lesson):
 
 def send_instructor_lesson_completed(lesson):
     """Send email notification to instructor once lesson is graded"""
-    target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
-    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['instructor_lesson_completed'],
-            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.instructor.user.email},
-            "customProperties": [
-                {"name": "instructor_name", "value": lesson.instructor.display_name},
-    ]
-    }
-    resp = requests.post(target_url, json=data)
-    if resp.status_code != 200:
+    headers = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-Type': 'application/json'}
+    response = requests.post(settings.SENDGRID_API_BASE_URL + 'mail/send', headers=headers,
+                            data=json.dumps({"from": {"email": settings.DEFAULT_FROM_EMAIL, "name": 'Nabi Music'},
+                                              "template_id": settings.SENDGRID_EMAIL_TEMPLATES_INSTRUCTOR['lesson_graded'],
+                                              "personalizations": [{"to": [{"email": lesson.instructor.user.email}] }]
+                                            })
+                            )
+
+    # data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['instructor_lesson_completed'],
+    #         "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.instructor.user.email},
+    #         "customProperties": [
+    #             {"name": "instructor_name", "value": lesson.instructor.display_name},
+    # ]
+    # }
+    # resp = requests.post(target_url, json=data)
+    if response.status_code != 202:
         send_admin_email("[INFO] Info about graded lesson email could not be sent",
                          """An email to info about a graded lesson could not be send to email {}, lesson id {}.
                          
                          The status_code for API's response was {} and content: {}""".format(lesson.instructor.user.email,
                                                                                              lesson.id,
-                                                                                             resp.status_code,
-                                                                                             resp.content.decode())
+                                                                                             response.status_code,
+                                                                                             response.content.decode())
                          )
         return None
 
@@ -308,20 +315,6 @@ def send_trial_confirmation(lesson):
                                                                     "dynamic_template_data": params}]
                                               })
                              )
-
-    
-    # data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['trial_confirmation'],
-    #         "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.booking.user.email},
-    #         "customProperties": [
-    #             {"name": "profile_link", "value": f"{settings.HOSTNAME_PROTOCOL}/profile/{instructor_id}"},
-    #             {"name": "instructor_name", "value": lesson.instructor.display_name if lesson.instructor else ''},
-    #             {"name": "student_name", "value": student_details.get('name')},
-    #             {"name": "first_name", "value": lesson.booking.user.first_name},
-    #             {"name": "instrument", "value": lesson.booking.request.instrument.name},
-    #             {"name": "lesson_availability", "value": lesson.booking.request.availability_as_string()},
-    #         ]
-    #         }
-    # resp = requests.post(target_url, json=data)
     if response.status_code != 202:
         send_admin_email("[INFO] Info about a created trial lesson could not be send",
                          """An email about a created trial lesson could not be send to email {}, lesson id {}.

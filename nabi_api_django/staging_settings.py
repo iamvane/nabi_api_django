@@ -135,6 +135,7 @@ SENDGRID_EMAIL_TEMPLATES_PARENT_STUDENT = {
 SENDGRID_EMAIL_TEMPLATES_INSTRUCTOR = {
     'new_trial_scheduled': 'd-f5545406b8774196b7ce8b3ca4bdc236',
     'reminder_grade_lesson': 'd-b29bdf1d567b4cddb48563a57122fb9c',
+    'lesson_graded': 'd-af295752951c4510bec929878330bc83',
 }
 
 HUBSPOT_CONTACT_LIST_IDS = {
@@ -155,7 +156,6 @@ HUBSPOT_TEMPLATE_IDS = {
     'info_request': '30861071713',
     'info_new_request': '33651799070',
     'reset_password': '29982554190',   # when user is crated via admin
-    'trial_confirmation': '33858534253',
     'instructor_lesson_completed': '33722126483',   # when instructor has graded a lesson
     'assigned_booking': '36987478562',
     'instructor_info_review': '34303391620',
