@@ -97,23 +97,44 @@ def send_alert_request_instructor(instructor, lesson_request, requestor_account)
 
 
 def send_info_lesson_student_parent(lesson):
-    target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
-    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['info_lesson_user'],
-            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.booking.user.email},
-            "customProperties": [
-                {"name": "first_name", "value": lesson.booking.user.first_name},
-                {"name": "instructor_name", "value": lesson.instructor.display_name},
-                {"name": "instructor_profile", "value": f'{settings.HOSTNAME_PROTOCOL}/profile/{lesson.instructor.id}'},
-            ]
-            }
-    resp = requests.post(target_url, json=data)
-    if resp.status_code != 200:
-        send_admin_email("[INFO] Alert request email could not be send to user",
-                         f"""An email to alert about a new lesson could not be send to email {lesson.booking.user.email}, lesson id {lesson.id}.
+    """Send email to meet instructor"""
+    # target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
+    # data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['info_lesson_user'],
+    #         "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.booking.user.email},
+    #         "customProperties": [
+    #             {"name": "first_name", "value": lesson.booking.user.first_name},
+    #             {"name": "instructor_name", "value": lesson.instructor.display_name},
+    #             {"name": "instructor_profile", "value": f'{settings.HOSTNAME_PROTOCOL}/profile/{lesson.instructor.id}'},
+    #         ]
+    #         }
+    params = {
+        'first_name': lesson.booking.user.first_name,
+        'instructor_name': lesson.instructor.display_name,
+        'instructor_profile': f'{settings.HOSTNAME_PROTOCOL}/profile/{lesson.instructor.id}',
+    }
+    headers = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-Type': 'application/json'}
+    response = requests.post(settings.SENDGRID_API_BASE_URL + 'mail/send', headers=headers,
+                             data=json.dumps({"from": {"email": settings.DEFAULT_FROM_EMAIL, "name": 'Nabi Music'},
+                                              "template_id": settings.SENDGRID_EMAIL_TEMPLATES_PARENT_STUDENT['meet_instructor'],
+                                              "personalizations": [{"to": [{"email": lesson.booking.user.email}],
+                                                                    "dynamic_template_data": params}]
+                                              })
+                             )
+    if response.status_code != 202:
+        send_admin_email("[INFO] Error sending email to Parent/Student, with booking invoice",
+                         "The error code is {} and response content: {}.".format(response.status_code,
+                                                                                 response.content.decode())
+                        )
+    # headers = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-Type': 'application/json'}
 
-                         The status_code for API's response was {resp.status_code} and content: {resp.content.decode()}"""
-                         )
-        return None
+    # resp = requests.post(target_url, json=data)
+    # if resp.status_code != 200:
+    #     send_admin_email("[INFO] Alert request email could not be send to user",
+    #                      f"""An email to alert about a new lesson could not be send to email {lesson.booking.user.email}, lesson id {lesson.id}.
+
+    #                      The status_code for API's response was {resp.status_code} and content: {resp.content.decode()}"""
+    #                      )
+    #     return None
 
 
 def send_info_lesson_instructor(lesson):

@@ -119,6 +119,10 @@ SENDGRID_EMAIL_TEMPLATES = {
     'booking_advice': 'd-b2a6ea08ab8d48cfa180985c966b0061',
 }
 
+SENDGRID_EMAIL_TEMPLATES_PARENT_STUDENT = {
+    'meet_instructor': 'd-3f980e9d5e6044e88c40619091708635',
+}
+
 HUBSPOT_CONTACT_LIST_IDS = {
     'instructors': '3',
     'parents': '5',
