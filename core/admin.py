@@ -8,7 +8,7 @@ from accounts.serializers import (InstructorCreateAccountSerializer, ParentCreat
 from .constants import BENEFIT_PENDING, ROLE_INSTRUCTOR, ROLE_PARENT, ROLE_STUDENT
 from .forms import CreateUserForm
 from .models import ScheduledTask, UserBenefits
-from .utils import generate_random_password, send_email_template, send_admin_email
+from .utils import generate_random_password, send_admin_email
 
 User = get_user_model()
 
@@ -41,6 +41,8 @@ class PhoneNumberAdmin(admin.TabularInline):
 def send_email_reset_password(user):
     from django.conf import settings
     import json
+    import requests
+
     params = {
         'email': user.email,
         'first_name': user.first_name

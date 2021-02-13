@@ -49,53 +49,6 @@ def send_alert_request_instructor_ant(instructor, lesson_request, requestor_acco
     send_email(from_email, [instructor.user.email], subject, template, plain_template, params)
 
 
-def send_alert_request_instructor(instructor, lesson_request, requestor_account):
-    target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
-    location_tuple = requestor_account.get_location(result_type='tuple')
-    student_details = ''
-    if requestor_account.user.is_parent():
-        for tied_student in lesson_request.students.all():
-            student_details = ', '.join([student_details, f'{tied_student.name}, {tied_student.age} years old ({lesson_request.skill_level})'])
-        if student_details:
-            student_details = student_details[2:]
-    else:
-        student_details = f'{requestor_account.display_name}, {requestor_account.age} years old ({lesson_request.skill_level})'
-    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['alert_request'],
-            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": instructor.user.email},
-            "customProperties": [
-                {"name": "first_name", "value": instructor.user.first_name},
-                {"name": "request_title", "value": lesson_request.title},
-                {"name": "instrument", "value": lesson_request.instrument.name},
-                {"name": "display_name", "value": requestor_account.display_name},
-                {"name": "student_details", "value": student_details},
-                {"name": "reference_url", "value": f'{settings.HOSTNAME_PROTOCOL}/request/{lesson_request.id}'},
-            ]
-            }
-    if lesson_request.trial_proposed_datetime:
-        if instructor.timezone:
-            time_zone = instructor.timezone
-        else:
-            time_zone = instructor.get_timezone_from_location_zipcode()
-        date_str, time_str = get_date_time_from_datetime_timezone(lesson_request.trial_proposed_datetime,
-                                                                  time_zone,
-                                                                  '%m/%d/%Y',
-                                                                  '%I:%M %p')
-        data['customProperties'].append({"name": "lesson_date_subject", "value": f'{date_str} at {time_str}'})
-        data['customProperties'].append({"name": "lesson_date",
-                                         "value": f'{date_str} at {time_str} ({lesson_request.trial_proposed_timezone})'})
-    resp = requests.post(target_url, json=data)
-    if resp.status_code != 200:
-        send_admin_email("[INFO] Alert request email could not be send",
-                         """An email to alert about a new lesson request could not be send to email {}, lesson request id {}.
-
-                         The status_code for API's response was {} and content: {}""".format(instructor.user.email,
-                                                                                             lesson_request.id,
-                                                                                             resp.status_code,
-                                                                                             resp.content.decode())
-                         )
-        return None
-
-
 def send_info_lesson_student_parent(lesson):
     """Send email to meet instructor"""
     params = {
@@ -263,30 +216,6 @@ def send_instructor_lesson_completed(lesson):
                                                                                              lesson.id,
                                                                                              response.status_code,
                                                                                              response.content.decode())
-                         )
-        return None
-
-
-def send_info_request_available(lesson_request, instructor):
-    """Send email to instructor about a request available, which match his data"""
-    target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
-    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['info_new_request'],
-            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": instructor.user.email},
-            "customProperties": [
-                {"name": "instrument", "value": lesson_request.instrument.name},
-                {"name": "first_name", "value": instructor.user.first_name},
-                {"name": "request_url", "value": f'{settings.HOSTNAME_PROTOCOL}/new-request/{lesson_request.id}/?userId={instructor.user.id}'},
-            ]
-            }
-    resp = requests.post(target_url, json=data)
-    if resp.status_code != 200:
-        send_admin_email("[INFO] Info about a new created lesson request could not be send",
-                         """An email about a new created lesson request could not be send to email {}, lesson request id {}.
-
-                         The status_code for API's response was {} and content: {}""".format(instructor.user.email,
-                                                                                             lesson_request.id,
-                                                                                             resp.status_code,
-                                                                                             resp.content.decode())
                          )
         return None
 
