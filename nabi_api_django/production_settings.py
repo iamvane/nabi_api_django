@@ -121,7 +121,8 @@ SENDGRID_EMAIL_TEMPLATES = {
 
 SENDGRID_EMAIL_TEMPLATES_USER = {
     'password_reset': 'd-0ed0cdc8b8a4459099acc1873c576940',
-    'referral_email': 'd-ec262894f3d74ae289b90e061a9f7200'
+    'referral_email': 'd-ec262894f3d74ae289b90e061a9f7200',
+    'lesson_reminder': 'd-fa4f06ff0fd149259bca8462a0bba33d',
 }
 
 SENDGRID_EMAIL_TEMPLATES_PARENT_STUDENT = {
@@ -151,7 +152,6 @@ HUBSPOT_TEMPLATE_IDS = {
     'alert_request': '27862630310',
     'info_request': '30861071713',
     'info_new_request': '33651799070',
-    'reminder_grade_lesson': '33862645099',
     'reminder_lesson': '33862178879',
     'reschedule_lesson': '33901672785',
     'reset_password': '29982554190',   # when user is crated via admin

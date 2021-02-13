@@ -373,26 +373,54 @@ def send_lesson_reminder(lesson_id, user_id):
             if stu_details and stu_details.instrument:
                 instrument_name = stu_details.instrument.name
                 skill_level = stu_details.skill_level
-    target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
-    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['reminder_lesson'],
-            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": user.email},
-            "customProperties": [
-                {"name": "first_name", "value": user.first_name},
-                {"name": "student_name", "value": student_details.get('name')},
-                {"name": "instrument", "value": instrument_name},
-                {"name": "student_details", "value": f"{student_details.get('age')} years old, {skill_level}"},
-                {"name": "lesson_date_time", "value": f'{sch_date} at {sch_time} ({time_zone})'},
-                {"name": "zoom_link", "value": lesson.booking.instructor.zoom_link},
-            ]
-            }
-    resp = requests.post(target_url, json=data)
-    if resp.status_code != 200:
+
+    params = {
+        'first_name': user.first_name,
+        'student_name': student_details.get('name'),
+        'instrument': instrument_name,
+        'student_details': f"{student_details.get('age')} years old, {skill_level}",
+        'lesson_date_time': f'{sch_date} at {sch_time} ({time_zone})',
+        'zoom_link': lesson.booking.instructor.zoom_link,
+    }
+
+    headers = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-Type': 'application/json'}
+    response = requests.post(settings.SENDGRID_API_BASE_URL + 'mail/send', headers=headers,
+                             data=json.dumps({"from": {"email": settings.DEFAULT_FROM_EMAIL, "name": 'Nabi Music'},
+                                              "template_id": settings.SENDGRID_EMAIL_TEMPLATES_USER['lesson_reminder'],
+                                              "personalizations": [{"to": [{"email": user.email}],
+                                                                    "dynamic_template_data": params}]
+                                              })
+                             )
+
+    if response.status_code != 202:
         send_admin_email("[INFO] Reminder lesson email",
                          f"""An email to reminder about a lesson could not be send to {user.email}, lesson id {lesson.id}.
 
-                             The status_code for API's response was {resp.status_code} and content: {resp.content.decode()}"""
+                             The status_code for API's response was {response.status_code} and content: {response.content.decode()}"""
                          )
         return None
+    return True
+
+    # target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
+    # data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['reminder_lesson'],
+    #         "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": user.email},
+    #         "customProperties": [
+    #             {"name": "first_name", "value": user.first_name},
+    #             {"name": "student_name", "value": student_details.get('name')},
+    #             {"name": "instrument", "value": instrument_name},
+    #             {"name": "student_details", "value": f"{student_details.get('age')} years old, {skill_level}"},
+    #             {"name": "lesson_date_time", "value": f'{sch_date} at {sch_time} ({time_zone})'},
+    #             {"name": "zoom_link", "value": lesson.booking.instructor.zoom_link},
+    #         ]
+    #         }
+    # resp = requests.post(target_url, json=data)
+    # if resp.status_code != 200:
+    #     send_admin_email("[INFO] Reminder lesson email",
+    #                      f"""An email to reminder about a lesson could not be send to {user.email}, lesson id {lesson.id}.
+
+    #                          The status_code for API's response was {resp.status_code} and content: {resp.content.decode()}"""
+    #                      )
+    #     return None
 
 
 def send_reschedule_lesson(lesson, user, prev_datetime):
