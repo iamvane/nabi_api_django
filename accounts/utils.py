@@ -185,27 +185,51 @@ def remove_contact_from_email_list(contact_id, email, list_name):
 
 
 def send_reset_password_email(email, token):
-    """Use HubSpot'a API to send email. Return True if response is successful, return False otherwise"""
-    target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
-    passw_reset_link = '{}/forgot-password?token={}'.format(settings.HOSTNAME_PROTOCOL, token)
-    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['password_reset'],
-            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": email},
-            "customProperties": [
-                {"name": "password_reset_link", "value": passw_reset_link},
-            ]
-            }
-    resp = requests.post(target_url, json=data)
-    if resp.status_code != 200:
+    """Email for users to reset password. Return True if response is successful, return False otherwise"""
+      passw_reset_link = '{}/forgot-password?token={}'.format(settings.HOSTNAME_PROTOCOL, token)
+      params = {
+        'password_reset_link': passw_reset_link,
+    }
+    headers = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-Type': 'application/json'}
+    response = requests.post(settings.SENDGRID_API_BASE_URL + 'mail/send', headers=headers,
+                            data=json.dumps({"from": {"email": settings.DEFAULT_FROM_EMAIL, "name": 'Nabi Music'},
+                                            "template_id": settings.SENDGRID_EMAIL_TEMPLATES_USER['password_reset'],
+                                            "personalizations": [{"to": [{"email": email}],
+                                                                    "dynamic_template_data": params}]
+                                            })
+                            )
+    if response.status_code != 202:
         send_admin_email("[INFO] Reset password email could not be send",
-                         """An email for reset password could not be send to email {}.
+                        """An email for reset password could not be send to email {}.
 
-                         The status_code for API's response was {} and content: {}""".format(email,
-                                                                                             resp.status_code,
-                                                                                             resp.content.decode()
-                                                                                             )
-                         )
+                        The status_code for API's response was {} and content: {}""".format(email,
+                                                                                            resp.status_code,
+                                                                                            resp.content.decode()
+                                                                                            )
+        )
         return False
     return True
+
+    # target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
+    # passw_reset_link = '{}/forgot-password?token={}'.format(settings.HOSTNAME_PROTOCOL, token)
+    # data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['password_reset'],
+    #         "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": email},
+    #         "customProperties": [
+    #             {"name": "password_reset_link", "value": passw_reset_link},
+    #         ]
+    #         }
+    # resp = requests.post(target_url, json=data)
+    # if resp.status_code != 200:
+    #     send_admin_email("[INFO] Reset password email could not be send",
+    #                      """An email for reset password could not be send to email {}.
+
+    #                      The status_code for API's response was {} and content: {}""".format(email,
+    #                                                                                          resp.status_code,
+    #                                                                                          resp.content.decode()
+    #                                                                                          )
+    #                      )
+    #     return False
+    # return True
 
 
 def get_stripe_customer_id(user):

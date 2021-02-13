@@ -119,6 +119,10 @@ SENDGRID_EMAIL_TEMPLATES = {
     'booking_advice': 'd-b2a6ea08ab8d48cfa180985c966b0061',
 }
 
+SENDGRID_EMAIL_TEMPLATES_USER = {
+    'password_reset': 'd-0ed0cdc8b8a4459099acc1873c576940',
+}
+
 SENDGRID_EMAIL_TEMPLATES_PARENT_STUDENT = {
     'meet_instructor': 'd-3f980e9d5e6044e88c40619091708635',
     'lesson_graded': 'd-2f55697a64834929a5ba6a833b1f2d42',
@@ -144,9 +148,8 @@ HUBSPOT_TEMPLATE_IDS = {
     'alert_application': '27908927674',
     'alert_request': '27862630310',
     'info_request': '30861071713',
-    # 'info_graded_lesson': '31198639395',
     'info_new_request': '33651799070',
-    'password_reset': '27908644852',
+    # 'password_reset': '27908644852',
     'referral_email': '27965493956',
     'reminder_grade_lesson': '33862645099',
     'reminder_lesson': '33862178879',

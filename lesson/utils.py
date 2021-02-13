@@ -230,18 +230,6 @@ def send_info_lesson_graded(lesson):
                                                                     "dynamic_template_data": params}]
                                             })
                             )
-
-
-    # target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
-    # data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['info_graded_lesson'],
-    #         "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.booking.user.email},
-    #         "customProperties": [
-    #             {"name": "grade", "value": lesson.grade},
-    #             {"name": "grade_comment", "value": lesson.comment},
-    #             {"name": "instructor_name", "value": lesson.instructor.display_name},
-    #         ]
-    #         }
-    # resp = requests.post(target_url, json=data)
     if response.status_code != 202:
         send_admin_email("[INFO] Info about graded lesson email could not be send",
                          """An email to info about a graded lesson could not be send to email {}, lesson id {}.
