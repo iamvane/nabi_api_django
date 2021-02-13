@@ -585,8 +585,12 @@ def get_booking_data_v2(user, package_name, last_lesson):
         data['lessonsPrice'] = last_lesson.rate * PACKAGES[package_name].get('lesson_qty')
     # SubTotal is amount to pay if there is not discounts
     sub_total = data['lessonsPrice'] + data.get('placementFee', 0)   # this variable does not include processingFee
-    data['processingFee'] = round(Decimal('0.029') * sub_total + Decimal('0.30'), 2)
-    data['subTotal'] = round(sub_total + data['processingFee'], 2)   # to display, add processing fee
+
+    data['subTotal'] = round((sub_total + Decimal('0.30')) / (Decimal(1 - 0.029)), 2)  # to display, add processing fee
+    data['processingFee'] = data['subTotal'] - sub_total
+    # data['processingFee'] = round(Decimal('0.029') * sub_total + Decimal('0.30'), 2)
+    # data['subTotal'] = round(sub_total + data['processingFee'], 2)   # to display, add processing fee
+
     # Now, calculate total
     if data.get('discounts'):
         total = round(data['lessonsPrice'] * (Decimal('100.0000') - data.get('discounts')) / Decimal('100.0'), 4)
@@ -597,8 +601,11 @@ def get_booking_data_v2(user, package_name, last_lesson):
         data['virtuosoDiscount'] = PACKAGES[package_name].get('discount')
         total = round(total * (Decimal('100.0000') - data['virtuosoDiscount']) / 100, 4)
     total += data.get('placementFee', 0)
-    data['processingFee'] = round(Decimal('0.029') * total + Decimal('0.30'), 2)
-    data['total'] = round(total + data['processingFee'], 2)
+
+    data['total'] = round((total + Decimal('0.30')) / (Decimal(1 - 0.029)), 2)
+    data['processingFee'] = data['total'] - total
+    # data['processingFee'] = round(Decimal('0.029') * total + Decimal('0.30'), 2)
+    # data['total'] = round(total + data['processingFee'], 2)
     return data
 
 
