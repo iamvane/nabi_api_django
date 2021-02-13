@@ -244,21 +244,17 @@ def send_info_lesson_graded(lesson):
 
 def send_instructor_lesson_completed(lesson):
     """Send email notification to instructor once lesson is graded"""
+    params = {
+        'first_name': lesson.instructor.display_name,
+    }
     headers = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-Type': 'application/json'}
     response = requests.post(settings.SENDGRID_API_BASE_URL + 'mail/send', headers=headers,
                             data=json.dumps({"from": {"email": settings.DEFAULT_FROM_EMAIL, "name": 'Nabi Music'},
                                               "template_id": settings.SENDGRID_EMAIL_TEMPLATES_INSTRUCTOR['lesson_graded'],
-                                              "personalizations": [{"to": [{"email": lesson.instructor.user.email}] }]
+                                              "personalizations": [{"to": [{"email": lesson.instructor.user.email}],
+                                                                    "dynamic_template_data": params}]
                                             })
                             )
-
-    # data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['instructor_lesson_completed'],
-    #         "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.instructor.user.email},
-    #         "customProperties": [
-    #             {"name": "instructor_name", "value": lesson.instructor.display_name},
-    # ]
-    # }
-    # resp = requests.post(target_url, json=data)
     if response.status_code != 202:
         send_admin_email("[INFO] Info about graded lesson email could not be sent",
                          """An email to info about a graded lesson could not be send to email {}, lesson id {}.
