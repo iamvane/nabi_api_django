@@ -322,7 +322,7 @@ def send_trial_confirmation(lesson):
     #         ]
     #         }
     # resp = requests.post(target_url, json=data)
-    if response.status_code != 200:
+    if response.status_code != 202:
         send_admin_email("[INFO] Info about a created trial lesson could not be send",
                          """An email about a created trial lesson could not be send to email {}, lesson id {}.
 
