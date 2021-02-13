@@ -426,7 +426,6 @@ def send_lesson_reminder(lesson_id, user_id):
 def send_reschedule_lesson(lesson, user, prev_datetime):
     """Send parent/student an email when a lesson is rescheduled"""
     from accounts.models import get_account
-    target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
     account = get_account(user)
     if account is None:
         send_admin_email("[INFO] Info about a rescheduled lesson could not be send",
@@ -444,24 +443,28 @@ def send_reschedule_lesson(lesson, user, prev_datetime):
                                                               time_zone,
                                                               date_format='%A %b %-d, %Y',
                                                               time_format='%-I:%M %p')
-    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['reschedule_lesson'],
-            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": user.email},
-            "customProperties": [
-                {"name": "first_name", "value": user.first_name},
-                {"name": "previous_date", "value": f'{prev_sch_date} {prev_sch_time} ({time_zone})'},
-                {"name": "current_date", "value": f'{sch_date} {sch_time} ({time_zone})'},
-            ]
-            }
-    resp = requests.post(target_url, json=data)
-    if resp.status_code != 200:
+    params = {
+        'first_name': user.first_name,
+        'previous_date': f'{prev_sch_date} {prev_sch_time} ({time_zone})',
+        'current_date': f'{sch_date} {sch_time} ({time_zone})',
+    }
+    headers = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-Type': 'application/json'}
+    response = requests.post(settings.SENDGRID_API_BASE_URL + 'mail/send', headers=headers,
+                             data=json.dumps({"from": {"email": settings.DEFAULT_FROM_EMAIL, "name": 'Nabi Music'},
+                                              "template_id": settings.SENDGRID_EMAIL_TEMPLATES_USER['lesson_rescheduled'],
+                                              "personalizations": [{"to": [{"email": user.email}],
+                                                                    "dynamic_template_data": params}]
+                                              })
+                             )
+    if response.status_code != 202:
         send_admin_email("[INFO] Info about a rescheduled lesson could not be send",
                          """An email about a rescheduled lesson could not be send to email {}, lesson id {}.
 
                          The status_code for API's response was {} and content: {}""".format(
                              user.email,
                              lesson.id,
-                             resp.status_code,
-                             resp.content.decode())
+                             response.status_code,
+                             response.content.decode())
                          )
         return None
 
