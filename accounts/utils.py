@@ -76,8 +76,8 @@ def send_referral_invitation_email(user, email):
 
                          The status_code for API's response was {} and content: {}""".format(
                              params,
-                             resp.status_code,
-                             resp.content.decode()
+                             response.status_code,
+                             response.content.decode()
                              )
                          )
         return False
