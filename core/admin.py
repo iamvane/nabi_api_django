@@ -8,7 +8,7 @@ from accounts.serializers import (InstructorCreateAccountSerializer, ParentCreat
 from .constants import BENEFIT_PENDING, ROLE_INSTRUCTOR, ROLE_PARENT, ROLE_STUDENT
 from .forms import CreateUserForm
 from .models import ScheduledTask, UserBenefits
-from .utils import generate_random_password, send_email_template
+from .utils import generate_random_password, send_admin_email
 
 User = get_user_model()
 
@@ -39,11 +39,30 @@ class PhoneNumberAdmin(admin.TabularInline):
 
 
 def send_email_reset_password(user):
-    parameter_list = [
-        {"name": "email", "value": user.email},
-        {"name": "first_name", "value": user.first_name},
-    ]
-    return send_email_template(user.email, 'reset_password', parameter_list)
+    from django.conf import settings
+    import json
+    import requests
+
+    params = {
+        'email': user.email,
+        'first_name': user.first_name
+    }
+    headers = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-Type': 'application/json'}
+    response = requests.post(settings.SENDGRID_API_BASE_URL + 'mail/send', headers=headers,
+                            data=json.dumps({"from": {"email": settings.DEFAULT_FROM_EMAIL, "name": 'Nabi Music'},
+                                              "template_id": settings.SENDGRID_EMAIL_TEMPLATES_USER['account_creation_admin'],
+                                              "personalizations": [{"to": [{"email": user.email}],
+                                                                    "dynamic_template_data": params}]
+                                            })
+                            )
+    if response.status_code != 202:
+        send_admin_email("""[INFO] Could not send account creation email to {}
+                        The status_code for API's response was {} and content: {}""".format(
+                             user.email,
+                             response.status_code,
+                             response.content.decode())
+                         )
+        return None         
 
 
 class UserAdmin(admin.ModelAdmin):

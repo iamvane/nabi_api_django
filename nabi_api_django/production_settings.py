@@ -119,6 +119,28 @@ SENDGRID_EMAIL_TEMPLATES = {
     'booking_advice': 'd-b2a6ea08ab8d48cfa180985c966b0061',
 }
 
+SENDGRID_EMAIL_TEMPLATES_USER = {
+    'password_reset': 'd-0ed0cdc8b8a4459099acc1873c576940',
+    'referral_email': 'd-ec262894f3d74ae289b90e061a9f7200',
+    'lesson_reminder': 'd-fa4f06ff0fd149259bca8462a0bba33d',
+    'lesson_rescheduled': 'd-4cb3b954210f417eaa385838f1a5d568',
+    'account_creation_admin': 'd-c54563cf7d82480d95b3390848bdea18',
+}
+
+SENDGRID_EMAIL_TEMPLATES_PARENT_STUDENT = {
+    'meet_instructor': 'd-3f980e9d5e6044e88c40619091708635',
+    'lesson_graded': 'd-2f55697a64834929a5ba6a833b1f2d42',
+    'trial_confirmation': 'd-97a7dad20d7a4d19902d271bbd1f8321',
+}
+
+SENDGRID_EMAIL_TEMPLATES_INSTRUCTOR = {
+    'new_trial_scheduled': 'd-f5545406b8774196b7ce8b3ca4bdc236',
+    'reminder_grade_lesson': 'd-b29bdf1d567b4cddb48563a57122fb9c',
+    'lesson_graded': 'd-af295752951c4510bec929878330bc83',
+    'new_trial_booking': 'd-061f2af6398143989402c7fc1207a6bf',
+    'new_review': 'd-915dde6a3505436e9aa22a39d56146cf',
+}
+
 HUBSPOT_CONTACT_LIST_IDS = {
     'instructors': '3',
     'parents': '5',
@@ -130,23 +152,4 @@ HUBSPOT_CONTACT_LIST_IDS = {
     'trial_to_booking': '161',
     'parents_without_request': 'foo',
     'students_without_request': 'foo',
-}
-HUBSPOT_TEMPLATE_IDS = {
-    'alert_application': '27908927674',
-    'alert_request': '27862630310',
-    'info_request': '30861071713',
-    'info_lesson_user': '33815399510',
-    'info_lesson_instructor': '33814822010',
-    'info_graded_lesson': '31198639395',
-    'info_new_request': '33651799070',
-    'password_reset': '27908644852',
-    'referral_email': '27965493956',
-    'reminder_grade_lesson': '33862645099',
-    'reminder_lesson': '33862178879',
-    'reschedule_lesson': '33901672785',
-    'reset_password': '29982554190',   # when user is crated via admin
-    'trial_confirmation': '33858534253',
-    'instructor_lesson_completed': '33722126483',   # when instructor has graded a lesson
-    'assigned_booking': '36987478562',
-    'instructor_info_review': '34303391620',
 }

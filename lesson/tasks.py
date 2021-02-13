@@ -15,42 +15,11 @@ from nabi_api_django.celery_config import app
 from core.models import ScheduledTask
 from .models import Lesson, LessonBooking, LessonRequest
 from .utils import (get_availability_field_names_from_availability_json, send_advice_assigned_instructor,
-                    send_alert_booking, send_alert_request_instructor, send_info_lesson_graded,
+                    send_alert_booking, send_info_lesson_graded,
                     send_info_lesson_student_parent, send_info_lesson_instructor,
-                    send_info_request_available, send_invoice_booking, send_reschedule_lesson, send_trial_confirmation,
+                    send_invoice_booking, send_reschedule_lesson, send_trial_confirmation,
                     send_instructor_lesson_completed, )
-
-
-@app.task
-def send_request_alert_instructors(request_id, task_log_id):
-    """Send an email to instructors in a place near to 50 miles from lesson request location"""
-    try:
-        request = LessonRequest.objects.get(id=request_id)
-    except LessonRequest.DoesNotExist:
-        send_admin_email(
-            'Error executing send_request_alert_instructors task',
-            f'Executing task send_request_alert_instructors (params: request_id {request_id}, task_log_id {task_log_id}) '
-            f'LessonRequest DoesNotExist error is raised'
-        )
-        return None
-    account = get_account(request.user)
-    if account is None:
-        send_admin_email(
-            'Error executing send_request_alert_instructors task',
-            f'Executing task send_request_alert_instructors (params: request_id {request_id}, task_log_id {task_log_id}) '
-            f'no account was obtained for user {request.user.id} ({request.user.email})'
-        )
-        return None
-    if request.place_for_lessons == PLACE_FOR_LESSONS_ONLINE:
-        for instructor in Instructor.objects.filter(instruments__name=request.instrument.name):
-            send_alert_request_instructor(instructor, request, account)
-    else:
-        if account and account.coordinates:
-            for instructor in Instructor.objects.filter(coordinates__distance_lte=(account.coordinates, D(mi=50)),
-                                                        instruments__name=request.instrument.name):
-                send_alert_request_instructor(instructor, request, account)
-    TaskLog.objects.filter(id=task_log_id).delete()
-
+                    
 
 @app.task
 def send_lesson_info_student_parent(lesson_id, task_log_id):
@@ -285,45 +254,6 @@ def send_admin_completed_instructor(lesson_id):
                      f"Lesson with id {lesson_id} ({lesson.title}) has been completed, "
                      "review and close this lesson.""")
     
-
-@app.task
-def send_alert_request_compatible_instructors(request_id, task_log_id):
-    try:
-        l_req = LessonRequest.objects.get(id=request_id)
-    except LessonRequest.DoesNotExist:
-        send_admin_email(
-            'Error executing send_alert_request_compatible_instructors task',
-            f'Executing task send_alert_request_compatible_instructors (params: request_id {request_id}, task_log_id {task_log_id}) '
-            f'LessonRequest DoesNotExist error is raised'
-        )
-        return None
-    if l_req.skill_level == SKILL_LEVEL_BEGINNER:
-        req_levels = [SKILL_LEVEL_BEGINNER, SKILL_LEVEL_INTERMEDIATE, SKILL_LEVEL_ADVANCED]
-    elif l_req.skill_level == SKILL_LEVEL_INTERMEDIATE:
-        req_levels = [SKILL_LEVEL_INTERMEDIATE, SKILL_LEVEL_ADVANCED]
-    else:
-        req_levels = [SKILL_LEVEL_ADVANCED]
-    instructors_instrument = InstructorInstruments.objects.filter(instrument_id=l_req.instrument_id,
-                                                                  skill_level__in=req_levels)\
-        .values_list('instructor_id', flat=True)
-    instructor_ids = []
-    lesson = l_req.get_first_lesson()
-    if lesson is None:
-        send_admin_email('No lesson in booking', f"The lesson request {l_req.id} has not booking with a lesson registered,"
-                                                 f"then, check availability of instructor for lesson's date can't be done.")
-    else:
-        for instructor in Instructor.objects.filter(id__in=instructors_instrument, complete=True):
-            if hasattr(instructor, 'availability'):
-                field_names = get_availability_field_names_from_availability_json(l_req.trial_availability_schedule)
-                for field_name in field_names:
-                    if getattr(instructor.availability, field_name):
-                        instructor_ids.append(instructor.id)
-                        break
-        for ins_id in instructor_ids:
-            send_info_request_available(l_req, Instructor.objects.get(id=ins_id))
-        send_admin_assign_instructor.apply_async((l_req.id,), countdown=3600)
-    TaskLog.objects.filter(id=task_log_id).delete()
-
 
 @app.task
 def execute_scheduled_task():

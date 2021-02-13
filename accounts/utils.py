@@ -1,6 +1,6 @@
 import requests
 from pygeocoder import Geocoder, GeocoderError
-
+import json
 from django.conf import settings
 from django.contrib.gis.geos import Point
 from django.core.mail import EmailMultiAlternatives
@@ -50,29 +50,34 @@ def send_welcome_email(user_cc):
 
 
 def send_referral_invitation_email(user, email):
+    """Send email to invite user to register via referrals"""
     referral_token = user.referral_token
     date_limit = get_date_a_month_later(timezone.now())
     referral_url = '{}/referral/{}'.format(settings.HOSTNAME_PROTOCOL, referral_token)
 
-    target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
-    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['referral_email'],
-            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": email},
-            "customProperties": [
-                {"name": "first_name", "value": user.first_name},
-                {"name": "last_name", "value": user.last_name},
-                {"name": "date_limit", "value": date_limit.strftime('%m/%d/%Y')},
-                {"name": "referral_url", "value": referral_url},
-            ]
-            }
-    resp = requests.post(target_url, json=data)
-    if resp.status_code != 200:
+    params = {
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'date_limit': date_limit.strftime('%m/%d/%Y'),
+        'referral_url': referral_url,
+    }
+    headers = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-Type': 'application/json'}
+    response = requests.post(settings.SENDGRID_API_BASE_URL + 'mail/send', headers=headers,
+                             data=json.dumps({"from": {"email": settings.DEFAULT_FROM_EMAIL, "name": 'Nabi Music'},
+                                              "template_id": settings.SENDGRID_EMAIL_TEMPLATES_USER['referral_email'],
+                                              "personalizations": [{"to": [{"email": email}],
+                                                                    "dynamic_template_data": params}]
+                                              })
+                             )
+
+    if response.status_code != 202:
         send_admin_email("[INFO] Referral email could not be send",
                          """Email referring another person could not be send, with data {}.
 
                          The status_code for API's response was {} and content: {}""".format(
-                             data,
-                             resp.status_code,
-                             resp.content.decode()
+                             params,
+                             response.status_code,
+                             response.content.decode()
                              )
                          )
         return False
@@ -185,25 +190,28 @@ def remove_contact_from_email_list(contact_id, email, list_name):
 
 
 def send_reset_password_email(email, token):
-    """Use HubSpot'a API to send email. Return True if response is successful, return False otherwise"""
-    target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
+    """Email for users to reset password. Return True if response is successful, return False otherwise"""
     passw_reset_link = '{}/forgot-password?token={}'.format(settings.HOSTNAME_PROTOCOL, token)
-    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['password_reset'],
-            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": email},
-            "customProperties": [
-                {"name": "password_reset_link", "value": passw_reset_link},
-            ]
-            }
-    resp = requests.post(target_url, json=data)
-    if resp.status_code != 200:
+    params = {
+        'password_reset_link': passw_reset_link,
+    }
+    headers = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-Type': 'application/json'}
+    response = requests.post(settings.SENDGRID_API_BASE_URL + 'mail/send', headers=headers,
+                             data=json.dumps({"from": {"email": settings.DEFAULT_FROM_EMAIL, "name": 'Nabi Music'},
+                                              "template_id": settings.SENDGRID_EMAIL_TEMPLATES_USER['password_reset'],
+                                              "personalizations": [{"to": [{"email": email}],
+                                                                    "dynamic_template_data": params}]
+                                              })
+                             )
+    if response.status_code != 202:
         send_admin_email("[INFO] Reset password email could not be send",
-                         """An email for reset password could not be send to email {}.
+                        """An email for reset password could not be send to email {}.
 
-                         The status_code for API's response was {} and content: {}""".format(email,
-                                                                                             resp.status_code,
-                                                                                             resp.content.decode()
-                                                                                             )
-                         )
+                        The status_code for API's response was {} and content: {}""".format(email,
+                                                                                            resp.status_code,
+                                                                                            resp.content.decode()
+                                                                                            )
+        )
         return False
     return True
 
@@ -253,27 +261,29 @@ def get_availaibility_field_name_from_dt(datetime_obj, tz_target):
 
 def send_instructor_info_review(instructor_review):
     """Send email to instructor, about a review added"""
-    target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
     reviewer_name = instructor_review.user.get_full_name()
-    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['instructor_info_review'],
-            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>',
-                        "to": instructor_review.instructor.user.email},
-            "customProperties": [
-                {"name": "reviewer_name", "value": reviewer_name},
-                {"name": "first_name", "value": instructor_review.instructor.user.first_name},
-                {"name": "rating", "value": instructor_review.rating},
-                {"name": "review_comment", "value": instructor_review.comment},
-            ]
-            }
-    resp = requests.post(target_url, json=data)
-    if resp.status_code != 200:
+    params = {
+        'reviewer_name': reviewer_name,
+        'first_name': instructor_review.instructor.user.first_name,
+        'rating': instructor_review.rating,
+        'review_comment': instructor_review.comment,
+    }
+    headers = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-Type': 'application/json'}
+    response = requests.post(settings.SENDGRID_API_BASE_URL + 'mail/send', headers=headers,
+                            data=json.dumps({"from": {"email": settings.DEFAULT_FROM_EMAIL, "name": 'Nabi Music'},
+                                              "template_id": settings.SENDGRID_EMAIL_TEMPLATES_INSTRUCTOR['new_review'],
+                                              "personalizations": [{"to": [{"email": instructor_review.instructor.user.email}],
+                                                                    "dynamic_template_data": params}]
+                                            })
+                            )
+    if response.status_code != 202:
         send_admin_email("[INFO] Info instructor email about added review could not be send",
                          """An email to info instructor about an added review could not be send to email {}, instructor review id {}.
 
                          The status_code for API's response was {} and content: {}""".format(
                              instructor_review.instructor.user.email,
                              instructor_review.id,
-                             resp.status_code,
-                             resp.content.decode())
+                             response.status_code,
+                             response.content.decode())
                          )
         return None
