@@ -131,6 +131,7 @@ SENDGRID_EMAIL_TEMPLATES_PARENT_STUDENT = {
 
 SENDGRID_EMAIL_TEMPLATES_INSTRUCTOR = {
     'new_trial_scheduled': 'd-f5545406b8774196b7ce8b3ca4bdc236',
+    'reminder_grade_lesson': 'd-b29bdf1d567b4cddb48563a57122fb9c',
 }
 
 HUBSPOT_CONTACT_LIST_IDS = {
@@ -150,7 +151,6 @@ HUBSPOT_TEMPLATE_IDS = {
     'alert_request': '27862630310',
     'info_request': '30861071713',
     'info_new_request': '33651799070',
-    # 'referral_email': '27965493956',
     'reminder_grade_lesson': '33862645099',
     'reminder_lesson': '33862178879',
     'reschedule_lesson': '33901672785',
