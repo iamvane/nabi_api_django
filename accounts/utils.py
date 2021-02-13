@@ -268,6 +268,7 @@ def send_instructor_info_review(instructor_review):
         'rating': instructor_review.rating,
         'review_comment': instructor_review.comment,
     }
+    headers = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-Type': 'application/json'}
     response = requests.post(settings.SENDGRID_API_BASE_URL + 'mail/send', headers=headers,
                             data=json.dumps({"from": {"email": settings.DEFAULT_FROM_EMAIL, "name": 'Nabi Music'},
                                               "template_id": settings.SENDGRID_EMAIL_TEMPLATES_INSTRUCTOR['new_review'],

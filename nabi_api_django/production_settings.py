@@ -153,7 +153,6 @@ HUBSPOT_CONTACT_LIST_IDS = {
     'students_without_request': 'foo',
 }
 HUBSPOT_TEMPLATE_IDS = {
-    'alert_application': '27908927674',
     'alert_request': '27862630310',
     'info_request': '30861071713',
     'info_new_request': '33651799070',
