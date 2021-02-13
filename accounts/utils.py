@@ -194,7 +194,7 @@ def send_reset_password_email(email, token):
     response = requests.post(settings.SENDGRID_API_BASE_URL + 'mail/send', headers=headers,
                              data=json.dumps({"from": {"email": settings.DEFAULT_FROM_EMAIL, "name": 'Nabi Music'},
                                               "template_id": settings.SENDGRID_EMAIL_TEMPLATES_USER['password_reset'],
-                                              "personalizations": [{"to": [{"email": lesson.booking.user.email}],
+                                              "personalizations": [{"to": [{"email": email}],
                                                                     "dynamic_template_data": params}]
                                               })
                              )
