@@ -121,6 +121,7 @@ SENDGRID_EMAIL_TEMPLATES = {
 
 SENDGRID_EMAIL_TEMPLATES_PARENT_STUDENT = {
     'meet_instructor': 'd-3f980e9d5e6044e88c40619091708635',
+    'lesson_graded': 'd-2f55697a64834929a5ba6a833b1f2d42',
 }
 
 SENDGRID_EMAIL_TEMPLATES_INSTRUCTOR = {
@@ -143,8 +144,7 @@ HUBSPOT_TEMPLATE_IDS = {
     'alert_application': '27908927674',
     'alert_request': '27862630310',
     'info_request': '30861071713',
-    'info_lesson_instructor': '33814822010',
-    'info_graded_lesson': '31198639395',
+    # 'info_graded_lesson': '31198639395',
     'info_new_request': '33651799070',
     'password_reset': '27908644852',
     'referral_email': '27965493956',

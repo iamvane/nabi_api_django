@@ -154,36 +154,6 @@ def send_info_lesson_instructor(lesson):
                         )
         return None
 
-    # target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
-    # student_details = lesson.booking.student_details()
-    # instrument_name = lesson.booking.request.instrument.name
-    # if lesson.instructor and lesson.instructor.timezone:
-    #     time_zone = lesson.instructor.timezone
-    # elif lesson.instructor:
-    #     time_zone = lesson.instructor.get_timezone_from_location_zipcode()
-    # else:
-    #     time_zone = 'US/Eastern'
-    # date_str, time_str = get_date_time_from_datetime_timezone(lesson.scheduled_datetime,
-    #                                                           time_zone,
-    #                                                           '%m/%d/%Y',
-    #                                                           '%I:%M %p')
-    # data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['info_lesson_instructor'],
-    #         "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.instructor.user.email},
-    #         "customProperties": [
-    #             {"name": "instructor_name", "value": lesson.instructor.display_name},
-    #             {"name": "lesson_details", "value": f'{student_details.get("name")}, {student_details.get("age")} year old, {instrument_name}'},
-    #             {"name": "schedule_details", "value": f'{date_str} at {time_str} ({time_zone})'},
-    #         ]
-    #         }
-    # resp = requests.post(target_url, json=data)
-    # if resp.status_code != 200:
-    #     send_admin_email("[INFO] Alert request email could not be send to instructor",
-    #                      f"""An email to alert about a new lesson could not be send to email {lesson.booking.user.email}, lesson id {lesson.id}.
-
-    #                      The status_code for API's response was {resp.status_code} and content: {resp.content.decode()}"""
-    #                      )
-    #     return None
-
 
 def send_invoice_booking(booking, payment):
     """Send email with invoice data for a lesson booking"""
@@ -247,17 +217,30 @@ def send_alert_booking(booking, instructor, buyer_account):
 
 def send_info_lesson_graded(lesson):
     """Send email to parent/student about a graded lesson"""
-    target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
-    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['info_graded_lesson'],
-            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.booking.user.email},
-            "customProperties": [
-                {"name": "grade", "value": lesson.grade},
-                {"name": "grade_comment", "value": lesson.comment},
-                {"name": "instructor_name", "value": lesson.instructor.display_name},
-            ]
-            }
-    resp = requests.post(target_url, json=data)
-    if resp.status_code != 200:
+    params = {
+        'grade', "value": lesson.grade,
+        'grade_comment': lesson.comment,
+        'instructor_name': lesson.instructor.display_name,
+    }
+    headers = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-Type': 'application/json'}
+    response = requests.post(settings.SENDGRID_API_BASE_URL + 'mail/send', headers=headers,
+                             data=json.dumps({"from": {"email": settings.DEFAULT_FROM_EMAIL, "name": 'Nabi Music'},
+                                              "template_id": settings.SENDGRID_EMAIL_TEMPLATES_PARENT_STUDENT['lesson_graded'],
+                                              "personalizations": [{"to": [{"email": lesson.booking.user.email}],
+                                                                    "dynamic_template_data": params}]
+
+
+    # target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
+    # data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['info_graded_lesson'],
+    #         "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.booking.user.email},
+    #         "customProperties": [
+    #             {"name": "grade", "value": lesson.grade},
+    #             {"name": "grade_comment", "value": lesson.comment},
+    #             {"name": "instructor_name", "value": lesson.instructor.display_name},
+    #         ]
+    #         }
+    # resp = requests.post(target_url, json=data)
+    if response.status_code != 202:
         send_admin_email("[INFO] Info about graded lesson email could not be send",
                          """An email to info about a graded lesson could not be send to email {}, lesson id {}.
 
