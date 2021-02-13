@@ -192,12 +192,12 @@ def send_reset_password_email(email, token):
     }
     headers = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-Type': 'application/json'}
     response = requests.post(settings.SENDGRID_API_BASE_URL + 'mail/send', headers=headers,
-                            data=json.dumps({"from": {"email": settings.DEFAULT_FROM_EMAIL, "name": 'Nabi Music'},
-                                            "template_id": settings.SENDGRID_EMAIL_TEMPLATES_USER['password_reset'],
-                                            "personalizations": [{"to": [{"email": email}],
+                             data=json.dumps({"from": {"email": settings.DEFAULT_FROM_EMAIL, "name": 'Nabi Music'},
+                                              "template_id": settings.SENDGRID_EMAIL_TEMPLATES_USER['password_reset'],
+                                              "personalizations": [{"to": [{"email": lesson.booking.user.email}],
                                                                     "dynamic_template_data": params}]
-                                            })
-                            )
+                                              })
+                             )
     if response.status_code != 202:
         send_admin_email("[INFO] Reset password email could not be send",
                         """An email for reset password could not be send to email {}.
