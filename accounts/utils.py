@@ -261,27 +261,28 @@ def get_availaibility_field_name_from_dt(datetime_obj, tz_target):
 
 def send_instructor_info_review(instructor_review):
     """Send email to instructor, about a review added"""
-    target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
     reviewer_name = instructor_review.user.get_full_name()
-    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['instructor_info_review'],
-            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>',
-                        "to": instructor_review.instructor.user.email},
-            "customProperties": [
-                {"name": "reviewer_name", "value": reviewer_name},
-                {"name": "first_name", "value": instructor_review.instructor.user.first_name},
-                {"name": "rating", "value": instructor_review.rating},
-                {"name": "review_comment", "value": instructor_review.comment},
-            ]
-            }
-    resp = requests.post(target_url, json=data)
-    if resp.status_code != 200:
+    params = {
+        'reviewer_name': reviewer_name,
+        'first_name': instructor_review.instructor.user.first_name,
+        'rating': instructor_review.rating,
+        'review_comment': instructor_review.comment,
+    }
+    response = requests.post(settings.SENDGRID_API_BASE_URL + 'mail/send', headers=headers,
+                            data=json.dumps({"from": {"email": settings.DEFAULT_FROM_EMAIL, "name": 'Nabi Music'},
+                                              "template_id": settings.SENDGRID_EMAIL_TEMPLATES_INSTRUCTOR['new_review'],
+                                              "personalizations": [{"to": [{"email": instructor_review.instructor.user.email}],
+                                                                    "dynamic_template_data": params}]
+                                            })
+                            )
+    if response.status_code != 202:
         send_admin_email("[INFO] Info instructor email about added review could not be send",
                          """An email to info instructor about an added review could not be send to email {}, instructor review id {}.
 
                          The status_code for API's response was {} and content: {}""".format(
                              instructor_review.instructor.user.email,
                              instructor_review.id,
-                             resp.status_code,
-                             resp.content.decode())
+                             response.status_code,
+                             response.content.decode())
                          )
         return None

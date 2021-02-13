@@ -158,5 +158,4 @@ HUBSPOT_TEMPLATE_IDS = {
     'info_request': '30861071713',
     'info_new_request': '33651799070',
     'reset_password': '29982554190',   # when user is crated via admin
-    'instructor_info_review': '34303391620',
 }
