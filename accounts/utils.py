@@ -50,22 +50,26 @@ def send_welcome_email(user_cc):
 
 
 def send_referral_invitation_email(user, email):
+    """Send email to invite user to register via referrals"""
     referral_token = user.referral_token
     date_limit = get_date_a_month_later(timezone.now())
     referral_url = '{}/referral/{}'.format(settings.HOSTNAME_PROTOCOL, referral_token)
 
-    target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
-    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['referral_email'],
-            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": email},
-            "customProperties": [
-                {"name": "first_name", "value": user.first_name},
-                {"name": "last_name", "value": user.last_name},
-                {"name": "date_limit", "value": date_limit.strftime('%m/%d/%Y')},
-                {"name": "referral_url", "value": referral_url},
-            ]
-            }
-    resp = requests.post(target_url, json=data)
-    if resp.status_code != 200:
+    params = {
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'date_limit': date_limit.strftime('%m/%d/%Y'),
+        'referral_url': referral_url,
+    }
+    headers = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-Type': 'application/json'}
+    response = requests.post(settings.SENDGRID_API_BASE_URL + 'mail/send', headers=headers,
+                             data=json.dumps({"from": {"email": settings.DEFAULT_FROM_EMAIL, "name": 'Nabi Music'},
+                                              "template_id": settings.SENDGRID_EMAIL_TEMPLATES_USER['referral_email'],
+                                              "personalizations": [{"to": [{"email": email}],
+                                                                    "dynamic_template_data": params}]
+                                              })
+                             )
+    if response.status_code != 200:
         send_admin_email("[INFO] Referral email could not be send",
                          """Email referring another person could not be send, with data {}.
 
@@ -209,27 +213,6 @@ def send_reset_password_email(email, token):
         )
         return False
     return True
-
-    # target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
-    # passw_reset_link = '{}/forgot-password?token={}'.format(settings.HOSTNAME_PROTOCOL, token)
-    # data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['password_reset'],
-    #         "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": email},
-    #         "customProperties": [
-    #             {"name": "password_reset_link", "value": passw_reset_link},
-    #         ]
-    #         }
-    # resp = requests.post(target_url, json=data)
-    # if resp.status_code != 200:
-    #     send_admin_email("[INFO] Reset password email could not be send",
-    #                      """An email for reset password could not be send to email {}.
-
-    #                      The status_code for API's response was {} and content: {}""".format(email,
-    #                                                                                          resp.status_code,
-    #                                                                                          resp.content.decode()
-    #                                                                                          )
-    #                      )
-    #     return False
-    # return True
 
 
 def get_stripe_customer_id(user):
