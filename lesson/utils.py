@@ -290,30 +290,47 @@ def send_info_request_available(lesson_request, instructor):
 
 def send_trial_confirmation(lesson):
     """Send email to parent/student, when a Trial Lesson is created"""
-    target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
     student_details = lesson.booking.student_details()
     instructor_id = lesson.instructor.id if lesson.instructor else 0
-    data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['trial_confirmation'],
-            "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.booking.user.email},
-            "customProperties": [
-                {"name": "profile_link", "value": f"{settings.HOSTNAME_PROTOCOL}/profile/{instructor_id}"},
-                {"name": "instructor_name", "value": lesson.instructor.display_name if lesson.instructor else ''},
-                {"name": "student_name", "value": student_details.get('name')},
-                {"name": "first_name", "value": lesson.booking.user.first_name},
-                {"name": "instrument", "value": lesson.booking.request.instrument.name},
-                {"name": "lesson_availability", "value": lesson.booking.request.availability_as_string()},
-            ]
-            }
-    resp = requests.post(target_url, json=data)
-    if resp.status_code != 200:
+    params = {
+        'profile_link': f"{settings.HOSTNAME_PROTOCOL}/profile/{instructor_id}",
+        'instructor_name': lesson.instructor.display_name if lesson.instructor else '',
+        'student_name': student_details.get('name'),
+        'first_name': lesson.booking.user.first_name,
+        'instrument': lesson.booking.request.instrument.name,
+        'lesson_availability': lesson.booking.request.availability_as_string(),
+    }
+    headers = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-Type': 'application/json'}
+    response = requests.post(settings.SENDGRID_API_BASE_URL + 'mail/send', headers=headers,
+                             data=json.dumps({"from": {"email": settings.DEFAULT_FROM_EMAIL, "name": 'Nabi Music'},
+                                              "template_id": settings.SENDGRID_EMAIL_TEMPLATES_PARENT_STUDENT['trial_confirmation'],
+                                              "personalizations": [{"to": [{"email": lesson.booking.user.email}],
+                                                                    "dynamic_template_data": params}]
+                                              })
+                             )
+
+    
+    # data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['trial_confirmation'],
+    #         "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": lesson.booking.user.email},
+    #         "customProperties": [
+    #             {"name": "profile_link", "value": f"{settings.HOSTNAME_PROTOCOL}/profile/{instructor_id}"},
+    #             {"name": "instructor_name", "value": lesson.instructor.display_name if lesson.instructor else ''},
+    #             {"name": "student_name", "value": student_details.get('name')},
+    #             {"name": "first_name", "value": lesson.booking.user.first_name},
+    #             {"name": "instrument", "value": lesson.booking.request.instrument.name},
+    #             {"name": "lesson_availability", "value": lesson.booking.request.availability_as_string()},
+    #         ]
+    #         }
+    # resp = requests.post(target_url, json=data)
+    if response.status_code != 200:
         send_admin_email("[INFO] Info about a created trial lesson could not be send",
                          """An email about a created trial lesson could not be send to email {}, lesson id {}.
 
                          The status_code for API's response was {} and content: {}""".format(
                              lesson.booking.user.email,
                              lesson.id,
-                             resp.status_code,
-                             resp.content.decode())
+                             response.status_code,
+                             response.content.decode())
                          )
         return None
 
@@ -400,27 +417,6 @@ def send_lesson_reminder(lesson_id, user_id):
                          )
         return None
     return True
-
-    # target_url = 'https://api.hubapi.com/email/public/v1/singleEmail/send?hapikey={}'.format(settings.HUBSPOT_API_KEY)
-    # data = {"emailId": settings.HUBSPOT_TEMPLATE_IDS['reminder_lesson'],
-    #         "message": {"from": f'Nabi Music <{settings.DEFAULT_FROM_EMAIL}>', "to": user.email},
-    #         "customProperties": [
-    #             {"name": "first_name", "value": user.first_name},
-    #             {"name": "student_name", "value": student_details.get('name')},
-    #             {"name": "instrument", "value": instrument_name},
-    #             {"name": "student_details", "value": f"{student_details.get('age')} years old, {skill_level}"},
-    #             {"name": "lesson_date_time", "value": f'{sch_date} at {sch_time} ({time_zone})'},
-    #             {"name": "zoom_link", "value": lesson.booking.instructor.zoom_link},
-    #         ]
-    #         }
-    # resp = requests.post(target_url, json=data)
-    # if resp.status_code != 200:
-    #     send_admin_email("[INFO] Reminder lesson email",
-    #                      f"""An email to reminder about a lesson could not be send to {user.email}, lesson id {lesson.id}.
-
-    #                          The status_code for API's response was {resp.status_code} and content: {resp.content.decode()}"""
-    #                      )
-    #     return None
 
 
 def send_reschedule_lesson(lesson, user, prev_datetime):
