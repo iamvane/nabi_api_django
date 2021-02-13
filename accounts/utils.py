@@ -186,8 +186,8 @@ def remove_contact_from_email_list(contact_id, email, list_name):
 
 def send_reset_password_email(email, token):
     """Email for users to reset password. Return True if response is successful, return False otherwise"""
-      passw_reset_link = '{}/forgot-password?token={}'.format(settings.HOSTNAME_PROTOCOL, token)
-      params = {
+    passw_reset_link = '{}/forgot-password?token={}'.format(settings.HOSTNAME_PROTOCOL, token)
+    params = {
         'password_reset_link': passw_reset_link,
     }
     headers = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-Type': 'application/json'}
