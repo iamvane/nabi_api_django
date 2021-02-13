@@ -70,7 +70,7 @@ def send_referral_invitation_email(user, email):
                                               })
                              )
 
-    if response.status_code != 200:
+    if response.status_code != 202:
         send_admin_email("[INFO] Referral email could not be send",
                          """Email referring another person could not be send, with data {}.
 
