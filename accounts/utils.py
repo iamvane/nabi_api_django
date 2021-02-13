@@ -69,12 +69,13 @@ def send_referral_invitation_email(user, email):
                                                                     "dynamic_template_data": params}]
                                               })
                              )
+
     if response.status_code != 200:
         send_admin_email("[INFO] Referral email could not be send",
                          """Email referring another person could not be send, with data {}.
 
                          The status_code for API's response was {} and content: {}""".format(
-                             data,
+                             params,
                              resp.status_code,
                              resp.content.decode()
                              )
