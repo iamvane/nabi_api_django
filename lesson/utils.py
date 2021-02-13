@@ -218,7 +218,7 @@ def send_alert_booking(booking, instructor, buyer_account):
 def send_info_lesson_graded(lesson):
     """Send email to parent/student about a graded lesson"""
     params = {
-        'grade', "value": lesson.grade,
+        'grade': lesson.grade,
         'grade_comment': lesson.comment,
         'instructor_name': lesson.instructor.display_name,
     }
