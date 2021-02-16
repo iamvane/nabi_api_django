@@ -151,9 +151,7 @@ def add_to_email_list(user, list_names, remove_list_names=None):
                     return None
             for contact in resp_json.get('contact_sample'):
                 email = contact.get('email')
-                if email in email_set:
-                    email_set.remove(email)
-                else:
+                if email == user.email:
                     remove_contact_from_email_list(contact.get('id'), email, remove_list_name)
 
 
