@@ -5,7 +5,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from accounts.models import Instructor, TiedStudent
-from accounts.utils import add_to_email_list_v2
+from accounts.utils import add_to_email_list
 from core.constants import LESSON_REQUEST_ACTIVE, LESSON_REQUEST_CLOSED, PY_APPLIED
 from core.models import ScheduledTask, TaskLog, UserBenefits
 from lesson.models import Instrument
@@ -101,7 +101,7 @@ class LessonBookingAdmin(admin.ModelAdmin):
                     if lesson_request:
                         obj.request = lesson_request
                         obj.save()
-                add_to_email_list_v2(obj.request.user, ['trial_to_booking'], ['customer_to_request'])
+                add_to_email_list(obj.request.user, ['goal_trial_to_purchase'], ['goal_schedule_trial'])
                 task_log = TaskLog.objects.create(task_name='send_lesson_info_student_parent',
                                                   args={'lesson_id': lesson.id})
                 send_lesson_info_student_parent.delay(lesson.id, task_log.id)
@@ -118,7 +118,7 @@ class LessonBookingAdmin(admin.ModelAdmin):
                         obj.request.save()
                 # update data for applicable benefits
                 UserBenefits.update_applicable_benefits(request.user)
-                add_to_email_list_v2(request.user, [], ['trial_to_booking'])
+                add_to_email_list(request.user, [], ['goal_trial_to_purchase'])
                 if obj.payment:
                     task_log = TaskLog.objects.create(task_name='send_booking_invoice', args={'booking_id': obj.id})
                     send_booking_invoice.delay(obj.id, task_log.id)
@@ -251,7 +251,7 @@ class LessonRequestAdmin(admin.ModelAdmin):
                                                       tied_student=tied_student,
                                                       description='Package trial', status=LessonBooking.TRIAL)
                     lesson = Lesson.objects.create(booking=lb, status=Lesson.PENDING)
-                add_to_email_list_v2(request.user, [], ['trial_to_booking'])
+                add_to_email_list(request.user, [], ['goal_trial_to_purchase'])
                 task_log = TaskLog.objects.create(task_name='send_trial_confirm', args={'lesson_id': lesson.id})
                 send_trial_confirm.delay(lesson.id, task_log.id)
 

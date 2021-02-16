@@ -13,7 +13,7 @@ from django.db import models
 from django.db.models import Avg, Count
 from django.utils import timezone
 
-from accounts.utils import add_to_email_list_v2
+from accounts.utils import add_to_email_list
 
 from core.constants import *
 from core.utils import send_admin_email
@@ -320,7 +320,7 @@ class Instructor(IUserAccount):
         if curr_value != self.complete:
             Instructor.objects.filter(id=self.id).update(complete=curr_value)   # update to avoid trigger signal for save
             if curr_value:
-                add_to_email_list_v2(self.user, [], ['incomplete_profiles'])
+                add_to_email_list(self.user, [], ['incomplete_profiles'])
 
     def missing_fields(self):
         """Return a list of fields with absence of values set 'complete' field to False"""

@@ -18,7 +18,7 @@ from .models import (Affiliate, Availability, Education, Employment, Instructor,
                      InstructorAgeGroup, InstructorInstruments, InstructorPlaceForLessons, InstructorLessonRate,
                      InstructorLessonSize, InstructorReview, Parent, PhoneNumber, SpecialNeeds, Student, StudentDetails,
                      TiedStudent, get_account)
-from .utils import add_to_email_list_v2, add_to_email_list, init_kwargs
+from .utils import add_to_email_list, init_kwargs
 
 User = get_user_model()
 
@@ -227,7 +227,6 @@ class ParentCreateAccountSerializer(BaseCreateAccountSerializer):
             parent.timezone = parent.get_timezone_from_location_zipcode()
             parent.save()
         add_to_email_list(user, ['parents', 'goal_schedule_trial']) # add to list in Sendgrid
-        # add_to_email_list_v2(user, ['parents', 'customer_to_request'], ['facebook_lead'])   
         return parent
 
 
@@ -247,7 +246,7 @@ class StudentCreateAccountSerializer(BaseCreateAccountSerializer):
             student.coordinates = Point(lng, lat, srid=4326)
             student.timezone = student.get_timezone_from_location_zipcode()
             student.save()
-        add_to_email_list_v2(user, ['students', 'customer_to_request'], ['facebook_lead'])   # add to list in HubSpot
+        add_to_email_list(user, ['students', 'goal_schedule_trial']) # add to list in Sendgrid
         return student
 
 
@@ -258,7 +257,7 @@ class InstructorCreateAccountSerializer(BaseCreateAccountSerializer):
         instructor = Instructor.objects.create(user=user, **init_kwargs(Instructor(), validated_data))
         instructor.set_display_name()
         instructor.set_referral_token()
-        add_to_email_list_v2(user, ['instructors', 'incomplete_profiles'])  # add to lists in HubSpot
+        add_to_email_list(user, ['instructors', 'incomplete_profiles'])  # add to lists in Sendgrid
         return instructor
 
 

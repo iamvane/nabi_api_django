@@ -84,8 +84,30 @@ def send_referral_invitation_email(user, email):
     return True
 
 
-def add_to_email_list(user, list_names):
+def remove_contact_from_email_list(contact_id, email, list_name):
+    """Remove email of user from Sendgrid's email list"""
+    header = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-type': 'application/json'}
+    target_url = '{}marketing/lists/{}/contacts?contact_ids={}'.format(settings.SENDGRID_API_BASE_URL,
+                                                                       settings.SENDGRID_CONTACT_LIST_IDS.get(list_name),
+                                                                       contact_id)
+    response = requests.delete(target_url, headers=header)
+    if response.status_code != 202:
+        send_admin_email("[INFO] Contact couldn't be removed from {} list".format(list_name),
+                         """The contact {} (id: {}) could not be removed from {} list in Sendgrid.
+
+                         The status_code for API's response was {} and content: {}""".format(email,
+                                                                                             contact_id,
+                                                                                             list_name,
+                                                                                             response.status_code,
+                                                                                             response.content.decode())
+                        )
+
+
+def add_to_email_list(user, list_names, remove_list_names=None):
     """Add email of user to Sendgrid's email list, including first_name and last_name if are non-empty"""
+    if settings.ENVIRON_TYPE != 'production':   # only add account to list in production environment
+        return None
+
     header = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-type': 'application/json'}
     contact = {'email': user.email}
     if user.first_name:
@@ -107,6 +129,31 @@ def add_to_email_list(user, list_names):
                                                                                                 response.status_code,
                                                                                                 response.content.decode())
                             )
+    if remove_list_names is None:
+        remove_list_names = []
+    else:
+        for remove_list_name in remove_list_names:
+            header = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD)}
+            resp = requests.get('{}marketing/lists/{}?contact_sample=true'.format(
+                settings.SENDGRID_API_BASE_URL, settings.SENDGRID_CONTACT_LIST_IDS[remove_list_name]),
+                headers=header
+            )
+            if not resp.content.decode():
+                resp_json = {'contact_sample': []}
+            else:
+                try:
+                    resp_json = resp.json()
+                except Exception as e:
+                    send_admin_email('ERROR: Data returned by Sendgrid is not json',
+                                    'Error message: {}\nReturned content: {}'.format(str(e), resp.content.decode())
+                                    )
+                    return None
+            for contact in resp_json.get('contact_sample'):
+                email = contact.get('email')
+                if email in email_set:
+                    email_set.remove(email)
+                else:
+                    remove_contact_from_email_list(contact.get('id'), email, remove_list_name)
 
 
 def add_to_email_list_v2(user, list_names, remove_list_names=None):
@@ -170,25 +217,6 @@ def add_to_email_list_v2(user, list_names, remove_list_names=None):
 
                              The status_code for API's response was {resp.status_code} and content: {resp.content.decode()}"""
                              )
-
-
-def remove_contact_from_email_list(contact_id, email, list_name):
-    """Remove email of user from Sendgrid's email list"""
-    header = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-type': 'application/json'}
-    target_url = '{}marketing/lists/{}/contacts?contact_ids={}'.format(settings.SENDGRID_API_BASE_URL,
-                                                                       settings.SENDGRID_CONTACT_LIST_IDS.get(list_name),
-                                                                       contact_id)
-    response = requests.delete(target_url, headers=header)
-    if response.status_code != 202:
-        send_admin_email("[INFO] Contact couldn't be removed from {} list".format(list_name),
-                         """The contact {} (id: {}) could not be removed from {} list in Sendgrid.
-
-                         The status_code for API's response was {} and content: {}""".format(email,
-                                                                                             contact_id,
-                                                                                             list_name,
-                                                                                             response.status_code,
-                                                                                             response.content.decode())
-                         )
 
 
 def send_reset_password_email(email, token):
