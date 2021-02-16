@@ -113,7 +113,13 @@ GOOGLE_FORM_REFERENCES_URL = 'https://forms.gle/MuGhfwUARTW9uzrU9'
 SENDGRID_CONTACT_LIST_IDS = {
     'parents_without_request': 'a5bc806b-ce29-4900-ad3b-5e66eaa6e405',
     'students_without_request': 'a7f64112-cf7b-4a26-8f2d-9cb251f3ed00',
+    'goal_schedule_trial': 'edf6cde8-0e0d-4681-9f3c-db7a94165678',
+    'goal_leave_review': '4d17e4f3-6b23-4bc9-8ca7-f95ed93676c2',
+    'instructors': '94a1393a-00c4-49f1-abe3-3752ad821599',
+    'parents': '2b33f01c-f2b4-4fc4-b2b1-793002d1b93e',
+    'students': '863d3703-1dbf-49dd-a362-894255e9d051'
 }
+
 SENDGRID_EMAIL_TEMPLATES = {
     'booking_invoice': 'd-16bb70c5d4d549ea99d73e2d57cdba84',
     'booking_advice': 'd-b2a6ea08ab8d48cfa180985c966b0061',

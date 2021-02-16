@@ -84,7 +84,7 @@ def send_referral_invitation_email(user, email):
     return True
 
 
-def add_to_email_list(user, list_name):
+def add_to_email_list(user, list_names):
     """Add email of user to Sendgrid's email list, including first_name and last_name if are non-empty"""
     header = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-type': 'application/json'}
     contact = {'email': user.email}
@@ -92,19 +92,21 @@ def add_to_email_list(user, list_name):
         contact['first_name'] = user.first_name
     if user.last_name:
         contact['last_name'] = user.last_name
-    response = requests.put('{}marketing/contacts'.format(settings.SENDGRID_API_BASE_URL),
-                            json={'list_ids': [settings.SENDGRID_CONTACT_LIST_IDS.get(list_name)],
-                                  'contacts': [contact]},
-                            headers=header
+    
+    for list_name in list_names:
+        response = requests.put('{}marketing/contacts'.format(settings.SENDGRID_API_BASE_URL),
+                                json={'list_ids': [settings.SENDGRID_CONTACT_LIST_IDS.get(list_name)],
+                                    'contacts': [contact]},
+                                headers=header
+                                )
+        if response.status_code != 202:
+            send_admin_email("[INFO] Contact couldn't be added to {} list".format(list_name),
+                            """The contact {} could not be added to {} list in Sendgrid.
+                            The status_code for API's response was {} and content: {}""".format(list_name,
+                                                                                                contact,
+                                                                                                response.status_code,
+                                                                                                response.content.decode())
                             )
-    if response.status_code != 202:
-        send_admin_email("[INFO] Contact couldn't be added to {} list".format(list_name),
-                         """The contact {} could not be added to {} list in Sendgrid.
-                         The status_code for API's response was {} and content: {}""".format(list_name,
-                                                                                             contact,
-                                                                                             response.status_code,
-                                                                                             response.content.decode())
-                         )
 
 
 def add_to_email_list_v2(user, list_names, remove_list_names=None):
