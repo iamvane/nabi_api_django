@@ -5,7 +5,7 @@ from core.models import User
 
 
 class Command(BaseCommand):
-    help = 'Create account in HubSpot and add to a list'
+    help = 'Create account in Sendgrid and add to a list'
 
     def handle(self, *args, **options):
         self.stdout.write('Start process ...')
