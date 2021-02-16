@@ -105,8 +105,8 @@ def remove_contact_from_email_list(contact_id, email, list_name):
 
 def add_to_email_list(user, list_names, remove_list_names=None):
     """Add email of user to Sendgrid's email list, including first_name and last_name if are non-empty"""
-    if settings.ENVIRON_TYPE != 'production':   # only add account to list in production environment
-        return None
+    # if settings.ENVIRON_TYPE != 'production':   # only add account to list in production environment
+    #     return None
 
     header = {'Authorization': 'Bearer {}'.format(settings.EMAIL_HOST_PASSWORD), 'Content-type': 'application/json'}
     contact = {'email': user.email}
@@ -129,6 +129,7 @@ def add_to_email_list(user, list_names, remove_list_names=None):
                                                                                                 response.status_code,
                                                                                                 response.content.decode())
                             )
+
     if remove_list_names is None:
         remove_list_names = []
     else:
