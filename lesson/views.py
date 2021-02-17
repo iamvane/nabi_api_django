@@ -22,7 +22,7 @@ from rest_framework.response import Response
 
 from accounts.models import Instructor, InstructorInstruments, TiedStudent, get_account
 from accounts.serializers import MinimalTiedStudentSerializer
-from accounts.utils import add_to_email_list_v2
+from accounts.utils import add_to_email_list
 from core.constants import *
 from core.models import ScheduledTask, TaskLog, UserBenefits
 from core.permissions import AccessForInstructor, AccessForParentOrStudent
@@ -59,7 +59,7 @@ class LessonRequestView(views.APIView):
                                                   tied_student=obj.students.first(),
                                                   description='Package trial', status=LessonBooking.TRIAL)
                 Lesson.objects.create(booking=lb, status=Lesson.PENDING)
-                add_to_email_list_v2(request.user, [], ['trial_to_booking'])
+                add_to_email_list(request.user, [], ['goal_trial_to_purchase'])
             ser = sers.LessonRequestDetailSerializer(obj, context={'user': request.user})
             return Response(ser.data)
         else:
@@ -309,7 +309,7 @@ class LessonBookingRegisterView(views.APIView):
                     pym_obj.save()
                 if booking.lessons.count() == 0:
                     booking.create_lessons(last_lesson)
-                add_to_email_list_v2(user, [], ['trial_to_booking'])
+                add_to_email_list(user, [], ['goal_trial_to_purchase'])
                 # update data for applicable benefits
                 UserBenefits.update_applicable_benefits(user)
 
